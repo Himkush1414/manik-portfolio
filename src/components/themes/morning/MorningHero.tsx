@@ -11,7 +11,7 @@ export default function MorningHero() {
           colors={["#FFD98E", "#FF7A59", "#8ED1FC"]}
           count={3}
           speed={0.35}
-          amplitude={1.9}
+          amplitude={1.2}
           waviness={1.1}
           thickness={0.4}
           glow={4}
