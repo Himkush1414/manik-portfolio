@@ -1,42 +1,32 @@
 "use client";
 
+import Strands from "@/components/effects/Strands";
 import { Reveal } from "@/components/ui/Reveal";
-import { profile } from "@/data/content";
-import { morningBodyFont, morningHeadingFont } from "./fonts";
 
 export default function MorningHero() {
   return (
-    <section id="home" className="flex min-h-[70vh] flex-col justify-center gap-6 pt-24">
-      <Reveal>
-        <p className={`${morningBodyFont.className} text-sm font-semibold uppercase tracking-[0.2em] text-[#FF7A59]`}>
-          Good morning
-        </p>
-      </Reveal>
-      <Reveal delay={100}>
-        <h1 className={`${morningHeadingFont.className} text-4xl font-semibold leading-tight text-[#2E2A45] sm:text-6xl`}>
-          {profile.fullName}
-        </h1>
-      </Reveal>
-      <Reveal delay={200}>
-        <p className={`${morningBodyFont.className} max-w-xl text-lg text-[#2E2A45]/75 sm:text-xl`}>
-          {profile.tagline}
-        </p>
-      </Reveal>
-      <Reveal delay={300}>
-        <div className="flex flex-wrap gap-4 pt-2">
-          <a
-            href="#projects"
-            className="rounded-full bg-[#2E2A45] px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-105"
-          >
-            View my work
-          </a>
-          <a
-            href="#contact"
-            className="rounded-full border border-[#2E2A45]/20 bg-white/40 px-6 py-3 text-sm font-semibold text-[#2E2A45] backdrop-blur transition-transform hover:scale-105"
-          >
-            Get in touch
-          </a>
-        </div>
+    <section id="home" className="relative h-[60vh] min-h-[420px] max-h-[640px] w-full">
+      <Reveal className="h-full w-full">
+        <Strands
+          colors={["#FFD98E", "#FF7A59", "#8ED1FC"]}
+          count={3}
+          speed={0.35}
+          amplitude={1.4}
+          waviness={0.8}
+          thickness={0.4}
+          glow={1.1}
+          taper={2.5}
+          spread={1.6}
+          intensity={0.3}
+          saturation={1.4}
+          opacity={0.8}
+          scale={1.6}
+          glass={false}
+          refraction={1}
+          dispersion={1}
+          glassSize={1}
+          hueShift={0}
+        />
       </Reveal>
     </section>
   );
