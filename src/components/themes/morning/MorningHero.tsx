@@ -2,6 +2,7 @@
 
 import Strands from "@/components/effects/Strands";
 import { Reveal } from "@/components/ui/Reveal";
+import { morningBrushFont } from "./fonts";
 
 export default function MorningHero() {
   return (
@@ -28,6 +29,16 @@ export default function MorningHero() {
           hueShift={0}
         />
       </Reveal>
+
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6">
+        <Reveal delay={150}>
+          <h1
+            className={`${morningBrushFont.className} text-center text-6xl text-[#1A1A1A] sm:text-8xl md:text-9xl`}
+          >
+            Manik Rana
+          </h1>
+        </Reveal>
+      </div>
     </section>
   );
 }
