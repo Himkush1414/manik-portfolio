@@ -11,13 +11,13 @@ import MorningProjects from "./MorningProjects";
 export type MorningSection = "home" | "projects" | "about" | "contact";
 
 export default function MorningTheme({ section }: { section: MorningSection }) {
-  // The Projects page has its own full-bleed identity: solid black, no
-  // sunrise gradient, no GhostFibers/Strands — just the nav and the headline.
-  if (section === "projects") {
+  // Projects and About both drop the sunrise identity for the site's black
+  // canvas — just the shared nav and full-bleed content.
+  if (section === "projects" || section === "about") {
     return (
       <div className={`${morningBodyFont.className} relative min-h-screen overflow-x-hidden bg-black text-white`}>
         <MorningNav />
-        <MorningProjects />
+        {section === "projects" ? <MorningProjects /> : <MorningAbout />}
       </div>
     );
   }
@@ -56,7 +56,6 @@ export default function MorningTheme({ section }: { section: MorningSection }) {
 
       <main className="relative z-10 flex min-h-screen items-center justify-center px-6 sm:px-10">
         {section === "home" && <MorningHero />}
-        {section === "about" && <MorningAbout />}
         {section === "contact" && <MorningContact />}
       </main>
     </div>
