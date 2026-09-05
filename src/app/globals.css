@@ -49,6 +49,40 @@ body {
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+   Site footer — one oversized "MANIK RANA" watermark, shared across every
+   page/zone. Clipped to roughly its upper half so the letters bleed off the
+   bottom edge of the viewport. No links, no other content.
+   ─────────────────────────────────────────────────────────────────────────── */
+.site-footer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  /* pull the footer up over the tail of the page so the wordmark sits on the
+     zone's own background rather than adding a separate band, and adds no net
+     page height */
+  margin-top: calc(clamp(2.75rem, 15.5vw, 15rem) * -0.46);
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.site-footer__word {
+  display: block;
+  overflow: hidden;
+  /* em resolves against this element's own font-size, so this shows the
+     top ~half of the glyphs regardless of the clamped size below */
+  height: 0.46em;
+  font-size: clamp(2.75rem, 15.5vw, 15rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(170, 170, 170, 0.5);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
    Projects page (Morning zone) — "NIGHTMARE" headline animation
    Letter-by-letter entrance, then a scroll-linked upward drift + fade driven
    by the --nm-shift / --nm-fade custom properties set from MorningProjects.

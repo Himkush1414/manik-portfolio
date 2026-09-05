@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ThemeProvider } from "@/components/theme/ThemeContext";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import "./globals.css";
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <ThemeProvider>
           {children}
+          <SiteFooter />
           <ThemeSwitcher />
         </ThemeProvider>
       </body>
