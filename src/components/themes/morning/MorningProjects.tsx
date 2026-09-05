@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { morningDisplayFont } from "./fonts";
+import MorningProjectShowcase from "./MorningProjectShowcase";
 import MorningProjectsSystem from "./MorningProjectsSystem";
 
 const HEADLINE = "NIGHTMARE";
@@ -59,6 +60,7 @@ export default function MorningProjects() {
       </section>
 
       <MorningProjectsSystem />
+      <MorningProjectShowcase />
     </>
   );
 }
