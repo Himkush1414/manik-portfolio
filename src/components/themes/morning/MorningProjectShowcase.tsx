@@ -8,7 +8,7 @@ import { showcaseProjects } from "@/data/showcaseProjects";
 export default function MorningProjectShowcase() {
   return (
     <section className="convex-system w-full">
-      <div className="mx-auto w-full max-w-[1400px] px-[24px] py-[80px] sm:px-[36px] sm:py-[128px]">
+      <div className="mx-auto w-full max-w-[1400px] px-[24px] pt-[24px] pb-[80px] sm:px-[36px] sm:pt-[40px] sm:pb-[112px]">
         <Reveal>
           <header className="flex flex-col gap-[12px]">
             <p className="cvx-caption">[ Selected work · 004 ]</p>

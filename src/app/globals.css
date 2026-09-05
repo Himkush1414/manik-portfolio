@@ -59,9 +59,9 @@ body {
   justify-content: center;
   width: 100%;
   /* pull the footer up over the tail of the page so the wordmark sits on the
-     zone's own background rather than adding a separate band, and adds no net
-     page height */
-  margin-top: calc(clamp(2.75rem, 15.5vw, 15rem) * -0.46);
+     zone's own background, but leave a clear gap between it and the content
+     above */
+  margin-top: calc(clamp(2.75rem, 15.5vw, 15rem) * -0.12);
   overflow: hidden;
   pointer-events: none;
   user-select: none;
@@ -71,8 +71,8 @@ body {
   display: block;
   overflow: hidden;
   /* em resolves against this element's own font-size, so this shows the
-     top ~half of the glyphs regardless of the clamped size below */
-  height: 0.46em;
+     top portion of the glyphs regardless of the clamped size below */
+  height: 0.52em;
   font-size: clamp(2.75rem, 15.5vw, 15rem);
   font-weight: 800;
   line-height: 1;

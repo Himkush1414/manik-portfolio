@@ -21,7 +21,7 @@ const PRINCIPLES = [
 // scope in globals.css — it must not bleed into the hero above.
 export default function MorningProjectsSystem() {
   return (
-    <section className="ciridae-system w-full px-[24px] py-[100px] sm:px-[40px] sm:py-[122px]">
+    <section className="ciridae-system w-full px-[24px] pt-[100px] pb-[56px] sm:px-[40px] sm:pt-[122px] sm:pb-[72px]">
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-[40px]">
         <header className="flex flex-col gap-[16px]">
           <p className="cir-caption">[ Ciridae — System 001 ]</p>
