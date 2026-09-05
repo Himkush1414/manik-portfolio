@@ -11,6 +11,9 @@ body {
 
 body {
   margin: 0;
+  /* single page black behind everything; the morning gradient / zone
+     surfaces paint over it, and the shared footer sits on it directly */
+  background-color: #000000;
 }
 
 @keyframes drift-slow {
@@ -72,7 +75,7 @@ body {
   overflow: hidden;
   /* em resolves against this element's own font-size, so this shows the
      top portion of the glyphs regardless of the clamped size below */
-  height: 0.52em;
+  height: 0.58em;
   font-size: clamp(2.75rem, 15.5vw, 15rem);
   font-weight: 800;
   line-height: 1;
