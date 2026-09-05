@@ -47,3 +47,196 @@ body {
     animation: none;
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Projects page (Morning zone) — "NIGHTMARE" headline animation
+   Letter-by-letter entrance, then a scroll-linked upward drift + fade driven
+   by the --nm-shift / --nm-fade custom properties set from MorningProjects.
+   ─────────────────────────────────────────────────────────────────────────── */
+.nm-headline {
+  transform: translateY(var(--nm-shift, 0px));
+  opacity: var(--nm-fade, 1);
+  will-change: transform, opacity;
+}
+
+.nm-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.3em);
+  animation: nm-char-in 0.62s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes nm-char-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nm-headline {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .nm-char {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Ciridae design system — SCOPED to the Projects page section that sits below
+   the Nightmare hero. Tokens are the exact values from the Ciridae spec, kept
+   under this selector rather than a global @theme so they cannot rewrite
+   Tailwind's numeric spacing/radius scale on the other pages/zones.
+   Rules: #0b0b0b canvas, #fff text, all-caps, Pragmatica Cond 400 only,
+   flat surfaces, no gradients, no shadows, Ember Rust as 1px strokes only.
+   ─────────────────────────────────────────────────────────────────────────── */
+.ciridae-system {
+  --color-ember-rust: #cc6437;
+  --color-void-black: #0b0b0b;
+  --color-charcoal-surface: #272a2a;
+  --color-bone: #edebe7;
+  --color-bone-darker: #dfddd9;
+  --color-pure-white: #ffffff;
+  --color-abyss: #050505;
+  --color-steel: #484848;
+  --color-ash: #cecece;
+  --font-pragmatica-cond: "Pragmatica Cond", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-pragmatica: "Pragmatica", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-roboto-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --text-caption: 11px;
+  --leading-caption: 1.1;
+  --tracking-caption: -0.22px;
+  --text-body-sm: 14px;
+  --leading-body-sm: 1.43;
+  --tracking-body-sm: -0.28px;
+  --text-heading-sm: 20px;
+  --leading-heading-sm: 1;
+  --tracking-heading-sm: -0.4px;
+  --text-heading: 24px;
+  --leading-heading: 1.2;
+  --tracking-heading: -0.48px;
+  --text-heading-lg: 32px;
+  --leading-heading-lg: 1.05;
+  --tracking-heading-lg: -0.64px;
+  --font-weight-regular: 400;
+  --spacing-5: 5px;
+  --spacing-7: 7px;
+  --spacing-8: 8px;
+  --spacing-10: 10px;
+  --spacing-11: 11px;
+  --spacing-16: 16px;
+  --spacing-18: 18px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-30: 30px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-65: 65px;
+  --spacing-80: 80px;
+  --spacing-100: 100px;
+  --spacing-122: 122px;
+  --page-max-width: 1400px;
+  --section-gap: 80px;
+  --card-padding: 32px;
+  --element-gap: 16-20px;
+  --radius-sm: 1px;
+  --radius-md: 4px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+  --radius-full-2: 1440px;
+  --radius-nav: 1440px;
+  --radius-cards: 10px;
+  --radius-badges: 1440px;
+  --radius-buttons: 1440px;
+  --radius-news-bar-button: 0px;
+  --surface-void-canvas: #0b0b0b;
+  --surface-abyss-bar: #050505;
+  --surface-charcoal-card: #272a2a;
+  --surface-bone-inversion: #edebe7;
+
+  background-color: var(--surface-void-canvas);
+  color: var(--color-pure-white);
+  font-family: var(--font-pragmatica-cond);
+  font-weight: var(--font-weight-regular);
+  text-transform: uppercase;
+}
+
+.ciridae-system :is(h1, h2, h3, h4, h5, h6, p, span, a, button, li, small, strong) {
+  font-family: var(--font-pragmatica-cond);
+  font-weight: var(--font-weight-regular);
+  text-transform: uppercase;
+}
+
+.ciridae-system .cir-caption {
+  font-family: var(--font-roboto-mono);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  letter-spacing: var(--tracking-caption);
+  color: var(--color-ash);
+}
+
+.ciridae-system .cir-body {
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  letter-spacing: var(--tracking-body-sm);
+  color: var(--color-ash);
+}
+
+.ciridae-system .cir-heading-sm {
+  font-size: var(--text-heading-sm);
+  line-height: var(--leading-heading-sm);
+  letter-spacing: var(--tracking-heading-sm);
+  color: var(--color-pure-white);
+}
+
+.ciridae-system .cir-heading-lg {
+  font-size: var(--text-heading-lg);
+  line-height: var(--leading-heading-lg);
+  letter-spacing: var(--tracking-heading-lg);
+  color: var(--color-pure-white);
+}
+
+.ciridae-system .cir-rule {
+  height: 1px;
+  border: 0;
+  background: var(--color-steel);
+}
+
+.ciridae-system .cir-card {
+  background: var(--surface-charcoal-card);
+  border-radius: var(--radius-cards);
+  padding: var(--card-padding);
+  box-shadow: none;
+}
+
+/* Ember Rust — thin accent stroke only, never a fill */
+.ciridae-system .cir-accent {
+  border-left: 1px solid var(--color-ember-rust);
+  padding-left: var(--spacing-16);
+}
+
+.ciridae-system .cir-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-8);
+  padding: var(--spacing-10) var(--spacing-20);
+  border: 1px solid var(--color-pure-white);
+  border-radius: var(--radius-buttons);
+  background: transparent;
+  color: var(--color-pure-white);
+  font-size: var(--text-body-sm);
+  letter-spacing: var(--tracking-body-sm);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.ciridae-system .cir-btn:hover {
+  border-color: var(--color-ember-rust);
+}
