@@ -195,7 +195,9 @@ body {
   --surface-charcoal-card: #272a2a;
   --surface-bone-inversion: #edebe7;
 
-  background-color: var(--surface-void-canvas);
+  /* One consistent page black across every section of /projects — matches the
+     `bg-black` (#000) behind the NIGHTMARE hero. */
+  background-color: #000000;
   color: var(--color-pure-white);
   font-family: var(--font-pragmatica-cond);
   font-weight: var(--font-weight-regular);
@@ -362,9 +364,9 @@ body {
   --surface-dark-code: #141414;
   --surface-dark-section: #292929;
 
-  /* Dark variant of the Convex system — the whole Projects experience
-     (Nightmare / Ciridae / showcase / project pages) is black. */
-  background-color: var(--color-ink-black);
+  /* Showcase section only. No background of its own — it sits on the single
+     page black (#000) shared with the NIGHTMARE / Ciridae sections. */
+  background-color: transparent;
   color: var(--color-paper-white);
   font-family: var(--font-gt-america);
   font-weight: var(--font-weight-regular);
@@ -437,8 +439,8 @@ body {
   display: inline-flex;
   align-items: center;
   padding: var(--spacing-4) var(--spacing-8);
-  border: 1px solid var(--color-graphite-border);
-  border-radius: var(--radius-tags);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
   font-family: var(--font-monospace);
   font-size: var(--text-caption);
   letter-spacing: var(--tracking-caption);
@@ -446,86 +448,100 @@ body {
   color: var(--color-ash-text);
 }
 
+/* Glassmorphism card — one long, wide rectangle: thumbnail on the left,
+   text + rectangular button on the right. Semi-transparent + blur, no fill. */
 .convex-system .cvx-card {
   display: flex;
-  flex-direction: column;
+  flex: 1 1 auto;
+  flex-direction: row;
   gap: var(--spacing-16);
-  background: var(--surface-dark-section);
-  border: 1px solid var(--color-graphite-border);
-  border-radius: var(--radius-cards);
-  padding: var(--card-padding);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: var(--spacing-16);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .convex-system .cvx-card:hover {
-  border-color: var(--color-ash-text);
-  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.convex-system .cvx-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.convex-system .cvx-card__title {
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-paper-white);
+}
+
+.convex-system .cvx-card__meta {
+  margin-top: 2px;
+  font-family: var(--font-monospace);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-ash-text);
 }
 
 .convex-system .cvx-thumb {
   display: flex;
   align-items: flex-end;
-  aspect-ratio: 16 / 10;
-  padding: var(--spacing-12);
-  border: 1px solid var(--color-graphite-border);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-ink-black);
+  flex: none;
+  width: 88px;
+  aspect-ratio: 1 / 1;
+  padding: var(--spacing-6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.03);
   background-image:
     repeating-linear-gradient(
       -45deg,
       transparent 0,
-      transparent 10px,
-      rgba(255, 255, 255, 0.05) 10px,
-      rgba(255, 255, 255, 0.05) 11px
+      transparent 8px,
+      rgba(255, 255, 255, 0.05) 8px,
+      rgba(255, 255, 255, 0.05) 9px
     );
   font-family: var(--font-monospace);
-  font-size: var(--text-caption);
-  letter-spacing: var(--tracking-caption);
+  font-size: 8px;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
   text-transform: uppercase;
   color: var(--color-ash-text);
 }
 
-.convex-system .cvx-thumb--hero {
-  aspect-ratio: 21 / 9;
-}
-
-/* Animated CTA: on the dark surface it inverts to a paper-white fill.
-   Arrow slides on hover, subtle lift. */
+/* Rectangular ghost button — square-ish corners to match the card language */
 .convex-system .cvx-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-8);
-  padding: var(--spacing-10) var(--spacing-16);
-  border: 1px solid var(--color-paper-white);
-  border-radius: var(--radius-buttons);
-  background: var(--color-paper-white);
-  color: var(--color-ink-black);
+  width: 100%;
+  margin-top: auto;
+  padding: var(--spacing-8) var(--spacing-10);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--color-paper-white);
   font-family: var(--font-gt-america);
-  font-size: var(--text-body);
+  font-size: 12px;
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .convex-system .cvx-btn:hover {
-  background: var(--color-mist-divider);
-  border-color: var(--color-mist-divider);
-  transform: translateY(-1px);
-}
-
-.convex-system .cvx-btn:active {
-  transform: translateY(0);
-}
-
-.convex-system .cvx-btn--ghost {
-  background: transparent;
-  border-color: var(--color-graphite-border);
-  color: var(--color-paper-white);
-}
-
-.convex-system .cvx-btn--ghost:hover {
-  background: var(--color-charcoal-surface);
-  border-color: var(--color-graphite-border);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .convex-system .cvx-btn__arrow {
@@ -542,8 +558,315 @@ body {
   .convex-system .cvx-btn__arrow {
     transition: none;
   }
-  .convex-system .cvx-card:hover,
-  .convex-system .cvx-btn:hover {
+  .convex-system .cvx-btn__arrow {
     transform: none;
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Individual project page — SCOPED, fully custom full-screen layout modelled
+   on the Convex reference screenshot. Warm dark-olive canvas, cream/near-white
+   type, GT America, hairline borders, no drop shadows, 8-12px radii. This
+   palette is deliberately different from the black Nightmare theme and lives
+   only on /projects/[slug]. No site nav, footer or theme switcher here.
+   ─────────────────────────────────────────────────────────────────────────── */
+.project-detail {
+  --pd-bg: #24211a;
+  --pd-surface: #1b1913;
+  --pd-surface-2: #2c2820;
+  --pd-cream: #f2eee2;
+  --pd-border: rgba(240, 234, 220, 0.12);
+  --pd-border-strong: rgba(240, 234, 220, 0.2);
+  --pd-border-warm: #7c6042;
+  --pd-text: #f4f1e8;
+  --pd-text-muted: #a8a294;
+  --pd-text-dim: #6f695b;
+  --pd-radius: 10px;
+  --pd-radius-sm: 8px;
+  --pd-font: "GT America", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --pd-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --pd-syn-keyword: #f0669b;
+  --pd-syn-string: #e6b56c;
+  --pd-syn-func: #f2d98d;
+  --pd-syn-type: #7fbce0;
+  --pd-syn-comment: #8b8f77;
+  --pd-syn-number: #a99ae8;
+  --pd-syn-punc: #b9b3a3;
+
+  min-height: 100vh;
+  background-color: var(--pd-bg);
+  color: var(--pd-text-muted);
+  font-family: var(--pd-font);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+.project-detail ::selection {
+  background: var(--pd-cream);
+  color: var(--pd-bg);
+}
+
+/* top bar */
+.project-detail .pd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px clamp(16px, 4vw, 40px);
+}
+
+.project-detail .pd-wordmark {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: var(--pd-text);
+}
+
+.project-detail .pd-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-detail .pd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid var(--pd-border);
+  border-radius: 999px;
+  background: var(--pd-surface-2);
+  color: var(--pd-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.project-detail .pd-pill:hover {
+  border-color: var(--pd-border-strong);
+  color: var(--pd-text);
+}
+
+.project-detail .pd-pill svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* main two-column layout */
+.project-detail .pd-main {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(24px, 5vw, 64px);
+  align-items: start;
+  padding: clamp(24px, 5vw, 56px) clamp(16px, 4vw, 40px) 96px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .project-detail .pd-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.project-detail .pd-title {
+  font-size: clamp(32px, 4.4vw, 46px);
+  line-height: 1.05;
+  letter-spacing: -1px;
+  font-weight: 500;
+  color: var(--pd-text);
+  max-width: 12ch;
+}
+
+.project-detail .pd-desc {
+  margin-top: 20px;
+  max-width: 42ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--pd-text-muted);
+}
+
+/* accordion */
+.project-detail .pd-accordion {
+  margin-top: 40px;
+  border-top: 1px solid var(--pd-border);
+}
+
+.project-detail .pd-acc-item {
+  border-bottom: 1px solid var(--pd-border);
+}
+
+.project-detail .pd-acc-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--pd-text-dim);
+  transition: color 0.18s ease;
+}
+
+.project-detail .pd-acc-item[data-open="true"] .pd-acc-trigger,
+.project-detail .pd-acc-trigger:hover {
+  color: var(--pd-text);
+}
+
+.project-detail .pd-acc-sign {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  position: relative;
+}
+
+.project-detail .pd-acc-sign::before,
+.project-detail .pd-acc-sign::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.project-detail .pd-acc-sign::before {
+  inset: 6px 0;
+  height: 2px;
+}
+
+.project-detail .pd-acc-sign::after {
+  inset: 0 6px;
+  width: 2px;
+}
+
+.project-detail .pd-acc-item[data-open="true"] .pd-acc-sign::after {
+  opacity: 0;
+  transform: rotate(90deg);
+}
+
+.project-detail .pd-acc-panel {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.project-detail .pd-acc-item[data-open="true"] .pd-acc-panel {
+  grid-template-rows: 1fr;
+}
+
+.project-detail .pd-acc-panel > div {
+  min-height: 0;
+}
+
+.project-detail .pd-acc-body {
+  padding: 0 0 20px;
+  max-width: 40ch;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--pd-text-muted);
+}
+
+.project-detail .pd-acc-index {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--pd-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--pd-text-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-detail .pd-acc-panel,
+  .project-detail .pd-acc-sign::before,
+  .project-detail .pd-acc-sign::after {
+    transition: none;
+  }
+}
+
+/* code preview panel */
+.project-detail .pd-code {
+  border: 1px solid var(--pd-border-warm);
+  border-radius: var(--pd-radius);
+  background: var(--pd-surface);
+  overflow: hidden;
+  font-family: var(--pd-mono);
+}
+
+.project-detail .pd-code__bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--pd-border);
+}
+
+.project-detail .pd-code__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(240, 234, 220, 0.18);
+}
+
+.project-detail .pd-code__file {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--pd-text-dim);
+}
+
+.project-detail .pd-code__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--pd-border);
+}
+
+.project-detail .pd-code__tab {
+  padding: 9px 14px;
+  font-size: 12px;
+  color: var(--pd-text-dim);
+  border-right: 1px solid var(--pd-border);
+}
+
+.project-detail .pd-code__tab[data-active="true"] {
+  background: var(--pd-surface-2);
+  color: var(--pd-text);
+}
+
+.project-detail .pd-code__scroll {
+  overflow-x: auto;
+  padding: 14px 0;
+}
+
+.project-detail .pd-code__line {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  font-size: 12.5px;
+  line-height: 1.65;
+  white-space: pre;
+}
+
+.project-detail .pd-code__ln {
+  text-align: right;
+  padding-right: 14px;
+  color: var(--pd-text-dim);
+  user-select: none;
+}
+
+.project-detail .pd-code__text {
+  padding-right: 20px;
+  color: var(--pd-syn-punc);
+}
+
+.project-detail .pd-code__text .k { color: var(--pd-syn-keyword); }
+.project-detail .pd-code__text .s { color: var(--pd-syn-string); }
+.project-detail .pd-code__text .f { color: var(--pd-syn-func); }
+.project-detail .pd-code__text .t { color: var(--pd-syn-type); }
+.project-detail .pd-code__text .c { color: var(--pd-syn-comment); font-style: italic; }
+.project-detail .pd-code__text .n { color: var(--pd-syn-number); }
+.project-detail .pd-code__text .v { color: var(--pd-text); }
+.project-detail .pd-code__text .p { color: var(--pd-syn-punc); }

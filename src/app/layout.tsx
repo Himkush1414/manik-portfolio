@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/SiteFooter";
+import { SiteChrome } from "@/components/SiteChrome";
 import { ThemeProvider } from "@/components/theme/ThemeContext";
-import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,8 +14,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <ThemeProvider>
           {children}
-          <SiteFooter />
-          <ThemeSwitcher />
+          <SiteChrome />
         </ThemeProvider>
       </body>
     </html>
