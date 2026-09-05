@@ -20,7 +20,7 @@ export default function ProjectDetail({ project }: { project: ShowcaseProject })
         </Reveal>
 
         <Reveal delay={80}>
-          <dl className="mt-[36px] grid gap-[24px] border-t border-[var(--color-mist-divider)] pt-[24px] sm:grid-cols-3">
+          <dl className="mt-[36px] grid gap-[24px] border-t border-[var(--color-graphite-border)] pt-[24px] sm:grid-cols-3">
             <div className="flex flex-col gap-[6px]">
               <dt className="cvx-caption">Year</dt>
               <dd className="cvx-body">{project.year}</dd>

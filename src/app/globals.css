@@ -362,15 +362,17 @@ body {
   --surface-dark-code: #141414;
   --surface-dark-section: #292929;
 
-  background-color: var(--surface-canvas);
-  color: var(--color-slate-text);
+  /* Dark variant of the Convex system — the whole Projects experience
+     (Nightmare / Ciridae / showcase / project pages) is black. */
+  background-color: var(--color-ink-black);
+  color: var(--color-paper-white);
   font-family: var(--font-gt-america);
   font-weight: var(--font-weight-regular);
 }
 
 .convex-system ::selection {
-  background: var(--color-ink-black);
-  color: var(--color-paper-white);
+  background: var(--color-paper-white);
+  color: var(--color-ink-black);
 }
 
 .convex-system .cvx-caption {
@@ -379,7 +381,7 @@ body {
   line-height: var(--leading-caption);
   letter-spacing: var(--tracking-caption);
   text-transform: uppercase;
-  color: var(--color-fog-text);
+  color: var(--color-ash-text);
 }
 
 .convex-system .cvx-display {
@@ -387,7 +389,7 @@ body {
   line-height: var(--leading-display);
   letter-spacing: var(--tracking-display);
   font-weight: var(--font-weight-medium);
-  color: var(--color-ink-black);
+  color: var(--color-paper-white);
 }
 
 .convex-system .cvx-heading-lg {
@@ -395,7 +397,7 @@ body {
   line-height: var(--leading-heading-lg);
   letter-spacing: var(--tracking-heading-lg);
   font-weight: var(--font-weight-medium);
-  color: var(--color-ink-black);
+  color: var(--color-paper-white);
 }
 
 .convex-system .cvx-heading {
@@ -403,53 +405,53 @@ body {
   line-height: var(--leading-heading);
   letter-spacing: var(--tracking-heading);
   font-weight: var(--font-weight-medium);
-  color: var(--color-ink-black);
+  color: var(--color-paper-white);
 }
 
 .convex-system .cvx-subheading {
   font-size: var(--text-subheading);
   line-height: var(--leading-subheading);
   font-weight: var(--font-weight-medium);
-  color: var(--color-ink-black);
+  color: var(--color-paper-white);
 }
 
 .convex-system .cvx-body {
   font-size: var(--text-body);
   line-height: var(--leading-body);
-  color: var(--color-slate-text);
+  color: var(--color-ash-text);
 }
 
 .convex-system .cvx-body-lg {
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
-  color: var(--color-slate-text);
+  color: var(--color-ash-text);
 }
 
 .convex-system .cvx-divider {
   height: 1px;
   border: 0;
-  background: var(--color-mist-divider);
+  background: var(--color-graphite-border);
 }
 
 .convex-system .cvx-tag {
   display: inline-flex;
   align-items: center;
   padding: var(--spacing-4) var(--spacing-8);
-  border: 1px solid var(--color-mist-divider);
+  border: 1px solid var(--color-graphite-border);
   border-radius: var(--radius-tags);
   font-family: var(--font-monospace);
   font-size: var(--text-caption);
   letter-spacing: var(--tracking-caption);
   text-transform: uppercase;
-  color: var(--color-fog-text);
+  color: var(--color-ash-text);
 }
 
 .convex-system .cvx-card {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-16);
-  background: var(--surface-card);
-  border: 1px solid var(--color-mist-divider);
+  background: var(--surface-dark-section);
+  border: 1px solid var(--color-graphite-border);
   border-radius: var(--radius-cards);
   padding: var(--card-padding);
   transition: border-color 0.2s ease, transform 0.2s ease;
@@ -465,47 +467,49 @@ body {
   align-items: flex-end;
   aspect-ratio: 16 / 10;
   padding: var(--spacing-12);
-  border: 1px solid var(--color-mist-divider);
+  border: 1px solid var(--color-graphite-border);
   border-radius: var(--radius-lg);
-  background-color: var(--surface-tinted-panel);
+  background-color: var(--color-ink-black);
   background-image:
     repeating-linear-gradient(
       -45deg,
       transparent 0,
       transparent 10px,
-      rgba(20, 20, 20, 0.04) 10px,
-      rgba(20, 20, 20, 0.04) 11px
+      rgba(255, 255, 255, 0.05) 10px,
+      rgba(255, 255, 255, 0.05) 11px
     );
   font-family: var(--font-monospace);
   font-size: var(--text-caption);
   letter-spacing: var(--tracking-caption);
   text-transform: uppercase;
-  color: var(--color-fog-text);
+  color: var(--color-ash-text);
 }
 
 .convex-system .cvx-thumb--hero {
   aspect-ratio: 21 / 9;
 }
 
-/* Animated CTA: filled dark button, arrow slides on hover, subtle lift */
+/* Animated CTA: on the dark surface it inverts to a paper-white fill.
+   Arrow slides on hover, subtle lift. */
 .convex-system .cvx-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-8);
   padding: var(--spacing-10) var(--spacing-16);
-  border: 1px solid var(--color-ink-black);
+  border: 1px solid var(--color-paper-white);
   border-radius: var(--radius-buttons);
-  background: var(--color-ink-black);
-  color: var(--color-paper-white);
+  background: var(--color-paper-white);
+  color: var(--color-ink-black);
   font-family: var(--font-gt-america);
   font-size: var(--text-body);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .convex-system .cvx-btn:hover {
-  background: var(--color-charcoal-surface);
+  background: var(--color-mist-divider);
+  border-color: var(--color-mist-divider);
   transform: translateY(-1px);
 }
 
@@ -515,11 +519,13 @@ body {
 
 .convex-system .cvx-btn--ghost {
   background: transparent;
-  color: var(--color-ink-black);
+  border-color: var(--color-graphite-border);
+  color: var(--color-paper-white);
 }
 
 .convex-system .cvx-btn--ghost:hover {
-  background: var(--color-cream-surface);
+  background: var(--color-charcoal-surface);
+  border-color: var(--color-graphite-border);
 }
 
 .convex-system .cvx-btn__arrow {
