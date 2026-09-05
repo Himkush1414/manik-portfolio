@@ -618,11 +618,15 @@ body {
   padding: 20px clamp(16px, 4vw, 40px);
 }
 
-.project-detail .pd-wordmark {
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
+/* top-left back button — same pill language, slightly brighter as the
+   primary way off this page */
+.project-detail .pd-back {
   color: var(--pd-text);
+}
+
+.project-detail .pd-back svg {
+  width: 13px;
+  height: 13px;
 }
 
 .project-detail .pd-actions {

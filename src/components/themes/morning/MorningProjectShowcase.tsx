@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { showcaseProjects } from "@/data/showcaseProjects";
@@ -6,8 +9,24 @@ import { showcaseProjects } from "@/data/showcaseProjects";
 // the NIGHTMARE and Ciridae sections — `.convex-system` supplies only the
 // GT America typography and the glass-card / rectangular-button treatment.
 export default function MorningProjectShowcase() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // "Back to projects" from a detail page lands on /projects#project-showcase.
+  // The section only exists after the client theme resolves, so a plain hash
+  // scroll can miss it — jump to it here once this component has mounted.
+  useEffect(() => {
+    if (window.location.hash !== "#project-showcase") return;
+    const el = sectionRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+  }, []);
+
   return (
-    <section className="convex-system w-full">
+    <section
+      ref={sectionRef}
+      id="project-showcase"
+      className="convex-system w-full scroll-mt-[72px]"
+    >
       <div className="mx-auto w-full max-w-[1400px] px-[24px] pt-[24px] pb-[80px] sm:px-[36px] sm:pt-[40px] sm:pb-[112px]">
         <Reveal>
           <header className="flex flex-col gap-[12px]">
