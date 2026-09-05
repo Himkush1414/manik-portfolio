@@ -1,5 +1,3 @@
-import { AnimatedFooter } from "@/components/ui/animated-footer";
-
 const PRINCIPLES = [
   {
     k: "01",
@@ -23,8 +21,8 @@ const PRINCIPLES = [
 // scope in globals.css — it must not bleed into the hero above.
 export default function MorningProjectsSystem() {
   return (
-    <section className="ciridae-system w-full">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-[40px] px-[24px] py-[100px] sm:px-[40px] sm:py-[122px]">
+    <section className="ciridae-system w-full px-[24px] py-[100px] sm:px-[40px] sm:py-[122px]">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-[40px]">
         <header className="flex flex-col gap-[16px]">
           <p className="cir-caption">[ Ciridae — System 001 ]</p>
           <h2 className="cir-heading-lg max-w-[20ch]">Built from bone, rust and void</h2>
@@ -57,23 +55,6 @@ export default function MorningProjectsSystem() {
             Explore the system
           </button>
         </div>
-      </div>
-
-      {/* Scroll-triggered two-hand ASCII effect: a left and right hand slide in
-          from opposite edges as this block enters the viewport and meet in the
-          middle. Reveal + pointer parallax are built into AnimatedFooter. */}
-      <div className="relative h-[72vh] min-h-[440px] w-full overflow-hidden">
-        <AnimatedFooter
-          headingLines={["Connect"]}
-          leftImage="/animated-footer/hand-left.svg"
-          rightImage="/animated-footer/hand-right.svg"
-          background="#0b0b0b"
-          textColor="#edebe7"
-          charColor="#cc6437"
-          hoverColor="#edebe7"
-          hoverCharColor="#0b0b0b"
-          parallaxStrength={12}
-        />
       </div>
     </section>
   );
