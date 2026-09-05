@@ -1,4 +1,4 @@
-import { Inter, Permanent_Marker, Quicksand } from "next/font/google";
+import { Archivo, Inter, Permanent_Marker, Quicksand } from "next/font/google";
 
 export const morningHeadingFont = Quicksand({
   subsets: ["latin"],
@@ -17,5 +17,13 @@ export const morningBodyFont = Inter({
 export const morningBrushFont = Permanent_Marker({
   subsets: ["latin"],
   weight: "400",
+  display: "swap",
+});
+
+// Heavy grotesque display face for oversized, full-bleed headlines
+// (e.g. the "NIGHTMARE" wordmark on the Projects page).
+export const morningDisplayFont = Archivo({
+  subsets: ["latin"],
+  weight: ["800", "900"],
   display: "swap",
 });

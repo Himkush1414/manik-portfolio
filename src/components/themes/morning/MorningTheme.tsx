@@ -1,7 +1,6 @@
 "use client";
 
 import GhostFibers from "@/components/effects/GhostFibers";
-import { profile } from "@/data/content";
 import { morningBodyFont } from "./fonts";
 import MorningAbout from "./MorningAbout";
 import MorningContact from "./MorningContact";
@@ -9,7 +8,20 @@ import MorningHero from "./MorningHero";
 import MorningNav from "./MorningNav";
 import MorningProjects from "./MorningProjects";
 
-export default function MorningTheme() {
+export type MorningSection = "home" | "projects" | "about" | "contact";
+
+export default function MorningTheme({ section }: { section: MorningSection }) {
+  // The Projects page has its own full-bleed identity: solid black, no
+  // sunrise gradient, no GhostFibers/Strands — just the nav and the headline.
+  if (section === "projects") {
+    return (
+      <div className={`${morningBodyFont.className} relative min-h-screen overflow-x-hidden bg-black text-white`}>
+        <MorningNav />
+        <MorningProjects />
+      </div>
+    );
+  }
+
   return (
     <div className={`${morningBodyFont.className} relative min-h-screen overflow-x-hidden text-[#2E2A45]`}>
       {/* sunrise gradient backdrop */}
@@ -42,16 +54,11 @@ export default function MorningTheme() {
 
       <MorningNav />
 
-      <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-32 px-6 pb-32 pt-32 sm:px-10">
-        <MorningHero />
-        <MorningProjects />
-        <MorningAbout />
-        <MorningContact />
+      <main className="relative z-10 flex min-h-screen items-center justify-center px-6 sm:px-10">
+        {section === "home" && <MorningHero />}
+        {section === "about" && <MorningAbout />}
+        {section === "contact" && <MorningContact />}
       </main>
-
-      <footer className="relative z-10 pb-10 text-center text-sm text-[#2E2A45]/60">
-        © {new Date().getFullYear()} {profile.fullName}. Crafted at sunrise.
-      </footer>
     </div>
   );
 }
