@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — home v0 (archived)</title>
+<meta name="description" content="Manik Rana — portfolio." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../../styles.css" />
+</head>
+<body>
+<!-- SVG filter: organic turbulence + blur used for the drifting bottom fog -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="fogDistort" x="-25%" y="-60%" width="150%" height="200%"
+          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
+    <feTurbulence type="fractalNoise" baseFrequency="0.0055 0.011" numOctaves="3"
+                  seed="17" stitchTiles="stitch" result="noise" />
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="185"
+                       xChannelSelector="R" yChannelSelector="G" result="disp" />
+    <feGaussianBlur in="disp" stdDeviation="26" />
+  </filter>
+</svg>
+
+<header class="hero" id="top">
+  <!-- Background layers -->
+  <div class="hero__bg" aria-hidden="true"></div>
+  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="hero__fog" aria-hidden="true"></div>
+  <div class="bubbles" aria-hidden="true">
+    <span class="bubble"></span><span class="bubble"></span><span class="bubble"></span>
+    <span class="bubble"></span><span class="bubble"></span><span class="bubble"></span>
+    <span class="bubble"></span>
+  </div>
+  <div class="hero__grain" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+  <!-- Faint dotted grid overlay -->
+  <div class="grid-lines" aria-hidden="true">
+    <span style="left:0%"></span>
+    <span style="left:34%"></span>
+    <span style="left:51%"></span>
+    <span style="left:68%"></span>
+    <span style="left:100%"></span>
+  </div>
+
+  <div class="hero__inner">
+    <!-- NAV -->
+    <nav class="nav">
+      <a class="nav__brand" href="#top" aria-label="Manik Rana — home">
+        <img src="../../assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
+        <span class="nav__wordmark">Manik Rana</span>
+      </a>
+      <div class="nav__menu">
+        <a class="pill" href="#about">About</a>
+        <a class="pill" href="#projects">Projects</a>
+        <a class="pill" href="#games">Games</a>
+        <a class="pill" href="#fun">Fun</a>
+        <a class="pill" href="#dashboard">Dashboard</a>
+        <a class="pill pill--icon" href="#about" aria-label="Enter">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+        </a>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT ROW -->
+    <div class="content">
+      <span class="content__marker" aria-hidden="true"></span>
+
+      <!-- Left: sign up -->
+      <div class="col col--signup">
+        <h1 class="signup__title">Sign up to stay in the loop:</h1>
+        <form class="signup__form" action="#" method="post" novalidate>
+          <input type="email" class="signup__input" placeholder="Enter your email" aria-label="Email address" />
+          <button type="submit" class="btn-signup">
+            <span>Sign up</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+          </button>
+        </form>
+
+        <div class="badge">
+          <img src="../../assets/logo.png" width="512" height="512" alt="" class="badge__mark" />
+          <p class="badge__text">
+            OPEN TO NEW PROJECTS<br />
+            FRONTEND &middot; CREATIVE DEV &middot; UI ENGINEERING
+          </p>
+        </div>
+      </div>
+
+      <!-- Middle group 1 -->
+      <div class="col col--links">
+        <p class="col__label">Navigation</p>
+        <ul class="linklist">
+          <li><a href="#about">About</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#games">Games</a></li>
+        </ul>
+      </div>
+
+      <!-- Middle group 2 -->
+      <div class="col col--links">
+        <p class="col__label col__label--ghost">More</p>
+        <ul class="linklist">
+          <li><a href="#fun">Fun</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Right: social + back to top -->
+      <div class="col col--social">
+        <div class="backtotop">
+          <span>Back to top</span>
+          <a href="#top" class="circle-btn" aria-label="Back to top">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 13l6-6 6 6" /></svg>
+          </a>
+        </div>
+        <p class="col__label">Social</p>
+        <ul class="linklist">
+          <li><a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://github.com/" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://x.com/" target="_blank" rel="noopener">Twitter / X</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- BOTTOM STRIP -->
+    <div class="bottom">
+      <div class="bottom__legal">
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#terms">Terms of Use</a>
+      </div>
+      <p class="bottom__copy">&copy; 2026 Manik Rana. All rights reserved</p>
+    </div>
+  </div>
+
+  <!-- GIANT WATERMARK NAME -->
+  <div class="watermark" id="watermark">
+    <svg class="watermark__svg" viewBox="0 0 1920 400" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="metal" gradientUnits="userSpaceOnUse" x1="0" y1="58" x2="0" y2="404">
+          <stop offset="0" stop-color="#E4EBF2" />
+          <stop offset="0.22" stop-color="#C2CDDA" />
+          <stop offset="0.46" stop-color="#8E9CAE" />
+          <stop offset="0.68" stop-color="#5D6D81" />
+          <stop offset="0.85" stop-color="#3E4F64" />
+          <stop offset="1" stop-color="#2C3B4C" />
+        </linearGradient>
+
+        <linearGradient id="baseFade" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="404">
+          <stop offset="0" stop-color="#fff" stop-opacity="1" />
+          <stop offset="0.66" stop-color="#fff" stop-opacity="0.92" />
+          <stop offset="0.88" stop-color="#fff" stop-opacity="0.42" />
+          <stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </linearGradient>
+        <mask id="baseFadeMask">
+          <rect x="-400" y="0" width="2720" height="404" fill="url(#baseFade)" />
+        </mask>
+
+        <radialGradient id="spot" gradientUnits="userSpaceOnUse" cx="-3000" cy="-3000" r="190">
+          <stop offset="0" stop-color="#fff" stop-opacity="1" />
+          <stop offset="0.55" stop-color="#fff" stop-opacity="1" />
+          <stop offset="0.8" stop-color="#fff" stop-opacity="0.45" />
+          <stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </radialGradient>
+        <mask id="spotMask">
+          <rect x="-600" y="-400" width="3120" height="1200" fill="url(#spot)" />
+        </mask>
+
+        <filter id="strokeGlow" x="-40%" y="-80%" width="180%" height="260%">
+          <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#BFD9F7" flood-opacity="1" />
+        </filter>
+      </defs>
+
+      <g mask="url(#baseFadeMask)">
+        <text class="watermark__fill" x="960" y="400" text-anchor="middle"
+              textLength="1854" lengthAdjust="spacing" fill="url(#metal)">Manik Rana</text>
+
+        <g id="strokeLayer" mask="url(#spotMask)">
+          <text class="watermark__stroke watermark__stroke--halo" x="960" y="400" text-anchor="middle"
+                textLength="1854" lengthAdjust="spacing" filter="url(#strokeGlow)">Manik Rana</text>
+          <text class="watermark__stroke" x="960" y="400" text-anchor="middle"
+                textLength="1854" lengthAdjust="spacing">Manik Rana</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Deep-water blur: masked backdrop layers over the bottom, above the
+       wordmark, so the base of the letters is seen as if through water -->
+  <div class="hero__depth" aria-hidden="true"></div>
+  <div class="hero__depth2" aria-hidden="true"></div>
+</header>
+
+<script type="module" src="./script.js"></script>
+</body>
+</html>

@@ -4,13 +4,13 @@ import InfiniteSpiral from './InfiniteSpiral';
 import { logos } from './logos';
 // §4 reuses /lab/lv1's footer verbatim — the actual component, asset and
 // extra stylesheet, imported (not copied/forked) so it stays identical.
-import RippleDistortion from '../lv1/RippleDistortion';
-import watermarkSource from '../lv1/watermark-source.jpg';
+import RippleDistortion from './lab/lv1/RippleDistortion';
+import watermarkSource from './lab/lv1/watermark-source.jpg';
 import './lv2.css';
-import '../lv1/lab.css';
+import './lab/lv1/lab.css';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
-console.log('%clab/lv2 build 2026-09-08-rebuild-d', 'color:#8fb8ea;font-weight:600');
+console.log('%croot build 2026-09-09 (formerly lab/lv2)', 'color:#8fb8ea;font-weight:600');
 
 // Clear any stray service worker / caches on localhost:5173 that could pin a
 // stale page at the bare URL (the "?query works, plain doesn't" symptom).
