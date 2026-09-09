@@ -1,0 +1,663 @@
+/* ============================================================
+   Manik Rana — portfolio hero
+   ============================================================ */
+
+:root {
+  --navy-pill: #16233B;
+  --navy-pill-70: rgba(22, 35, 59, 0.70);
+  --outline: #3A4E6E;
+  --near-white: #F0F4F8;
+  --muted: #8CA1BD;
+  --input-fill: rgba(15, 27, 46, 0.60);
+  --grid-line: rgba(255, 255, 255, 0.08);
+  --dash-divider: rgba(42, 59, 84, 0.30);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #020A1C;
+  color: var(--near-white);
+  font-family: "Sora", "Inter", "Helvetica Neue", Arial, system-ui, sans-serif;
+  font-feature-settings: "ss01" on, "cv01" on;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; margin: 0; padding: 0; }
+
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+
+/* ============================================================
+   HERO SHELL
+   ============================================================ */
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  min-height: 620px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* --- Background base: continuous vertical gradient, light blue at the very
+   top easing into an almost-black navy that owns the centre and bottom. --- */
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: #01040A;
+  background-image: linear-gradient(
+    180deg,
+    #5C87BC 0%,
+    #46709F 7%,
+    #335A83 13%,
+    #234764 20%,
+    #163449 28%,
+    #0C2338 37%,
+    #071829 47%,
+    #04101D 58%,
+    #020A14 70%,
+    #01060D 84%,
+    #01040A 100%
+  );
+}
+
+/* --- Background glow layer: soft diffused corner + bottom lighting.
+   Heavily blurred so it reads as hazy light/shadow, never a hard edge.
+   Sits BELOW the watermark, so the letters stay perfectly sharp. --- */
+.hero__glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  filter: blur(64px);
+  background:
+    /* top-left — near-white soft glow */
+    radial-gradient(38% 40% at 0% 0%,
+      rgba(248, 251, 255, 0.98) 0%,
+      rgba(220, 234, 249, 0.40) 40%,
+      rgba(180, 208, 235, 0) 74%),
+    /* top-right — near-white soft glow */
+    radial-gradient(36% 38% at 100% 0%,
+      rgba(244, 249, 254, 0.92) 0%,
+      rgba(212, 229, 247, 0.34) 42%,
+      rgba(175, 205, 234, 0) 76%),
+    /* gentle darkening through the centre of the field */
+    radial-gradient(70% 62% at 50% 46%,
+      rgba(1, 5, 12, 0.55) 0%,
+      rgba(1, 5, 12, 0.18) 45%,
+      rgba(1, 5, 12, 0) 72%);
+}
+
+/* --- Bottom fog: drifting mist along the bottom edge.
+   Many overlapping dark blobs of varying height + an SVG turbulence
+   displacement, so the top contour is uneven and organic — frosted glass,
+   not a straight blur band. Sits BELOW the watermark: letters stay sharp. --- */
+.hero__fog {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -12%;
+  height: 72%;
+  z-index: 2;
+  pointer-events: none;
+  filter: url("#fogDistort");
+  background:
+    /* continuous dark base so there is never a gap across the bottom */
+    radial-gradient(150% 26% at 50% 100%,
+      rgba(1, 3, 8, 0.88) 0%, rgba(1, 3, 8, 0) 100%),
+    /* --- dark lobes: heights vary widely so the top contour rolls --- */
+    radial-gradient(30% 40% at 9% 100%,  rgba(0, 1, 5, 0.92) 0%, transparent 68%),
+    radial-gradient(24% 60% at 22% 100%, rgba(1, 3, 8, 0.80) 0%, transparent 72%),
+    radial-gradient(30% 32% at 37% 100%, rgba(0, 1, 5, 0.92) 0%, transparent 66%),
+    radial-gradient(26% 66% at 50% 100%, rgba(1, 2, 7, 0.86) 0%, transparent 74%),
+    radial-gradient(22% 40% at 62% 100%, rgba(0, 1, 5, 0.88) 0%, transparent 68%),
+    radial-gradient(28% 58% at 76% 100%, rgba(1, 3, 8, 0.82) 0%, transparent 72%),
+    radial-gradient(30% 36% at 92% 100%, rgba(0, 1, 5, 0.92) 0%, transparent 66%),
+    /* --- pale mist wisps: visible cool haze drifting above the dark base --- */
+    radial-gradient(38% 34% at 14% 82%, rgba(150, 174, 206, 0.30) 0%, transparent 64%),
+    radial-gradient(32% 26% at 34% 70%, rgba(160, 182, 212, 0.22) 0%, transparent 62%),
+    radial-gradient(44% 32% at 56% 78%, rgba(146, 170, 204, 0.28) 0%, transparent 64%),
+    radial-gradient(30% 24% at 72% 66%, rgba(158, 180, 210, 0.20) 0%, transparent 62%),
+    radial-gradient(34% 28% at 88% 80%, rgba(150, 174, 206, 0.24) 0%, transparent 62%),
+    radial-gradient(26% 20% at 45% 58%, rgba(168, 188, 216, 0.15) 0%, transparent 60%);
+}
+
+@supports not (filter: url("#fogDistort")) {
+  .hero__fog { filter: blur(46px); }
+}
+
+/* --- Rising bubbles: a few soft points of light drifting up through the
+   murk, like oxygen rising through deep water. They sit below the depth
+   blur, so they start as smears near the bottom and sharpen as they rise. --- */
+.bubbles {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48%;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bubble {
+  position: absolute;
+  bottom: -6%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%,
+    rgba(222, 236, 250, 0.5) 0%,
+    rgba(158, 190, 224, 0.16) 44%,
+    rgba(120, 160, 200, 0) 72%);
+  filter: blur(1.4px);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: bubbleRise var(--dur, 20s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+.bubble:nth-child(1) { left: 11%; width: 9px;  --dur: 21s; --delay: -3s;  }
+.bubble:nth-child(2) { left: 23%; width: 5px;  --dur: 17s; --delay: -9s;  }
+.bubble:nth-child(3) { left: 38%; width: 13px; --dur: 26s; --delay: -14s; }
+.bubble:nth-child(4) { left: 52%; width: 6px;  --dur: 19s; --delay: -1s;  }
+.bubble:nth-child(5) { left: 63%; width: 8px;  --dur: 23s; --delay: -17s; }
+.bubble:nth-child(6) { left: 78%; width: 5px;  --dur: 16s; --delay: -6s;  }
+.bubble:nth-child(7) { left: 88%; width: 11px; --dur: 28s; --delay: -21s; }
+
+@keyframes bubbleRise {
+  0%   { transform: translate3d(0, 0, 0) scale(0.85);        opacity: 0; }
+  10%  { opacity: 0.55; }
+  55%  { opacity: 0.4; }
+  80%  { opacity: 0.18; }
+  100% { transform: translate3d(16px, -340px, 0) scale(1.1); opacity: 0; }
+}
+
+/* --- Depth blur: two stacked backdrop layers ABOVE the watermark, each
+   masked by a heavily turbulence-warped vertical ramp. They blur the
+   background AND the lower part of the letters together, more and more
+   toward the bottom, with no straight edge or boundary anywhere —
+   like looking down into deep water. --- */
+.hero__depth,
+.hero__depth2 {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-position: bottom;
+  mask-position: bottom;
+}
+.hero__depth {
+  height: 54%;
+  z-index: 7;
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221400%22%20height%3D%22760%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.84%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.93%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.4%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.7%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.007%200.015%22%20numOctaves%3D%222%22%20seed%3D%225%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%2258%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3CfeGaussianBlur%20stdDeviation%3D%228%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%221400%22%20height%3D%22760%22%20fill%3D%22url(%23g)%22%20filter%3D%22url(%23f)%22%2F%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221400%22%20height%3D%22760%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.84%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.93%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.4%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.7%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.007%200.015%22%20numOctaves%3D%222%22%20seed%3D%225%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%2258%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3CfeGaussianBlur%20stdDeviation%3D%228%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%221400%22%20height%3D%22760%22%20fill%3D%22url(%23g)%22%20filter%3D%22url(%23f)%22%2F%3E%3C%2Fsvg%3E");
+}
+.hero__depth2 {
+  height: 33%;
+  z-index: 8;
+  -webkit-backdrop-filter: blur(17px);
+  backdrop-filter: blur(17px);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221400%22%20height%3D%22300%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.68%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.86%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.45%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.85%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.007%200.015%22%20numOctaves%3D%222%22%20seed%3D%2213%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%2244%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3CfeGaussianBlur%20stdDeviation%3D%227%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%221400%22%20height%3D%22300%22%20fill%3D%22url(%23g)%22%20filter%3D%22url(%23f)%22%2F%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221400%22%20height%3D%22300%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.68%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.86%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.45%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.85%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22f%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.007%200.015%22%20numOctaves%3D%222%22%20seed%3D%2213%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%2244%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3CfeGaussianBlur%20stdDeviation%3D%227%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%221400%22%20height%3D%22300%22%20fill%3D%22url(%23g)%22%20filter%3D%22url(%23f)%22%2F%3E%3C%2Fsvg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble { animation: none; opacity: 0.14; }
+}
+
+/* Grain to keep the gradient perfectly smooth on wide / hi-dpi screens */
+.hero__grain {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.13;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.6'/></svg>");
+  background-size: 160px 160px;
+}
+
+/* --- Cursor-tracking glow behind the watermark --- */
+.cursor-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 760px;
+  height: 760px;
+  margin: -380px 0 0 -380px;
+  z-index: 5;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle,
+    rgba(188, 216, 246, 0.52) 0%,
+    rgba(140, 180, 232, 0.30) 26%,
+    rgba(104, 148, 208, 0.12) 46%,
+    rgba(90, 130, 190, 0) 66%);
+  filter: blur(10px);
+  will-change: transform, opacity;
+}
+.cursor-glow.is-active { opacity: 1; }
+
+/* --- Faint dotted grid overlay --- */
+.grid-lines {
+  position: absolute;
+  z-index: 9;
+  top: 0;
+  bottom: 0;
+  left: 24px;
+  right: 24px;
+  pointer-events: none;
+}
+.grid-lines span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--grid-line);
+  transform: translateX(-0.5px);
+}
+.grid-lines span:last-child { transform: translateX(0.5px); }
+
+/* --- Inner content wrapper --- */
+.hero__inner {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0 18px;
+}
+
+.nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav__logo {
+  width: 30px;
+  height: 30px;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+}
+.nav__wordmark {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #0B1220;
+}
+
+.nav__menu {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  background: var(--navy-pill-70);
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--near-white);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.pill:hover {
+  background: rgba(30, 47, 78, 0.85);
+  border-color: #4E679044;
+  border-color: #566f98;
+}
+
+.pill--icon {
+  width: 40px;
+  padding: 10px;
+  border-radius: 50%;
+  background: var(--navy-pill);
+}
+.pill--icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ============================================================
+   CONTENT ROW
+   ============================================================ */
+
+.content {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 33% 17% 25% 25%;
+  align-items: start;
+  padding-top: clamp(28px, 6vh, 74px);
+}
+
+.content__marker {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  /* sits in the bright top-left glow, so a dark mark reads better */
+  background: rgba(16, 26, 44, 0.65);
+}
+
+.col { min-width: 0; }
+
+.col__label {
+  margin: 0 0 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.col__label--ghost { visibility: hidden; }
+
+/* --- Left: sign up --- */
+.signup__title {
+  margin: 0 0 22px;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.signup__form {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.signup__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 13px 16px;
+  border: 1px solid rgba(58, 78, 110, 0.55);
+  border-radius: 6px;
+  background: var(--input-fill);
+  color: var(--near-white);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.signup__input::placeholder { color: var(--muted); }
+.signup__input:focus {
+  outline: none;
+  border-color: #5C7FB8;
+  background: rgba(15, 27, 46, 0.78);
+}
+
+.btn-signup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--navy-pill);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+.btn-signup:hover { background: #1E2F4E; }
+.btn-signup:active { transform: translateY(1px); }
+.btn-signup svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: clamp(28px, 7vh, 80px);
+}
+.badge__mark {
+  width: 30px;
+  height: 30px;
+  opacity: 0.9;
+  filter: brightness(0) invert(1);
+  flex: 0 0 auto;
+}
+.badge__text {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.65;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+/* --- Middle link groups --- */
+.linklist a {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.8;
+  color: var(--near-white);
+  transition: color 0.16s ease;
+}
+.linklist a:hover { color: #fff; }
+.linklist li + li { margin-top: 2px; }
+
+/* --- Right: social + back to top --- */
+.col--social { position: relative; }
+
+.backtotop {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.backtotop span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  /* sits inside the bright top-right glow — dark ink keeps it legible */
+  color: rgba(20, 32, 52, 0.72);
+}
+
+.circle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--navy-pill);
+  border: 1px solid var(--outline);
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+.circle-btn:hover { background: #1E2F4E; transform: translateY(-1px); }
+.circle-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ============================================================
+   BOTTOM STRIP
+   ============================================================ */
+
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0 18px;
+  border-top: 1px dashed var(--dash-divider);
+}
+.bottom__legal {
+  display: flex;
+  gap: 24px;
+}
+.bottom__legal a {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bottom__legal a:hover { color: #9db0c9; }
+.bottom__copy {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+}
+
+/* ============================================================
+   GIANT WATERMARK NAME
+   ============================================================ */
+
+.watermark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  height: clamp(260px, 42vh, 500px);
+  pointer-events: none;
+}
+.watermark__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.watermark__fill {
+  font-family: "Sora", "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 400px;
+  letter-spacing: -2px;
+}
+
+.watermark__stroke {
+  font-family: "Sora", "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 400px;
+  letter-spacing: -2px;
+  fill: none;
+  stroke: #FFFFFF;
+  stroke-width: 2.6;
+  stroke-dasharray: 2.6 6.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.watermark__stroke--halo {
+  stroke: #AECCF2;
+  stroke-width: 4.4;
+  stroke-dasharray: 2.6 6.5;
+  opacity: 0.65;
+}
+
+#strokeLayer {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#strokeLayer.is-active { opacity: 1; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1200px) {
+  .content { grid-template-columns: 40% 20% 20% 20%; }
+  .signup__title { font-size: 26px; }
+  .watermark__fill, .watermark__stroke { font-size: 300px; letter-spacing: -1px; }
+}
+
+@media (max-width: 860px) {
+  .hero { height: auto; min-height: 100vh; }
+  .hero__inner { padding: 0 18px; }
+  .grid-lines { display: none; }
+  .nav { flex-wrap: wrap; gap: 14px; }
+  .nav__menu { flex-wrap: wrap; }
+  .content {
+    grid-template-columns: 1fr 1fr;
+    gap: 34px 18px;
+    padding-top: 34px;
+    padding-bottom: 40px;
+  }
+  .col--signup { grid-column: 1 / -1; }
+  .signup__form { flex-wrap: wrap; }
+  .btn-signup { width: 100%; justify-content: center; }
+  .backtotop { position: static; margin-bottom: 20px; justify-content: flex-start; }
+  .bottom { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .watermark { position: relative; height: 30vw; margin-top: 20px; }
+  .watermark__fill, .watermark__stroke { font-size: 220px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #strokeLayer, .cursor-glow { transition: none; }
+  * { scroll-behavior: auto !important; }
+}

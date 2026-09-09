@@ -1,0 +1,778 @@
+/* ============================================================
+   /lab/lv3 — two stacked sections on one continuous page.
+
+   §1 HERO   left (marker/headline/text), middle (ShapeBlur box
+             only), right (three numbered sections).
+   §2 STACK  scroll-pinned: two-line headline + three rows whose
+             text fades pale -> dark as the row comes into focus,
+             with a scroll-driven InfiniteSpiral on the right.
+
+   Reuses the shared primitives from styles.css (font, --vars,
+   .nav / .pill). Everything else is scoped to body.lv3 so it
+   can't affect the homepage or /lab/lv1.
+   ============================================================ */
+
+@property --act {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+body.lv3 {
+  /* only visible on overscroll — real content sits on opaque section
+     backgrounds. Pale at the top (behind the hero), deep blue at the
+     bottom (behind the end of the stack) so neither rubber-band edge
+     flashes a wrong colour. */
+  background: linear-gradient(180deg, #E7EEF6 0%, #E9EFF6 34%, #6E9BD6 84%, #3E6FBB 100%);
+  color: #3A3A3D;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   §1  HERO
+   ============================================================ */
+.lv3-hero {
+  position: relative;
+  min-height: 100vh;
+  /* the section's own continuous gradient — ends at #F7F8FA, which is
+     exactly where the stack section's gradient begins (no seam). */
+  background: linear-gradient(180deg, #E7EEF6 0%, #EDF1F6 26%, #F3F5F8 58%, #F7F8FA 100%);
+}
+
+/* soft, misty ocean-blue light across the top strip */
+.lv3-tint {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 64vh;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(88% 46% at 50% -14%, rgba(174, 203, 236, 0.62) 0%, rgba(174, 203, 236, 0) 66%),
+    linear-gradient(180deg,
+      rgba(196, 218, 240, 0.82) 0%,
+      rgba(214, 229, 245, 0.44) 26%,
+      rgba(230, 238, 247, 0.14) 62%,
+      rgba(230, 238, 247, 0) 100%);
+}
+
+.lv3-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1780px;
+  margin: 0 auto;
+  padding: 18px clamp(24px, 3.2vw, 48px) clamp(36px, 5vh, 60px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- faint dashed grid ---- */
+.lv3-grid {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: clamp(24px, 3.2vw, 48px);
+  right: clamp(24px, 3.2vw, 48px);
+  pointer-events: none;
+}
+.lv3-grid span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed rgba(38, 58, 88, 0.11);
+  transform: translateX(-0.5px);
+}
+.lv3-grid span:last-child { transform: translateX(0.5px); }
+.lv3-grid__h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 70px;
+  border-top: 1px dashed rgba(38, 58, 88, 0.11);
+}
+
+.nav.lv3-nav {
+  position: relative;
+  z-index: 3;
+  padding: 14px 0 0;
+}
+
+.lv3-cols {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 0.92fr 1.3fr 0.92fr;
+  align-items: stretch;
+}
+.lv3-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- LEFT ---- */
+.lv3-col--left {
+  padding: 15vh clamp(24px, 2.6vw, 44px) 6vh 0;
+}
+.lv3-marker {
+  width: 6px;
+  height: 6px;
+  margin-bottom: 26px;
+  background: rgba(58, 58, 61, 0.5);
+}
+.lv3-headline {
+  margin: 0;
+  font-size: clamp(42px, 4.6vw, 64px);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #3A3A3D;
+}
+.lv3-lead {
+  margin: auto 0 0;
+  max-width: 33ch;
+  font-size: 13.5px;
+  line-height: 1.74;
+  color: #8A8D94;
+}
+
+/* ---- MIDDLE (effect box only) ---- */
+.lv3-col--mid {
+  padding: 12vh clamp(8px, 1vw, 16px) 0;
+  align-items: stretch;
+}
+.lv3-effect {
+  position: relative;
+  align-self: flex-start;
+  width: 100%;
+  height: clamp(640px, 80vh, 920px);
+  border-radius: 4px;
+  overflow: hidden;
+  background: linear-gradient(178deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
+  box-shadow: 0 46px 110px -44px rgba(9, 24, 48, 0.4);
+}
+.lv3-effect__mount {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.lv3-effect__mount > div { width: 100%; height: 100%; }
+.lv3-effect__mount canvas { display: block; }
+.lv3-effect__logo {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* ---- RIGHT (three numbered sections) ---- */
+.lv3-col--right {
+  padding: 13vh 0 6vh clamp(24px, 2.6vw, 44px);
+}
+.lv3-item {
+  flex: 1;
+  display: block;
+  position: relative;
+  padding: 24px clamp(96px, 11vw, 168px) 24px 0;
+  border-top: 1px dashed rgba(38, 58, 88, 0.13);
+}
+.lv3-item:last-child { border-bottom: 1px dashed rgba(38, 58, 88, 0.13); }
+.lv3-item__no {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #757982;
+}
+.lv3-item__no i {
+  width: 6px;
+  height: 6px;
+  background: #3A3A3D;
+  display: block;
+}
+.lv3-item__title {
+  margin: 14px 0 6px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: #34343A;
+}
+.lv3-item__sub {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #8A8D94;
+}
+.lv3-item__deco {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(104px, 10.5vw, 176px);
+  height: auto;
+  fill: none;
+  stroke: rgba(48, 70, 102, 0.16);
+  stroke-width: 1;
+  stroke-dasharray: 1.4 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lv3-item:hover .lv3-item__title { color: #1F2A3D; }
+.lv3-item:hover .lv3-item__deco { stroke: rgba(48, 70, 102, 0.3); }
+
+/* ============================================================
+   §2  STACK  — scroll-pinned section
+   ============================================================ */
+.lv3-stack {
+  position: relative;
+  z-index: 1;
+}
+
+.lv3-stack__pin {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  /* continuous vertical gradient: starts on #F7F8FA (== the hero's
+     bottom colour, so the join is invisible) and deepens to a
+     saturated blue at the bottom of the section. */
+  background: linear-gradient(180deg,
+    #F7F8FA 0%,
+    #EAF1F9 13%,
+    #CFE0F2 35%,
+    #A6C6E9 56%,
+    #77A2DA 78%,
+    #3E6FBB 100%);
+}
+
+/* pinning is switched on by main.tsx once it is safe (desktop, tall
+   enough viewport, JS running). Until then the section just flows. */
+.lv3-stack.is-pin-ready {
+  height: 300vh;
+}
+.lv3-stack.is-pin-ready .lv3-stack__pin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  min-height: 0;
+}
+.lv3-stack.is-pin-ready.is-pinned .lv3-stack__pin {
+  position: fixed;
+}
+.lv3-stack.is-pin-ready.is-past .lv3-stack__pin {
+  position: absolute;
+  top: auto;
+  bottom: 0;
+}
+
+.lv3-stack__inner {
+  max-width: 1780px;
+  height: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 3.2vw, 48px);
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr;
+  column-gap: clamp(24px, 3vw, 56px);
+}
+.lv3-stack.is-pin-ready .lv3-stack__inner {
+  min-height: 0;
+}
+
+.lv3-stack__lead {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(52px, 8vh, 92px) clamp(8px, 1.5vw, 24px) clamp(44px, 7vh, 84px) 0;
+}
+.lv3-stack__title {
+  margin: 0;
+  font-size: clamp(38px, 4.3vw, 58px);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #10151D;
+}
+.lv3-stack__rule {
+  margin: clamp(22px, 3.4vh, 38px) 0 0;
+  border-top: 1px dashed rgba(26, 44, 74, 0.22);
+}
+.lv3-stack__rows {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(28px, 4vh, 56px);
+  padding-top: clamp(20px, 3.2vh, 36px);
+}
+
+.lv3-row {
+  --act: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(22px, 2.6vw, 48px);
+  align-items: start;
+  transition: --act 140ms linear;
+}
+/* not pinned (small screen / reduced motion / no JS) -> always legible */
+.lv3-stack:not(.is-pin-ready) .lv3-row { --act: 1; }
+
+.lv3-row__label {
+  grid-column: 1 / -1;
+  margin: 0 0 13px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(20, 32, 50, calc(0.24 + 0.66 * var(--act)));
+}
+.lv3-row__title {
+  margin: 0;
+  font-size: clamp(21px, 2.3vw, 30px);
+  line-height: 1.14;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: rgba(9, 18, 34, calc(0.15 + 0.83 * var(--act)));
+}
+.lv3-row__body {
+  margin: 0;
+  padding-top: 3px;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.62;
+  color: rgba(22, 34, 54, calc(0.20 + 0.70 * var(--act)));
+}
+
+.lv3-stack__media {
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: clamp(24px, 4vh, 56px) 0 clamp(20px, 3vh, 44px);
+}
+.lv3-stack__media::before {
+  content: "";
+  position: absolute;
+  inset: 4% 6% 32%;
+  background: radial-gradient(58% 48% at 56% 30%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 72%);
+  pointer-events: none;
+}
+#spiral-mount {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---- InfiniteSpiral shim (component ships Tailwind classes; this
+   project has no Tailwind, so reproduce only what it needs, keyed off
+   the roles the component sets). Cards: solid black, white logo. ---- */
+.lv3-spiral {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+.lv3-spiral [role="list"] {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.lv3-spiral [role="listitem"] {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  overflow: hidden;
+  background: #05070C;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 20px 46px rgba(6, 12, 28, 0.36);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  will-change: transform, opacity, filter;
+}
+.lv3-spiral [role="listitem"] img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 24% !important;
+  box-sizing: border-box !important;
+  object-fit: contain !important;
+  filter: none !important;
+}
+
+/* ============================================================
+   §3  REVEAL  — "CREATIVE DESIGN" half-height sliding band
+
+   Geometry
+   --------
+   .lv3-reveal          50vh tall in the document -> contributes exactly
+                        one half-viewport of scroll, the "slide budget".
+   .lv3-reveal__pin     the visible band. 50vh, pinned to the TOP of the
+                        viewport (position: fixed while .is-pinned). It only
+                        ever covers the top half, so §4 (#lv3-footer, normal
+                        flow right after this section) shows in the bottom
+                        half from the very first frame.
+   .lv3-reveal__panel   the deep-sea navy fill + "CREATIVE DESIGN" cut-out +
+                        frosted glass rim. Slides up via --slide (0 -> 1,
+                        driven linearly from scroll in main.tsx) so its
+                        bottom edge stays flush with §4's rising top edge.
+   ============================================================ */
+
+/* "Brigold" is a paid display serif; no licensed file is bundled here, so
+   this @font-face will simply fail to fetch and the stack falls through to
+   Playfair Display (loaded in index.html) — the closest loadable high-
+   contrast display serif. Drop a real Brigold.woff2 next to this file to
+   pick it up automatically. */
+@font-face {
+  font-family: "Brigold";
+  src: url("./Brigold.woff2") format("woff2");
+  font-display: swap;
+}
+
+.lv3-reveal {
+  position: relative;
+  z-index: 2; /* band (and its fixed child) paints above §4 during the slide */
+}
+
+.lv3-reveal__pin {
+  position: relative;
+  height: 50vh;
+  overflow: hidden; /* clips the panel as it travels off the top */
+  background: transparent; /* where the panel has slid past, §4 shows straight through */
+  /* purely decorative overlay — never intercept clicks. (While position:fixed
+     it otherwise sits invisibly over the top half of the viewport, e.g. at the
+     bottom of the page, and would swallow clicks on the footer's Back-to-Top
+     button.) */
+  pointer-events: none;
+}
+
+.lv3-reveal.is-pin-ready {
+  height: 50vh;
+}
+.lv3-reveal.is-pin-ready .lv3-reveal__pin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50vh;
+}
+.lv3-reveal.is-pin-ready.is-pinned .lv3-reveal__pin {
+  position: fixed;
+}
+.lv3-reveal.is-pin-ready.is-past .lv3-reveal__pin {
+  position: absolute;
+  top: 0;
+}
+
+/* ---- the sliding navy panel ---- */
+.lv3-reveal__panel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* gentle inward curve where the band meets the screen edges. overflow:hidden
+     clips the SVG fill to it, so the corners round and show §4 behind them. */
+  border-radius: clamp(20px, 3.2vw, 48px);
+  overflow: hidden;
+  transform: translateY(calc(var(--slide, 0) * -100%));
+  will-change: transform;
+}
+
+/* faint luminous backlight — sits BEHIND the opaque navy fill, so it is only
+   ever seen through the letter holes, giving them a light cast against the
+   navy before §4's lighter blue has risen far. Travels with the panel (no
+   pop at release). Low alpha: §4 still reads clearly through the holes. */
+.lv3-reveal__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(135% 96% at 50% 46%,
+    rgba(220, 233, 250, 0.34) 0%,
+    rgba(220, 233, 250, 0.12) 46%,
+    rgba(220, 233, 250, 0) 74%);
+}
+
+/* the navy fill + letter holes. Inset by the rim width and given its own
+   (concentric, tighter) rounded clip, so a translucent margin is left between
+   the solid fill and the panel's outer curve — that margin is real glass:
+   only §4 sits behind it, and .lv3-reveal__panel::after frosts/refracts it. */
+.lv3-reveal__cut {
+  position: absolute;
+  inset: clamp(10px, 1.4vw, 18px);
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: clamp(11px, 2vw, 32px);
+  overflow: hidden;
+}
+
+/* SVG mask <text> — "Brigold" -> Playfair Display fallback. textLength locks
+   the run to 87.5% of the artboard width, so the font swap can't change the
+   fit and the letters stay clear of the curved corners. */
+.lv3-reveal__word {
+  font-family: "Brigold", "Playfair Display", "Georgia", "Times New Roman", serif;
+  font-weight: 800;
+  font-size: 150px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* frosted-glass rim hugging the curved edges, distinct from the flat fill:
+   a translucent rounded frame with a real backdrop blur + a soft inner/outer
+   highlight. Masked to just the border band so the panel centre is untouched. */
+.lv3-reveal__panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: clamp(10px, 1.4vw, 18px); /* == .lv3-reveal__cut inset: frosts exactly the glass margin */
+  -webkit-backdrop-filter: blur(9px) saturate(1.25);
+  backdrop-filter: blur(9px) saturate(1.25);
+  background: linear-gradient(145deg,
+    rgba(226, 239, 255, 0.20) 0%,
+    rgba(226, 239, 255, 0.04) 38%,
+    rgba(120, 162, 214, 0.05) 62%,
+    rgba(226, 239, 255, 0.16) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(200, 223, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -10px 22px -12px rgba(4, 12, 24, 0.5);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* ---- flow fallback: not pinned (small screen / short / reduced motion) ---- */
+.lv3-reveal:not(.is-pin-ready) {
+  height: auto;
+}
+.lv3-reveal:not(.is-pin-ready) .lv3-reveal__pin {
+  position: relative;
+  height: 54vh;
+  min-height: 340px;
+}
+.lv3-reveal:not(.is-pin-ready) .lv3-reveal__panel {
+  transform: none;
+}
+
+.lv3-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1080px) {
+  .lv3-cols { grid-template-columns: 1fr 1fr; }
+  .lv3-col--left { grid-column: 1 / -1; padding: 10vh 0 40px; }
+  .lv3-col--mid { padding-top: 0; }
+  .lv3-effect { height: clamp(540px, 70vh, 760px); }
+  .lv3-col--right { padding: 0 0 6vh; }
+  .lv3-grid span:nth-child(3) { display: none; }
+}
+
+/* stack: single column when it isn't pinned */
+.lv3-stack:not(.is-pin-ready) .lv3-stack__inner {
+  grid-template-columns: 1fr;
+  min-height: 0;
+  padding-top: 48px;
+  padding-bottom: 64px;
+}
+.lv3-stack:not(.is-pin-ready) .lv3-stack__lead { padding-bottom: 0; }
+.lv3-stack:not(.is-pin-ready) .lv3-stack__rows {
+  display: flex;
+  gap: 34px;
+  padding-bottom: 40px;
+}
+.lv3-stack:not(.is-pin-ready) .lv3-stack__media {
+  height: 56vh;
+  margin-top: 26px;
+  align-self: stretch;
+}
+
+@media (max-width: 720px) {
+  .nav.lv3-nav { flex-wrap: wrap; gap: 12px; }
+  .nav.lv3-nav .nav__menu { flex-wrap: wrap; }
+  .lv3-cols { grid-template-columns: 1fr; }
+  .lv3-col--mid { grid-column: 1 / -1; }
+  .lv3-item { padding-right: clamp(70px, 22vw, 120px); }
+  .lv3-row { grid-template-columns: 1fr; row-gap: 8px; }
+  .lv3-row__body { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv3-effect__mount { opacity: 0.9; }
+  .lv3-row { transition: none; }
+}
+
+/* ============================================================
+   §4  FOOTER — lv3-only enhancements
+   (the section markup is /lab/lv1's footer, reused verbatim; these
+   rules are additive and scoped to body.lv3 so lv1/lv2 are untouched)
+
+   CHANGE 1 — denser ambient bubbles + a rising watermark + a one-shot
+              bubble "burst" when the scroll settles at the bottom
+   CHANGE 2 — the footer's own nav is gone; the site nav (.lv3-topnav)
+              slides back in once this section is reached
+   ============================================================ */
+
+/* ---- 1a. denser ambient bubble field --------------------------------
+   styles.css already styles .bubble (visuals + infinite bubbleRise) and
+   positions :nth-child(1..7). These add 8..14 — same look, new lanes,
+   long slow durations so any given moment still reads as "a few". */
+body.lv3 .bubbles .bubble:nth-child(8)  { left: 6%;  width: 7px;  --dur: 24s; --delay: -5s;  }
+body.lv3 .bubbles .bubble:nth-child(9)  { left: 17%; width: 4px;  --dur: 15s; --delay: -11s; }
+body.lv3 .bubbles .bubble:nth-child(10) { left: 44%; width: 6px;  --dur: 20s; --delay: -2s;  }
+body.lv3 .bubbles .bubble:nth-child(11) { left: 57%; width: 10px; --dur: 27s; --delay: -19s; }
+body.lv3 .bubbles .bubble:nth-child(12) { left: 71%; width: 5px;  --dur: 18s; --delay: -8s;  }
+body.lv3 .bubbles .bubble:nth-child(13) { left: 83%; width: 7px;  --dur: 22s; --delay: -13s; }
+body.lv3 .bubbles .bubble:nth-child(14) { left: 95%; width: 4px;  --dur: 16s; --delay: -4s;  }
+
+/* ---- 1b. watermark entrance — rises up into place on scroll-in --------
+   main.tsx adds .lv3-wm-in to #lv3-footer (IntersectionObserver) once the
+   footer is ~90% in view. --lv3-wm-y flips from a big downward offset to 0;
+   because `transform` carries a transition and reads that var, the wordmark
+   visibly travels up into its resting spot over ~1.2s. The SVG fallback
+   wordmark, the RippleDistortion canvas and its feather all share the same
+   offset so they never desync. */
+body.lv3 #lv3-footer {
+  --lv3-wm-y: clamp(150px, 30vh, 260px);
+}
+body.lv3 #lv3-footer.lv3-wm-in {
+  --lv3-wm-y: 0px;
+}
+body.lv3 #lv3-footer .watermark {
+  transform: translateY(var(--lv3-wm-y, 220px));
+  transition: transform 1200ms cubic-bezier(0.17, 0.79, 0.24, 1);
+  will-change: transform;
+}
+/* overrides /lab/lv1 lab.css `#ripple-root{transform:translateX(...)}` —
+   keeps the horizontal nudge, adds the shared vertical entrance offset. */
+body.lv3 #ripple-root,
+body.lv3 #ripple-fade {
+  transform: translate(var(--ripple-nudge-x, 0px), var(--lv3-wm-y, 220px));
+  transition: transform 1200ms cubic-bezier(0.17, 0.79, 0.24, 1);
+  will-change: transform;
+}
+
+/* ---- 1c. bubble "burst" — a ~2.2s flurry once the wordmark settles ----
+   main.tsx spawns .lv3-burst-bubble into #lv3-burst on a short repeating
+   timer, then stops; each rises once and removes itself, so the rate
+   visibly drops back to the ambient field above. #lv3-burst sits ABOVE the
+   depth blur (unlike .bubbles) so the splash reads clearly. */
+body.lv3 .lv3-burst-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62%;
+  z-index: 9;
+  pointer-events: none;
+  overflow: hidden;
+}
+body.lv3 .lv3-burst-bubble {
+  position: absolute;
+  bottom: 6%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%,
+    rgba(236, 246, 255, 0.95) 0%,
+    rgba(182, 212, 240, 0.42) 40%,
+    rgba(120, 160, 200, 0) 72%);
+  filter: blur(0.7px);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: lv3BurstRise var(--lv3-burst-dur, 2.2s) cubic-bezier(0.34, 0.12, 0.42, 1) 1 both;
+}
+@keyframes lv3BurstRise {
+  0%   { transform: translate3d(0, 0, 0) scale(0.45);                           opacity: 0; }
+  14%  { opacity: 1; }
+  82%  { opacity: 0.72; }
+  100% { transform: translate3d(var(--lv3-drift, 12px), -330px, 0) scale(1.3);  opacity: 0; }
+}
+
+/* ---- CHANGE 2. the returning site nav ------------------------------- */
+body.lv3 .lv3-topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  gap: 24px;
+  padding: 13px max(clamp(20px, 3.2vw, 44px), calc((100% - 1780px) / 2));
+  background: linear-gradient(180deg,
+    rgba(3, 10, 21, 0.86) 0%,
+    rgba(3, 10, 21, 0.6) 62%,
+    rgba(3, 10, 21, 0) 100%);
+  -webkit-backdrop-filter: blur(11px) saturate(1.1);
+  backdrop-filter: blur(11px) saturate(1.1);
+  transform: translateY(-115%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 440ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 300ms ease;
+}
+body.lv3 .lv3-topnav.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+body.lv3 .lv3-topnav .nav__wordmark { color: var(--near-white); }
+
+/* the footer lost its own nav row — keep the content off the top edge so the
+   returning .lv3-topnav doesn't overlap the sign-up heading when it slides in */
+body.lv3 #lv3-footer .content {
+  padding-top: clamp(72px, 12vh, 128px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.lv3 .lv3-topnav { transition: opacity 200ms ease; transform: none; }
+  body.lv3 .lv3-topnav:not(.is-visible) { opacity: 0; pointer-events: none; }
+  body.lv3 .lv3-burst-bubble { display: none; }
+  /* no entrance travel — wordmark just sits in place */
+  body.lv3 #lv3-footer,
+  body.lv3 #lv3-footer.lv3-wm-in { --lv3-wm-y: 0px; }
+  body.lv3 #lv3-footer .watermark { transform: none; transition: none; }
+  body.lv3 #ripple-root,
+  body.lv3 #ripple-fade {
+    transform: translate(var(--ripple-nudge-x, 0px), 0);
+    transition: none;
+  }
+}

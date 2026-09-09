@@ -1,0 +1,68 @@
+/* ============================================================
+   /lab/lv1 — experimental clone.
+   Only additions to the shared homepage styles live here.
+   ============================================================ */
+
+/* The RippleDistortion mount covers exactly the watermark band,
+   sitting above the deep-water blur layers so the WebGL canvas
+   itself renders crisp. No CSS mask on this element — a mask over a
+   hardware-accelerated <canvas> can suppress it on some GPUs; the
+   soft top edge is done with the #ripple-fade overlay instead. */
+/* left / width / height are set from JS (main.tsx -> layoutRippleLayer) to
+   exactly match the live SVG's rendered content box. These are only the
+   pre-JS fallback values. */
+#ripple-root {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(220px, 39vh, 460px);
+  z-index: 9;
+  pointer-events: none;
+  /* manual horizontal alignment nudge — set via main.tsx from ?rx= / the
+     [ ] keys / localStorage. Negative = shift the effect layer LEFT. */
+  transform: translateX(var(--ripple-nudge-x, 0px));
+}
+
+/* Stand in for the component's Tailwind utility classes
+   (this project doesn't ship Tailwind). */
+#ripple-root > div {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+#ripple-root > div > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Feather the top of the ripple canvas into the gradient/fog above it,
+   so the opaque canvas doesn't show a hard horizontal seam. The canvas
+   texture is a render of this exact band, so only a very light touch is
+   needed right at the top edge. */
+#ripple-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(220px, 39vh, 460px);
+  z-index: 10;
+  pointer-events: none;
+  transform: translateX(var(--ripple-nudge-x, 0px));
+  background: linear-gradient(
+    to bottom,
+    rgba(9, 19, 34, 0.55) 0%,
+    rgba(9, 19, 34, 0.16) 7%,
+    rgba(9, 19, 34, 0) 17%
+  );
+}
+
+/* keep the dotted grid + content above the ripple */
+.grid-lines { z-index: 11; }
+.hero__inner { z-index: 12; }
+
+/* the fallback SVG wordmark stays as-is underneath; if WebGL is
+   unavailable the canvas never mounts and it simply shows through */
