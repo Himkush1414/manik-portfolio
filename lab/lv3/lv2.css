@@ -496,7 +496,20 @@ body.lv2 {
   align-items: center;
   justify-content: center;
   padding: clamp(20px, 4vw, 72px);
-  background: #EDF1F6;
+  /* blue continuing from slide 2, deepening to the deep-sea footer colour by
+     the bottom — the palette copied from slide 2 in the earlier fix */
+  background-color: #01040A;
+  background-image: linear-gradient(180deg,
+    #3E6FBB 0%,
+    #335A83 13%,
+    #234764 24%,
+    #163449 36%,
+    #0C2338 48%,
+    #071829 60%,
+    #04101D 72%,
+    #020A14 82%,
+    #01060D 91%,
+    #01040A 100%);
   transform: translateY(calc(var(--slide, 0) * -100%));
   will-change: transform;
 }
