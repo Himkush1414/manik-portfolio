@@ -431,17 +431,18 @@ body.lv2 {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  /* Continues the footer's upward lightening. The bottom edge meets the footer
-     on #5C87BC — styles.css .hero__bg's 0% (top) stop, i.e. exactly where the
-     footer's lighten-going-up trend leaves off — then keeps getting lighter up
-     through the section to full white at the top. No restart to dark. */
+  /* Continues the footer's upward lightening. The bottom edge lands on #5B85B8
+     — the *sampled* colour of the footer's rendered top edge at mid-width (not
+     the raw #5C87BC CSS stop) — then keeps getting lighter up through the
+     section to full white at the top. The ::after veil below adds the footer's
+     corner lift so the whole boundary matches, not just the centre. */
   background-color: #FFFFFF;
   background-image: linear-gradient(180deg,
     #FFFFFF 0%,
     #E9EFF7 22%,
     #C8D9EC 44%,
     #9DBAD9 67%,
-    #5C87BC 100%);
+    #5B85B8 100%);
 }
 .lv2-reveal.is-pin-ready {
   height: 340vh;
@@ -584,13 +585,14 @@ body.lv2 #lv2-footer .hero__inner {
 }
 
 /* ============================================================
-   §3 -> §4 seam: the footer's .hero__glow lifts its top-left / top-right
-   corners toward near-white, so a flat #5C87BC bottom edge on .lv2-reveal
-   showed a step at the edges. This ::after mirrors that corner lift on the
-   section's bottom corners (tuned to the footer's attenuated render), so the
-   two edges meet as one colour right across the boundary. It sits only in the
-   bottom 26vh of the 340vh section, so it's off-screen during the pinned scrub
-   and only in play where the section meets the footer.
+   §3 -> §4 seam: the footer's blurred .hero__glow lifts its top-left/right
+   corners, so a horizontally-flat bottom edge on .lv2-reveal stepped against
+   it at the edges. The footer's rendered top edge was sampled pixel-by-pixel
+   across the width; the ::after below reproduces that exact colour profile on
+   the section's bottom edge (mid-width handled by the #5B85B8 gradient stop,
+   the corner lift by this veil). It lives in the bottom 20vh of the 340vh
+   section, so it's off-screen during the pinned scrub — only in play where the
+   section meets the footer.
    ============================================================ */
 body.lv2 .lv2-reveal::after {
   content: '';
@@ -598,18 +600,37 @@ body.lv2 .lv2-reveal::after {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 26vh;
-  z-index: 2;
+  height: 20vh;
+  z-index: 0;
   pointer-events: none;
-  background:
-    radial-gradient(46% 100% at 3% 100%,
-      rgba(231, 240, 250, 0.28) 0%,
-      rgba(231, 240, 250, 0.10) 42%,
-      rgba(231, 240, 250, 0) 66%),
-    radial-gradient(44% 100% at 97% 100%,
-      rgba(229, 239, 250, 0.26) 0%,
-      rgba(229, 239, 250, 0.09) 44%,
-      rgba(229, 239, 250, 0) 68%);
+  /* A cool-white veil whose per-x opacity is the exact lift that turns the
+     section's #5B85B8 bottom edge into the footer's *sampled* top-edge colour
+     at that x (footer .hero__bg + blurred .hero__glow corner lift): ~0.22 at
+     the corners, ~0.35 at the glow peaks (~6% / ~94%), 0 across the middle
+     where the two already match. */
+  background: linear-gradient(90deg,
+    rgba(224, 236, 255, 0.218) 0%,
+    rgba(224, 236, 255, 0.286) 2%,
+    rgba(224, 236, 255, 0.331) 4%,
+    rgba(224, 236, 255, 0.346) 6.5%,
+    rgba(224, 236, 255, 0.293) 10%,
+    rgba(224, 236, 255, 0.211) 14%,
+    rgba(224, 236, 255, 0.128) 19%,
+    rgba(224, 236, 255, 0.053) 25%,
+    rgba(224, 236, 255, 0) 30%,
+    rgba(224, 236, 255, 0) 71%,
+    rgba(224, 236, 255, 0.030) 73%,
+    rgba(224, 236, 255, 0.083) 78%,
+    rgba(224, 236, 255, 0.143) 83%,
+    rgba(224, 236, 255, 0.211) 87.5%,
+    rgba(224, 236, 255, 0.286) 91.7%,
+    rgba(224, 236, 255, 0.301) 94%,
+    rgba(224, 236, 255, 0.256) 98%,
+    rgba(224, 236, 255, 0.203) 100%);
+  /* full strength only at the very bottom (the seam), fading out upward so it
+     blends into the section's own vertical gradient */
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 6%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, #000 6%, transparent 100%);
 }
 
 /* ============================================================
