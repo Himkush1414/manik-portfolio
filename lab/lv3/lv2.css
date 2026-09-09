@@ -776,44 +776,14 @@ body.lv2 .lv2-reveal::after {
   body.lv2 #lv2-footer .hero__inner { padding-top: 20px; }
 }
 
-/* ---- <=760: hamburger nav; footer tightens ---- */
+/* ---- <=860: the StaggeredMenu (main.tsx / #sm-root) is the mobile menu;
+   the built-in pill menu + old hamburger on both navs are hidden here.
+   Each nav keeps only its brand — .lv3-returnnav still slides down at the
+   footer, now with a frosted-glass ground (see below). ---- */
 @media (max-width: 860px) {
-  body.lv2 .nav { position: relative; gap: 14px; flex-wrap: nowrap; }
-  body.lv2 .nav .nav__toggle { display: inline-flex; }
-  body.lv2 .nav .nav__menu {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
-    left: auto;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-    width: min(240px, calc(100vw - 32px));
-    padding: 10px;
-    border-radius: 14px;
-    background: rgba(9, 16, 28, 0.94);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    -webkit-backdrop-filter: blur(18px);
-    backdrop-filter: blur(18px);
-    box-shadow: 0 26px 64px -22px rgba(0, 0, 0, 0.55);
-    opacity: 0;
-    transform: translateY(-8px) scale(0.98);
-    transform-origin: top right;
-    pointer-events: none;
-    transition: opacity 190ms ease, transform 190ms ease;
-    z-index: 45;
-  }
-  body.lv2 .nav .nav__menu.is-open {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
-  body.lv2 .nav .nav__menu .pill {
-    justify-content: flex-start;
-    width: 100%;
-    background: rgba(30, 47, 78, 0.5);
-  }
-  body.lv2 .nav .nav__menu .pill--icon { display: none; }
+  body.lv2 .nav .nav__menu,
+  body.lv2 .nav .nav__toggle { display: none !important; }
+  body.lv2 .nav { gap: 14px; }
   body.lv2 .lv3-returnnav { padding: 14px 18px; }
 
   .lv2-shell { padding: 14px 18px clamp(28px, 5vh, 44px); }
@@ -874,22 +844,147 @@ body.lv2 .lv2-reveal::after {
   body.lv2 #lv2-footer .content { transform: none !important; opacity: 1 !important; }
 }
 
-/* §3->§4 seam veil, gentle mobile calibration: the footer .hero__glow is
-   vertically compressed on a content-height footer, so its top-corner lift is
-   smaller — dial the corner veil to match (peak ~0.14 vs ~0.32 on desktop). */
-@media (max-width: 700px) {
+/* §3->§4 seam veil, re-tuned for the content-height footer used below the pin
+   gate: the .hero__glow's top-corner lift is stronger (footer is shorter) and
+   varies with the footer's column count, so two calibrations — one for the
+   ~2-column footer (561-900), one for the single-column phone footer (<=560).
+   Both were sampled pixel-by-pixel against the footer's rendered top edge. */
+@media (max-width: 900px) {
   body.lv2 .lv2-reveal::after {
-    height: 14vh;
+    height: 15vh;
     background: linear-gradient(90deg,
-      rgba(240, 246, 255, 0.155) 0%,
-      rgba(240, 246, 255, 0.150) 8%,
-      rgba(240, 246, 255, 0.075) 18%,
-      rgba(240, 246, 255, 0) 30%,
-      rgba(240, 246, 255, 0) 70%,
-      rgba(240, 246, 255, 0.075) 82%,
-      rgba(240, 246, 255, 0.150) 92%,
-      rgba(240, 246, 255, 0.155) 100%);
+      rgba(240, 246, 255, 0.174) 0%,
+      rgba(240, 246, 255, 0.221) 6%,
+      rgba(240, 246, 255, 0.175) 16%,
+      rgba(240, 246, 255, 0.110) 22%,
+      rgba(240, 246, 255, 0.055) 28%,
+      rgba(240, 246, 255, 0.014) 34%,
+      rgba(240, 246, 255, 0) 44%,
+      rgba(240, 246, 255, 0) 60%,
+      rgba(240, 246, 255, 0.014) 66%,
+      rgba(240, 246, 255, 0.050) 76%,
+      rgba(240, 246, 255, 0.110) 84%,
+      rgba(240, 246, 255, 0.188) 92%,
+      rgba(240, 246, 255, 0.180) 100%);
     -webkit-mask-image: linear-gradient(to top, #000 0%, #000 9%, transparent 100%);
     mask-image: linear-gradient(to top, #000 0%, #000 9%, transparent 100%);
   }
+}
+@media (max-width: 560px) {
+  body.lv2 .lv2-reveal::after {
+    height: 13vh;
+    background: linear-gradient(90deg,
+      rgba(240, 246, 255, 0.118) 0%,
+      rgba(240, 246, 255, 0.120) 8%,
+      rgba(240, 246, 255, 0.090) 20%,
+      rgba(240, 246, 255, 0.046) 34%,
+      rgba(240, 246, 255, 0.014) 46%,
+      rgba(240, 246, 255, 0) 53%,
+      rgba(240, 246, 255, 0.014) 62%,
+      rgba(240, 246, 255, 0.050) 76%,
+      rgba(240, 246, 255, 0.098) 90%,
+      rgba(240, 246, 255, 0.112) 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 10%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0%, #000 10%, transparent 100%);
+  }
+}
+
+/* ============================================================
+   FIX 3 — the footer's slide-in return nav gets a frosted-glass ground
+   (blurs the content behind it), with no border / shadow / hard edge:
+   the bottom is masked so the frost fades out instead of stopping abruptly.
+   Applies wherever the nav slides in (all widths).
+   ============================================================ */
+body.lv2 .lv3-returnnav {
+  background: rgba(9, 19, 34, 0.34);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(20px) saturate(1.3);
+  border: 0;
+  box-shadow: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+}
+
+/* ============================================================
+   MOBILE MENU — react-bits StaggeredMenu (#sm-root)
+   No Tailwind in this project, so these fill what the component's own
+   <style> block leaves out (fixed-container sizing, dark navy theme,
+   frosted toggle) + fit the display type to a phone. Only ever mounted
+   at <=860px by main.tsx; #sm-root:empty is display:none.
+   ============================================================ */
+#sm-root {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+}
+#sm-root:empty { display: none; }
+#sm-root .sm-scope { position: absolute; inset: 0; width: 100%; height: 100%; }
+#sm-root .staggered-menu-wrapper { pointer-events: none; }
+#sm-root .staggered-menu-panel { pointer-events: auto; }
+
+/* dark navy panel to match the site (component default is white); the panel/
+   prelayer WIDTH is left to the component: full-screen <=640px, drawer above */
+#sm-root .staggered-menu-panel {
+  background: #0B1C33;
+  padding: 5.4rem clamp(1.4rem, 7vw, 2.2rem) 2rem;
+}
+#sm-root .sm-panel-inner { gap: 1rem; }
+#sm-root .sm-panel-list { gap: 0.3rem; }
+#sm-root .sm-panel-item {
+  display: block;
+  color: #EAF1FB;
+  letter-spacing: -1px;
+  font-size: clamp(2.3rem, 12vw, 3.4rem);
+  padding-right: 0.6em;
+}
+#sm-root .sm-panel-item:hover,
+#sm-root .sm-panel-item:focus-visible { color: var(--sm-accent, #5C87BC); }
+#sm-root .sm-panel-list[data-numbering] .sm-panel-item::after {
+  color: var(--sm-accent, #5C87BC);
+  right: 0.3em;
+  top: 0.05em;
+  font-size: 13px;
+}
+#sm-root .sm-socials-link { color: #C6D5E8; }
+#sm-root .sm-socials-link:hover,
+#sm-root .sm-socials-link:focus-visible { color: var(--sm-accent, #5C87BC); }
+#sm-root .sm-socials-title {
+  color: var(--sm-accent, #5C87BC);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* the component's logo is hidden — the page already carries the brand */
+#sm-root .sm-logo { display: none; }
+
+/* frosted-glass "Menu / Close" toggle so it reads on any section behind it;
+   logo is hidden so the toggle sits at the right (matches position="right") */
+#sm-root .staggered-menu-header { padding: clamp(10px, 3.5vw, 16px) clamp(14px, 4vw, 18px); justify-content: flex-end; }
+#sm-root .sm-toggle {
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(8, 17, 30, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  color: #EAF1FB;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (max-width: 380px) {
+  #sm-root .sm-panel-item { font-size: 2rem; }
+}
+
+/* ============================================================
+   FIX 1 — no empty gap above the content on mobile: the hero content
+   starts right at the top edge (leaving just enough for the fixed toggle).
+   ============================================================ */
+@media (max-width: 860px) {
+  .lv2-shell { padding-top: 4px; }
+  .nav.lv2-nav { padding-top: 4px; }
 }

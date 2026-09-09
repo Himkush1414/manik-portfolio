@@ -1,7 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import ShapeBlur from './ShapeBlur';
 import InfiniteSpiral from './InfiniteSpiral';
+import StaggeredMenu from './StaggeredMenu';
 import { logos } from './logos';
+import navLogo from '../../assets/logo.png';
 // §4 reuses /lab/lv1's footer verbatim — the actual component, asset and
 // extra stylesheet, imported (not copied/forked) so it stays identical.
 import RippleDistortion from '../lv1/RippleDistortion';
@@ -466,6 +468,73 @@ if (footerBlock && footerBlockSection) {
     window.addEventListener('scroll', onFooterBlockScroll, { passive: true });
     window.addEventListener('resize', onFooterBlockScroll);
   }
+}
+
+// ---- MOBILE MENU: the react-bits StaggeredMenu ----
+// Only lives at <=860px. Above that it is never mounted, so desktop / tablet
+// keep the existing .lv2-nav (pills) and .lv3-returnnav (slide-down) untouched.
+const smMount = document.getElementById('sm-root');
+if (smMount) {
+  const smItems = [
+    { label: 'About', ariaLabel: 'Jump to About', link: '#about' },
+    { label: 'Projects', ariaLabel: 'Jump to Projects', link: '#projects' },
+    { label: 'Games', ariaLabel: 'Jump to Games', link: '#games' },
+    { label: 'Fun', ariaLabel: 'Jump to Fun', link: '#fun' },
+    { label: 'Dashboard', ariaLabel: 'Jump to Dashboard', link: '#dashboard' },
+  ];
+  const smSocials = [
+    { label: 'GitHub', link: 'https://github.com/Himkush1414' },
+    { label: 'LinkedIn', link: 'https://www.linkedin.com/in/manik-rana-752154277' },
+    { label: 'Gmail', link: 'mailto:manikrana831@gmail.com' },
+  ];
+  const lockScroll = (on: boolean) => {
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+  };
+  const smMQ = window.matchMedia('(max-width: 860px)');
+  let smRoot: ReturnType<typeof createRoot> | null = null;
+  const syncSM = () => {
+    if (smMQ.matches && !smRoot) {
+      smRoot = createRoot(smMount);
+      smRoot.render(
+        <StaggeredMenu
+          position="right"
+          isFixed
+          items={smItems}
+          socialItems={smSocials}
+          displaySocials
+          displayItemNumbering
+          logoUrl={navLogo}
+          /* deep-sea navy palette (not the react-bits purple defaults) */
+          colors={['#12335C', '#0A1E38']}
+          accentColor="#5C87BC"
+          menuButtonColor="#EAF1FB"
+          openMenuButtonColor="#EAF1FB"
+          changeMenuColorOnOpen={false}
+          closeOnClickAway
+          onMenuOpen={() => lockScroll(true)}
+          onMenuClose={() => lockScroll(false)}
+        />
+      );
+    } else if (!smMQ.matches && smRoot) {
+      smRoot.unmount();
+      smRoot = null;
+      lockScroll(false);
+      smMount.innerHTML = '';
+    }
+  };
+  syncSM();
+  smMQ.addEventListener('change', syncSM);
+
+  // the component only closes on the toggle / click-away — also close it when a
+  // menu item or social link is chosen (delegated; survives re-mounts).
+  smMount.addEventListener('click', e => {
+    const link = (e.target as HTMLElement).closest('.sm-panel-item, .sm-socials-link');
+    if (!link) return;
+    const toggle = smMount.querySelector<HTMLButtonElement>('.sm-toggle');
+    if (toggle && smMount.querySelector('.staggered-menu-wrapper[data-open]')) {
+      setTimeout(() => toggle.click(), 10);
+    }
+  });
 }
 
 // Mobile nav: the hamburger (shown by CSS at <=860px) toggles the .nav__menu

@@ -14,6 +14,11 @@
 </head>
 <body class="lv2">
 
+<!-- StaggeredMenu (react-bits) mount — the mobile menu. main.tsx only mounts it
+     at <=860px; #sm-root is display:none above that, so desktop/tablet keep the
+     existing .lv2-nav / .lv3-returnnav behaviour untouched. -->
+<div id="sm-root" aria-hidden="true"></div>
+
 <!-- Site nav — hidden off the top of the viewport; slides down once the footer
      (bottom of the page) is reached. Replaces the fixed nav that used to live
      inside the footer. Toggled by main.tsx (.is-in). -->
