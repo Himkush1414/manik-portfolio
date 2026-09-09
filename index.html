@@ -14,6 +14,26 @@
 </head>
 <body class="lv2">
 
+<!-- Site nav — hidden off the top of the viewport; slides down once the footer
+     (bottom of the page) is reached. Replaces the fixed nav that used to live
+     inside the footer. Toggled by main.tsx (.is-in). -->
+<nav class="nav lv3-returnnav" id="lv3-returnnav" aria-hidden="true">
+  <a class="nav__brand" href="#lv2-footer" aria-label="Manik Rana — home">
+    <img src="assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
+    <span class="nav__wordmark">Manik Rana</span>
+  </a>
+  <div class="nav__menu">
+    <a class="pill" href="#about">About</a>
+    <a class="pill" href="#projects">Projects</a>
+    <a class="pill" href="#games">Games</a>
+    <a class="pill" href="#fun">Fun</a>
+    <a class="pill" href="#dashboard">Dashboard</a>
+    <a class="pill pill--icon" href="#about" aria-label="Enter">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+    </a>
+  </div>
+</nav>
+
 <!-- SVG filter: organic turbulence + blur for §4's drifting bottom fog
      (same definition as /lab/lv1) -->
 <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
@@ -213,23 +233,9 @@
   </div>
 
   <div class="hero__inner">
-    <!-- NAV -->
-    <nav class="nav">
-      <a class="nav__brand" href="#lv2-footer" aria-label="Manik Rana — home">
-        <img src="assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
-        <span class="nav__wordmark">Manik Rana</span>
-      </a>
-      <div class="nav__menu">
-        <a class="pill" href="#about">About</a>
-        <a class="pill" href="#projects">Projects</a>
-        <a class="pill" href="#games">Games</a>
-        <a class="pill" href="#fun">Fun</a>
-        <a class="pill" href="#dashboard">Dashboard</a>
-        <a class="pill pill--icon" href="#about" aria-label="Enter">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
-        </a>
-      </div>
-    </nav>
+    <!-- The fixed in-footer nav has been removed. The site nav lives in
+         #lv3-returnnav (top of <body>) and slides down from the top of the
+         viewport once this footer section is reached. -->
 
     <!-- MAIN CONTENT ROW -->
     <div class="content">

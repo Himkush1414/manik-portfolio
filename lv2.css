@@ -431,17 +431,18 @@ body.lv2 {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  /* Continues the footer's upward lightening. The bottom edge meets the footer
-     on #5C87BC — styles.css .hero__bg's 0% (top) stop, i.e. exactly where the
-     footer's lighten-going-up trend leaves off — then keeps getting lighter up
-     through the section to full white at the top. No restart to dark. */
+  /* Continues the footer's upward lightening. The bottom edge lands on #5B85B8
+     — the *sampled* colour of the footer's rendered top edge at mid-width (not
+     the raw #5C87BC CSS stop) — then keeps getting lighter up through the
+     section to full white at the top. The ::after veil below adds the footer's
+     corner lift so the whole boundary matches, not just the centre. */
   background-color: #FFFFFF;
   background-image: linear-gradient(180deg,
     #FFFFFF 0%,
     #E9EFF7 22%,
     #C8D9EC 44%,
     #9DBAD9 67%,
-    #5C87BC 100%);
+    #5B85B8 100%);
 }
 .lv2-reveal.is-pin-ready {
   height: 340vh;
@@ -545,6 +546,91 @@ body.lv2 {
 
 @media (prefers-reduced-motion: reduce) {
   .lv2-reveal__statement .w { transition: none; }
+}
+
+/* ============================================================
+   §4  FOOTER — return nav
+   The nav that used to be fixed inside the footer is gone. The links + logo
+   (no bar, no panel, no backdrop — just the elements) fade + drift down into
+   place once the footer / bottom of the page is reached (main.tsx adds .is-in).
+   ============================================================ */
+body.lv2 .lv3-returnnav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  gap: 24px;
+  padding: 22px clamp(24px, 3.2vw, 48px);
+  /* transparent — no background / blur / border / shadow */
+  opacity: 0;
+  transform: translateY(-16px);
+  transition: opacity 900ms ease, transform 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+body.lv2 .lv3-returnnav.is-in {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.lv2 .lv3-returnnav {
+    transition: opacity 260ms ease;
+    transform: none;
+  }
+}
+/* the removed in-footer nav used to give the footer content ~72px of headroom
+   at the top — keep it, so the layout is unchanged and the drifting-in links
+   have clearance */
+body.lv2 #lv2-footer .hero__inner {
+  padding-top: 76px;
+}
+
+/* ============================================================
+   §3 -> §4 seam: the footer's blurred .hero__glow lifts its top-left/right
+   corners, so a horizontally-flat bottom edge on .lv2-reveal stepped against
+   it at the edges. The footer's rendered top edge was sampled pixel-by-pixel
+   across the width; the ::after below reproduces that exact colour profile on
+   the section's bottom edge (mid-width handled by the #5B85B8 gradient stop,
+   the corner lift by this veil). It lives in the bottom 20vh of the 340vh
+   section, so it's off-screen during the pinned scrub — only in play where the
+   section meets the footer.
+   ============================================================ */
+body.lv2 .lv2-reveal::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20vh;
+  z-index: 0;
+  pointer-events: none;
+  /* A cool-white veil whose per-x opacity is the exact lift that turns the
+     section's #5B85B8 bottom edge into the footer's *sampled* top-edge colour
+     at that x (footer .hero__bg + blurred .hero__glow corner lift): ~0.22 at
+     the corners, ~0.35 at the glow peaks (~6% / ~94%), 0 across the middle
+     where the two already match. */
+  background: linear-gradient(90deg,
+    rgba(224, 236, 255, 0.218) 0%,
+    rgba(224, 236, 255, 0.286) 2%,
+    rgba(224, 236, 255, 0.331) 4%,
+    rgba(224, 236, 255, 0.346) 6.5%,
+    rgba(224, 236, 255, 0.293) 10%,
+    rgba(224, 236, 255, 0.211) 14%,
+    rgba(224, 236, 255, 0.128) 19%,
+    rgba(224, 236, 255, 0.053) 25%,
+    rgba(224, 236, 255, 0) 30%,
+    rgba(224, 236, 255, 0) 71%,
+    rgba(224, 236, 255, 0.030) 73%,
+    rgba(224, 236, 255, 0.083) 78%,
+    rgba(224, 236, 255, 0.143) 83%,
+    rgba(224, 236, 255, 0.211) 87.5%,
+    rgba(224, 236, 255, 0.286) 91.7%,
+    rgba(224, 236, 255, 0.301) 94%,
+    rgba(224, 236, 255, 0.256) 98%,
+    rgba(224, 236, 255, 0.203) 100%);
+  /* full strength only at the very bottom (the seam), fading out upward so it
+     blends into the section's own vertical gradient */
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 6%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, #000 6%, transparent 100%);
 }
 
 /* ============================================================
