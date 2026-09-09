@@ -431,24 +431,17 @@ body.lv2 {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  /* Continuous with §2: the top starts on #3E6FBB — the exact colour
-     .lv2-stack__pin ends on at its bottom — so the slide 2 -> slide 3 join is
-     invisible. It then deepens down through the footer's own deep-sea stops
-     (lifted verbatim from styles.css .hero__bg) to #01040A, the ocean-depth
-     tone behind the "Manik Rana" watermark. §2 + §3 read as one unbroken
-     top-to-bottom gradient. */
-  background-color: #01040A;
+  /* Continues the footer's upward lightening. The bottom edge meets the footer
+     on #5C87BC — styles.css .hero__bg's 0% (top) stop, i.e. exactly where the
+     footer's lighten-going-up trend leaves off — then keeps getting lighter up
+     through the section to full white at the top. No restart to dark. */
+  background-color: #FFFFFF;
   background-image: linear-gradient(180deg,
-    #3E6FBB 0%,
-    #335A83 13%,
-    #234764 24%,
-    #163449 36%,
-    #0C2338 48%,
-    #071829 60%,
-    #04101D 72%,
-    #020A14 82%,
-    #01060D 91%,
-    #01040A 100%);
+    #FFFFFF 0%,
+    #E9EFF7 22%,
+    #C8D9EC 44%,
+    #9DBAD9 67%,
+    #5C87BC 100%);
 }
 .lv2-reveal.is-pin-ready {
   height: 340vh;
@@ -486,7 +479,7 @@ body.lv2 {
   line-height: 1.34;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #EAF1FB;
+  color: #0C2338;
 }
 .lv2-reveal__line { display: block; }
 .lv2-reveal__statement .w {
@@ -503,20 +496,7 @@ body.lv2 {
   align-items: center;
   justify-content: center;
   padding: clamp(20px, 4vw, 72px);
-  /* same palette as .lv2-reveal__pin (the background behind the statement text),
-     copied verbatim so there is no light/blank panel behind "Creative Design" */
-  background-color: #01040A;
-  background-image: linear-gradient(180deg,
-    #3E6FBB 0%,
-    #335A83 13%,
-    #234764 24%,
-    #163449 36%,
-    #0C2338 48%,
-    #071829 60%,
-    #04101D 72%,
-    #020A14 82%,
-    #01060D 91%,
-    #01040A 100%);
+  background: #EDF1F6;
   transform: translateY(calc(var(--slide, 0) * -100%));
   will-change: transform;
 }

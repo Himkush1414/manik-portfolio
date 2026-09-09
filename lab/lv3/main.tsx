@@ -166,15 +166,16 @@ if (stack && stackRows.length === 3) {
 const reveal = document.querySelector<HTMLElement>('.lv2-reveal');
 const revealPanel = document.querySelector<HTMLElement>('.lv2-reveal__panel');
 if (reveal && revealPanel) {
-  // split each statement line into per-word spans so they can fade individually
+  // split each statement line into per-character spans so the reveal scrubs
+  // letter by letter (was per-word, which stepped chunkily)
   const words: HTMLElement[] = [];
   reveal.querySelectorAll<HTMLElement>('.lv2-reveal__line').forEach(line => {
-    const parts = (line.textContent || '').trim().split(/\s+/);
+    const chars = Array.from((line.textContent || '').trim());
     line.textContent = '';
-    parts.forEach((word, i) => {
+    chars.forEach(ch => {
       const span = document.createElement('span');
       span.className = 'w';
-      span.textContent = i < parts.length - 1 ? `${word} ` : word;
+      span.textContent = ch;
       line.appendChild(span);
       words.push(span);
     });
@@ -214,8 +215,11 @@ if (reveal && revealPanel) {
     // ...then the statement finishes filling in, then it dwells before release
     const rp = Math.min(Math.max((p - 0.12) / 0.58, 0), 1);
     const n = words.length;
+    // ~2 letters ease in together (SPREAD) so the scrub feels fluid, not steppy
+    const SPREAD = 2.2;
+    const denom = n - 1 + SPREAD;
     for (let i = 0; i < n; i++) {
-      const wp = Math.min(Math.max(rp * n - i, 0), 1);
+      const wp = Math.min(Math.max((rp * denom - i) / SPREAD, 0), 1);
       words[i].style.opacity = (0.1 + 0.9 * (wp * wp * (3 - 2 * wp))).toFixed(3);
     }
   };
