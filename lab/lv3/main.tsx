@@ -379,6 +379,33 @@ if (backToTop) {
   });
 }
 
+// Return nav: the footer no longer carries a fixed nav. Instead the site nav
+// (#lv3-returnnav, parked off the top of the viewport) slides down once the
+// footer section fills enough of the screen — i.e. the bottom of the site.
+const returnNav = document.getElementById('lv3-returnnav');
+const returnNavFooter = document.getElementById('lv2-footer');
+if (returnNav && returnNavFooter) {
+  let navTicking = false;
+  const syncReturnNav = () => {
+    navTicking = false;
+    const rect = returnNavFooter.getBoundingClientRect();
+    // slide in once the footer's top edge passes the middle of the viewport —
+    // i.e. the footer (bottom of the site) is what you're looking at
+    const show = rect.top < window.innerHeight * 0.5;
+    returnNav.classList.toggle('is-in', show);
+    returnNav.setAttribute('aria-hidden', show ? 'false' : 'true');
+  };
+  const onReturnNavScroll = () => {
+    if (!navTicking) {
+      navTicking = true;
+      requestAnimationFrame(syncReturnNav);
+    }
+  };
+  syncReturnNav();
+  window.addEventListener('scroll', onReturnNavScroll, { passive: true });
+  window.addEventListener('resize', onReturnNavScroll);
+}
+
 // smooth-scroll for in-page anchors, consistent with the rest of the site
 document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
