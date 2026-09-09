@@ -389,9 +389,9 @@ if (returnNav && returnNavFooter) {
   const syncReturnNav = () => {
     navTicking = false;
     const rect = returnNavFooter.getBoundingClientRect();
-    // slide in once the footer's top edge passes the middle of the viewport —
-    // i.e. the footer (bottom of the site) is what you're looking at
-    const show = rect.top < window.innerHeight * 0.5;
+    // start the slow fade/drift once the footer's top edge is ~60% down the
+    // viewport, so the long entrance has finished settling by the bottom
+    const show = rect.top < window.innerHeight * 0.6;
     returnNav.classList.toggle('is-in', show);
     returnNav.setAttribute('aria-hidden', show ? 'false' : 'true');
   };

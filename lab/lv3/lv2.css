@@ -549,37 +549,67 @@ body.lv2 {
 
 /* ============================================================
    §4  FOOTER — return nav
-   The nav that used to be fixed inside the footer is gone. This one is
-   parked off the top of the viewport and slides down (main.tsx adds
-   .is-in) once the footer / bottom of the page is reached.
+   The nav that used to be fixed inside the footer is gone. The links + logo
+   (no bar, no panel, no backdrop — just the elements) fade + drift down into
+   place once the footer / bottom of the page is reached (main.tsx adds .is-in).
    ============================================================ */
 body.lv2 .lv3-returnnav {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 60;
   gap: 24px;
-  padding: 12px clamp(24px, 3.2vw, 48px);
-  background: rgba(244, 247, 250, 0.82);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-  border-bottom: 1px solid rgba(38, 58, 88, 0.12);
-  box-shadow: 0 12px 34px -20px rgba(11, 22, 44, 0.55);
-  transform: translateY(-100%);
-  transition: transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 22px clamp(24px, 3.2vw, 48px);
+  /* transparent — no background / blur / border / shadow */
+  opacity: 0;
+  transform: translateY(-16px);
+  transition: opacity 900ms ease, transform 1100ms cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 body.lv2 .lv3-returnnav.is-in {
+  opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 @media (prefers-reduced-motion: reduce) {
-  body.lv2 .lv3-returnnav { transition: none; }
+  body.lv2 .lv3-returnnav {
+    transition: opacity 260ms ease;
+    transform: none;
+  }
 }
 /* the removed in-footer nav used to give the footer content ~72px of headroom
-   at the top — keep it, so the layout is unchanged and the return nav has
-   clearance when it slides in */
+   at the top — keep it, so the layout is unchanged and the drifting-in links
+   have clearance */
 body.lv2 #lv2-footer .hero__inner {
   padding-top: 76px;
+}
+
+/* ============================================================
+   §3 -> §4 seam: the footer's .hero__glow lifts its top-left / top-right
+   corners toward near-white, so a flat #5C87BC bottom edge on .lv2-reveal
+   showed a step at the edges. This ::after mirrors that corner lift on the
+   section's bottom corners (tuned to the footer's attenuated render), so the
+   two edges meet as one colour right across the boundary. It sits only in the
+   bottom 26vh of the 340vh section, so it's off-screen during the pinned scrub
+   and only in play where the section meets the footer.
+   ============================================================ */
+body.lv2 .lv2-reveal::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 26vh;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 100% at 3% 100%,
+      rgba(231, 240, 250, 0.28) 0%,
+      rgba(231, 240, 250, 0.10) 42%,
+      rgba(231, 240, 250, 0) 66%),
+    radial-gradient(44% 100% at 97% 100%,
+      rgba(229, 239, 250, 0.26) 0%,
+      rgba(229, 239, 250, 0.09) 44%,
+      rgba(229, 239, 250, 0) 68%);
 }
 
 /* ============================================================
