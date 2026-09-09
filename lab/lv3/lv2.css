@@ -431,8 +431,24 @@ body.lv2 {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  /* established deep "iceberg bottom" navy (styles.css hero gradient stop) */
-  background: #04101D;
+  /* Continuous with §2: the top starts on #3E6FBB — the exact colour
+     .lv2-stack__pin ends on at its bottom — so the slide 2 -> slide 3 join is
+     invisible. It then deepens down through the footer's own deep-sea stops
+     (lifted verbatim from styles.css .hero__bg) to #01040A, the ocean-depth
+     tone behind the "Manik Rana" watermark. §2 + §3 read as one unbroken
+     top-to-bottom gradient. */
+  background-color: #01040A;
+  background-image: linear-gradient(180deg,
+    #3E6FBB 0%,
+    #335A83 13%,
+    #234764 24%,
+    #163449 36%,
+    #0C2338 48%,
+    #071829 60%,
+    #04101D 72%,
+    #020A14 82%,
+    #01060D 91%,
+    #01040A 100%);
 }
 .lv2-reveal.is-pin-ready {
   height: 340vh;
