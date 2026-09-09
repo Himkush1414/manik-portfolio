@@ -406,6 +406,45 @@ if (returnNav && returnNavFooter) {
   window.addEventListener('resize', onReturnNavScroll);
 }
 
+// Footer lower content block: rises up into view as ONE unit as the footer
+// enters the viewport, holds once you're at the bottom, and sinks back down on
+// scroll-out. It's purely a function of scroll position, so scrolling back up
+// exactly reverses the entrance.
+const footerBlock = document.querySelector<HTMLElement>('#lv2-footer .content');
+const footerBlockSection = document.getElementById('lv2-footer');
+if (footerBlock && footerBlockSection) {
+  const reduceFB = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const RISE_PX = 80;
+  let fbTicking = false;
+  const applyFooterBlock = () => {
+    fbTicking = false;
+    const vh = window.innerHeight;
+    const top = footerBlockSection.getBoundingClientRect().top;
+    // 0 when the footer's top edge is at the viewport bottom, 1 once it has
+    // reached the top (i.e. scrolled to the bottom of the site); clamped so it
+    // holds while you stay at the bottom.
+    const raw = (vh - top) / (vh * 0.85);
+    const p = Math.min(Math.max(raw, 0), 1);
+    const e = p * p * (3 - 2 * p); // smoothstep for a soft settle
+    footerBlock.style.setProperty('--footer-rise', `${((1 - e) * RISE_PX).toFixed(1)}px`);
+    footerBlock.style.setProperty('--footer-fade', e.toFixed(3));
+  };
+  const onFooterBlockScroll = () => {
+    if (!fbTicking) {
+      fbTicking = true;
+      requestAnimationFrame(applyFooterBlock);
+    }
+  };
+  if (reduceFB) {
+    footerBlock.style.setProperty('--footer-rise', '0px');
+    footerBlock.style.setProperty('--footer-fade', '1');
+  } else {
+    applyFooterBlock();
+    window.addEventListener('scroll', onFooterBlockScroll, { passive: true });
+    window.addEventListener('resize', onFooterBlockScroll);
+  }
+}
+
 // smooth-scroll for in-page anchors, consistent with the rest of the site
 document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
