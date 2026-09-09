@@ -364,6 +364,17 @@ if (rippleMount) {
   }, 2500);
 }
 
+// footer "Back to top" — scroll to the very top of the page (href="#" so the
+// generic anchor handler below skips it)
+const backToTop = document.querySelector<HTMLAnchorElement>('#lv2-footer [data-backtotop]');
+if (backToTop) {
+  backToTop.addEventListener('click', e => {
+    e.preventDefault();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  });
+}
+
 // smooth-scroll for in-page anchors, consistent with the rest of the site
 document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
