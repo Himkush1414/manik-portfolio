@@ -155,7 +155,6 @@ body.lv2 {
   border-radius: 4px;
   overflow: hidden;
   background: linear-gradient(178deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
-  box-shadow: 0 46px 110px -44px rgba(9, 24, 48, 0.4);
 }
 .lv2-effect__mount {
   position: absolute;
