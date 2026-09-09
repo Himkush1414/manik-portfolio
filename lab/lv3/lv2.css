@@ -596,6 +596,21 @@ body.lv2 #lv2-footer .content {
   will-change: transform, opacity;
 }
 
+/* Social links: real destinations + a brand glyph in front, sized to the
+   15px link text (icon inherits the link colour, incl. the :hover shift). */
+body.lv2 #lv2-footer .linklist--social a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+body.lv2 #lv2-footer .linklist--social a svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: currentColor;
+  transition: fill 0.16s ease;
+}
+
 /* ============================================================
    §3 -> §4 seam: the footer's blurred .hero__glow lifts its top-left/right
    corners, so a horizontally-flat bottom edge on .lv2-reveal stepped against
