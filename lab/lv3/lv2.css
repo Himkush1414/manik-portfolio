@@ -584,6 +584,18 @@ body.lv2 #lv2-footer .hero__inner {
   padding-top: 76px;
 }
 
+/* Footer lower content block (sign-up, nav/contact/social links, the
+   "open to new projects" line, back-to-top) rises in as ONE unit as the footer
+   enters the viewport, holds at the bottom, and sinks back on scroll-out.
+   main.tsx drives the two custom properties from scroll position; the defaults
+   leave it at rest so it's fine with JS off. The .bottom legal strip is a
+   sibling and stays static. */
+body.lv2 #lv2-footer .content {
+  transform: translateY(var(--footer-rise, 0px));
+  opacity: var(--footer-fade, 1);
+  will-change: transform, opacity;
+}
+
 /* ============================================================
    §3 -> §4 seam: the footer's blurred .hero__glow lifts its top-left/right
    corners, so a horizontally-flat bottom edge on .lv2-reveal stepped against
