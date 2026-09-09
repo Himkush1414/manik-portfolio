@@ -431,8 +431,17 @@ body.lv2 {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  /* established deep "iceberg bottom" navy (styles.css hero gradient stop) */
-  background: #04101D;
+  /* Continues the footer's upward lightening. The bottom edge meets the footer
+     on #5C87BC — styles.css .hero__bg's 0% (top) stop, i.e. exactly where the
+     footer's lighten-going-up trend leaves off — then keeps getting lighter up
+     through the section to full white at the top. No restart to dark. */
+  background-color: #FFFFFF;
+  background-image: linear-gradient(180deg,
+    #FFFFFF 0%,
+    #E9EFF7 22%,
+    #C8D9EC 44%,
+    #9DBAD9 67%,
+    #5C87BC 100%);
 }
 .lv2-reveal.is-pin-ready {
   height: 340vh;
@@ -470,7 +479,7 @@ body.lv2 {
   line-height: 1.34;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #EAF1FB;
+  color: #0C2338;
 }
 .lv2-reveal__line { display: block; }
 .lv2-reveal__statement .w {
@@ -487,7 +496,20 @@ body.lv2 {
   align-items: center;
   justify-content: center;
   padding: clamp(20px, 4vw, 72px);
-  background: #EDF1F6;
+  /* blue continuing from slide 2, deepening to the deep-sea footer colour by
+     the bottom — the palette copied from slide 2 in the earlier fix */
+  background-color: #01040A;
+  background-image: linear-gradient(180deg,
+    #3E6FBB 0%,
+    #335A83 13%,
+    #234764 24%,
+    #163449 36%,
+    #0C2338 48%,
+    #071829 60%,
+    #04101D 72%,
+    #020A14 82%,
+    #01060D 91%,
+    #01040A 100%);
   transform: translateY(calc(var(--slide, 0) * -100%));
   will-change: transform;
 }
