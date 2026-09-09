@@ -2,7 +2,7 @@ import type { InfiniteSpiralItem } from './InfiniteSpiral';
 
 /* Simple monochrome (white) glyphs, hand-drawn as SVG so they need no network
    request and survive the production build. Each renders on a solid-black card
-   (see .lv3-spiral styles in lv3.css), GitHub-style. */
+   (see .lv2-spiral styles in lv2.css), GitHub-style. */
 const svg = (body: string) =>
   `data:image/svg+xml,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${body}</svg>`
