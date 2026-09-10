@@ -1,7 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import ShapeBlur from './ShapeBlur';
 import InfiniteSpiral from './InfiniteSpiral';
+import StaggeredMenu from './StaggeredMenu';
 import { logos } from './logos';
+import navLogo from './assets/logo.png';
 // §4 reuses /lab/lv1's footer verbatim — the actual component, asset and
 // extra stylesheet, imported (not copied/forked) so it stays identical.
 import RippleDistortion from './lab/lv1/RippleDistortion';
@@ -58,6 +60,15 @@ if (mount) {
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
 const spiralMount = document.getElementById('spiral-mount');
 if (spiralMount) {
+  // scale the spiral geometry down on narrow screens (the component already
+  // adapts its radius to its container, but the cards are a fixed px size)
+  const vw = window.innerWidth;
+  const sp =
+    vw <= 480
+      ? { card: 88, radius: 104, spacing: 50, per: 7 }
+      : vw <= 900
+        ? { card: 108, radius: 126, spacing: 60, per: 7 }
+        : { card: 132, radius: 150, spacing: 72, per: 7 };
   try {
     createRoot(spiralMount).render(
       <InfiniteSpiral
@@ -66,12 +77,12 @@ if (spiralMount) {
         animationMode="scroll"
         speed={0.8}
         direction="up"
-        radius={150}
-        cardWidth={132}
-        cardHeight={132}
-        verticalSpacing={72}
+        radius={sp.radius}
+        cardWidth={sp.card}
+        cardHeight={sp.card}
+        verticalSpacing={sp.spacing}
         perspective={1150}
-        cardsPerTurn={7}
+        cardsPerTurn={sp.per}
         rotation={0}
         cardTilt={0}
         cardRadius={16}
@@ -328,7 +339,14 @@ window.addEventListener('keydown', e => {
   }
 });
 
-const rippleMount = document.getElementById('ripple-root');
+// The ripple is a cursor-hover effect. On touch / no-hover devices there is no
+// cursor to drive it, so skip the WebGL canvas entirely and let the crisp SVG
+// metal wordmark show through (sharper on mobile than a scaled raster anyway).
+const coarsePointer =
+  window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+const rippleFade = document.getElementById('ripple-fade');
+const rippleMount = coarsePointer ? null : document.getElementById('ripple-root');
+if (coarsePointer && rippleFade) rippleFade.style.display = 'none';
 if (rippleMount) {
   try {
     createRoot(rippleMount).render(
@@ -414,17 +432,24 @@ const footerBlock = document.querySelector<HTMLElement>('#lv2-footer .content');
 const footerBlockSection = document.getElementById('lv2-footer');
 if (footerBlock && footerBlockSection) {
   const reduceFB = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const RISE_PX = 80;
+  // a smaller lift on phones so it settles within the shorter viewport
+  let RISE_PX = window.innerWidth <= 600 ? 44 : 80;
+  window.addEventListener('resize', () => {
+    RISE_PX = window.innerWidth <= 600 ? 44 : 80;
+  });
   let fbTicking = false;
   const applyFooterBlock = () => {
     fbTicking = false;
     const vh = window.innerHeight;
     const top = footerBlockSection.getBoundingClientRect().top;
-    // 0 when the footer's top edge is at the viewport bottom, 1 once it has
-    // reached the top (i.e. scrolled to the bottom of the site); clamped so it
-    // holds while you stay at the bottom.
-    const raw = (vh - top) / (vh * 0.85);
-    const p = Math.min(Math.max(raw, 0), 1);
+    // progress rises as the footer's top edge climbs the viewport...
+    const byFooter = (vh - top) / (vh * 0.85);
+    // ...or as you approach the absolute bottom of the page (covers viewports
+    // taller than the footer, where the footer's top never reaches y=0).
+    const distToBottom =
+      document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+    const byBottom = 1 - distToBottom / Math.min(vh * 0.55, 380);
+    const p = Math.min(Math.max(Math.max(byFooter, byBottom), 0), 1);
     const e = p * p * (3 - 2 * p); // smoothstep for a soft settle
     footerBlock.style.setProperty('--footer-rise', `${((1 - e) * RISE_PX).toFixed(1)}px`);
     footerBlock.style.setProperty('--footer-fade', e.toFixed(3));
@@ -444,6 +469,100 @@ if (footerBlock && footerBlockSection) {
     window.addEventListener('resize', onFooterBlockScroll);
   }
 }
+
+// ---- MOBILE MENU: the react-bits StaggeredMenu ----
+// Only lives at <=860px. Above that it is never mounted, so desktop / tablet
+// keep the existing .lv2-nav (pills) and .lv3-returnnav (slide-down) untouched.
+const smMount = document.getElementById('sm-root');
+if (smMount) {
+  const smItems = [
+    { label: 'About', ariaLabel: 'Jump to About', link: '#about' },
+    { label: 'Projects', ariaLabel: 'Jump to Projects', link: '#projects' },
+    { label: 'Games', ariaLabel: 'Jump to Games', link: '#games' },
+    { label: 'Fun', ariaLabel: 'Jump to Fun', link: '#fun' },
+    { label: 'Dashboard', ariaLabel: 'Jump to Dashboard', link: '#dashboard' },
+  ];
+  const smSocials = [
+    { label: 'GitHub', link: 'https://github.com/Himkush1414' },
+    { label: 'LinkedIn', link: 'https://www.linkedin.com/in/manik-rana-752154277' },
+    { label: 'Gmail', link: 'mailto:manikrana831@gmail.com' },
+  ];
+  const lockScroll = (on: boolean) => {
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+  };
+  const smMQ = window.matchMedia('(max-width: 860px)');
+  let smRoot: ReturnType<typeof createRoot> | null = null;
+  const syncSM = () => {
+    if (smMQ.matches && !smRoot) {
+      smRoot = createRoot(smMount);
+      smRoot.render(
+        <StaggeredMenu
+          position="right"
+          isFixed
+          items={smItems}
+          socialItems={smSocials}
+          displaySocials
+          displayItemNumbering
+          logoUrl={navLogo}
+          /* deep-sea navy palette (not the react-bits purple defaults) */
+          colors={['#12335C', '#0A1E38']}
+          accentColor="#5C87BC"
+          menuButtonColor="#EAF1FB"
+          openMenuButtonColor="#EAF1FB"
+          changeMenuColorOnOpen={false}
+          closeOnClickAway
+          onMenuOpen={() => lockScroll(true)}
+          onMenuClose={() => lockScroll(false)}
+        />
+      );
+    } else if (!smMQ.matches && smRoot) {
+      smRoot.unmount();
+      smRoot = null;
+      lockScroll(false);
+      smMount.innerHTML = '';
+    }
+  };
+  syncSM();
+  smMQ.addEventListener('change', syncSM);
+
+  // the component only closes on the toggle / click-away — also close it when a
+  // menu item or social link is chosen (delegated; survives re-mounts).
+  smMount.addEventListener('click', e => {
+    const link = (e.target as HTMLElement).closest('.sm-panel-item, .sm-socials-link');
+    if (!link) return;
+    const toggle = smMount.querySelector<HTMLButtonElement>('.sm-toggle');
+    if (toggle && smMount.querySelector('.staggered-menu-wrapper[data-open]')) {
+      setTimeout(() => toggle.click(), 10);
+    }
+  });
+}
+
+// Mobile nav: the hamburger (shown by CSS at <=860px) toggles the .nav__menu
+// dropdown on both the hero nav and the footer's return nav.
+document.querySelectorAll<HTMLElement>('.nav').forEach(nav => {
+  const toggle = nav.querySelector<HTMLButtonElement>('.nav__toggle');
+  const menu = nav.querySelector<HTMLElement>('.nav__menu');
+  if (!toggle || !menu) return;
+  const setOpen = (open: boolean) => {
+    menu.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  toggle.addEventListener('click', e => {
+    e.stopPropagation();
+    setOpen(!menu.classList.contains('is-open'));
+  });
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('click', e => {
+    if (menu.classList.contains('is-open') && !nav.contains(e.target as Node)) setOpen(false);
+  });
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') setOpen(false);
+  });
+  // clean state if the viewport grows back to desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 860) setOpen(false);
+  });
+});
 
 // smooth-scroll for in-page anchors, consistent with the rest of the site
 document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(a => {

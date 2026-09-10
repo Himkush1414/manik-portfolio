@@ -102,6 +102,33 @@ body.lv2 {
   padding: 14px 0 0;
 }
 
+/* hamburger — shown only on small screens (see RESPONSIVE) */
+body.lv2 .nav__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  background: var(--navy-pill-70);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+}
+body.lv2 .nav__toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+body.lv2 .lv2-nav .nav__toggle { color: #16233B; border-color: rgba(38, 58, 88, 0.28); background: rgba(255, 255, 255, 0.5); }
+
 .lv2-cols {
   position: relative;
   z-index: 2;
@@ -530,18 +557,26 @@ body.lv2 {
   color: transparent;
 }
 
-/* flow fallback when the section isn't pinned (small / reduced-motion) */
-.lv2-reveal:not(.is-pin-ready) .lv2-reveal__pin { height: auto; }
+/* Flow fallback when the section isn't pinned (small screen / reduced-motion /
+   no JS): the pin becomes a flex column with the "Creative Design" heading
+   panel first, then the statement — so it reads top-to-bottom as one section. */
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__pin {
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
 .lv2-reveal:not(.is-pin-ready) .lv2-reveal__panel {
   position: relative;
+  order: -1;
   transform: none;
-  min-height: 70vh;
+  min-height: clamp(300px, 44vh, 460px);
+  padding: clamp(52px, 10vh, 96px) clamp(20px, 5vw, 56px);
 }
 .lv2-reveal:not(.is-pin-ready) .lv2-reveal__stage {
   position: relative;
-  padding-top: 14vh;
-  padding-bottom: 14vh;
+  padding: clamp(46px, 9vh, 90px) clamp(24px, 6vw, 48px);
 }
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement { max-width: 44ch; }
 .lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement .w { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -661,47 +696,295 @@ body.lv2 .lv2-reveal::after {
 }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE  —  mobile → wide desktop
+   Below ~900px (main.tsx gate) the pinned sections flow instead;
+   the rules here make that flow, plus the type and spacing, read
+   as intentionally designed at every screen size.
    ============================================================ */
-@media (max-width: 1080px) {
-  .lv2-cols { grid-template-columns: 1fr 1fr; }
-  .lv2-col--left { grid-column: 1 / -1; padding: 10vh 0 40px; }
-  .lv2-col--mid { padding-top: 0; }
-  .lv2-effect { height: clamp(540px, 70vh, 760px); }
-  .lv2-col--right { padding: 0 0 6vh; }
-  .lv2-grid span:nth-child(3) { display: none; }
-}
 
-/* stack: single column when it isn't pinned */
+/* ---- §2 stack: single column + flex rows whenever it isn't pinned ---- */
 .lv2-stack:not(.is-pin-ready) .lv2-stack__inner {
   grid-template-columns: 1fr;
   min-height: 0;
-  padding-top: 48px;
-  padding-bottom: 64px;
+  padding-top: clamp(44px, 8vh, 80px);
+  padding-bottom: clamp(52px, 9vh, 88px);
 }
 .lv2-stack:not(.is-pin-ready) .lv2-stack__lead { padding-bottom: 0; }
 .lv2-stack:not(.is-pin-ready) .lv2-stack__rows {
   display: flex;
-  gap: 34px;
-  padding-bottom: 40px;
+  gap: clamp(26px, 4.5vh, 44px);
+  padding-bottom: clamp(28px, 5vh, 44px);
 }
 .lv2-stack:not(.is-pin-ready) .lv2-stack__media {
-  height: 56vh;
-  margin-top: 26px;
+  height: clamp(340px, 52vh, 520px);
+  margin-top: clamp(18px, 3vh, 30px);
   align-self: stretch;
 }
 
-@media (max-width: 720px) {
-  .nav.lv2-nav { flex-wrap: wrap; gap: 12px; }
-  .nav.lv2-nav .nav__menu { flex-wrap: wrap; }
-  .lv2-cols { grid-template-columns: 1fr; }
-  .lv2-col--mid { grid-column: 1 / -1; }
-  .lv2-item { padding-right: clamp(70px, 22vw, 120px); }
-  .lv2-row { grid-template-columns: 1fr; row-gap: 8px; }
-  .lv2-row__body { max-width: none; }
+/* ---- wide (>1600): widen the frames, keep the proportions ---- */
+@media (min-width: 1600px) {
+  .lv2-shell,
+  .lv2-stack__inner { max-width: 1880px; }
+}
+
+/* ---- <=1200: ease the 3-col hero in ---- */
+@media (max-width: 1200px) {
+  .lv2-cols { grid-template-columns: 0.9fr 1.25fr 0.9fr; }
+  .lv2-col--left { padding: 12vh clamp(18px, 2.4vw, 40px) 5vh 0; }
+  .lv2-col--right { padding: 11vh 0 5vh clamp(18px, 2.4vw, 40px); }
+}
+
+/* ---- <=1080: headline over two columns, smaller effect box ---- */
+@media (max-width: 1080px) {
+  .lv2-cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    column-gap: clamp(20px, 3vw, 40px);
+    align-items: center;
+  }
+  .lv2-col--left { grid-column: 1 / -1; padding: 7vh 0 clamp(20px, 4vh, 40px); }
+  .lv2-headline { font-size: clamp(38px, 5.6vw, 56px); }
+  .lv2-lead { max-width: 60ch; margin-top: 18px; font-size: 14px; }
+  .lv2-col--mid { padding: 0; }
+  .lv2-effect { height: clamp(400px, 56vh, 600px); }
+  .lv2-col--right { padding: 0; justify-content: center; }
+  .lv2-grid span:nth-child(3) { display: none; }
+  .lv2-item { padding: 20px clamp(96px, 13vw, 150px) 20px 0; }
+}
+
+/* ---- <=900: single column; effect box centred, item list below ---- */
+@media (max-width: 900px) {
+  .lv2-cols { grid-template-columns: 1fr; row-gap: clamp(28px, 5vh, 46px); }
+  .lv2-col--mid,
+  .lv2-col--right { grid-column: 1 / -1; }
+  .lv2-col--left { padding: 6vh 0 2px; }
+  .lv2-effect {
+    height: clamp(320px, 46vh, 440px);
+    width: 100%;
+    max-width: 540px;
+    align-self: center;
+  }
+  .lv2-col--right { padding: 0; }
+  .lv2-item { padding: 18px clamp(84px, 20vw, 140px) 18px 0; }
+  .lv2-grid { display: none; }
+
+  .lv2-stack__title { font-size: clamp(32px, 6.2vw, 50px); }
+  .lv2-stack__rule { margin-top: clamp(18px, 3vh, 30px); }
+
+  .lv2-reveal__statement { font-size: clamp(21px, 4.3vw, 34px); }
+  .lv2-reveal__paneltext { font-size: clamp(52px, 15vw, 128px); }
+
+  body.lv2 #lv2-footer .hero__inner { padding-top: 20px; }
+}
+
+/* ---- <=860: the StaggeredMenu (main.tsx / #sm-root) is the mobile menu;
+   the built-in pill menu + old hamburger on both navs are hidden here.
+   Each nav keeps only its brand — .lv3-returnnav still slides down at the
+   footer, now with a frosted-glass ground (see below). ---- */
+@media (max-width: 860px) {
+  body.lv2 .nav .nav__menu,
+  body.lv2 .nav .nav__toggle { display: none !important; }
+  body.lv2 .nav { gap: 14px; }
+  body.lv2 .lv3-returnnav { padding: 14px 18px; }
+
+  .lv2-shell { padding: 14px 18px clamp(28px, 5vh, 44px); }
+  .lv2-headline { font-size: clamp(36px, 9vw, 48px); }
+  .lv2-item { padding-right: clamp(70px, 24vw, 116px); }
+  .lv2-row { grid-template-columns: 1fr; row-gap: 6px; }
+  .lv2-row__body { max-width: 54ch; }
+
+  /* footer: content-height (not a forced 100vh) so there's no dead gap between
+     the links and the legal strip; the watermark still gets room to breathe */
+  body.lv2 #lv2-footer { height: auto; min-height: 0; }
+  body.lv2 #lv2-footer .hero__inner { height: auto; }
+  body.lv2 #lv2-footer .content { flex: 0 0 auto; padding-bottom: clamp(24px, 5vh, 44px); }
+  body.lv2 #lv2-footer .badge { margin-top: clamp(20px, 4vh, 44px); }
+  body.lv2 #lv2-footer .watermark {
+    position: relative;
+    height: clamp(120px, 38vw, 210px);
+    margin-top: clamp(18px, 4vh, 40px);
+  }
+  /* dark top-corner-tuned ink is invisible on the footer's dark ground */
+  body.lv2 #lv2-footer .backtotop span { color: var(--muted); }
+  body.lv2 #lv2-footer .content__marker { display: none; }
+}
+
+/* ---- <=560: phones — tightest type + spacing, footer single column ---- */
+@media (max-width: 560px) {
+  .lv2-hero,
+  .lv2-shell { min-height: 100svh; }
+  .lv2-col--left { padding: 24px 0 2px; }
+  .lv2-headline { font-size: clamp(33px, 11vw, 42px); }
+  .lv2-lead { font-size: 13.5px; line-height: 1.7; }
+  .lv2-effect { height: clamp(280px, 50vh, 380px); }
+
+  .lv2-stack__title { font-size: clamp(28px, 8.4vw, 40px); }
+  .lv2-stack:not(.is-pin-ready) .lv2-stack__media { height: clamp(300px, 74vw, 400px); }
+  .lv2-row__title { font-size: clamp(19px, 6vw, 26px); }
+
+  .lv2-reveal:not(.is-pin-ready) .lv2-reveal__panel { min-height: clamp(220px, 36vh, 320px); }
+  .lv2-reveal__statement { font-size: clamp(18px, 5.4vw, 26px); }
+  .lv2-reveal__paneltext { font-size: clamp(42px, 17vw, 84px); }
+
+  body.lv2 #lv2-footer .content { grid-template-columns: 1fr; gap: clamp(22px, 5vw, 30px); }
+  body.lv2 #lv2-footer .signup__title { font-size: 22px; }
+  /* single column: the hidden "More" label just leaves a dead gap */
+  body.lv2 #lv2-footer .col__label--ghost { display: none; }
+  body.lv2 #lv2-footer .col--links + .col--links { margin-top: -8px; }
+}
+
+/* ---- touch (no hover): keep the numbered items reading as "live" ---- */
+@media (hover: none) {
+  .lv2-item .lv2-item__title { color: #1F2A3D; }
+  .lv2-item .lv2-item__deco { stroke: rgba(48, 70, 102, 0.24); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lv2-effect__mount { opacity: 0.9; }
   .lv2-row { transition: none; }
+  body.lv2 #lv2-footer .content { transform: none !important; opacity: 1 !important; }
+}
+
+/* §3->§4 seam veil, re-tuned for the content-height footer used below the pin
+   gate: the .hero__glow's top-corner lift is stronger (footer is shorter) and
+   varies with the footer's column count, so two calibrations — one for the
+   ~2-column footer (561-900), one for the single-column phone footer (<=560).
+   Both were sampled pixel-by-pixel against the footer's rendered top edge. */
+@media (max-width: 900px) {
+  body.lv2 .lv2-reveal::after {
+    height: 15vh;
+    background: linear-gradient(90deg,
+      rgba(240, 246, 255, 0.174) 0%,
+      rgba(240, 246, 255, 0.221) 6%,
+      rgba(240, 246, 255, 0.175) 16%,
+      rgba(240, 246, 255, 0.110) 22%,
+      rgba(240, 246, 255, 0.055) 28%,
+      rgba(240, 246, 255, 0.014) 34%,
+      rgba(240, 246, 255, 0) 44%,
+      rgba(240, 246, 255, 0) 60%,
+      rgba(240, 246, 255, 0.014) 66%,
+      rgba(240, 246, 255, 0.050) 76%,
+      rgba(240, 246, 255, 0.110) 84%,
+      rgba(240, 246, 255, 0.188) 92%,
+      rgba(240, 246, 255, 0.180) 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 9%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0%, #000 9%, transparent 100%);
+  }
+}
+@media (max-width: 560px) {
+  body.lv2 .lv2-reveal::after {
+    height: 13vh;
+    background: linear-gradient(90deg,
+      rgba(240, 246, 255, 0.118) 0%,
+      rgba(240, 246, 255, 0.120) 8%,
+      rgba(240, 246, 255, 0.090) 20%,
+      rgba(240, 246, 255, 0.046) 34%,
+      rgba(240, 246, 255, 0.014) 46%,
+      rgba(240, 246, 255, 0) 53%,
+      rgba(240, 246, 255, 0.014) 62%,
+      rgba(240, 246, 255, 0.050) 76%,
+      rgba(240, 246, 255, 0.098) 90%,
+      rgba(240, 246, 255, 0.112) 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 10%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0%, #000 10%, transparent 100%);
+  }
+}
+
+/* ============================================================
+   FIX 3 — the footer's slide-in return nav gets a frosted-glass ground
+   (blurs the content behind it), with no border / shadow / hard edge:
+   the bottom is masked so the frost fades out instead of stopping abruptly.
+   Applies wherever the nav slides in (all widths).
+   ============================================================ */
+body.lv2 .lv3-returnnav {
+  background: rgba(9, 19, 34, 0.34);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(20px) saturate(1.3);
+  border: 0;
+  box-shadow: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+}
+
+/* ============================================================
+   MOBILE MENU — react-bits StaggeredMenu (#sm-root)
+   No Tailwind in this project, so these fill what the component's own
+   <style> block leaves out (fixed-container sizing, dark navy theme,
+   frosted toggle) + fit the display type to a phone. Only ever mounted
+   at <=860px by main.tsx; #sm-root:empty is display:none.
+   ============================================================ */
+#sm-root {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+}
+#sm-root:empty { display: none; }
+#sm-root .sm-scope { position: absolute; inset: 0; width: 100%; height: 100%; }
+#sm-root .staggered-menu-wrapper { pointer-events: none; }
+#sm-root .staggered-menu-panel { pointer-events: auto; }
+
+/* dark navy panel to match the site (component default is white); the panel/
+   prelayer WIDTH is left to the component: full-screen <=640px, drawer above */
+#sm-root .staggered-menu-panel {
+  background: #0B1C33;
+  padding: 5.4rem clamp(1.4rem, 7vw, 2.2rem) 2rem;
+}
+#sm-root .sm-panel-inner { gap: 1rem; }
+#sm-root .sm-panel-list { gap: 0.3rem; }
+#sm-root .sm-panel-item {
+  display: block;
+  color: #EAF1FB;
+  letter-spacing: -1px;
+  font-size: clamp(2.3rem, 12vw, 3.4rem);
+  padding-right: 0.6em;
+}
+#sm-root .sm-panel-item:hover,
+#sm-root .sm-panel-item:focus-visible { color: var(--sm-accent, #5C87BC); }
+#sm-root .sm-panel-list[data-numbering] .sm-panel-item::after {
+  color: var(--sm-accent, #5C87BC);
+  right: 0.3em;
+  top: 0.05em;
+  font-size: 13px;
+}
+#sm-root .sm-socials-link { color: #C6D5E8; }
+#sm-root .sm-socials-link:hover,
+#sm-root .sm-socials-link:focus-visible { color: var(--sm-accent, #5C87BC); }
+#sm-root .sm-socials-title {
+  color: var(--sm-accent, #5C87BC);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* the component's logo is hidden — the page already carries the brand */
+#sm-root .sm-logo { display: none; }
+
+/* frosted-glass "Menu / Close" toggle so it reads on any section behind it;
+   logo is hidden so the toggle sits at the right (matches position="right") */
+#sm-root .staggered-menu-header { padding: clamp(10px, 3.5vw, 16px) clamp(14px, 4vw, 18px); justify-content: flex-end; }
+#sm-root .sm-toggle {
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(8, 17, 30, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  color: #EAF1FB;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (max-width: 380px) {
+  #sm-root .sm-panel-item { font-size: 2rem; }
+}
+
+/* ============================================================
+   FIX 1 — no empty gap above the content on mobile: the hero content
+   starts right at the top edge (leaving just enough for the fixed toggle).
+   ============================================================ */
+@media (max-width: 860px) {
+  .lv2-shell { padding-top: 4px; }
+  .nav.lv2-nav { padding-top: 4px; }
 }
