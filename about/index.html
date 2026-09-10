@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — About</title>
+<meta name="description" content="Manik Rana — About." />
+<link rel="icon" type="image/png" href="../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./lv5.css" />
+</head>
+<body class="lv5">
+
+<!-- ===================== ABOUT SECTION =====================
+     The whole route: loads straight into panel 1, no entry/trigger
+     section in front of it. -->
+<div id="about" class="about is-active">
+
+  <!-- persistent left sidebar — stays fixed while the track below slides
+       past/behind it -->
+  <aside class="about__sidebar">
+    <div class="about__sidebar-top">
+      <button type="button" class="about__menu" id="menu-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="about__edition">FOLIO&nbsp;&mdash;&nbsp;EDITION</span>
+    </div>
+    <span class="about__name-mark">MANIK&nbsp;RANA</span>
+    <span class="about__copyright">&copy; 2026</span>
+  </aside>
+
+  <!-- mount point for the react-bits StaggeredMenu (menu.tsx), reused from
+       /lab/lv3/ — full-screen here, sliding in from the left, triggered only
+       by the sidebar hamburger above -->
+  <div id="sm-root" aria-hidden="true"></div>
+
+  <!-- revealed in place of navigating when "Contact" is clicked in the menu
+       above (menu.tsx) -->
+  <div class="contact-links" id="contact-links" aria-hidden="true">
+    <a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://instagram.com/manikrana31" target="_blank" rel="noopener">Instagram</a>
+  </div>
+
+  <!-- horizontally-translated panel track -->
+  <div class="about__track" id="track">
+
+    <!-- PANEL 1 — name / hero intro -->
+    <section class="panel panel--intro" aria-label="Introduction">
+      <p class="panel__blurb panel__blurb--top-right">
+        Independent developer based in India &mdash; focused on considered,
+        detail-driven digital work that reads as inevitable, not assembled.
+      </p>
+
+      <h1 class="panel__name">
+        <span>MANIK</span>
+        <span>RANA</span>
+      </h1>
+
+      <div class="panel__meta panel__meta--bottom-left">
+        <span id="clock-place">New Delhi, India</span>
+        <span id="clock-time">&nbsp;</span>
+      </div>
+
+      <p class="panel__status">Open for collaborations</p>
+
+      <div class="panel__scroll" aria-hidden="true">
+        <span>SCROLL</span>
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </section>
+
+    <!-- PANEL 2 — about / intro detail -->
+    <section class="panel panel--about" aria-label="About">
+      <span class="panel__chapter">CHAPTER I</span>
+
+      <div class="panel__intro-copy">
+        <span class="panel__label">Quick Intro</span>
+        <p class="panel__paragraph">
+          Hi, I&rsquo;m Manik &mdash; a developer who cares as much about how
+          something feels to use as the code underneath it. I build
+          interfaces, small tools, and the occasional over-engineered side
+          project, chasing the point where craft and function agree. When it
+          works and it feels right, that&rsquo;s the whole job.
+        </p>
+        <p class="panel__quote">
+          Not everything needs to be clever.<br />
+          It just needs to feel considered.
+        </p>
+
+        <figure class="panel__portrait">
+          <img src="./portrait.png" alt="Portrait of Manik Rana" width="1254" height="1254" />
+        </figure>
+      </div>
+
+      <p class="panel__aside panel__aside--bottom-left">
+        Beyond code: football, chess, anime, coffee,<br />
+        and the occasional trip somewhere new.
+      </p>
+
+      <a href="#" class="panel__more">
+        <span>More about me</span>
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </section>
+
+    <!-- PANEL 3 — "THE WORK" split-reveal -->
+    <section class="panel panel--work" aria-label="The Work" id="panel-work">
+      <div class="work__word work__word--the" id="word-the">THE</div>
+      <div class="work__box" id="work-box">
+        <span>VIDEO</span>
+      </div>
+      <div class="work__word work__word--work" id="word-work">WORK</div>
+    </section>
+
+    <!-- PANEL 4 — placeholder continuation -->
+    <section class="panel panel--next" aria-label="More">
+      <p class="panel__soon">More to come.</p>
+    </section>
+
+  </div>
+</div>
+
+<script type="module" src="./main.ts"></script>
+<script type="module" src="./menu.tsx"></script>
+</body>
+</html>

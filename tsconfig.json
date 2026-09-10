@@ -12,5 +12,5 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["lab", "*.ts", "*.tsx"]
+  "include": ["lab", "about", "*.ts", "*.tsx"]
 }

@@ -1,0 +1,509 @@
+/* ============================================================
+   /lab/lv5 — the About section. Standalone build: its own fonts,
+   palette and layout system, unrelated to the rest of the site.
+   Everything here is scoped to body.lv5.
+   ============================================================ */
+
+body.lv5 {
+  --bg-dark: #3A3632;
+  --text-warm: #F3EEE8;
+  --work-bg: #FAF9F6;
+  --work-text: #2E2B2A;
+  --accent: #C99A6C;
+  --gutter-left: clamp(84px, 8vw, 132px);
+  --edge: clamp(20px, 3.4vw, 56px);
+  --font-display: 'Bodoni Moda', 'Times New Roman', serif;
+  --font-body: Helvetica, Arial, sans-serif;
+
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #EDEBE7;
+  color: #1B1A18;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body.lv5 * { box-sizing: border-box; }
+body.lv5 img { max-width: 100%; display: block; }
+
+/* ============================================================
+   ABOUT SECTION — the whole route: full-screen from load, owns all
+   wheel/touch input to drive the horizontal track.
+   ============================================================ */
+.about {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: var(--text-warm);
+}
+
+/* ---- persistent sidebar ---- */
+.about__sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: clamp(64px, 6.5vw, 90px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 0 22px;
+  pointer-events: none;
+  /* scroll is a direct, unsnapped 1:1 tracking of input now, so a panel can
+     come to rest at any in-between position — solid (not translucent) so
+     the strip cleanly occludes whatever panel content happens to be passing
+     underneath at that instant, rather than letting it bleed through.
+     Both the background and the foreground below are driven every frame
+     from main.ts, blended in sync with horizontal scroll position so the
+     strip's whole colour — not just its text — matches whichever panel is
+     currently in view. These defaults are the pre-JS/no-JS fallback,
+     matching panel 1's dark background. */
+  background: var(--sidebar-bg);
+  --sidebar-bg: #211E1B;
+  --sidebar-fg: var(--text-warm);
+}
+.about__sidebar > * { pointer-events: auto; }
+.about__sidebar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+.about__menu {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.about__menu span {
+  width: 18px;
+  height: 1.5px;
+  background: var(--sidebar-fg);
+  display: block;
+  transition: opacity 0.15s ease;
+}
+.about__menu:hover span { opacity: 0.6; }
+.about__edition,
+.about__name-mark {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  color: var(--sidebar-fg);
+}
+.about__edition { font-size: 10px; letter-spacing: 0.18em; opacity: 0.5; }
+.about__name-mark { font-size: 12px; font-weight: 700; letter-spacing: 0.24em; }
+.about__copyright {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  opacity: 0.45;
+  color: var(--sidebar-fg);
+}
+
+/* ---- full-screen nav menu (react-bits StaggeredMenu, menu.tsx) ----
+   The component itself (lab/lv5/StaggeredMenu.tsx) is an unmodified copy of
+   /lab/lv3/'s — same mechanic/animation, just reconfigured: full-screen
+   instead of a mobile drawer, sliding in from the left, and always mounted
+   rather than gated to a media query. No Tailwind in this project, so —
+   same as lv3's own #sm-root block — these overrides fill in what the
+   component's embedded <style> leaves as defaults. */
+#sm-root {
+  position: fixed;
+  inset: 0;
+  /* above the track's panels, below the always-visible sidebar (z-index 30) */
+  z-index: 25;
+  overflow: hidden;
+  pointer-events: none;
+}
+#sm-root:empty { display: none; }
+#sm-root .sm-scope { position: absolute; inset: 0; width: 100%; height: 100%; }
+#sm-root .staggered-menu-wrapper { pointer-events: none; }
+#sm-root .staggered-menu-panel { pointer-events: auto; }
+
+/* the component's own header (logo + Menu/Close toggle) is hidden — lv5
+   opens/closes this menu exclusively through the sidebar's own hamburger,
+   proxied onto the toggle button in menu.tsx */
+#sm-root .staggered-menu-header { display: none; }
+
+/* full screen, not a partial drawer */
+#sm-root .staggered-menu-panel,
+#sm-root .sm-prelayers {
+  width: 100%;
+}
+#sm-root .staggered-menu-panel {
+  background: #2E2B28;
+  /* clamped by vh, not just a fixed 232px — at the specified ~160px item
+     size + ~60px gaps, four stacked rows plus this padding comfortably
+     exceed a typical laptop viewport height, which pushed "Home" (the
+     first/topmost row) off the top of the screen entirely. A little
+     top padding too, so "Home" always has clear headroom rather than
+     sitting flush against the very top edge. */
+  padding: clamp(20px, 4vh, 40px) var(--edge) clamp(70px, 18vh, 232px) var(--gutter-left);
+  justify-content: flex-end;
+}
+#sm-root .sm-panel-list { gap: clamp(16px, 4.5vh, 60px); }
+#sm-root .sm-panel-item {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  /* bound by BOTH vw (so "Contact" never overflows a narrow viewport
+     horizontally) and vh (so four rows + gaps + the padding above always
+     fit within the screen height, with headroom to spare) — whichever is
+     smaller wins */
+  font-size: clamp(40px, min(11vw, 12vh), 160px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #6B6865;
+  padding-right: 0;
+}
+/* "About" (2nd row) reads bright/active by default — the user is already
+   inside the About section when this menu opens. It only stays that way
+   while nothing else in the list is hovered: hovering a different item
+   (rule below) brightens that one instead and, because :not(:hover) on the
+   list then fails to match, lets "About" fall back to the dim base colour
+   just like everything else — so only one word is ever bright at a time. */
+#sm-root .sm-panel-list:not(:hover) li:nth-child(2) .sm-panel-item { color: #F5F3EF; }
+#sm-root .sm-panel-item:hover { color: #F5F3EF; }
+
+/* ---- contact links, revealed by the menu's "Contact" item ---- */
+.contact-links {
+  position: fixed;
+  right: var(--edge);
+  bottom: var(--edge);
+  z-index: 26; /* above the menu panel (25), below the sidebar (30) */
+  display: flex;
+  gap: clamp(16px, 2.4vw, 32px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.contact-links.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.contact-links a {
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: #F5F3EF;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
+.contact-links a:hover { opacity: 1; }
+
+/* ---- horizontal track ---- */
+.about__track {
+  display: flex;
+  height: 100%;
+  width: max-content;
+  will-change: transform;
+}
+.panel {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+.panel--intro,
+.panel--about,
+.panel--next {
+  background: var(--bg-dark);
+  color: var(--text-warm);
+}
+
+/* ============================================================
+   PANEL 1 — name / hero intro
+   ============================================================ */
+.panel--intro { display: flex; align-items: center; }
+
+.panel__name {
+  margin: 0 0 0 var(--gutter-left);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(56px, 15vw, 250px);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+}
+.panel__name span { display: block; }
+
+.panel__blurb {
+  position: absolute;
+  font-family: var(--font-body);
+  font-size: clamp(12px, 1.2vw, 22px);
+  line-height: 1.5;
+  max-width: 30ch;
+}
+.panel__blurb--top-right {
+  top: var(--edge);
+  right: var(--edge);
+  text-align: right;
+}
+
+.panel__meta {
+  position: absolute;
+  left: var(--gutter-left);
+  bottom: var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  opacity: 0.62;
+}
+
+.panel__status {
+  position: absolute;
+  left: calc(var(--gutter-left) + 30vw);
+  bottom: var(--edge);
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.panel__status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #8CBF8C;
+  vertical-align: middle;
+}
+
+.panel__scroll {
+  position: absolute;
+  right: var(--edge);
+  bottom: var(--edge);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  animation: lv5-scroll-pulse 2.2s ease-in-out infinite;
+}
+@keyframes lv5-scroll-pulse {
+  0%, 100% { transform: translateX(0); opacity: 0.55; }
+  50% { transform: translateX(6px); opacity: 0.95; }
+}
+
+/* ============================================================
+   PANEL 2 — about / intro detail
+   ============================================================ */
+.panel--about {
+  display: flex;
+  align-items: flex-start;
+  /* pushes the single text+photo column toward the right side of the panel,
+     leaving "CHAPTER I" isolated in the top-left with clear space around it */
+  justify-content: flex-end;
+  padding: 0 var(--edge) 0 var(--gutter-left);
+  /* clears the (now small) chapter heading above */
+  padding-top: clamp(90px, 13vh, 150px);
+  /* matches panel 3's ("THE WORK") light background */
+  background: var(--work-bg);
+  /* every text element on this panel reads against that light background now,
+     so it needs the dark ink colour, not the light one the rest of the
+     section uses */
+  color: var(--work-text);
+}
+
+.panel__chapter {
+  position: absolute;
+  top: var(--edge);
+  left: var(--gutter-left);
+  font-family: var(--font-display);
+  font-style: italic;
+  /* a small chapter marker, not a display headline */
+  font-size: clamp(20px, 2.2vw, 32px);
+  line-height: 1;
+  /* muted dark maroon, solid (not faint) */
+  color: #7A3B30;
+}
+
+.panel__intro-copy {
+  /* a single top-to-bottom column: label, then the paragraph, then the
+     quote, then the portrait sitting below all of it — the paragraph
+     always reads in full above the photo, never beside/overlapping it */
+  display: flex;
+  flex-direction: column;
+  width: clamp(280px, 46vw, 620px);
+  min-width: 0;
+}
+.panel__label {
+  display: block;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  /* muted but still clearly legible against the light background */
+  color: rgba(46, 43, 42, 0.6);
+  margin-bottom: 22px;
+}
+.panel__paragraph {
+  margin: 0 0 26px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(12px, 1.7vw, 26px);
+  line-height: 1.28;
+  text-align: justify;
+}
+.panel__quote {
+  margin: 0 0 32px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(14px, 1.5vw, 21px);
+  line-height: 1.55;
+  color: var(--accent);
+}
+
+.panel__portrait {
+  /* hugs the right edge of the text column, below the quote */
+  align-self: flex-end;
+  width: clamp(150px, 18vw, 240px);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 2px;
+}
+.panel__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.06) brightness(0.98);
+}
+
+.panel__aside {
+  position: absolute;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(46, 43, 42, 0.78);
+}
+.panel__aside--bottom-left { left: var(--gutter-left); bottom: var(--edge); }
+
+.panel__more {
+  position: absolute;
+  right: var(--edge);
+  bottom: var(--edge);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--work-text);
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.15s ease, gap 0.15s ease;
+}
+.panel__more:hover { opacity: 1; gap: 12px; }
+
+/* ============================================================
+   PANEL 3 — "THE WORK" split-reveal
+   ============================================================ */
+.panel--work {
+  background: var(--work-bg);
+  color: var(--work-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 4vw, 56px);
+  /* extra left padding (beyond the sidebar gutter) shifts the centred pair
+     toward the right side of the screen */
+  padding: 0 var(--edge) 0 calc(var(--gutter-left) + clamp(60px, 12vw, 220px));
+}
+.work__word {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(44px, 13vw, 190px);
+  line-height: 1;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.work__box {
+  position: absolute;
+  top: 50%;
+  /* set precisely in JS (main.ts: updateWorkBoxCenter) to the true midpoint
+     of the gap between "THE" and "WORK" — the two words render at different
+     widths, so that point isn't the flex block's own centre; this is just
+     the pre-JS fallback */
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  border-radius: 14px;
+  background: #17140F;
+  color: var(--text-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 2;
+  will-change: width, height, opacity;
+}
+.work__box span {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+}
+
+/* ============================================================
+   PANEL 4 — placeholder continuation
+   ============================================================ */
+.panel--next { display: flex; align-items: center; justify-content: center; }
+.panel__soon {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(24px, 4vw, 44px);
+  opacity: 0.7;
+}
+
+/* ============================================================
+   small screens — keep everything on-screen; the horizontal
+   scroll-jack mechanic itself is unchanged, just the type scales down
+   ============================================================ */
+@media (max-width: 720px) {
+  /* a reserved bottom gap so flowed content (portrait included) never
+     grows down into the zone the absolutely positioned aside/more-link
+     occupy at the panel's own bottom edge */
+  .panel--about {
+    padding-top: 84px;
+    padding-bottom: 96px;
+    overflow-y: auto;
+  }
+  .panel__intro-copy { width: 100%; }
+  .panel__portrait {
+    width: clamp(130px, 34vw, 190px);
+    align-self: flex-start;
+  }
+
+  /* panel 1's bottom row doesn't fit three side-by-side groups at this
+     width — stack status above the location/time meta instead, both left,
+     clear of the sidebar */
+  .panel__status { left: var(--gutter-left); bottom: calc(var(--edge) + 40px); }
+  .panel__scroll { right: var(--edge); bottom: var(--edge); }
+}
