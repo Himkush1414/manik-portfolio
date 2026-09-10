@@ -7,6 +7,9 @@ import { resolve } from "path";
 //  - "/lab/lv1/"      -> experiment: watermark cursor effect swapped for RippleDistortion
 //  - "/lab/lv3/"      -> copy of the main site with an enhanced footer (bubble burst +
 //                        rising watermark + site nav that returns at the bottom)
+//  - "/lab/lv4/"      -> full duplicate of /lab/lv3/, plus: a background photo cut
+//                        through the "Creative Design" panel text, and a responsive
+//                        (not fixed-size) ShapeBlur box in the stack section
 //  - "/lab/home-v0/"  -> the original vanilla homepage, archived (index.html +
 //                        styles.css + script.js, no build step of its own)
 
@@ -15,7 +18,7 @@ import { resolve } from "path";
 //    page for "/lab/xxx", which looks like the wrong page)
 //  - force no-store on lab HTML so a browser/proxy cache can't pin a stale
 //    bundle to the bare URL while a ?query variant loads fresh
-const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/home-v0/"];
+const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/home-v0/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
   configureServer(server) {
@@ -48,6 +51,7 @@ export default defineConfig({
         main: resolve(__dirname, "index.html"),
         labLv1: resolve(__dirname, "lab/lv1/index.html"),
         labLv3: resolve(__dirname, "lab/lv3/index.html"),
+        labLv4: resolve(__dirname, "lab/lv4/index.html"),
         homeV0: resolve(__dirname, "lab/home-v0/index.html"),
       },
     },
