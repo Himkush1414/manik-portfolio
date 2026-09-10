@@ -219,9 +219,15 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 .panel--intro,
 .panel--about,
+.panel--ch3,
 .panel--next {
   background: var(--bg-dark);
   color: var(--text-warm);
+}
+.panel--ch2,
+.panel--ch4 {
+  background: var(--work-bg);
+  color: var(--work-text);
 }
 
 /* ============================================================
@@ -472,14 +478,331 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 
 /* ============================================================
-   PANEL 4 — placeholder continuation
+   PANEL 4 — "CHAPTER II": selected work list + hover-swapped preview
+   PANEL 6 — "CHAPTER IV": same layout/mechanic, different content —
+   shared classes below (ch2__ / ch4__ prefixes only differ where the
+   content itself genuinely differs)
    ============================================================ */
-.panel--next { display: flex; align-items: center; justify-content: center; }
-.panel__soon {
+.panel--ch2,
+.panel--ch4 {
+  position: relative;
+}
+
+.ch2__list-wrap,
+.ch4__list-wrap {
+  position: absolute;
+  top: clamp(90px, 13vh, 150px);
+  right: var(--edge);
+  text-align: right;
+  max-width: clamp(260px, 40vw, 560px);
+}
+.ch2__list,
+.ch4__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ch2__item,
+.ch4__item {
+  /* left-justified: every item starts flush at the same left edge,
+     regardless of how long its own text runs (the box itself still sits
+     against the panel's right edge via the wrap above) */
+  text-align: left;
+  padding: clamp(10px, 1.6vh, 18px) 0;
+  border-bottom: 1px solid rgba(46, 43, 42, 0.15);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 3.8vw, 58px);
+  line-height: 1.05;
+  /* solid/bright by default — hovering the list dims every item except
+     the one under the cursor (rules below), rather than the other way
+     round */
+  color: var(--work-text);
+  cursor: default;
+  transition: color 0.3s ease;
+}
+.ch2__item:last-child,
+.ch4__item:last-child {
+  border-bottom: none;
+}
+.ch2__list:hover .ch2__item:not(:hover),
+.ch4__list:hover .ch4__item:not(:hover) {
+  color: rgba(46, 43, 42, 0.32);
+}
+
+.ch2__preview-wrap,
+.ch4__preview-wrap {
+  position: absolute;
+  left: var(--gutter-left);
+  bottom: var(--edge);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ch2__preview-stack,
+.ch4__preview-stack {
+  position: relative;
+  width: clamp(160px, 19vw, 260px);
+  aspect-ratio: 3 / 4;
+  border-radius: 2px;
+  overflow: hidden;
+}
+/* one of these sits behind each list, all stacked in the same box.
+   .is-active marks the one currently "at rest" (visible, unanimated) —
+   only ever true for exactly one at a time. Every rise/exit transition
+   between them is played by .is-rising (see the shared curtain-reveal
+   keyframes below), triggered from main.ts, not by this class. */
+.preview-ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  text-align: center;
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(24px, 4vw, 44px);
-  opacity: 0.7;
+  font-size: clamp(13px, 1.3vw, 17px);
+  color: rgba(46, 43, 42, 0.55);
+  /* hidden below the box at rest; only .is-active (unanimated) or a
+     running .is-rising animation ever move it into view */
+  transform: translateY(100%);
+}
+.preview-ph.is-active { transform: translateY(0); }
+/* placeholder tones — simple tinted cards standing in for real project
+   imagery, swappable for <img> later without touching the swap mechanic */
+.preview-ph[data-tone="a"] { background: #EFE9DD; }
+.preview-ph[data-tone="b"] { background: #E7E2E8; }
+.preview-ph[data-tone="c"] { background: #E3E8E3; }
+.preview-ph[data-tone="d"] { background: #EDE4E0; }
+
+/* ---- shared "rising curtain" reveal ----
+   Used by both this preview box and "CHAPTER III"'s column backgrounds
+   (below). Rises up from below into full view, holds there, then keeps
+   rising off the top — always forward, never reversing, so leaving before
+   it finishes just lets it keep going rather than snapping back down.
+   main.ts (triggerRise) removes+re-adds this class to restart it fresh
+   on every new hover. */
+@keyframes lv5-curtain-rise {
+  0% { transform: translateY(100%); }
+  30% { transform: translateY(0%); }
+  70% { transform: translateY(0%); }
+  100% { transform: translateY(-100%); }
+}
+.is-rising {
+  animation: lv5-curtain-rise 2.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ch2__caption,
+.ch4__caption {
+  margin: 0;
+  max-width: 26ch;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(46, 43, 42, 0.55);
+}
+
+/* ============================================================
+   PANEL 5 — "CHAPTER III": a static left region (heading + intro line,
+   holds steady like "CHAPTER I"'s left side) beside four numbered
+   discipline columns whose background reveals on hover — cursor-driven
+   (main.ts), not tied to scroll.
+   ============================================================ */
+.panel--ch3 {
+  display: flex;
+  height: 100%;
+}
+.panel--ch3 .panel__chapter {
+  /* the light-panel maroon doesn't read well against this dark
+     background — the same warm accent used for the quote/numerals does */
+  position: static;
+  color: var(--accent);
+}
+
+.ch3__static {
+  flex: 0 0 35%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  /* "CHAPTER III" (now a normal flex child, not absolutely positioned)
+     stays pinned at the top while the intro line sits at the bottom —
+     space-between distributes the height between exactly those two */
+  justify-content: space-between;
+  gap: 18px;
+  padding: var(--edge) clamp(24px, 3vw, 48px) var(--edge) var(--gutter-left);
+}
+.ch3__intro {
+  margin: 0;
+  max-width: 30ch;
+  font-family: var(--font-body);
+  font-size: clamp(14px, 1.3vw, 17px);
+  line-height: 1.6;
+  opacity: 0.75;
+}
+
+.ch3__divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  background: rgba(243, 238, 232, 0.15);
+}
+
+.ch3__columns {
+  flex: 1 1 auto;
+  display: flex;
+  height: 100%;
+}
+.ch3__col {
+  position: relative;
+  /* min-width:0 overrides flexbox's default min-width:auto, which would
+     otherwise size each column to fit its longest unbroken word (e.g.
+     "Development") rather than the 25% share below — on a narrow viewport
+     that forced the column wider than its share and pushed it over the
+     line into its neighbour instead of wrapping. */
+  flex: 1 1 25%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(14px, 1.6vw, 28px);
+  border-left: 1px solid rgba(243, 238, 232, 0.12);
+  overflow: hidden;
+  text-align: center;
+}
+.ch3__col:first-child { border-left: none; }
+
+.ch3__col-bg {
+  position: absolute;
+  inset: 0;
+  /* hidden below the column at rest — only a running .is-rising animation
+     (triggered on hover, main.ts) ever brings it into view */
+  transform: translateY(100%);
+  will-change: transform;
+}
+/* each discipline's placeholder "image" — a tinted gradient standing in
+   for a real photo, still clearly within the dark palette so the text
+   above stays legible whether or not it's revealed */
+.ch3__col-bg[data-tone="a"] { background: linear-gradient(180deg, #4A4038, var(--bg-dark) 75%); }
+.ch3__col-bg[data-tone="b"] { background: linear-gradient(180deg, #3A4548, var(--bg-dark) 75%); }
+.ch3__col-bg[data-tone="c"] { background: linear-gradient(180deg, #453A45, var(--bg-dark) 75%); }
+.ch3__col-bg[data-tone="d"] { background: linear-gradient(180deg, #3A4238, var(--bg-dark) 75%); }
+
+.ch3__col-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  /* NOT align-items:center — that makes children shrink-to-fit their own
+     content instead of taking a definite width, and overflow-wrap only
+     forces a mid-word break once a box already has a definite width to
+     wrap within (a shrink-to-fit box just grows to fit the whole
+     unbroken word instead, e.g. "Development" overflowing past the
+     column's edge). Stretching (the default) gives every child the
+     column's actual width to wrap inside, and text-align centers the
+     text within that width instead. */
+  gap: 14px;
+  text-align: center;
+  /* same min-width:0 fix as .ch3__col itself — this is ALSO a flex item
+     (of .ch3__col, a row container) and without it won't shrink below its
+     widest unbroken word ("Development"), overflowing past the column's
+     edge instead of wrapping/breaking within it */
+  min-width: 0;
+  max-width: 100%;
+}
+.ch3__num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(32px, 3.2vw, 52px);
+  line-height: 1;
+  color: var(--accent);
+}
+.ch3__title {
+  /* width:100% (not auto) is the key part: a flex item with auto cross-
+     axis margins and an auto width resolves to shrink-to-fit sizing —
+     which is exactly what let this overflow past the column's edge
+     instead of wrapping, since overflow-wrap only forces a mid-word
+     break once a box already has a definite width to wrap within.
+     width:100% gives it that definite size (the column's own width,
+     minus its padding) up front; max-width then still clips it down
+     narrower on wide desktop columns, with the auto margins centering
+     whatever's left over. */
+  width: 100%;
+  max-width: 16ch;
+  margin: 0 auto;
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(15px, 1.5vw, 22px);
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+
+/* ============================================================
+   PANEL 7 — "NEXT CHAPTER": closing / contact
+   ============================================================ */
+.panel--next {
+  display: flex;
+  align-items: center;
+}
+
+.next__socials {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  display: flex;
+  gap: clamp(16px, 2vw, 28px);
+}
+.next__socials a {
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--text-warm);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
+.next__socials a:hover { opacity: 1; }
+
+.next__center { margin-left: var(--gutter-left); }
+.next__heading {
+  margin: 0 0 clamp(24px, 4vh, 48px);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(48px, 11vw, 170px);
+  line-height: 0.94;
+  letter-spacing: -0.01em;
+}
+.next__heading span { display: block; }
+
+.next__contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+/* the shared .panel__label defaults to right-aligned (built for the
+   right-side chapter lists) — left-aligned here since it isn't paired
+   with anything to its left */
+.next__contact .panel__label { text-align: left; }
+.next__email {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2.2vw, 30px);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.next__signoff {
+  position: absolute;
+  right: var(--edge);
+  bottom: var(--edge);
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  opacity: 0.5;
 }
 
 /* ============================================================
@@ -506,4 +829,25 @@ body.lv5 img { max-width: 100%; display: block; }
      clear of the sidebar */
   .panel__status { left: var(--gutter-left); bottom: calc(var(--edge) + 40px); }
   .panel__scroll { right: var(--edge); bottom: var(--edge); }
+
+  /* the static region + 4 columns side by side has no room to breathe at
+     phone width — stack the static region above the columns instead (the
+     column-flex .ch3__divider becomes a horizontal rule automatically,
+     same flex:0 0 1px rule, just along the other axis) */
+  .panel--ch3 { flex-direction: column; }
+  .ch3__static {
+    flex: 0 0 auto;
+    padding: 84px var(--edge) 20px var(--gutter-left);
+  }
+  .ch3__intro { max-width: 100%; }
+  /* on desktop the columns row only ever starts after the static region's
+     35% share, which already clears the sidebar — stacked here, this row
+     starts at x=0 instead, putting column 1 directly under the sidebar
+     unless it gets the same gutter clearance the static region above it
+     has (on the row itself, not stolen from column 1's own share, same
+     reasoning as everywhere else this pattern shows up) */
+  .ch3__columns { flex: 1 1 auto; padding-left: var(--gutter-left); }
+  .ch3__col { padding: 0 10px; }
+  .ch3__num { font-size: 32px; }
+  .ch3__title { font-size: 14px; }
 }

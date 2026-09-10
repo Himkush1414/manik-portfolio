@@ -4,9 +4,10 @@
 // page vertically — it accumulates 1:1 into a single virtual position that
 // is only eased for fluidity (a per-frame lerp toward that position, no
 // snapping to panel boundaries), then mapped to horizontal panel motion.
-// The "THE WORK" panel reserves a slice of that virtual range where the
-// mapping pins the track and drives a local split/grow animation instead of
-// advancing to the next panel.
+// One panel reserves a slice of that virtual range where the mapping pins
+// the track and drives a local sub-animation instead of advancing to the
+// next panel: "THE WORK" (split/grow). "CHAPTER III"'s column reveal is
+// cursor-driven, not scroll-driven — see the curtain-reveal section below.
 
 const about = document.getElementById('about') as HTMLElement;
 const track = document.getElementById('track') as HTMLElement;
@@ -32,11 +33,12 @@ window.addEventListener('resize', updateWorkBoxCenter);
 // ---------------------------------------------------------------
 // Horizontal scroll-jacking
 // ---------------------------------------------------------------
-// Virtual scroll units: 2 full-viewport slides (intro->about,
-// about->work) + a reserved SPECIAL_RANGE where the track stays put
-// while the work panel's own split/grow animation plays + 1 more
-// full-viewport slide (work->next).
-const SPECIAL_RANGE = 2600;
+// Track order: intro(0), about/"CHAPTER I"(1), "THE WORK"(2, pinned),
+// "CHAPTER II"(3), "CHAPTER III"(4), "CHAPTER IV"(5), "NEXT CHAPTER"(6) —
+// 7 panels, one of which ("THE WORK") reserves a slice of the virtual
+// scroll range where the track pins in place and a local progress value
+// drives its split/grow sub-animation instead of advancing.
+const WORK_RANGE = 2600;
 const EASE = 0.16;
 const SETTLE_EPSILON = 0.04;
 
@@ -60,8 +62,20 @@ function viewportHeight() {
   return document.documentElement.clientHeight;
 }
 
+// Cumulative virtual-scroll thresholds. B2 is where "THE WORK" reaches rest
+// (and its pin begins); B3 is where that pin ends. Beyond B3, the remaining
+// four panels ("CHAPTER II/III/IV", "NEXT CHAPTER") slide by normally, one
+// panel-width of scroll each, ending at maxScroll.
+function thresholds() {
+  const vw = viewportWidth();
+  const B2 = vw * 2;
+  const B3 = B2 + WORK_RANGE;
+  const max = B3 + vw * 4;
+  return { vw, B2, B3, max };
+}
+
 function maxScroll() {
-  return viewportWidth() * 3 + SPECIAL_RANGE;
+  return thresholds().max;
 }
 
 function clampTarget() {
@@ -79,10 +93,9 @@ function easeInOutCubic(t: number) {
 // currently scrolled under it, blended smoothly (not switched) as
 // each panel boundary passes.
 // ---------------------------------------------------------------
-// Panel backgrounds in track order: 1 dark, 2 light, 3 light, 4 dark — so
-// only two boundaries ever actually change the colour (panel 1->2 and
-// panel 3->4); the 2->3 boundary is light->light and produces no visible
-// shift, which the a-minus-b blend below falls out of naturally.
+// Panel backgrounds in track order: intro dark, about/work/ch2 light,
+// ch3 dark, ch4 light, next dark. 0 = dark, 1 = light per panel index.
+const PANEL_MIX = [0, 1, 1, 1, 0, 1, 0];
 const SIDEBAR_DARK_BG = [0x21, 0x1e, 0x1b]; // #211E1B, the strip's existing dark tone, over dark panels
 const SIDEBAR_LIGHT_BG = [0xfa, 0xf9, 0xf6]; // --work-bg, over light panels
 const SIDEBAR_DARK_FG = [243, 238, 232]; // --text-warm, used over dark panels
@@ -102,31 +115,39 @@ function updateSidebarColor(x: number, vw: number) {
   // where the incoming panel finishes settling to fill the whole screen —
   // so the blend ramps UP TO the boundary and is fully switched by the time
   // it's reached (not still blending past it), matching what's actually
-  // sliding into view under the sidebar as the scroll approaches that point.
+  // sliding into view under the sidebar as the scroll approaches that
+  // point. Generalised over however many panels PANEL_MIX lists (adjacent
+  // same-colour boundaries just produce a zero-length blend, same as
+  // before) rather than hardcoding two specific boundaries.
+  const lastIndex = PANEL_MIX.length - 1;
   const width = vw * 0.22;
-  const a = clamp01((x - (vw - width)) / width); // ramps 0->1 approaching x=vw (panel1->2)
-  const b = clamp01((x - (3 * vw - width)) / width); // ramps 0->1 approaching x=3vw (panel3->4)
-  const mix = a - b; // 0 = dark panel behind sidebar, 1 = light panel behind sidebar
+  const xc = Math.max(0, Math.min(x, lastIndex * vw));
+  const k = Math.min(lastIndex, Math.max(1, Math.ceil(xc / vw)));
+  const from = PANEL_MIX[k - 1];
+  const to = PANEL_MIX[k];
+  const t = clamp01((xc - (k * vw - width)) / width);
+  const mix = from + (to - from) * t; // 0 = dark panel behind sidebar, 1 = light panel behind sidebar
   sidebar.style.setProperty('--sidebar-bg', mixRgb(SIDEBAR_DARK_BG, SIDEBAR_LIGHT_BG, mix));
   sidebar.style.setProperty('--sidebar-fg', mixRgb(SIDEBAR_DARK_FG, SIDEBAR_LIGHT_FG, mix));
 }
 
 function applyState(p: number) {
-  const vw = viewportWidth();
+  const { vw, B2, B3 } = thresholds();
   const vh = viewportHeight();
-  const B2 = vw * 2;
-  const B3 = B2 + SPECIAL_RANGE;
 
   let trackX: number;
   let workT: number;
 
   if (p <= B2) {
+    // intro -> about -> work, sliding normally up to work's rest position
     trackX = -p;
     workT = 0;
   } else if (p <= B3) {
+    // pinned on "THE WORK": track holds at work's rest position (x=2vw)
     trackX = -B2;
-    workT = (p - B2) / SPECIAL_RANGE;
+    workT = (p - B2) / WORK_RANGE;
   } else {
+    // work -> ch2 -> ch3 -> ch4 -> next, sliding normally to the end
     trackX = -(B2 + (p - B3));
     workT = 1;
   }
@@ -223,6 +244,60 @@ window.addEventListener('keydown', e => {
 });
 
 window.addEventListener('resize', clampTarget);
+
+// ---------------------------------------------------------------
+// "Rising curtain" reveal — shared by "CHAPTER II"/"CHAPTER IV"'s hover
+// preview and "CHAPTER III"'s per-column background. Triggering it (element
+// starts hidden below, off) restarts the .is-rising CSS animation (see
+// lv5.css: rises into view, holds, then continues rising off the TOP —
+// it never reverses back down, even if the cursor leaves mid-animation,
+// since nothing here ever removes the class on its own; only a fresh
+// trigger restarts it, forcing the animation from its beginning again).
+// ---------------------------------------------------------------
+function triggerRise(el: HTMLElement) {
+  el.classList.remove('is-rising');
+  void el.offsetWidth; // force reflow so re-adding the class restarts the animation
+  el.classList.add('is-rising');
+}
+
+// "CHAPTER II" / "CHAPTER IV": a list of items paired with a single preview
+// box that shows whichever item's image the cursor is currently over,
+// defaulting to the first item (already sitting at rest, unanimated) so the
+// box is never empty. Switching hover targets rises the new image in while
+// the old one keeps rising and exits — both play independently.
+function wireHoverPreview(listSelector: string, stackSelector: string) {
+  const list = document.querySelector(listSelector);
+  const stack = document.querySelector(stackSelector);
+  if (!list || !stack) return;
+  let activeKey = stack.querySelector<HTMLElement>('[data-key].is-active')?.dataset.key ?? null;
+  list.querySelectorAll<HTMLElement>('[data-key]').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      const key = item.dataset.key;
+      if (!key || key === activeKey) return;
+      const prev = activeKey ? stack.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null;
+      const next = stack.querySelector<HTMLElement>(`[data-key="${key}"]`);
+      if (prev) {
+        prev.classList.remove('is-active');
+        triggerRise(prev);
+      }
+      if (next) {
+        next.classList.add('is-active');
+        triggerRise(next);
+      }
+      activeKey = key;
+    });
+  });
+}
+wireHoverPreview('.ch2__list', '.ch2__preview-stack');
+wireHoverPreview('.ch4__list', '.ch4__preview-stack');
+
+// "CHAPTER III": each column reveals its own background independently on
+// hover — cursor-driven, not tied to scroll position at all.
+document.querySelectorAll<HTMLElement>('.ch3__col').forEach(col => {
+  const bg = col.querySelector<HTMLElement>('.ch3__col-bg');
+  if (!bg) return;
+  col.addEventListener('mouseenter', () => triggerRise(bg));
+});
 
 // ---------------------------------------------------------------
 // Live local-time readout (bottom-left of panel 1)

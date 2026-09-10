@@ -117,9 +117,122 @@
       <div class="work__word work__word--work" id="word-work">WORK</div>
     </section>
 
-    <!-- PANEL 4 — placeholder continuation -->
-    <section class="panel panel--next" aria-label="More">
-      <p class="panel__soon">More to come.</p>
+    <!-- PANEL 4 — "CHAPTER II": selected work list + hover-swapped preview -->
+    <section class="panel panel--ch2" aria-label="Selected Work">
+      <span class="panel__chapter">CHAPTER II</span>
+
+      <div class="ch2__list-wrap">
+        <span class="panel__label">Selected Work</span>
+        <ul class="ch2__list">
+          <li class="ch2__item" data-key="websites">Web Pages</li>
+          <li class="ch2__item" data-key="os">OS Systems</li>
+          <li class="ch2__item" data-key="frontend">Front-End Design</li>
+          <li class="ch2__item" data-key="games">Games</li>
+        </ul>
+      </div>
+
+      <div class="ch2__preview-wrap">
+        <div class="ch2__preview-stack">
+          <div class="preview-ph is-active" data-key="websites" data-tone="a"><span>Web Pages</span></div>
+          <div class="preview-ph" data-key="os" data-tone="b"><span>OS Systems</span></div>
+          <div class="preview-ph" data-key="frontend" data-tone="c"><span>Front-End Design</span></div>
+          <div class="preview-ph" data-key="games" data-tone="d"><span>Games</span></div>
+        </div>
+        <p class="ch2__caption">Work spanning products, interfaces, and systems.</p>
+      </div>
+
+      <a href="#" class="panel__more">
+        <span>View All Work</span>
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </section>
+
+    <!-- PANEL 5 — "CHAPTER III": numbered disciplines, hover-revealed backgrounds -->
+    <section class="panel panel--ch3" aria-label="Disciplines">
+      <div class="ch3__static">
+        <span class="panel__chapter">CHAPTER III</span>
+        <p class="ch3__intro">Designing digital experiences with clarity, structure, and intention.</p>
+      </div>
+
+      <div class="ch3__divider" aria-hidden="true"></div>
+
+      <div class="ch3__columns">
+        <div class="ch3__col">
+          <div class="ch3__col-bg" data-tone="a"></div>
+          <div class="ch3__col-content">
+            <span class="ch3__num">01</span>
+            <h3 class="ch3__title">Product Design</h3>
+          </div>
+        </div>
+        <div class="ch3__col">
+          <div class="ch3__col-bg" data-tone="b"></div>
+          <div class="ch3__col-content">
+            <span class="ch3__num">02</span>
+            <h3 class="ch3__title">Digital Experiences</h3>
+          </div>
+        </div>
+        <div class="ch3__col">
+          <div class="ch3__col-bg" data-tone="c"></div>
+          <div class="ch3__col-content">
+            <span class="ch3__num">03</span>
+            <h3 class="ch3__title">Visual Design</h3>
+          </div>
+        </div>
+        <div class="ch3__col">
+          <div class="ch3__col-bg" data-tone="d"></div>
+          <div class="ch3__col-content">
+            <span class="ch3__num">04</span>
+            <h3 class="ch3__title">Development</h3>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 6 — "CHAPTER IV": hover-highlight experience list + reference image -->
+    <section class="panel panel--ch4" aria-label="Selected Experiences">
+      <span class="panel__chapter">CHAPTER IV</span>
+
+      <div class="ch4__list-wrap">
+        <span class="panel__label">Selected Experiences</span>
+        <ul class="ch4__list">
+          <li class="ch4__item" data-key="one">Project One</li>
+          <li class="ch4__item" data-key="two">Project Two</li>
+          <li class="ch4__item" data-key="three">Project Three</li>
+          <li class="ch4__item" data-key="more">And More</li>
+        </ul>
+      </div>
+
+      <div class="ch4__preview-wrap">
+        <div class="ch4__preview-stack">
+          <div class="preview-ph is-active" data-key="one" data-tone="a"><span>Project One</span></div>
+          <div class="preview-ph" data-key="two" data-tone="b"><span>Project Two</span></div>
+          <div class="preview-ph" data-key="three" data-tone="c"><span>Project Three</span></div>
+          <div class="preview-ph" data-key="more" data-tone="d"><span>And More</span></div>
+        </div>
+        <p class="ch4__caption">Work spanning interfaces, tools, and small experiments.</p>
+      </div>
+    </section>
+
+    <!-- PANEL 7 — "NEXT CHAPTER": closing / contact -->
+    <section class="panel panel--next" aria-label="Contact">
+      <div class="next__socials">
+        <a href="https://instagram.com/manikrana31" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+
+      <div class="next__center">
+        <h2 class="next__heading">
+          <span>NEXT</span>
+          <span>CHAPTER</span>
+        </h2>
+        <div class="next__contact">
+          <span class="panel__label">Contact To</span>
+          <a href="mailto:manikrana831@gmail.com" class="next__email">manikrana831@gmail.com</a>
+        </div>
+      </div>
+
+      <p class="next__signoff">Thanks for reading &mdash; more to come soon.</p>
     </section>
 
   </div>
