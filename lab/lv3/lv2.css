@@ -129,6 +129,87 @@ body.lv2 .nav__toggle svg {
 }
 body.lv2 .lv2-nav .nav__toggle { color: #16233B; border-color: rgba(38, 58, 88, 0.28); background: rgba(255, 255, 255, 0.5); }
 
+/* ============================================================
+   NAV PILLS — bespoke glass treatment for the top-right link/arrow
+   buttons, replacing styles.css's flat dark boxes (built for the
+   dark footer, where they still apply as-is) with something in this
+   page's own language: pill shapes and frosted glass matching the
+   StaggeredMenu "Menu" toggle and the returnnav's frosted ground, a
+   glossy top-lit highlight echoing the metal-text panel treatment,
+   and the same #5C87BC/#2C4A78 blue used across the hero effect,
+   the reveal panel and the StaggeredMenu accent for the arrow pill.
+   Scoped to body.lv2 .nav so only this nav's own pills change.
+   ============================================================ */
+
+/* .lv2-nav sits on the light hero background -> light glass */
+body.lv2 .lv2-nav .nav__menu .pill {
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.46));
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 10px 24px -14px rgba(20, 40, 74, 0.32);
+  color: #16233B;
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+}
+body.lv2 .lv2-nav .nav__menu .pill:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.62));
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 14px 30px -14px rgba(20, 40, 74, 0.4);
+}
+body.lv2 .lv2-nav .nav__menu .pill--icon {
+  background: linear-gradient(160deg, #4C74A8 0%, #2C4A78 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #EAF1FB;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 10px 22px -10px rgba(30, 58, 100, 0.55);
+}
+body.lv2 .lv2-nav .nav__menu .pill--icon:hover {
+  background: linear-gradient(160deg, #5C87BC 0%, #35578C 100%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 14px 28px -12px rgba(30, 58, 100, 0.65);
+}
+
+/* .lv3-returnnav slides in over its own dark frosted ground (already
+   blurred) — its pills get a lighter-touch dark-glass treatment so they
+   don't stack a second heavy blur on top of that ground. */
+body.lv2 .lv3-returnnav .nav__menu .pill {
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #EAF1FB;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+body.lv2 .lv3-returnnav .nav__menu .pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+body.lv2 .lv3-returnnav .nav__menu .pill--icon {
+  background: linear-gradient(160deg, #5C87BC 0%, #2C4A78 100%);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #EAF1FB;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
+  background: linear-gradient(160deg, #6C97CC 0%, #3A5C94 100%);
+  border-color: rgba(255, 255, 255, 0.46);
+}
+
 .lv2-cols {
   position: relative;
   z-index: 2;
@@ -562,6 +643,9 @@ body.lv2 .lv2-nav .nav__toggle { color: #16233B; border-color: rgba(38, 58, 88, 
    panel first, then the statement — so it reads top-to-bottom as one section. */
 .lv2-reveal:not(.is-pin-ready) .lv2-reveal__pin {
   height: auto;
+  min-height: 0; /* the pinned rule's min-height:100vh otherwise leaves a dead,
+                     uncovered gap below the (shorter) flex content, exposing
+                     the wrong background colour right before the footer */
   display: flex;
   flex-direction: column;
 }
@@ -572,11 +656,40 @@ body.lv2 .lv2-nav .nav__toggle { color: #16233B; border-color: rgba(38, 58, 88, 
   min-height: clamp(300px, 44vh, 460px);
   padding: clamp(52px, 10vh, 96px) clamp(20px, 5vw, 56px);
 }
+/* The stage sits directly below the panel here (no pin/slide to cover the
+   seam), so it needs its own background instead of showing the slice of the
+   pin's white->blue "desktop reveal" gradient that would otherwise land
+   there — that slice is always pale, however the two are proportioned,
+   because it's an unrelated ramp built for the fully-revealed pinned view.
+   This one picks up exactly where the panel's gradient ends (#01040A) and
+   rises to #6490C2 — the footer's *rendered* top edge (its own #5C87BC top
+   stop, lifted a little further by .hero__glow's corner bloom) — so both the
+   panel->stage and stage->footer joins land flush, not just the CSS stops. */
 .lv2-reveal:not(.is-pin-ready) .lv2-reveal__stage {
   position: relative;
   padding: clamp(46px, 9vh, 90px) clamp(24px, 6vw, 48px);
+  background-color: #01040A;
+  background-image: linear-gradient(180deg,
+    #01040A 0%,
+    #01060D 9%,
+    #020A14 18%,
+    #04101D 28%,
+    #071829 40%,
+    #0C2338 52%,
+    #163449 64%,
+    #234764 76%,
+    #335A83 87%,
+    #6490C2 100%);
 }
-.lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement { max-width: 44ch; }
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement {
+  max-width: 44ch;
+  /* dark navy (the desktop colour) would be unreadable on the dark backdrop
+     above — pale metallic, echoing the panel's own paneltext treatment */
+  color: #E7EEF6;
+}
+/* words start dim (see .w below) and light up on scroll — same mechanic as
+   desktop, driven by main.tsx. This is only the no-JS / reduced-motion
+   fallback: JS sets an inline opacity that overrides it whenever it runs. */
 .lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement .w { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
