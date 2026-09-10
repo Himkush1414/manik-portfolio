@@ -12,7 +12,7 @@ import './lv2.css';
 import './lab/lv1/lab.css';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
-console.log('%croot build 2026-09-09 (synced from lab/lv3)', 'color:#8fb8ea;font-weight:600');
+console.log('%croot build 2026-09-10 (synced from lab/lv4)', 'color:#8fb8ea;font-weight:600');
 
 // Clear any stray service worker / caches on localhost:5173 that could pin a
 // stale page at the bare URL (the "?query works, plain doesn't" symptom).
@@ -176,7 +176,8 @@ if (stack && stackRows.length === 3) {
 // word by word, timed to scroll position.
 const reveal = document.querySelector<HTMLElement>('.lv2-reveal');
 const revealPanel = document.querySelector<HTMLElement>('.lv2-reveal__panel');
-if (reveal && revealPanel) {
+const revealStage = document.querySelector<HTMLElement>('.lv2-reveal__stage');
+if (reveal && revealPanel && revealStage) {
   // split each statement line into per-character spans so the reveal scrubs
   // letter by letter (was per-word, which stepped chunkily)
   const words: HTMLElement[] = [];
@@ -200,38 +201,55 @@ if (reveal && revealPanel) {
     return t * t * (3 - 2 * t);
   };
 
-  let tickingR = false;
-  const applyR = () => {
-    tickingR = false;
-    if (!reveal.classList.contains('is-pin-ready')) return;
-
-    const rect = reveal.getBoundingClientRect();
-    const spanH = reveal.offsetHeight - window.innerHeight;
-    let p: number;
-    if (rect.top >= 0 || spanH <= 0) {
-      p = 0;
-      reveal.classList.remove('is-pinned', 'is-past');
-    } else if (-rect.top >= spanH) {
-      p = 1;
-      reveal.classList.remove('is-pinned');
-      reveal.classList.add('is-past');
-    } else {
-      p = -rect.top / spanH;
-      reveal.classList.add('is-pinned');
-      reveal.classList.remove('is-past');
-    }
-
-    // panel clears the top first...
-    revealPanel.style.setProperty('--slide', ssR(0.04, 0.5, p).toFixed(4));
-    // ...then the statement finishes filling in, then it dwells before release
-    const rp = Math.min(Math.max((p - 0.12) / 0.58, 0), 1);
+  // ~2 letters ease in together (SPREAD) so the scrub feels fluid, not steppy
+  // — shared by both the pinned (desktop) and flow (mobile) reveal below.
+  const SPREAD = 2.2;
+  const lightWords = (rp: number) => {
     const n = words.length;
-    // ~2 letters ease in together (SPREAD) so the scrub feels fluid, not steppy
-    const SPREAD = 2.2;
     const denom = n - 1 + SPREAD;
     for (let i = 0; i < n; i++) {
       const wp = Math.min(Math.max((rp * denom - i) / SPREAD, 0), 1);
       words[i].style.opacity = (0.1 + 0.9 * (wp * wp * (3 - 2 * wp))).toFixed(3);
+    }
+  };
+
+  let tickingR = false;
+  const applyR = () => {
+    tickingR = false;
+    if (reveal.classList.contains('is-pin-ready')) {
+      const rect = reveal.getBoundingClientRect();
+      const spanH = reveal.offsetHeight - window.innerHeight;
+      let p: number;
+      if (rect.top >= 0 || spanH <= 0) {
+        p = 0;
+        reveal.classList.remove('is-pinned', 'is-past');
+      } else if (-rect.top >= spanH) {
+        p = 1;
+        reveal.classList.remove('is-pinned');
+        reveal.classList.add('is-past');
+      } else {
+        p = -rect.top / spanH;
+        reveal.classList.add('is-pinned');
+        reveal.classList.remove('is-past');
+      }
+
+      // panel clears the top first...
+      revealPanel.style.setProperty('--slide', ssR(0.04, 0.5, p).toFixed(4));
+      // ...then the statement finishes filling in, then it dwells before release
+      lightWords(Math.min(Math.max((p - 0.12) / 0.58, 0), 1));
+    } else if (!reduceR) {
+      // Mobile / short-viewport: the section isn't pinned, so there is no
+      // scroll-jacked scrub to time this to. Instead, key it to the
+      // statement's own natural scroll position — dim as it enters from the
+      // bottom of the screen, fully lit by the time it nears the top — the
+      // same word-by-word easing as the pinned version above, just driven by
+      // ordinary document scroll instead of a scrubbed pin range.
+      const stageRect = revealStage.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const startY = vh * 0.92;
+      const endY = vh * 0.24;
+      const p = Math.min(Math.max((startY - stageRect.top) / (startY - endY), 0), 1);
+      lightWords(p);
     }
   };
   const onScrollR = () => {
@@ -243,12 +261,12 @@ if (reveal && revealPanel) {
   const syncR = () => {
     if (canPinR()) {
       reveal.classList.add('is-pin-ready');
-      applyR();
     } else {
       reveal.classList.remove('is-pin-ready', 'is-pinned', 'is-past');
       revealPanel.style.setProperty('--slide', '0');
-      words.forEach(w => (w.style.opacity = '1'));
+      if (reduceR) words.forEach(w => (w.style.opacity = '1'));
     }
+    applyR();
   };
   syncR();
   window.addEventListener('scroll', onScrollR, { passive: true });
