@@ -1,0 +1,1123 @@
+/* ============================================================
+   /lab/lv2 — two stacked sections on one continuous page.
+
+   §1 HERO   left (marker/headline/text), middle (ShapeBlur box
+             only), right (three numbered sections).
+   §2 STACK  scroll-pinned: two-line headline + three rows whose
+             text fades pale -> dark as the row comes into focus,
+             with a scroll-driven InfiniteSpiral on the right.
+
+   Reuses the shared primitives from styles.css (font, --vars,
+   .nav / .pill). Everything else is scoped to body.lv2 so it
+   can't affect the homepage or /lab/lv1.
+   ============================================================ */
+
+@property --act {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+body.lv2 {
+  /* only visible on overscroll — real content sits on opaque section
+     backgrounds. Pale at the top (behind the hero), deep blue at the
+     bottom (behind the end of the stack) so neither rubber-band edge
+     flashes a wrong colour. */
+  background: linear-gradient(180deg, #E7EEF6 0%, #E9EFF6 34%, #6E9BD6 84%, #3E6FBB 100%);
+  color: #3A3A3D;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   §1  HERO
+   ============================================================ */
+.lv2-hero {
+  position: relative;
+  min-height: 100vh;
+  /* the section's own continuous gradient — ends at #F7F8FA, which is
+     exactly where the stack section's gradient begins (no seam). */
+  background: linear-gradient(180deg, #E7EEF6 0%, #EDF1F6 26%, #F3F5F8 58%, #F7F8FA 100%);
+}
+
+/* soft, misty ocean-blue light across the top strip */
+.lv2-tint {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 64vh;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(88% 46% at 50% -14%, rgba(174, 203, 236, 0.62) 0%, rgba(174, 203, 236, 0) 66%),
+    linear-gradient(180deg,
+      rgba(196, 218, 240, 0.82) 0%,
+      rgba(214, 229, 245, 0.44) 26%,
+      rgba(230, 238, 247, 0.14) 62%,
+      rgba(230, 238, 247, 0) 100%);
+}
+
+.lv2-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1780px;
+  margin: 0 auto;
+  padding: 18px clamp(24px, 3.2vw, 48px) clamp(36px, 5vh, 60px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- faint dashed grid ---- */
+.lv2-grid {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: clamp(24px, 3.2vw, 48px);
+  right: clamp(24px, 3.2vw, 48px);
+  pointer-events: none;
+}
+.lv2-grid span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed rgba(38, 58, 88, 0.11);
+  transform: translateX(-0.5px);
+}
+.lv2-grid span:last-child { transform: translateX(0.5px); }
+.lv2-grid__h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 70px;
+  border-top: 1px dashed rgba(38, 58, 88, 0.11);
+}
+
+.nav.lv2-nav {
+  position: relative;
+  z-index: 3;
+  padding: 14px 0 0;
+}
+
+/* hamburger — shown only on small screens (see RESPONSIVE) */
+body.lv2 .nav__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  background: var(--navy-pill-70);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+}
+body.lv2 .nav__toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+body.lv2 .lv2-nav .nav__toggle { color: #16233B; border-color: rgba(38, 58, 88, 0.28); background: rgba(255, 255, 255, 0.5); }
+
+/* ============================================================
+   NAV PILLS — bespoke glass treatment for the top-right link/arrow
+   buttons, replacing styles.css's flat dark boxes (built for the
+   dark footer, where they still apply as-is) with something in this
+   page's own language: pill shapes and frosted glass matching the
+   StaggeredMenu "Menu" toggle and the returnnav's frosted ground, a
+   glossy top-lit highlight echoing the metal-text panel treatment,
+   and the same #5C87BC/#2C4A78 blue used across the hero effect,
+   the reveal panel and the StaggeredMenu accent for the arrow pill.
+   Scoped to body.lv2 .nav so only this nav's own pills change.
+   ============================================================ */
+
+/* .lv2-nav sits on the light hero background -> light glass */
+body.lv2 .lv2-nav .nav__menu .pill {
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.46));
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 10px 24px -14px rgba(20, 40, 74, 0.32);
+  color: #16233B;
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+}
+body.lv2 .lv2-nav .nav__menu .pill:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.62));
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 14px 30px -14px rgba(20, 40, 74, 0.4);
+}
+body.lv2 .lv2-nav .nav__menu .pill--icon {
+  background: linear-gradient(160deg, #4C74A8 0%, #2C4A78 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #EAF1FB;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 10px 22px -10px rgba(30, 58, 100, 0.55);
+}
+body.lv2 .lv2-nav .nav__menu .pill--icon:hover {
+  background: linear-gradient(160deg, #5C87BC 0%, #35578C 100%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 14px 28px -12px rgba(30, 58, 100, 0.65);
+}
+
+/* .lv3-returnnav slides in over its own dark frosted ground (already
+   blurred) — its pills get a lighter-touch dark-glass treatment so they
+   don't stack a second heavy blur on top of that ground. */
+body.lv2 .lv3-returnnav .nav__menu .pill {
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #EAF1FB;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+body.lv2 .lv3-returnnav .nav__menu .pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+body.lv2 .lv3-returnnav .nav__menu .pill--icon {
+  background: linear-gradient(160deg, #5C87BC 0%, #2C4A78 100%);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #EAF1FB;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
+  background: linear-gradient(160deg, #6C97CC 0%, #3A5C94 100%);
+  border-color: rgba(255, 255, 255, 0.46);
+}
+
+.lv2-cols {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 0.92fr 1.3fr 0.92fr;
+  align-items: stretch;
+}
+.lv2-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- LEFT ---- */
+.lv2-col--left {
+  padding: 15vh clamp(24px, 2.6vw, 44px) 6vh 0;
+}
+.lv2-marker {
+  width: 6px;
+  height: 6px;
+  margin-bottom: 26px;
+  background: rgba(58, 58, 61, 0.5);
+}
+.lv2-headline {
+  margin: 0;
+  font-size: clamp(42px, 4.6vw, 64px);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #3A3A3D;
+}
+.lv2-lead {
+  margin: auto 0 0;
+  max-width: 33ch;
+  font-size: 13.5px;
+  line-height: 1.74;
+  color: #8A8D94;
+}
+
+/* ---- MIDDLE (effect box only) ---- */
+.lv2-col--mid {
+  padding: 12vh clamp(8px, 1vw, 16px) 0;
+  align-items: stretch;
+}
+.lv2-effect {
+  position: relative;
+  align-self: flex-start;
+  width: 100%;
+  /* lv4 only: height derives from the box's own (already-responsive) width
+     via aspect-ratio instead of an independently vh-clamped value, so it
+     scales continuously with the screen ratio — no breakpoint gap where
+     width has already narrowed but height hasn't caught up yet, which is
+     what let the box sit oversized/disproportionate at in-between sizes.
+     max-height keeps the old ceiling for tall desktop viewports. */
+  aspect-ratio: 1 / 1;
+  max-height: min(80vh, 920px);
+  border-radius: 4px;
+  overflow: hidden;
+  background: linear-gradient(178deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
+}
+.lv2-effect__mount {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.lv2-effect__mount > div { width: 100%; height: 100%; }
+.lv2-effect__mount canvas { display: block; }
+.lv2-effect__logo {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* ---- RIGHT (three numbered sections) ---- */
+.lv2-col--right {
+  padding: 13vh 0 6vh clamp(24px, 2.6vw, 44px);
+}
+.lv2-item {
+  flex: 1;
+  display: block;
+  position: relative;
+  padding: 24px clamp(96px, 11vw, 168px) 24px 0;
+  border-top: 1px dashed rgba(38, 58, 88, 0.13);
+}
+.lv2-item:last-child { border-bottom: 1px dashed rgba(38, 58, 88, 0.13); }
+.lv2-item__no {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #757982;
+}
+.lv2-item__no i {
+  width: 6px;
+  height: 6px;
+  background: #3A3A3D;
+  display: block;
+}
+.lv2-item__title {
+  margin: 14px 0 6px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: #34343A;
+}
+.lv2-item__sub {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #8A8D94;
+}
+.lv2-item__deco {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(104px, 10.5vw, 176px);
+  height: auto;
+  fill: none;
+  stroke: rgba(48, 70, 102, 0.16);
+  stroke-width: 1;
+  stroke-dasharray: 1.4 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lv2-item:hover .lv2-item__title { color: #1F2A3D; }
+.lv2-item:hover .lv2-item__deco { stroke: rgba(48, 70, 102, 0.3); }
+
+/* ============================================================
+   §2  STACK  — scroll-pinned section
+   ============================================================ */
+.lv2-stack {
+  position: relative;
+  z-index: 1;
+}
+
+.lv2-stack__pin {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  /* continuous vertical gradient: starts on #F7F8FA (== the hero's
+     bottom colour, so the join is invisible) and deepens to a
+     saturated blue at the bottom of the section. */
+  background: linear-gradient(180deg,
+    #F7F8FA 0%,
+    #EAF1F9 13%,
+    #CFE0F2 35%,
+    #A6C6E9 56%,
+    #77A2DA 78%,
+    #3E6FBB 100%);
+}
+
+/* pinning is switched on by main.tsx once it is safe (desktop, tall
+   enough viewport, JS running). Until then the section just flows. */
+.lv2-stack.is-pin-ready {
+  height: 300vh;
+}
+.lv2-stack.is-pin-ready .lv2-stack__pin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  min-height: 0;
+}
+.lv2-stack.is-pin-ready.is-pinned .lv2-stack__pin {
+  position: fixed;
+}
+.lv2-stack.is-pin-ready.is-past .lv2-stack__pin {
+  position: absolute;
+  top: auto;
+  bottom: 0;
+}
+
+.lv2-stack__inner {
+  max-width: 1780px;
+  height: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 3.2vw, 48px);
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr;
+  column-gap: clamp(24px, 3vw, 56px);
+}
+.lv2-stack.is-pin-ready .lv2-stack__inner {
+  min-height: 0;
+}
+
+.lv2-stack__lead {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(52px, 8vh, 92px) clamp(8px, 1.5vw, 24px) clamp(44px, 7vh, 84px) 0;
+}
+.lv2-stack__title {
+  margin: 0;
+  font-size: clamp(38px, 4.3vw, 58px);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #10151D;
+}
+.lv2-stack__rule {
+  margin: clamp(22px, 3.4vh, 38px) 0 0;
+  border-top: 1px dashed rgba(26, 44, 74, 0.22);
+}
+.lv2-stack__rows {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(28px, 4vh, 56px);
+  padding-top: clamp(20px, 3.2vh, 36px);
+}
+
+.lv2-row {
+  --act: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(22px, 2.6vw, 48px);
+  align-items: start;
+  transition: --act 140ms linear;
+}
+/* not pinned (small screen / reduced motion / no JS) -> always legible */
+.lv2-stack:not(.is-pin-ready) .lv2-row { --act: 1; }
+
+.lv2-row__label {
+  grid-column: 1 / -1;
+  margin: 0 0 13px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(20, 32, 50, calc(0.24 + 0.66 * var(--act)));
+}
+.lv2-row__title {
+  margin: 0;
+  font-size: clamp(21px, 2.3vw, 30px);
+  line-height: 1.14;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: rgba(9, 18, 34, calc(0.15 + 0.83 * var(--act)));
+}
+.lv2-row__body {
+  margin: 0;
+  padding-top: 3px;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.62;
+  color: rgba(22, 34, 54, calc(0.20 + 0.70 * var(--act)));
+}
+
+.lv2-stack__media {
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: clamp(24px, 4vh, 56px) 0 clamp(20px, 3vh, 44px);
+}
+.lv2-stack__media::before {
+  content: "";
+  position: absolute;
+  inset: 4% 6% 32%;
+  background: radial-gradient(58% 48% at 56% 30%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 72%);
+  pointer-events: none;
+}
+#spiral-mount {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---- InfiniteSpiral shim (component ships Tailwind classes; this
+   project has no Tailwind, so reproduce only what it needs, keyed off
+   the roles the component sets). Cards: solid black, white logo. ---- */
+.lv2-spiral {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+.lv2-spiral [role="list"] {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.lv2-spiral [role="listitem"] {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  overflow: hidden;
+  background: #05070C;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 20px 46px rgba(6, 12, 28, 0.36);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  will-change: transform, opacity, filter;
+}
+.lv2-spiral [role="listitem"] img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 24% !important;
+  box-sizing: border-box !important;
+  object-fit: contain !important;
+  filter: none !important;
+}
+
+/* ============================================================
+   §3  REVEAL  — "Creative Design" sliding panel
+   ============================================================ */
+.lv2-reveal {
+  position: relative;
+  z-index: 1;
+}
+.lv2-reveal__pin {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  /* Continues the footer's upward lightening. The bottom edge lands on #5B85B8
+     — the *sampled* colour of the footer's rendered top edge at mid-width (not
+     the raw #5C87BC CSS stop) — then keeps getting lighter up through the
+     section to full white at the top. The ::after veil below adds the footer's
+     corner lift so the whole boundary matches, not just the centre. */
+  background-color: #FFFFFF;
+  background-image: linear-gradient(180deg,
+    #FFFFFF 0%,
+    #E9EFF7 22%,
+    #C8D9EC 44%,
+    #9DBAD9 67%,
+    #5B85B8 100%);
+}
+.lv2-reveal.is-pin-ready {
+  height: 340vh;
+}
+.lv2-reveal.is-pin-ready .lv2-reveal__pin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  min-height: 0;
+}
+.lv2-reveal.is-pin-ready.is-pinned .lv2-reveal__pin {
+  position: fixed;
+}
+.lv2-reveal.is-pin-ready.is-past .lv2-reveal__pin {
+  position: absolute;
+  top: auto;
+  bottom: 0;
+}
+
+/* the statement that reveals behind the panel */
+.lv2-reveal__stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(24px, 7vw, 150px);
+}
+.lv2-reveal__statement {
+  margin: 0;
+  max-width: 46ch;
+  font-size: clamp(23px, 3.15vw, 44px);
+  line-height: 1.34;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0C2338;
+}
+.lv2-reveal__line { display: block; }
+.lv2-reveal__statement .w {
+  opacity: 0.1;
+  transition: opacity 220ms linear;
+}
+
+/* the solid panel that slides up off the top */
+.lv2-reveal__panel {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 4vw, 72px);
+  /* blue continuing from slide 2, deepening to the deep-sea footer colour by
+     the bottom — the palette copied from slide 2 in the earlier fix */
+  background-color: #01040A;
+  background-image: linear-gradient(180deg,
+    #3E6FBB 0%,
+    #335A83 13%,
+    #234764 24%,
+    #163449 36%,
+    #0C2338 48%,
+    #071829 60%,
+    #04101D 72%,
+    #020A14 82%,
+    #01060D 91%,
+    #01040A 100%);
+  transform: translateY(calc(var(--slide, 0) * -100%));
+  will-change: transform;
+}
+/* lv4 only: the letters are cut out of a photo instead of filled with the
+   metallic gradient — same background-clip:text masking technique, just a
+   background-image instead of a background gradient. The text box is
+   stretched to the full panel (inset:0, still centred via flex) so the photo
+   is sized/positioned against the *panel*, not the tight text bbox — the
+   letters read as a window into one photo behind the whole panel rather than
+   each letter getting its own rescaled sliver of it. Because this element is
+   a child of .lv2-reveal__panel, the photo moves WITH the panel's own
+   translateY slide for free (background-attachment stays the default
+   "scroll", i.e. fixed to this element's own box, not the viewport) —
+   nothing extra needed to pin it to the panel's motion. */
+.lv2-reveal__paneltext {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(56px, 16.5vw, 300px);
+  line-height: 0.9;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  background-image: url('./creative-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Flow fallback when the section isn't pinned (small screen / reduced-motion /
+   no JS): the pin becomes a flex column with the "Creative Design" heading
+   panel first, then the statement — so it reads top-to-bottom as one section. */
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__pin {
+  height: auto;
+  min-height: 0; /* the pinned rule's min-height:100vh otherwise leaves a dead,
+                     uncovered gap below the (shorter) flex content, exposing
+                     the wrong background colour right before the footer */
+  display: flex;
+  flex-direction: column;
+}
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__panel {
+  position: relative;
+  order: -1;
+  transform: none;
+  min-height: clamp(300px, 44vh, 460px);
+  padding: clamp(52px, 10vh, 96px) clamp(20px, 5vw, 56px);
+}
+/* The stage sits directly below the panel here (no pin/slide to cover the
+   seam), so it needs its own background instead of showing the slice of the
+   pin's white->blue "desktop reveal" gradient that would otherwise land
+   there — that slice is always pale, however the two are proportioned,
+   because it's an unrelated ramp built for the fully-revealed pinned view.
+   This one picks up exactly where the panel's gradient ends (#01040A) and
+   rises to #6490C2 — the footer's *rendered* top edge (its own #5C87BC top
+   stop, lifted a little further by .hero__glow's corner bloom) — so both the
+   panel->stage and stage->footer joins land flush, not just the CSS stops. */
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__stage {
+  position: relative;
+  padding: clamp(46px, 9vh, 90px) clamp(24px, 6vw, 48px);
+  background-color: #01040A;
+  background-image: linear-gradient(180deg,
+    #01040A 0%,
+    #01060D 9%,
+    #020A14 18%,
+    #04101D 28%,
+    #071829 40%,
+    #0C2338 52%,
+    #163449 64%,
+    #234764 76%,
+    #335A83 87%,
+    #6490C2 100%);
+}
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement {
+  max-width: 44ch;
+  /* dark navy (the desktop colour) would be unreadable on the dark backdrop
+     above — pale metallic, echoing the panel's own paneltext treatment */
+  color: #E7EEF6;
+}
+/* words start dim (see .w below) and light up on scroll — same mechanic as
+   desktop, driven by main.tsx. This is only the no-JS / reduced-motion
+   fallback: JS sets an inline opacity that overrides it whenever it runs. */
+.lv2-reveal:not(.is-pin-ready) .lv2-reveal__statement .w { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lv2-reveal__statement .w { transition: none; }
+}
+
+/* ============================================================
+   §4  FOOTER — return nav
+   The nav that used to be fixed inside the footer is gone. The links + logo
+   (no bar, no panel, no backdrop — just the elements) fade + drift down into
+   place once the footer / bottom of the page is reached (main.tsx adds .is-in).
+   ============================================================ */
+body.lv2 .lv3-returnnav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  gap: 24px;
+  padding: 22px clamp(24px, 3.2vw, 48px);
+  /* transparent — no background / blur / border / shadow */
+  opacity: 0;
+  transform: translateY(-16px);
+  transition: opacity 900ms ease, transform 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+body.lv2 .lv3-returnnav.is-in {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.lv2 .lv3-returnnav {
+    transition: opacity 260ms ease;
+    transform: none;
+  }
+}
+/* the removed in-footer nav used to give the footer content ~72px of headroom
+   at the top — keep it, so the layout is unchanged and the drifting-in links
+   have clearance */
+body.lv2 #lv2-footer .hero__inner {
+  padding-top: 76px;
+}
+
+/* Footer lower content block (sign-up, nav/contact/social links, the
+   "open to new projects" line, back-to-top) rises in as ONE unit as the footer
+   enters the viewport, holds at the bottom, and sinks back on scroll-out.
+   main.tsx drives the two custom properties from scroll position; the defaults
+   leave it at rest so it's fine with JS off. The .bottom legal strip is a
+   sibling and stays static. */
+body.lv2 #lv2-footer .content {
+  transform: translateY(var(--footer-rise, 0px));
+  opacity: var(--footer-fade, 1);
+  will-change: transform, opacity;
+}
+
+/* Social links: real destinations + a brand glyph in front, sized to the
+   15px link text (icon inherits the link colour, incl. the :hover shift). */
+body.lv2 #lv2-footer .linklist--social a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+body.lv2 #lv2-footer .linklist--social a svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: currentColor;
+  transition: fill 0.16s ease;
+}
+
+/* ============================================================
+   §3 -> §4 seam: the footer's blurred .hero__glow lifts its top-left/right
+   corners, so a horizontally-flat bottom edge on .lv2-reveal stepped against
+   it at the edges. The footer's rendered top edge was sampled pixel-by-pixel
+   across the width; the ::after below reproduces that exact colour profile on
+   the section's bottom edge (mid-width handled by the #5B85B8 gradient stop,
+   the corner lift by this veil). It lives in the bottom 20vh of the 340vh
+   section, so it's off-screen during the pinned scrub — only in play where the
+   section meets the footer.
+   ============================================================ */
+body.lv2 .lv2-reveal::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20vh;
+  z-index: 0;
+  pointer-events: none;
+  /* A cool-white veil whose per-x opacity is the exact lift that turns the
+     section's #5B85B8 bottom edge into the footer's *sampled* top-edge colour
+     at that x (footer .hero__bg + blurred .hero__glow corner lift): ~0.22 at
+     the corners, ~0.35 at the glow peaks (~6% / ~94%), 0 across the middle
+     where the two already match. */
+  background: linear-gradient(90deg,
+    rgba(224, 236, 255, 0.218) 0%,
+    rgba(224, 236, 255, 0.286) 2%,
+    rgba(224, 236, 255, 0.331) 4%,
+    rgba(224, 236, 255, 0.346) 6.5%,
+    rgba(224, 236, 255, 0.293) 10%,
+    rgba(224, 236, 255, 0.211) 14%,
+    rgba(224, 236, 255, 0.128) 19%,
+    rgba(224, 236, 255, 0.053) 25%,
+    rgba(224, 236, 255, 0) 30%,
+    rgba(224, 236, 255, 0) 71%,
+    rgba(224, 236, 255, 0.030) 73%,
+    rgba(224, 236, 255, 0.083) 78%,
+    rgba(224, 236, 255, 0.143) 83%,
+    rgba(224, 236, 255, 0.211) 87.5%,
+    rgba(224, 236, 255, 0.286) 91.7%,
+    rgba(224, 236, 255, 0.301) 94%,
+    rgba(224, 236, 255, 0.256) 98%,
+    rgba(224, 236, 255, 0.203) 100%);
+  /* full strength only at the very bottom (the seam), fading out upward so it
+     blends into the section's own vertical gradient */
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 6%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, #000 6%, transparent 100%);
+}
+
+/* ============================================================
+   RESPONSIVE  —  mobile → wide desktop
+   Below ~900px (main.tsx gate) the pinned sections flow instead;
+   the rules here make that flow, plus the type and spacing, read
+   as intentionally designed at every screen size.
+   ============================================================ */
+
+/* ---- §2 stack: single column + flex rows whenever it isn't pinned ---- */
+.lv2-stack:not(.is-pin-ready) .lv2-stack__inner {
+  grid-template-columns: 1fr;
+  min-height: 0;
+  padding-top: clamp(44px, 8vh, 80px);
+  padding-bottom: clamp(52px, 9vh, 88px);
+}
+.lv2-stack:not(.is-pin-ready) .lv2-stack__lead { padding-bottom: 0; }
+.lv2-stack:not(.is-pin-ready) .lv2-stack__rows {
+  display: flex;
+  gap: clamp(26px, 4.5vh, 44px);
+  padding-bottom: clamp(28px, 5vh, 44px);
+}
+.lv2-stack:not(.is-pin-ready) .lv2-stack__media {
+  height: clamp(340px, 52vh, 520px);
+  margin-top: clamp(18px, 3vh, 30px);
+  align-self: stretch;
+}
+
+/* ---- wide (>1600): widen the frames, keep the proportions ---- */
+@media (min-width: 1600px) {
+  .lv2-shell,
+  .lv2-stack__inner { max-width: 1880px; }
+}
+
+/* ---- <=1200: ease the 3-col hero in ---- */
+@media (max-width: 1200px) {
+  .lv2-cols { grid-template-columns: 0.9fr 1.25fr 0.9fr; }
+  .lv2-col--left { padding: 12vh clamp(18px, 2.4vw, 40px) 5vh 0; }
+  .lv2-col--right { padding: 11vh 0 5vh clamp(18px, 2.4vw, 40px); }
+}
+
+/* ---- <=1080: headline over two columns, smaller effect box ---- */
+@media (max-width: 1080px) {
+  .lv2-cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    column-gap: clamp(20px, 3vw, 40px);
+    align-items: center;
+  }
+  .lv2-col--left { grid-column: 1 / -1; padding: 7vh 0 clamp(20px, 4vh, 40px); }
+  .lv2-headline { font-size: clamp(38px, 5.6vw, 56px); }
+  .lv2-lead { max-width: 60ch; margin-top: 18px; font-size: 14px; }
+  .lv2-col--mid { padding: 0; }
+  .lv2-col--right { padding: 0; justify-content: center; }
+  .lv2-grid span:nth-child(3) { display: none; }
+  .lv2-item { padding: 20px clamp(96px, 13vw, 150px) 20px 0; }
+}
+
+/* ---- <=900: single column; effect box centred, item list below ---- */
+@media (max-width: 900px) {
+  .lv2-cols { grid-template-columns: 1fr; row-gap: clamp(28px, 5vh, 46px); }
+  .lv2-col--mid,
+  .lv2-col--right { grid-column: 1 / -1; }
+  .lv2-col--left { padding: 6vh 0 2px; }
+  .lv2-effect {
+    width: 100%;
+    max-width: 540px;
+    align-self: center;
+  }
+  .lv2-col--right { padding: 0; }
+  .lv2-item { padding: 18px clamp(84px, 20vw, 140px) 18px 0; }
+  .lv2-grid { display: none; }
+
+  .lv2-stack__title { font-size: clamp(32px, 6.2vw, 50px); }
+  .lv2-stack__rule { margin-top: clamp(18px, 3vh, 30px); }
+
+  .lv2-reveal__statement { font-size: clamp(21px, 4.3vw, 34px); }
+  .lv2-reveal__paneltext { font-size: clamp(52px, 15vw, 128px); }
+
+  body.lv2 #lv2-footer .hero__inner { padding-top: 20px; }
+}
+
+/* ---- <=860: the StaggeredMenu (main.tsx / #sm-root) is the mobile menu;
+   the built-in pill menu + old hamburger on both navs are hidden here.
+   Each nav keeps only its brand — .lv3-returnnav still slides down at the
+   footer, now with a frosted-glass ground (see below). ---- */
+@media (max-width: 860px) {
+  body.lv2 .nav .nav__menu,
+  body.lv2 .nav .nav__toggle { display: none !important; }
+  body.lv2 .nav { gap: 14px; }
+  body.lv2 .lv3-returnnav { padding: 14px 18px; }
+
+  .lv2-shell { padding: 14px 18px clamp(28px, 5vh, 44px); }
+  .lv2-headline { font-size: clamp(36px, 9vw, 48px); }
+  .lv2-item { padding-right: clamp(70px, 24vw, 116px); }
+  .lv2-row { grid-template-columns: 1fr; row-gap: 6px; }
+  .lv2-row__body { max-width: 54ch; }
+
+  /* footer: content-height (not a forced 100vh) so there's no dead gap between
+     the links and the legal strip; the watermark still gets room to breathe */
+  body.lv2 #lv2-footer { height: auto; min-height: 0; }
+  body.lv2 #lv2-footer .hero__inner { height: auto; }
+  body.lv2 #lv2-footer .content { flex: 0 0 auto; padding-bottom: clamp(24px, 5vh, 44px); }
+  body.lv2 #lv2-footer .badge { margin-top: clamp(20px, 4vh, 44px); }
+  body.lv2 #lv2-footer .watermark {
+    position: relative;
+    height: clamp(120px, 38vw, 210px);
+    margin-top: clamp(18px, 4vh, 40px);
+  }
+  /* dark top-corner-tuned ink is invisible on the footer's dark ground */
+  body.lv2 #lv2-footer .backtotop span { color: var(--muted); }
+  body.lv2 #lv2-footer .content__marker { display: none; }
+}
+
+/* ---- <=560: phones — tightest type + spacing, footer single column ---- */
+@media (max-width: 560px) {
+  .lv2-hero,
+  .lv2-shell { min-height: 100svh; }
+  .lv2-col--left { padding: 24px 0 2px; }
+  .lv2-headline { font-size: clamp(33px, 11vw, 42px); }
+  .lv2-lead { font-size: 13.5px; line-height: 1.7; }
+
+  .lv2-stack__title { font-size: clamp(28px, 8.4vw, 40px); }
+  .lv2-stack:not(.is-pin-ready) .lv2-stack__media { height: clamp(300px, 74vw, 400px); }
+  .lv2-row__title { font-size: clamp(19px, 6vw, 26px); }
+
+  .lv2-reveal:not(.is-pin-ready) .lv2-reveal__panel { min-height: clamp(220px, 36vh, 320px); }
+  .lv2-reveal__statement { font-size: clamp(18px, 5.4vw, 26px); }
+  .lv2-reveal__paneltext { font-size: clamp(42px, 17vw, 84px); }
+
+  body.lv2 #lv2-footer .content { grid-template-columns: 1fr; gap: clamp(22px, 5vw, 30px); }
+  body.lv2 #lv2-footer .signup__title { font-size: 22px; }
+  /* single column: the hidden "More" label just leaves a dead gap */
+  body.lv2 #lv2-footer .col__label--ghost { display: none; }
+  body.lv2 #lv2-footer .col--links + .col--links { margin-top: -8px; }
+}
+
+/* ---- touch (no hover): keep the numbered items reading as "live" ---- */
+@media (hover: none) {
+  .lv2-item .lv2-item__title { color: #1F2A3D; }
+  .lv2-item .lv2-item__deco { stroke: rgba(48, 70, 102, 0.24); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv2-effect__mount { opacity: 0.9; }
+  .lv2-row { transition: none; }
+  body.lv2 #lv2-footer .content { transform: none !important; opacity: 1 !important; }
+}
+
+/* §3->§4 seam veil, re-tuned for the content-height footer used below the pin
+   gate: the .hero__glow's top-corner lift is stronger (footer is shorter) and
+   varies with the footer's column count, so two calibrations — one for the
+   ~2-column footer (561-900), one for the single-column phone footer (<=560).
+   Both were sampled pixel-by-pixel against the footer's rendered top edge. */
+@media (max-width: 900px) {
+  body.lv2 .lv2-reveal::after {
+    height: 15vh;
+    background: linear-gradient(90deg,
+      rgba(240, 246, 255, 0.174) 0%,
+      rgba(240, 246, 255, 0.221) 6%,
+      rgba(240, 246, 255, 0.175) 16%,
+      rgba(240, 246, 255, 0.110) 22%,
+      rgba(240, 246, 255, 0.055) 28%,
+      rgba(240, 246, 255, 0.014) 34%,
+      rgba(240, 246, 255, 0) 44%,
+      rgba(240, 246, 255, 0) 60%,
+      rgba(240, 246, 255, 0.014) 66%,
+      rgba(240, 246, 255, 0.050) 76%,
+      rgba(240, 246, 255, 0.110) 84%,
+      rgba(240, 246, 255, 0.188) 92%,
+      rgba(240, 246, 255, 0.180) 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 9%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0%, #000 9%, transparent 100%);
+  }
+}
+@media (max-width: 560px) {
+  body.lv2 .lv2-reveal::after {
+    height: 13vh;
+    background: linear-gradient(90deg,
+      rgba(240, 246, 255, 0.118) 0%,
+      rgba(240, 246, 255, 0.120) 8%,
+      rgba(240, 246, 255, 0.090) 20%,
+      rgba(240, 246, 255, 0.046) 34%,
+      rgba(240, 246, 255, 0.014) 46%,
+      rgba(240, 246, 255, 0) 53%,
+      rgba(240, 246, 255, 0.014) 62%,
+      rgba(240, 246, 255, 0.050) 76%,
+      rgba(240, 246, 255, 0.098) 90%,
+      rgba(240, 246, 255, 0.112) 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, #000 10%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 0%, #000 10%, transparent 100%);
+  }
+}
+
+/* ============================================================
+   FIX 3 — the footer's slide-in return nav gets a frosted-glass ground
+   (blurs the content behind it), with no border / shadow / hard edge:
+   the bottom is masked so the frost fades out instead of stopping abruptly.
+   Applies wherever the nav slides in (all widths).
+   ============================================================ */
+body.lv2 .lv3-returnnav {
+  background: rgba(9, 19, 34, 0.34);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(20px) saturate(1.3);
+  border: 0;
+  box-shadow: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 60%, transparent 100%);
+}
+
+/* ============================================================
+   MOBILE MENU — react-bits StaggeredMenu (#sm-root)
+   No Tailwind in this project, so these fill what the component's own
+   <style> block leaves out (fixed-container sizing, dark navy theme,
+   frosted toggle) + fit the display type to a phone. Only ever mounted
+   at <=860px by main.tsx; #sm-root:empty is display:none.
+   ============================================================ */
+#sm-root {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+}
+#sm-root:empty { display: none; }
+#sm-root .sm-scope { position: absolute; inset: 0; width: 100%; height: 100%; }
+#sm-root .staggered-menu-wrapper { pointer-events: none; }
+#sm-root .staggered-menu-panel { pointer-events: auto; }
+
+/* dark navy panel to match the site (component default is white); the panel/
+   prelayer WIDTH is left to the component: full-screen <=640px, drawer above */
+#sm-root .staggered-menu-panel {
+  background: #0B1C33;
+  padding: 5.4rem clamp(1.4rem, 7vw, 2.2rem) 2rem;
+}
+#sm-root .sm-panel-inner { gap: 1rem; }
+#sm-root .sm-panel-list { gap: 0.3rem; }
+#sm-root .sm-panel-item {
+  display: block;
+  color: #EAF1FB;
+  letter-spacing: -1px;
+  font-size: clamp(2.3rem, 12vw, 3.4rem);
+  padding-right: 0.6em;
+}
+#sm-root .sm-panel-item:hover,
+#sm-root .sm-panel-item:focus-visible { color: var(--sm-accent, #5C87BC); }
+#sm-root .sm-panel-list[data-numbering] .sm-panel-item::after {
+  color: var(--sm-accent, #5C87BC);
+  right: 0.3em;
+  top: 0.05em;
+  font-size: 13px;
+}
+#sm-root .sm-socials-link { color: #C6D5E8; }
+#sm-root .sm-socials-link:hover,
+#sm-root .sm-socials-link:focus-visible { color: var(--sm-accent, #5C87BC); }
+#sm-root .sm-socials-title {
+  color: var(--sm-accent, #5C87BC);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* the component's logo is hidden — the page already carries the brand */
+#sm-root .sm-logo { display: none; }
+
+/* frosted-glass "Menu / Close" toggle so it reads on any section behind it;
+   logo is hidden so the toggle sits at the right (matches position="right") */
+#sm-root .staggered-menu-header { padding: clamp(10px, 3.5vw, 16px) clamp(14px, 4vw, 18px); justify-content: flex-end; }
+#sm-root .sm-toggle {
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(8, 17, 30, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  color: #EAF1FB;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (max-width: 380px) {
+  #sm-root .sm-panel-item { font-size: 2rem; }
+}
+
+/* ============================================================
+   FIX 1 — no empty gap above the content on mobile: the hero content
+   starts right at the top edge (leaving just enough for the fixed toggle).
+   ============================================================ */
+@media (max-width: 860px) {
+  .lv2-shell { padding-top: 4px; }
+  .nav.lv2-nav { padding-top: 4px; }
+}

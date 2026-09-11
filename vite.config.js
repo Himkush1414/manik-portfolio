@@ -18,6 +18,13 @@ import { resolve } from "path";
 //                        sub-animation on the "THE WORK" panel. Kept around
 //                        purely for continued testing — the live "About" nav
 //                        link points at /about/ (below), a separate copy.
+//  - "/lab/lv6/"      -> full duplicate of the main site, plus one addition:
+//                        clicking "About" no longer navigates straight to
+//                        /about/ — a staggered column-wipe (lv6-transition.ts)
+//                        covers the screen, swaps in the About page (preloaded
+//                        the whole time in a hidden iframe, so it's already
+//                        fully rendered underneath), then wipes away again to
+//                        reveal it. Every other section/effect is untouched.
 //  - "/about/"        -> the live About page linked from the main site's nav
 //                        (a duplicate of /lab/lv5/'s content, deployed at its
 //                        own real path rather than under /lab/)
@@ -30,7 +37,7 @@ import { resolve } from "path";
 //  - force no-store on /lab/* HTML so a browser/proxy cache can't pin a stale
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
-const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/home-v0/"];
+const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/home-v0/"];
 const SITE_ROUTES = ["/about/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
@@ -66,6 +73,7 @@ export default defineConfig({
         labLv3: resolve(__dirname, "lab/lv3/index.html"),
         labLv4: resolve(__dirname, "lab/lv4/index.html"),
         labLv5: resolve(__dirname, "lab/lv5/index.html"),
+        labLv6: resolve(__dirname, "lab/lv6/index.html"),
         about: resolve(__dirname, "about/index.html"),
         homeV0: resolve(__dirname, "lab/home-v0/index.html"),
       },

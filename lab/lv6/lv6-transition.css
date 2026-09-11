@@ -1,0 +1,162 @@
+/* ============================================================
+   /lab/lv6 — the one addition beyond an exact copy of the main site:
+   a staggered column-wipe transition for the "About" nav entry, and
+   its reverse for the "Home" nav back out of it (see lv6-transition.ts
+   for the sequencing). This file only styles the pieces it drives — the
+   hidden-until-needed About iframe, and the 7 full-height columns that
+   cover/reveal it.
+   ============================================================ */
+
+/* the About page itself, preloaded the whole time lv6 is open (src is set
+   directly in the HTML) so it's already fully rendered by the time it's
+   swapped in — invisible and non-interactive until then, so it never
+   overlaps normal use of the main site above it. */
+.lv6-about-frame-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+}
+.lv6-about-frame-wrap.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lv6-about-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  /* matches the About panel's own dark tone, so even the first instant
+     before its stylesheet paints can never show a mismatched colour */
+  background: #3A3632;
+}
+
+/* 7 full-height columns tiling the viewport (~1/7 ≈ 14.3% each — "roughly
+   15%"). Idle state sits translated fully below the viewport; .is-covering
+   brings all of them to translateY(0) so they rise up into view; each
+   column's own transition-delay (set in JS, reversed between the cover and
+   reveal phases — see lv6-transition.ts) is what actually produces the
+   left-to-right / right-to-left sweep, not anything here.
+
+   Each column is 2px wider than its even 1/7 share and pulled back with a
+   matching -2px margin-right, so adjacent columns overlap by 2px instead of
+   sitting exactly edge-to-edge — with 7 non-integer-width flex children,
+   each one can round to a different sub-pixel boundary and land on its own
+   compositor layer (every column animates on its own transform), which was
+   leaving hairline gaps between them at certain viewport widths. The last
+   column's 2px overflows past the right edge of this fixed, viewport-sized
+   box, which is simply off-screen — never a visible seam either. */
+.lv6-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  pointer-events: none;
+}
+.lv6-transition.is-active {
+  pointer-events: auto;
+}
+.lv6-transition__col {
+  flex: 0 0 calc(100% / 7 + 2px);
+  margin-right: -2px;
+  height: 100%;
+  background: #3A3632;
+  transform: translateY(100%);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.lv6-transition.is-covering .lv6-transition__col {
+  transform: translateY(0);
+}
+.lv6-transition.is-revealing .lv6-transition__col {
+  transform: translateY(100%);
+}
+
+/* the reverse (About -> Home) transition recolours the same columns with
+   the main site's own dark-sea navy language — the exact two tones its own
+   mobile StaggeredMenu already uses (main.tsx: colors={['#12335C',
+   '#0A1E38']}) — deep near-black navy at the top fading to the lighter
+   "iceberg" blue-navy at the bottom, the same dark-to-light read as the
+   hero's watermark/footer. */
+.lv6-transition.theme-home .lv6-transition__col {
+  background: linear-gradient(180deg, #0A1E38 0%, #12335C 100%);
+}
+
+/* ============================================================
+   MOBILE — a separate overlay, not the desktop one reflowed. Narrow-screen
+   columns that thin would read as slivers, so below the 720px breakpoint
+   (matching lv5/about's own mobile split) this swaps to 5 fewer, wider
+   full-width horizontal bars that slide in/out left-to-right instead of
+   narrow columns rising/falling — same cover-then-reveal mechanic, same
+   left-to-right cover / right-to-left-order reveal (lv6-transition.ts
+   picks whichever overlay's element list matches the current breakpoint
+   at the moment a transition starts), just rotated 90°. Desktop's own
+   overlay is untouched — this is a fully separate element tree.
+   ============================================================ */
+.lv6-transition-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  pointer-events: none;
+}
+@media (max-width: 720px) {
+  .lv6-transition { display: none; }
+  .lv6-transition-mobile { display: flex; }
+}
+.lv6-transition-mobile.is-active {
+  pointer-events: auto;
+}
+/* 5 full-width bars (~1/5 = 20% of the height each), each 2px taller than
+   its even share with a matching -2px margin-bottom for the same
+   overlap-instead-of-abutting anti-seam trick the desktop columns use
+   (§ .lv6-transition__col above), just along the vertical axis this time.
+   Idle state sits translated fully off the LEFT edge; .is-covering brings
+   every bar to translateX(0) so each slides in from the left to fill its
+   band; .is-revealing continues that same left-to-right motion on through
+   to translateX(100%), sliding on out past the right edge — cover and
+   reveal read as one continuous left-to-right sweep, never a reversal in
+   the motion itself, only in which bar leads (see lv6-transition.ts). */
+.lv6-transition-mobile__bar {
+  flex: 0 0 calc(100% / 5 + 2px);
+  margin-bottom: -2px;
+  width: 100%;
+  background: #3A3632;
+  transform: translateX(-100%);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.lv6-transition-mobile.is-covering .lv6-transition-mobile__bar {
+  transform: translateX(0);
+}
+.lv6-transition-mobile.is-revealing .lv6-transition-mobile__bar {
+  transform: translateX(100%);
+}
+/* same navy palette as the desktop reverse transition, one continuous
+   dark-top/light-bottom gradient across all 5 stacked bars rather than 5
+   repeating mini-gradients banding across each one individually.
+   background-attachment:fixed would be the obvious way to anchor a
+   background to the viewport instead of each bar's own (much shorter) box
+   — but these bars are transformed (translateX, for the slide), and
+   Chromium resolves a fixed background on a transformed element relative
+   to that element's own box instead of the true viewport, which is
+   exactly the banding this is trying to avoid. Sized/positioned backgrounds
+   sidestep that entirely: each bar gets the FULL gradient stretched to 5x
+   its own height (matching the whole screen again), then shifted up by
+   its own index share via background-position-y, so what's actually
+   visible in each bar's short box is precisely that bar's slice of one
+   unbroken gradient — plain background-size/position math, unaffected by
+   any transform on the element. */
+.lv6-transition-mobile.theme-home .lv6-transition-mobile__bar {
+  background-image: linear-gradient(180deg, #0A1E38 0%, #12335C 100%);
+  background-size: 100% 500%;
+}
+.lv6-transition-mobile.theme-home .lv6-transition-mobile__bar:nth-child(1) { background-position-y: 0%; }
+.lv6-transition-mobile.theme-home .lv6-transition-mobile__bar:nth-child(2) { background-position-y: 25%; }
+.lv6-transition-mobile.theme-home .lv6-transition-mobile__bar:nth-child(3) { background-position-y: 50%; }
+.lv6-transition-mobile.theme-home .lv6-transition-mobile__bar:nth-child(4) { background-position-y: 75%; }
+.lv6-transition-mobile.theme-home .lv6-transition-mobile__bar:nth-child(5) { background-position-y: 100%; }
