@@ -311,11 +311,20 @@ wireHoverPreview('.ch2__list', '.ch2__preview-stack');
 wireHoverPreview('.ch4__list', '.ch4__preview-stack');
 
 // "CHAPTER III": each column reveals its own background independently on
-// hover — cursor-driven, not tied to scroll position at all.
+// hover — cursor-driven, not tied to scroll position at all. Leaving
+// doesn't just let the reveal vanish/snap back down: it triggers a SECOND
+// rise (.ch3__col-cover, a solid sheet matching the panel's own
+// background) that climbs up from the bottom the same way the reveal
+// did, covering/hiding it — so both the show and the hide read as the
+// same bottom-to-top motion, never a reverse.
 document.querySelectorAll<HTMLElement>('.ch3__col').forEach(col => {
   const bg = col.querySelector<HTMLElement>('.ch3__col-bg');
+  const cover = col.querySelector<HTMLElement>('.ch3__col-cover');
   if (!bg) return;
   col.addEventListener('mouseenter', () => triggerRise(bg));
+  if (cover) {
+    col.addEventListener('mouseleave', () => triggerRise(cover));
+  }
 });
 
 // ---------------------------------------------------------------

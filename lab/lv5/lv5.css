@@ -354,10 +354,19 @@ body.lv5 img { max-width: 100%; display: block; }
 .panel__intro-copy {
   /* a single top-to-bottom column: label, then the paragraph, then the
      quote, then the portrait sitting below all of it — the paragraph
-     always reads in full above the photo, never beside/overlapping it */
+     always reads in full above the photo, never beside/overlapping it.
+     Right-aligned (via .panel--about's justify-content:flex-end) with a
+     width pinned to calc(50vw - edge), so its left edge always lands
+     exactly on the viewport's horizontal midpoint — consistent at every
+     desktop width, not just whichever size the old vw-clamped width
+     happened to line up at. No upper bound: capping the width would let
+     it fall narrower than 50vw-edge on very wide screens, pulling its
+     left edge back off the midpoint. The 280px floor only matters below
+     the 720px breakpoint, where mobile's own width:100% override applies
+     instead anyway. */
   display: flex;
   flex-direction: column;
-  width: clamp(280px, 46vw, 620px);
+  width: max(280px, calc(50vw - var(--edge)));
   min-width: 0;
 }
 .panel__label {
@@ -376,7 +385,7 @@ body.lv5 img { max-width: 100%; display: block; }
   margin: 0 0 26px;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(12px, 1.7vw, 26px);
+  font-size: clamp(15px, 2vw, 30px);
   line-height: 1.28;
   text-align: justify;
 }
@@ -392,7 +401,7 @@ body.lv5 img { max-width: 100%; display: block; }
 .panel__portrait {
   /* hugs the right edge of the text column, below the quote */
   align-self: flex-end;
-  width: clamp(150px, 18vw, 240px);
+  width: clamp(165px, 20vw, 265px);
   aspect-ratio: 3 / 4;
   overflow: hidden;
   margin: 0;
@@ -499,7 +508,11 @@ body.lv5 img { max-width: 100%; display: block; }
 .ch4__list-wrap {
   position: absolute;
   top: clamp(90px, 13vh, 150px);
-  right: var(--edge);
+  /* pulled in from the panel's right edge toward the centre — still
+     right-anchored (and each item's own text stays left-aligned within
+     the wrap, see .ch2__item/.ch4__item below), just shifted inward
+     rather than sitting flush against the edge or fully centred */
+  right: calc(var(--edge) + 14vw);
   text-align: right;
   max-width: clamp(260px, 40vw, 560px);
 }
@@ -521,6 +534,7 @@ body.lv5 img { max-width: 100%; display: block; }
   font-weight: 700;
   font-size: clamp(32px, 3.8vw, 58px);
   line-height: 1.05;
+  text-transform: uppercase;
   /* solid/bright by default — hovering the list dims every item except
      the one under the cursor (rules below), rather than the other way
      round */
@@ -549,10 +563,18 @@ body.lv5 img { max-width: 100%; display: block; }
 .ch2__preview-stack,
 .ch4__preview-stack {
   position: relative;
-  width: clamp(160px, 19vw, 260px);
-  aspect-ratio: 3 / 4;
   border-radius: 2px;
   overflow: hidden;
+}
+/* CHAPTER II's preview box: landscape (wider than tall), and a touch
+   bigger than before — CHAPTER IV's stays its original portrait shape/size */
+.ch2__preview-stack {
+  width: clamp(220px, 25vw, 360px);
+  aspect-ratio: 16 / 10;
+}
+.ch4__preview-stack {
+  width: clamp(160px, 19vw, 260px);
+  aspect-ratio: 3 / 4;
 }
 /* one of these sits behind each list, all stacked in the same box.
    .is-active marks the one currently "at rest" (visible, unanimated) —
@@ -637,8 +659,8 @@ body.lv5 img { max-width: 100%; display: block; }
      stays pinned at the top while the intro line sits at the bottom —
      space-between distributes the height between exactly those two */
   justify-content: space-between;
-  gap: 18px;
-  padding: var(--edge) clamp(24px, 3vw, 48px) var(--edge) var(--gutter-left);
+  gap: 28px;
+  padding: calc(var(--edge) + 16px) clamp(36px, 4.4vw, 68px) calc(var(--edge) + 16px) var(--gutter-left);
 }
 .ch3__intro {
   margin: 0;
@@ -672,18 +694,19 @@ body.lv5 img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 clamp(14px, 1.6vw, 28px);
+  padding: 0 clamp(18px, 2vw, 36px);
   border-left: 1px solid rgba(243, 238, 232, 0.12);
   overflow: hidden;
   text-align: center;
 }
 .ch3__col:first-child { border-left: none; }
 
-.ch3__col-bg {
+.ch3__col-bg,
+.ch3__col-cover {
   position: absolute;
   inset: 0;
   /* hidden below the column at rest — only a running .is-rising animation
-     (triggered on hover, main.ts) ever brings it into view */
+     (triggered on hover/hover-leave, main.ts) ever brings it into view */
   transform: translateY(100%);
   will-change: transform;
 }
@@ -694,6 +717,18 @@ body.lv5 img { max-width: 100%; display: block; }
 .ch3__col-bg[data-tone="b"] { background: linear-gradient(180deg, #3A4548, var(--bg-dark) 75%); }
 .ch3__col-bg[data-tone="c"] { background: linear-gradient(180deg, #453A45, var(--bg-dark) 75%); }
 .ch3__col-bg[data-tone="d"] { background: linear-gradient(180deg, #3A4238, var(--bg-dark) 75%); }
+
+/* the "conceal" layer: a second sheet that rises up from the bottom on
+   mouseleave, covering the now-revealed .ch3__col-bg underneath (rather
+   than that bg just snapping back down/vanishing). Solid, matching the
+   panel's own dark background, so once it (and, per the shared is-rising
+   keyframes, its own eventual auto-exit off the top) finish playing, the
+   column reads exactly as it did before anything was ever hovered. Sits
+   above .ch3__col-bg (later in DOM, same default stacking) but below
+   .ch3__col-content (explicit z-index:1 keeps the text on top always). */
+.ch3__col-cover {
+  background: var(--bg-dark);
+}
 
 .ch3__col-content {
   position: relative;
@@ -708,7 +743,7 @@ body.lv5 img { max-width: 100%; display: block; }
      column's edge). Stretching (the default) gives every child the
      column's actual width to wrap inside, and text-align centers the
      text within that width instead. */
-  gap: 14px;
+  gap: 22px;
   text-align: center;
   /* same min-width:0 fix as .ch3__col itself — this is ALSO a flex item
      (of .ch3__col, a row container) and without it won't shrink below its
@@ -741,9 +776,10 @@ body.lv5 img { max-width: 100%; display: block; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: clamp(15px, 1.5vw, 22px);
+  font-size: clamp(14px, 1.35vw, 20px);
   line-height: 1.25;
   overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 /* ============================================================
@@ -1011,12 +1047,9 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 /* a light stagger so multi-item lists read as a block reveal rather than
    every row snapping in at once */
-.m-list__item:nth-child(2),
-.m-ch3__item:nth-child(2) { transition-delay: 0.08s; }
-.m-list__item:nth-child(3),
-.m-ch3__item:nth-child(3) { transition-delay: 0.16s; }
-.m-list__item:nth-child(4),
-.m-ch3__item:nth-child(4) { transition-delay: 0.24s; }
+.m-list__item:nth-child(2) { transition-delay: 0.08s; }
+.m-list__item:nth-child(3) { transition-delay: 0.16s; }
+.m-list__item:nth-child(4) { transition-delay: 0.24s; }
 
 /* ============================================================
    MOBILE PANEL 1 — hero
@@ -1220,6 +1253,7 @@ body.lv5 img { max-width: 100%; display: block; }
   line-height: 1.05;
   color: var(--work-text);
   text-align: left;
+  text-transform: uppercase;
 }
 .m-list__item:last-child {
   border-bottom: none;
@@ -1251,39 +1285,37 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 
 /* ============================================================
-   MOBILE PANEL 5 — "CHAPTER III"
+   MOBILE PANEL 5 — "CHAPTER III": a lead-in panel (heading + intro line,
+   .m-panel--ch3-lead) followed by four full-screen panels, one per
+   discipline (.m-panel--ch3-item) — each its own clearly-presented
+   section (numeral, title, description) revealed in turn as the user
+   scrolls, mirroring how desktop's four columns are each their own
+   distinct region, rather than one compact static list.
    ============================================================ */
 .m-panel--ch3 {
-  padding: 28px 20px 40px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  padding: 28px 20px 40px;
 }
 .m-ch3__intro {
-  margin: 0 0 28px;
+  margin: 0;
   max-width: 34ch;
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.6;
   opacity: 0.75;
 }
-.m-ch3__list {
+.m-ch3__section {
   display: flex;
   flex-direction: column;
-}
-.m-ch3__item {
-  display: flex;
-  align-items: baseline;
   gap: 16px;
-  padding: 18px 0;
-  border-bottom: 1px solid rgba(243, 238, 232, 0.12);
-}
-.m-ch3__item:last-child {
-  border-bottom: none;
 }
 .m-ch3__num {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(24px, 7vw, 34px);
+  font-size: clamp(40px, 13vw, 64px);
+  line-height: 1;
   color: var(--accent);
 }
 .m-ch3__title {
@@ -1292,7 +1324,16 @@ body.lv5 img { max-width: 100%; display: block; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  font-size: clamp(17px, 5vw, 22px);
+  font-size: clamp(30px, 9vw, 44px);
+  line-height: 1.1;
+}
+.m-ch3__desc {
+  margin: 0;
+  max-width: 32ch;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  opacity: 0.8;
 }
 
 /* ============================================================
