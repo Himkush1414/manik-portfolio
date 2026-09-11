@@ -52,15 +52,18 @@ if (smMount) {
     contactLinks?.setAttribute('aria-hidden', 'true');
   };
 
-  // lv5 triggers/closes this menu exclusively through the sidebar's own
-  // hamburger (the component's own header/toggle is hidden in lv5.css) —
+  // lv5 triggers/closes this menu exclusively through its own hamburger
+  // buttons (the component's own header/toggle is hidden in lv5.css) —
   // proxy a click onto the component's internal toggle so its untouched
   // open/close logic runs exactly as built. Every open (and close) starts
-  // the contact panel fresh/hidden.
-  const sidebarToggle = document.getElementById('menu-toggle');
-  sidebarToggle?.addEventListener('click', () => {
-    closeMenu();
-    hideContactLinks();
+  // the contact panel fresh/hidden. Two such buttons exist: the desktop
+  // sidebar's (#menu-toggle) and the separate mobile nav bar's
+  // (#mobile-menu-toggle) — both share the same full-screen menu.
+  document.querySelectorAll('.menu-trigger').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closeMenu();
+      hideContactLinks();
+    });
   });
 
   // Home is a genuine <a href="/"> — left to navigate normally, no
