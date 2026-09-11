@@ -8,6 +8,7 @@ import navLogo from '../../assets/logo.png';
 // extra stylesheet, imported (not copied/forked) so it stays identical.
 import RippleDistortion from '../lv1/RippleDistortion';
 import watermarkSource from '../lv1/watermark-source.jpg';
+import { setScrollLock } from './scroll-lock';
 import './lv2.css';
 import '../lv1/lab.css';
 import './lv6-transition';
@@ -513,9 +514,13 @@ if (smMount) {
     { label: 'LinkedIn', link: 'https://www.linkedin.com/in/manik-rana-752154277' },
     { label: 'Gmail', link: 'mailto:manikrana831@gmail.com' },
   ];
-  const lockScroll = (on: boolean) => {
-    document.documentElement.style.overflow = on ? 'hidden' : '';
-  };
+  // Reference-counted (see scroll-lock.ts): the About<->Home transition
+  // locks this same property for its own overlay, and selecting "About"
+  // from this menu closes it a beat later (this file's own click handler
+  // below, `setTimeout(() => toggle.click(), 10)`) — a raw style write here
+  // would otherwise race that lock and silently unlock the root while
+  // About is still open.
+  const lockScroll = (on: boolean) => setScrollLock('mobile-menu', on);
   const smMQ = window.matchMedia('(max-width: 860px)');
   let smRoot: ReturnType<typeof createRoot> | null = null;
   const syncSM = () => {

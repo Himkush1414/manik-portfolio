@@ -13,7 +13,17 @@
   --dash-divider: rgba(42, 59, 84, 0.30);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  /* suppresses the default mobile-browser blue tap-highlight box on every
+     element site-wide — the real tap/click interaction (and whatever
+     animation it triggers) still fires exactly as before, this only turns
+     off the browser's own "you pressed this" overlay so it doesn't fight
+     with the site's own hover/active states. -webkit-tap-highlight-color
+     alone isn't reliably inherited by every element in every engine, so
+     it's set here on the universal selector rather than just html/body. */
+  -webkit-tap-highlight-color: transparent;
+}
 
 html, body {
   margin: 0;

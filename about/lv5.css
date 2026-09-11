@@ -23,8 +23,31 @@ body.lv5 {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* mobile-only in practice (this is the only place the mobile breakpoint's
+     own scroll lives): on iOS/Android, once .mobile-about's normal document
+     scroll (turned on below the 720px breakpoint) runs out at either end,
+     a fast/aggressive scroll gesture can "chain" into whatever scrollable
+     ancestor sits beyond it — when this page is embedded (the main site's
+     About<->Home transition runs it inside an iframe), that's the parent
+     document, and the resulting rubber-band bounce there can very briefly
+     reveal the parent's own content through the fixed overlay covering it.
+     `contain` stops the chain at this document's own boundary — reserved
+     here rather than 'none' so this page's own internal overscroll/bounce
+     feel (e.g. on its own top-level route, not embedded) is unaffected. */
+  overscroll-behavior: contain;
 }
 body.lv5 * { box-sizing: border-box; }
+/* suppresses the default mobile-browser blue tap-highlight box on every
+   element in this section (e.g. the StaggeredMenu's own "Home" item) — the
+   real tap interaction still fires exactly as before, this only turns off
+   the browser's "you pressed this" overlay. body.lv5 itself needs its own
+   rule alongside the descendant selector: tap-highlight-color isn't
+   inherited, and "body.lv5 *" only ever matches body.lv5's children, never
+   body.lv5 itself. */
+body.lv5,
+body.lv5 * {
+  -webkit-tap-highlight-color: transparent;
+}
 body.lv5 img { max-width: 100%; display: block; }
 
 /* ============================================================

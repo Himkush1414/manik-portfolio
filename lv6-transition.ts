@@ -28,7 +28,7 @@
 // in below 720px, same breakpoint lv5/about use for their own mobile split).
 // Which one plays is decided fresh each time a transition starts, from
 // whichever matches the viewport at that moment.
-export {};
+import { setScrollLock } from './scroll-lock';
 
 interface Profile {
   overlay: HTMLElement;
@@ -193,12 +193,31 @@ if ((desktopProfile || mobileProfile) && frameWrap && frame) {
     }
   }
 
+  // While About is open, the root document's own scroll (a long page:
+  // hero -> stack -> reveal -> footer) stays fully live underneath the
+  // fixed overlay unless something stops it; on mobile, a fast/aggressive
+  // scroll gesture over the About iframe can chain past its own exhausted
+  // scroll into the root's, triggering a rubber-band bounce there that can
+  // very briefly show through the fixed overlay before snapping back.
+  // lv5.css's own overscroll-behavior:contain (on body.lv5) stops that
+  // chaining at its source; this is the second, independent layer — the
+  // root simply can't scroll at all for as long as About is open,
+  // regardless of what reaches it. Goes through the shared, reference-
+  // counted setScrollLock (not a raw style write) because the mobile
+  // hamburger menu (main.tsx) locks the exact same property for its own
+  // overlay, and selecting "About" from inside that menu closes it a beat
+  // later — its own unlock would otherwise race this one and win.
+  function lockRootScroll(on: boolean) {
+    setScrollLock('about', on);
+  }
+
   function openAbout() {
     if (open) return;
     if (playing) {
       pending = openAbout;
       return;
     }
+    lockRootScroll(true);
     playTransition('about', () => {
       frameWrap!.classList.add('is-visible');
       frameWrap!.setAttribute('aria-hidden', 'false');
@@ -216,6 +235,7 @@ if ((desktopProfile || mobileProfile) && frameWrap && frame) {
       frameWrap!.classList.remove('is-visible');
       frameWrap!.setAttribute('aria-hidden', 'true');
       open = false;
+      lockRootScroll(false);
 
       // The iframe is never actually navigated away, so About's own React
       // state (its StaggeredMenu left open — exactly how the user just got
