@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="./lv2.css" />
+<link rel="stylesheet" href="./lv6-transition.css" />
 </head>
 <body class="lv2">
 
@@ -374,6 +375,40 @@
   <div id="ripple-root" aria-hidden="true"></div>
   <div id="ripple-fade" aria-hidden="true"></div>
 </header>
+
+<!-- ===================== "About" entry transition =====================
+     Clicking any real "About" link (href="/about") is intercepted
+     (lv6-transition.ts) instead of navigating away: a staggered wipe
+     covers the screen, the About page underneath (preloaded into
+     #lv6-about-frame the whole time, so it's already fully rendered and
+     ready the instant it's needed) is swapped in while still fully hidden
+     behind the cover, then the same wipe reverses to reveal it. See
+     lv6-transition.css/.ts.
+
+     Two separate overlays, only one ever active at a time (CSS media query
+     below the 720px breakpoint swaps which is display:none) — desktop gets
+     7 narrow vertical columns rising/falling; mobile gets 5 wide horizontal
+     bars instead, sliding in/out left-to-right, sized to actually read as
+     bars rather than slivers on a narrow screen. -->
+<div id="lv6-about-frame-wrap" class="lv6-about-frame-wrap" aria-hidden="true">
+  <iframe id="lv6-about-frame" class="lv6-about-frame" src="/about/" title="About" tabindex="-1"></iframe>
+</div>
+<div id="lv6-transition" class="lv6-transition" aria-hidden="true">
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+</div>
+<div id="lv6-transition-mobile" class="lv6-transition-mobile" aria-hidden="true">
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+</div>
 
 <script type="module" src="./main.tsx"></script>
 </body>

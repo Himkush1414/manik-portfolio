@@ -10,9 +10,11 @@ import RippleDistortion from './lab/lv1/RippleDistortion';
 import watermarkSource from './lab/lv1/watermark-source.jpg';
 import './lv2.css';
 import './lab/lv1/lab.css';
+import './lv6-transition';
+import './lv6-about-mobile-nav';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
-console.log('%croot build 2026-09-10 (synced from lab/lv4)', 'color:#8fb8ea;font-weight:600');
+console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
 
 // Clear any stray service worker / caches on localhost:5173 that could pin a
 // stale page at the bare URL (the "?query works, plain doesn't" symptom).
@@ -494,7 +496,11 @@ if (footerBlock && footerBlockSection) {
 const smMount = document.getElementById('sm-root');
 if (smMount) {
   const smItems = [
-    { label: 'About', ariaLabel: 'Jump to About', link: '#about' },
+    // real "About" link — lv6-transition.ts intercepts every
+    // a[href="/about"] via delegation, including this one once the menu
+    // renders it, so tapping it from the mobile hamburger plays the same
+    // cover/reveal transition the desktop pills/hero card/footer link do.
+    { label: 'About', ariaLabel: 'Jump to About', link: '/about' },
     { label: 'Projects', ariaLabel: 'Jump to Projects', link: '#projects' },
     { label: 'Games', ariaLabel: 'Jump to Games', link: '#games' },
     { label: 'Fun', ariaLabel: 'Jump to Fun', link: '#fun' },
