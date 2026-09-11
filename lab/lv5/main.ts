@@ -1,4 +1,4 @@
-// /lab/lv5 — the About section.
+// /lab/lv5 — the About section, DESKTOP layout only.
 //
 // Ordinary scroll input (wheel / trackpad / touch drag) never scrolls the
 // page vertically — it accumulates 1:1 into a single virtual position that
@@ -8,6 +8,14 @@
 // the track and drives a local sub-animation instead of advancing to the
 // next panel: "THE WORK" (split/grow). "CHAPTER III"'s column reveal is
 // cursor-driven, not scroll-driven — see the curtain-reveal section below.
+//
+// Below the lv5.css breakpoint, none of this mechanic applies at all — the
+// mobile layout is a fully separate, normal-vertical-scroll experience
+// (mobile.ts, the #mobile-about markup), and .about/.about__track are
+// display:none there. IS_MOBILE_LAYOUT below gates every piece of this
+// file that would otherwise fight that (the scroll-jacking listeners, the
+// rAF loop) so it stays completely inert rather than just invisible.
+const IS_MOBILE_LAYOUT = window.matchMedia('(max-width: 720px)').matches;
 
 const about = document.getElementById('about') as HTMLElement;
 const track = document.getElementById('track') as HTMLElement;
@@ -191,59 +199,70 @@ function loop() {
   applyState(current);
   rafId = requestAnimationFrame(loop);
 }
-rafId = requestAnimationFrame(loop);
 
-about.addEventListener(
-  'wheel',
-  e => {
-    e.preventDefault();
-    const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    const scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
-    target += dx * scale;
-    clampTarget();
-  },
-  { passive: false }
-);
+// Everything below drives the horizontal scroll-jack itself — none of it
+// should run on the mobile layout, which uses the browser's own normal
+// vertical scroll instead (mobile.ts). Starting the rAF loop is the main
+// thing worth gating (a background per-frame loop with nothing to show
+// for it); the listeners would also be harmless on their own since
+// .about is display:none there and un-rendered elements never receive
+// wheel/touch events, but gating them too keeps this file's behaviour
+// honest about which layout it belongs to.
+if (!IS_MOBILE_LAYOUT) {
+  rafId = requestAnimationFrame(loop);
 
-let touchStartX = 0;
-let touchStartTarget = 0;
-let touching = false;
-about.addEventListener(
-  'touchstart',
-  e => {
-    if (e.touches.length !== 1) return;
-    touching = true;
-    touchStartX = e.touches[0].clientX;
-    touchStartTarget = target;
-  },
-  { passive: true }
-);
-about.addEventListener(
-  'touchmove',
-  e => {
-    if (!touching || e.touches.length !== 1) return;
-    e.preventDefault();
-    const dx = touchStartX - e.touches[0].clientX;
-    target = touchStartTarget + dx * 1.6;
-    clampTarget();
-  },
-  { passive: false }
-);
-about.addEventListener('touchend', () => {
-  touching = false;
-});
+  about.addEventListener(
+    'wheel',
+    e => {
+      e.preventDefault();
+      const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
+      target += dx * scale;
+      clampTarget();
+    },
+    { passive: false }
+  );
 
-window.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-    target += viewportWidth() * 0.6;
-    clampTarget();
-  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-    target -= viewportWidth() * 0.6;
-    clampTarget();
-  }
-});
+  let touchStartX = 0;
+  let touchStartTarget = 0;
+  let touching = false;
+  about.addEventListener(
+    'touchstart',
+    e => {
+      if (e.touches.length !== 1) return;
+      touching = true;
+      touchStartX = e.touches[0].clientX;
+      touchStartTarget = target;
+    },
+    { passive: true }
+  );
+  about.addEventListener(
+    'touchmove',
+    e => {
+      if (!touching || e.touches.length !== 1) return;
+      e.preventDefault();
+      const dx = touchStartX - e.touches[0].clientX;
+      target = touchStartTarget + dx * 1.6;
+      clampTarget();
+    },
+    { passive: false }
+  );
+  about.addEventListener('touchend', () => {
+    touching = false;
+  });
 
-window.addEventListener('resize', clampTarget);
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+      target += viewportWidth() * 0.6;
+      clampTarget();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      target -= viewportWidth() * 0.6;
+      clampTarget();
+    }
+  });
+
+  window.addEventListener('resize', clampTarget);
+}
 
 // ---------------------------------------------------------------
 // "Rising curtain" reveal — shared by "CHAPTER II"/"CHAPTER IV"'s hover

@@ -40,6 +40,13 @@ body.lv5 img { max-width: 100%; display: block; }
   color: var(--text-warm);
 }
 
+/* the fully separate mobile experience (#mobile-about, styled at the very
+   end of this file) — hidden by default; the small-screen media query
+   near the end of this file is the only place that turns it back on */
+.mobile-about {
+  display: none;
+}
+
 /* ---- persistent sidebar ---- */
 .about__sidebar {
   position: fixed;
@@ -806,10 +813,44 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 
 /* ============================================================
-   small screens — keep everything on-screen; the horizontal
-   scroll-jack mechanic itself is unchanged, just the type scales down
+   small screens — the desktop horizontal scroll-jack track is replaced
+   wholesale by .mobile-about (a fully separate normal-vertical-scroll
+   experience, styled further below) below this breakpoint. Everything
+   else in this block still tunes the DESKTOP track's own elements for
+   narrow widths — harmless dead weight now that .about__track is hidden
+   here too, but left as-is rather than pulled out mid-task.
    ============================================================ */
 @media (max-width: 720px) {
+  /* #about is a position:fixed, z-index:10, opaque full-viewport box —
+     needed on desktop so .about__sidebar/.about__track can lay out inside
+     it, but its own box (not just those two children) has to stop being a
+     fixed/positioned/painted element on mobile too, or it keeps stacking
+     above the sibling #mobile-about (painting its background over it and
+     intercepting every click) even with its children hidden below.
+     #sm-root — the shared StaggeredMenu mount, also a child of #about —
+     is unaffected: it sets its own position: fixed independently. */
+  .about {
+    position: static;
+    z-index: auto;
+    background: none;
+    overflow: visible;
+  }
+  .about__sidebar,
+  .about__track {
+    display: none;
+  }
+  .mobile-about {
+    display: block;
+  }
+  /* the desktop layout keeps the whole page from scrolling (the track
+     handles all motion itself) — undo that so .mobile-about's normal
+     document flow can scroll natively */
+  body.lv5 {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+  }
+
   /* a reserved bottom gap so flowed content (portrait included) never
      grows down into the zone the absolutely positioned aside/more-link
      occupy at the panel's own bottom edge */
@@ -850,4 +891,457 @@ body.lv5 img { max-width: 100%; display: block; }
   .ch3__col { padding: 0 10px; }
   .ch3__num { font-size: 32px; }
   .ch3__title { font-size: 14px; }
+}
+
+/* ============================================================
+   MOBILE ABOUT — a fully separate experience from the desktop track
+   above: normal vertical page scroll, one full-screen section after
+   another, content revealing in (mobile.ts, IntersectionObserver) as
+   each is scrolled into view rather than sitting there statically.
+   Its default-hidden rule lives up near .about, BEFORE the breakpoint
+   media query below overrides it to display:block — the reverse source
+   order would let this equal-specificity rule always win regardless of
+   viewport, since cascade order (not which side of a media query a rule
+   sits on) breaks same-specificity ties.
+   ============================================================ */
+.m-panel {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.m-panel--hero,
+.m-panel--work,
+.m-panel--ch3,
+.m-panel--next {
+  background: var(--bg-dark);
+  color: var(--text-warm);
+}
+.m-panel--ch1,
+.m-panel--ch2,
+.m-panel--ch4 {
+  background: var(--work-bg);
+  color: var(--work-text);
+}
+
+/* ---- shared across mobile panels: chapter heading / label / list item /
+   more-link / caption — same visual language as the desktop versions,
+   just re-sized for phone width */
+.m-chapter {
+  display: block;
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(20px, 6.4vw, 30px);
+  line-height: 1;
+  color: #7A3B30;
+}
+.m-panel--work .m-chapter,
+.m-panel--ch3 .m-chapter {
+  /* the light-panel maroon doesn't read against these dark panels — same
+     accent used on desktop for the same reason */
+  color: var(--accent);
+}
+.m-label {
+  display: block;
+  margin: 0 0 16px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(46, 43, 42, 0.6);
+}
+.m-panel--next .m-label {
+  color: rgba(243, 238, 232, 0.6);
+}
+.m-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.85;
+}
+.m-caption {
+  margin: 14px 0 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(46, 43, 42, 0.55);
+}
+
+/* ---- scroll-triggered reveal (mobile.ts toggles .is-visible via
+   IntersectionObserver as each element scrolls into view) ---- */
+.m-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.m-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* the portrait and preview cards use a bottom-to-top wipe instead of the
+   plain fade/slide above. Important: the clip-path that makes this a
+   "wipe" lives on an INNER .m-wipe-target (the <img>, or a
+   .m-preview__inner wrapper) — NEVER on the .m-reveal--wipe element
+   itself, which is the element mobile.ts's IntersectionObserver actually
+   watches. A clip-path that clips away 100% of an element's own area
+   also zeroes ITS OWN intersection ratio as far as the observer is
+   concerned (unlike a translateY/opacity offset, which doesn't), so
+   self-clipping the observed element would mean it could never be
+   detected scrolling into view to trigger its own reveal in the first
+   place — a dead end this sidesteps by clipping a child instead, while
+   the observed parent's geometry stays completely normal throughout. */
+.m-reveal--wipe {
+  overflow: hidden;
+}
+.m-reveal--wipe .m-wipe-target {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.m-reveal--wipe.is-visible .m-wipe-target {
+  clip-path: inset(0 0 0% 0);
+}
+/* a light stagger so multi-item lists read as a block reveal rather than
+   every row snapping in at once */
+.m-list__item:nth-child(2),
+.m-ch3__item:nth-child(2) { transition-delay: 0.08s; }
+.m-list__item:nth-child(3),
+.m-ch3__item:nth-child(3) { transition-delay: 0.16s; }
+.m-list__item:nth-child(4),
+.m-ch3__item:nth-child(4) { transition-delay: 0.24s; }
+
+/* ============================================================
+   MOBILE PANEL 1 — hero
+   ============================================================ */
+.m-panel--hero {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+}
+.m-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+}
+.m-nav__logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.m-nav__menu {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.m-nav__menu span {
+  width: 20px;
+  height: 1.5px;
+  background: var(--text-warm);
+  display: block;
+}
+.m-hero__blurb {
+  margin: 14px 0 0;
+  max-width: 34ch;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+.m-hero__bottom {
+  margin-top: auto;
+  padding-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.m-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
+}
+.m-hero__status {
+  display: inline-flex;
+  align-items: center;
+}
+.m-hero__status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #8CBF8C;
+}
+.m-hero__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(52px, 17vw, 96px);
+  line-height: 0.94;
+  letter-spacing: -0.01em;
+}
+.m-hero__name span {
+  display: block;
+}
+
+/* ============================================================
+   MOBILE PANEL 2 — "CHAPTER I"
+   ============================================================ */
+.m-panel--ch1 {
+  display: flex;
+  flex-direction: column;
+}
+.m-ch1__text {
+  padding: 28px 20px 24px;
+}
+.m-ch1__paragraph {
+  margin: 0 0 20px;
+  font-family: var(--font-display);
+  font-size: clamp(17px, 4.6vw, 22px);
+  line-height: 1.4;
+  text-align: justify;
+}
+.m-ch1__photo {
+  /* grows to consume every remaining pixel down to the panel's own
+     bottom edge — zero gap after the text above it, no leftover space
+     below it, regardless of how tall the text block itself ends up */
+  flex: 1 1 auto;
+  min-height: 220px;
+  margin: 0;
+  overflow: hidden;
+}
+.m-ch1__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.06) brightness(0.98);
+}
+
+/* ============================================================
+   MOBILE PANEL 3 — "THE WORK", vertical split/grow. Pinned via
+   position:sticky (not scroll-jacked) — a tall wrapper provides the
+   scroll distance, the panel sticks to the viewport while mobile.ts
+   reads how far the page has scrolled through that wrapper to drive
+   the same box-grow/word-separation math the desktop version uses.
+   ============================================================ */
+.m-pin-wrap {
+  position: relative;
+  height: 260vh;
+}
+.m-panel--work {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 5vh, 40px);
+}
+.m-work__word {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(52px, 17vw, 100px);
+  line-height: 1;
+  will-change: transform;
+}
+.m-work__box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  border-radius: 14px;
+  background: #17140F;
+  color: var(--text-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 2;
+  will-change: width, height, opacity;
+}
+.m-work__box span {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+}
+
+/* ============================================================
+   MOBILE PANEL 4 — "CHAPTER II"; PANEL 6 — "CHAPTER IV" (shared layout,
+   both stack the same way: heading/label, list, a single static preview
+   card — no hover state to drive a swap on a touch device, so it just
+   shows the first/default item's card)
+   ============================================================ */
+.m-panel--ch2,
+.m-panel--ch4 {
+  padding: 28px 20px 40px;
+  display: flex;
+  flex-direction: column;
+}
+.m-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+.m-list__item {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(46, 43, 42, 0.15);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(26px, 8.4vw, 38px);
+  line-height: 1.05;
+  color: var(--work-text);
+  text-align: left;
+}
+.m-list__item:last-child {
+  border-bottom: none;
+}
+.m-preview {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+.m-preview__inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  color: rgba(46, 43, 42, 0.55);
+}
+.m-preview__inner[data-tone="a"] {
+  background: #EFE9DD;
+}
+.m-panel--ch2 .m-more-link,
+.m-panel--ch4 .m-more-link {
+  margin-top: 4px;
+  align-self: flex-end;
+}
+
+/* ============================================================
+   MOBILE PANEL 5 — "CHAPTER III"
+   ============================================================ */
+.m-panel--ch3 {
+  padding: 28px 20px 40px;
+  display: flex;
+  flex-direction: column;
+}
+.m-ch3__intro {
+  margin: 0 0 28px;
+  max-width: 34ch;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.75;
+}
+.m-ch3__list {
+  display: flex;
+  flex-direction: column;
+}
+.m-ch3__item {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(243, 238, 232, 0.12);
+}
+.m-ch3__item:last-child {
+  border-bottom: none;
+}
+.m-ch3__num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(24px, 7vw, 34px);
+  color: var(--accent);
+}
+.m-ch3__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: clamp(17px, 5vw, 22px);
+}
+
+/* ============================================================
+   MOBILE PANEL 7 — "NEXT CHAPTER"
+   ============================================================ */
+.m-panel--next {
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.m-next__socials {
+  display: flex;
+  gap: 20px;
+  padding-top: 10px;
+}
+.m-next__socials a {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-warm);
+  text-decoration: none;
+  opacity: 0.75;
+}
+.m-next__heading {
+  margin: auto 0 24px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(56px, 17vw, 90px);
+  line-height: 0.94;
+}
+.m-next__heading span {
+  display: block;
+}
+.m-next__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+.m-next__email {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 5.6vw, 24px);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  word-break: break-word;
+}
+.m-next__signoff {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  opacity: 0.5;
 }

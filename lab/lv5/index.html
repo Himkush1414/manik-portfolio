@@ -24,7 +24,7 @@
        past/behind it -->
   <aside class="about__sidebar">
     <div class="about__sidebar-top">
-      <button type="button" class="about__menu" id="menu-toggle" aria-label="Menu">
+      <button type="button" class="about__menu menu-trigger" id="menu-toggle" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
       <span class="about__edition">FOLIO&nbsp;&mdash;&nbsp;EDITION</span>
@@ -238,7 +238,159 @@
   </div>
 </div>
 
+<!-- ===================== MOBILE ABOUT SECTION =====================
+     A fully separate experience from #about above (only one of the two is
+     ever displayed — see lv5.css's breakpoint): normal vertical page
+     scroll, one full-screen panel after another, content revealing in as
+     each is scrolled into view. #sm-root / .contact-links above are
+     shared between both layouts (this mobile nav's hamburger triggers the
+     same full-screen menu the desktop sidebar does). -->
+<div id="mobile-about" class="mobile-about">
+
+  <!-- MOBILE PANEL 1 — hero -->
+  <section class="m-panel m-panel--hero">
+    <nav class="m-nav">
+      <img src="../../assets/logo.png" alt="Manik Rana" class="m-nav__logo" />
+      <button type="button" class="m-nav__menu menu-trigger" id="mobile-menu-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+
+    <p class="m-hero__blurb m-reveal">
+      Independent developer based in India &mdash; focused on considered,
+      detail-driven digital work that reads as inevitable, not assembled.
+    </p>
+
+    <div class="m-hero__bottom">
+      <div class="m-hero__meta m-reveal">
+        <span id="mobile-clock-place">New Delhi, India</span>
+        <span id="mobile-clock-time">&nbsp;</span>
+        <span class="m-hero__status">Open for collaborations</span>
+      </div>
+      <h1 class="m-hero__name m-reveal">
+        <span>MANIK</span>
+        <span>RANA</span>
+      </h1>
+    </div>
+  </section>
+
+  <!-- MOBILE PANEL 2 — "CHAPTER I" -->
+  <section class="m-panel m-panel--ch1">
+    <div class="m-ch1__text">
+      <span class="m-chapter m-reveal">CHAPTER I</span>
+      <span class="m-label m-reveal">Quick Intro</span>
+      <p class="m-ch1__paragraph m-reveal">
+        Hi, I&rsquo;m Manik &mdash; a developer who cares as much about how
+        something feels to use as the code underneath it. I build
+        interfaces, small tools, and the occasional over-engineered side
+        project, chasing the point where craft and function agree. When it
+        works and it feels right, that&rsquo;s the whole job.
+      </p>
+      <a href="#" class="m-more-link m-reveal">
+        <span>More about me</span>
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+    <figure class="m-ch1__photo m-reveal m-reveal--wipe">
+      <img class="m-wipe-target" src="./portrait.png" alt="Portrait of Manik Rana" width="1254" height="1254" />
+    </figure>
+  </section>
+
+  <!-- MOBILE PANEL 3 — "THE WORK" split-reveal, vertical + pinned via
+       position:sticky (mobile.ts drives the progress, no scroll-jacking) -->
+  <div class="m-pin-wrap" id="m-work-wrap">
+    <section class="m-panel m-panel--work">
+      <div class="m-work__word m-work__word--the" id="m-word-the">THE</div>
+      <div class="m-work__box" id="m-work-box"><span>VIDEO</span></div>
+      <div class="m-work__word m-work__word--work" id="m-word-work">WORK</div>
+    </section>
+  </div>
+
+  <!-- MOBILE PANEL 4 — "CHAPTER II" -->
+  <section class="m-panel m-panel--ch2">
+    <span class="m-chapter m-reveal">CHAPTER II</span>
+    <span class="m-label m-reveal">Selected Work</span>
+    <ul class="m-list">
+      <li class="m-list__item m-reveal">Web Pages</li>
+      <li class="m-list__item m-reveal">OS Systems</li>
+      <li class="m-list__item m-reveal">Front-End Design</li>
+      <li class="m-list__item m-reveal">Games</li>
+    </ul>
+    <div class="m-preview m-reveal m-reveal--wipe">
+      <div class="m-preview__inner m-wipe-target" data-tone="a"><span>Web Pages</span></div>
+    </div>
+    <p class="m-caption m-reveal">Work spanning products, interfaces, and systems.</p>
+    <a href="#" class="m-more-link m-reveal">
+      <span>View All Work</span>
+      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </section>
+
+  <!-- MOBILE PANEL 5 — "CHAPTER III" -->
+  <section class="m-panel m-panel--ch3">
+    <span class="m-chapter m-reveal">CHAPTER III</span>
+    <p class="m-ch3__intro m-reveal">Designing digital experiences with clarity, structure, and intention.</p>
+    <div class="m-ch3__list">
+      <div class="m-ch3__item m-reveal">
+        <span class="m-ch3__num">01</span>
+        <h3 class="m-ch3__title">Product Design</h3>
+      </div>
+      <div class="m-ch3__item m-reveal">
+        <span class="m-ch3__num">02</span>
+        <h3 class="m-ch3__title">Digital Experiences</h3>
+      </div>
+      <div class="m-ch3__item m-reveal">
+        <span class="m-ch3__num">03</span>
+        <h3 class="m-ch3__title">Visual Design</h3>
+      </div>
+      <div class="m-ch3__item m-reveal">
+        <span class="m-ch3__num">04</span>
+        <h3 class="m-ch3__title">Development</h3>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOBILE PANEL 6 — "CHAPTER IV" -->
+  <section class="m-panel m-panel--ch4">
+    <span class="m-chapter m-reveal">CHAPTER IV</span>
+    <span class="m-label m-reveal">Selected Experiences</span>
+    <ul class="m-list">
+      <li class="m-list__item m-reveal">Project One</li>
+      <li class="m-list__item m-reveal">Project Two</li>
+      <li class="m-list__item m-reveal">Project Three</li>
+      <li class="m-list__item m-reveal">And More</li>
+    </ul>
+    <div class="m-preview m-reveal m-reveal--wipe">
+      <div class="m-preview__inner m-wipe-target" data-tone="a"><span>Project One</span></div>
+    </div>
+    <p class="m-caption m-reveal">Work spanning interfaces, tools, and small experiments.</p>
+  </section>
+
+  <!-- MOBILE PANEL 7 — "NEXT CHAPTER" -->
+  <section class="m-panel m-panel--next">
+    <div class="m-next__socials m-reveal">
+      <a href="https://instagram.com/manikrana31" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+
+    <h2 class="m-next__heading m-reveal">
+      <span>NEXT</span>
+      <span>CHAPTER</span>
+    </h2>
+    <div class="m-next__contact m-reveal">
+      <span class="m-label">Contact To</span>
+      <a href="mailto:manikrana831@gmail.com" class="m-next__email">manikrana831@gmail.com</a>
+    </div>
+
+    <p class="m-next__signoff m-reveal">Thanks for reading &mdash; more to come soon.</p>
+  </section>
+
+</div>
+
 <script type="module" src="./main.ts"></script>
 <script type="module" src="./menu.tsx"></script>
+<script type="module" src="./mobile.ts"></script>
 </body>
 </html>
