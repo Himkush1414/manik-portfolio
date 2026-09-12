@@ -8,12 +8,39 @@
 <link rel="icon" type="image/png" href="assets/logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet" />
+<!-- LogoLoop (react-bits), used by the ported Projects section below,
+     ships styled with Tailwind utility classes and this project has no
+     Tailwind build step of its own — the play CDN compiles those classes
+     at runtime. Same approach /lab/lv7/ itself already uses. -->
+<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="./lv2.css" />
 <link rel="stylesheet" href="./lv6-transition.css" />
+<link rel="stylesheet" href="./projects.css" />
 </head>
 <body class="lv2">
+
+<!-- SVG filter: organic turbulence + blur for §4's drifting bottom fog
+     (same definition as /lab/lv1). Kept OUTSIDE #home-root deliberately —
+     display:none on an SVG's ancestor can stop some browsers resolving a
+     filter: url(#...) reference elsewhere, so this stays always-mounted
+     regardless of which view (Home/Projects/Contact) is showing. -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="fogDistort" x="-25%" y="-60%" width="150%" height="200%"
+          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
+    <feTurbulence type="fractalNoise" baseFrequency="0.0055 0.011" numOctaves="3"
+                  seed="17" stitchTiles="stitch" result="noise" />
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="185"
+                       xChannelSelector="R" yChannelSelector="G" result="disp" />
+    <feGaussianBlur in="disp" stdDeviation="26" />
+  </filter>
+</svg>
+
+<!-- ===================== HOME — the site's original content, now wrapped
+     so it can be hidden as a whole while Projects/Contact/About are shown
+     (see lv6-transition.ts). Nothing inside this wrapper was changed. ===================== -->
+<div id="home-root">
 
 <!-- StaggeredMenu (react-bits) mount — the mobile menu. main.tsx only mounts it
      at <=860px; #sm-root is display:none above that, so desktop/tablet keep the
@@ -42,19 +69,6 @@
     </a>
   </div>
 </nav>
-
-<!-- SVG filter: organic turbulence + blur for §4's drifting bottom fog
-     (same definition as /lab/lv1) -->
-<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
-  <filter id="fogDistort" x="-25%" y="-60%" width="150%" height="200%"
-          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
-    <feTurbulence type="fractalNoise" baseFrequency="0.0055 0.011" numOctaves="3"
-                  seed="17" stitchTiles="stitch" result="noise" />
-    <feDisplacementMap in="SourceGraphic" in2="noise" scale="185"
-                       xChannelSelector="R" yChannelSelector="G" result="disp" />
-    <feGaussianBlur in="disp" stdDeviation="26" />
-  </filter>
-</svg>
 
 <!-- ===================== SECTION 1 — HERO ===================== -->
 <div class="lv2-hero">
@@ -376,6 +390,238 @@
   <div id="ripple-fade" aria-hidden="true"></div>
 </header>
 
+</div>
+<!-- ===================== /#home-root ===================== -->
+
+<!-- ===================== PROJECTS + CONTACT — ported from /lab/lv7/'s
+     current build (styling, effects, footer, everything); lv7 itself is
+     untouched. Own floating nav (logo/Home/About/Contact), own footer,
+     own palette — all scoped under #proj-root so none of it leaks into
+     Home's styling. Hidden by default; shown by lv6-transition.ts, same
+     mechanism as the existing About crossing. ===================== -->
+<div id="proj-root">
+
+  <a class="lv7-nav__logo" id="lv7-logo" href="#projects" aria-label="Manik Rana — Projects">
+    <img src="./nav-logo-mark.png" alt="" />
+  </a>
+
+  <nav class="lv7-nav__links" id="lv7-nav-links" aria-label="Primary">
+    <a class="lv7-nav__link" href="/">Home</a>
+    <a class="lv7-nav__link" href="/about">About</a>
+  </nav>
+
+  <button class="lv7-nav__contact" id="lv7-contact-btn" type="button" aria-label="Contact">
+    <img class="lv7-nav__avatar" src="./contact-photo.jpeg" alt="" />
+    <span>Contact</span>
+  </button>
+
+  <!-- ===================== VIEW 1 — PROJECTS (default within #proj-root) ===================== -->
+  <main class="lv7-view" id="proj-view-projects">
+
+    <section class="lv7-projects" id="projects" aria-label="Projects">
+      <h1 class="lv7-projects__heading">PROJECTS</h1>
+
+      <ul class="lv7-list" id="lv7-list">
+        <li class="lv7-row" data-index="0">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>VIEW LIVE WEBSITE</span>
+          </div>
+          <p class="lv7-row__meta">2025, Cafe, Restaurant</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/blossom-cafe.png" alt="Blossom Cafe" loading="lazy" /></div>
+          <h2 class="lv7-row__name">Blossom Cafe</h2>
+          <a class="lv7-row__link" href="https://theblossomcafe.in" target="_blank" rel="noopener" aria-label="Open Blossom Cafe live site"></a>
+          <span class="lv7-row__arrow" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+
+        <li class="lv7-row" data-index="1">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>VIEW LIVE WEBSITE</span>
+          </div>
+          <p class="lv7-row__meta">2026, Industries</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/nr-industries.png" alt="NR Industries" loading="lazy" /></div>
+          <h2 class="lv7-row__name">NR Industries</h2>
+          <a class="lv7-row__link" href="https://nrpower.in" target="_blank" rel="noopener" aria-label="Open NR Industries live site"></a>
+          <span class="lv7-row__arrow" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+
+        <li class="lv7-row" data-index="2">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>VIEW LIVE WEBSITE</span>
+          </div>
+          <p class="lv7-row__meta">2025, Edu. Platform</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/lyu.png" alt="LYU" loading="lazy" /></div>
+          <h2 class="lv7-row__name">LYU</h2>
+          <a class="lv7-row__link" href="https://lyu-local-youth-upliftment.vercel.app" target="_blank" rel="noopener" aria-label="Open LYU live site"></a>
+          <span class="lv7-row__arrow" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+
+        <li class="lv7-row" data-index="3">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>VIEW LIVE WEBSITE</span>
+          </div>
+          <p class="lv7-row__meta">2025, Travel Agency</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/ridexplorer.png" alt="RideXplorer" loading="lazy" /></div>
+          <h2 class="lv7-row__name">RideXplorer</h2>
+          <a class="lv7-row__link" href="https://ridexplorer-p4hw.vercel.app" target="_blank" rel="noopener" aria-label="Open RideXplorer live site"></a>
+          <span class="lv7-row__arrow" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+
+        <li class="lv7-row" data-index="4">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>VIEW LIVE WEBSITE</span>
+          </div>
+          <p class="lv7-row__meta">2026, Industries</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/industrial-solutions.png" alt="Industrial Solutions Co." loading="lazy" /></div>
+          <h2 class="lv7-row__name">Industrial Solutions Co.</h2>
+          <a class="lv7-row__link" href="https://nr-industries-website.vercel.app" target="_blank" rel="noopener" aria-label="Open Industrial Solutions Co. live site"></a>
+          <span class="lv7-row__arrow" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+
+        <li class="lv7-row lv7-row--nolink" data-index="5">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>NO LIVE LINK YET</span>
+          </div>
+          <p class="lv7-row__meta">2026, Product Company</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/super-management.png" alt="Super Management System" loading="lazy" /></div>
+          <h2 class="lv7-row__name">Super Management System</h2>
+          <span class="lv7-row__link" aria-disabled="true"></span>
+          <span class="lv7-row__arrow lv7-row__arrow--disabled" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+
+        <li class="lv7-row" data-index="6">
+          <div class="lv7-row__pill" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+            <span>VIEW LIVE WEBSITE</span>
+          </div>
+          <p class="lv7-row__meta">2026, Hotel</p>
+          <div class="lv7-row__thumb"><img src="./projects-img/hotelos.png" alt="HotelOS" loading="lazy" /></div>
+          <h2 class="lv7-row__name">HotelOS</h2>
+          <a class="lv7-row__link" href="https://hotel-management-project-eta.vercel.app" target="_blank" rel="noopener" aria-label="Open HotelOS live site"></a>
+          <span class="lv7-row__arrow" aria-hidden="true">
+            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+          </span>
+        </li>
+      </ul>
+
+      <div class="lv7-logoloop" id="lv7-logoloop-mount" aria-label="Tech stack"></div>
+
+      <section class="lv7-cta" aria-label="Get in touch">
+        <p class="lv7-cta__kicker">Let&rsquo;s talk!</p>
+        <h2 class="lv7-cta__headline">READY FOR YOUR<br />NEW WEBSITE?</h2>
+        <a class="lv7-cta__btn lv7-cta__btn--avatar" id="lv7-book-call" href="mailto:manikrana831@gmail.com">
+          <img class="lv7-cta__avatar" src="./contact-photo.jpeg" alt="" />
+          <span>Contact Me</span>
+        </a>
+      </section>
+    </section>
+
+    <!-- FOOTER — local to the Projects/Contact views only; the existing
+         Home footer (#lv2-footer, inside #home-root) is untouched. -->
+    <footer class="lv7-footer">
+      <div class="lv7-footer__cols">
+        <div class="lv7-footer__col lv7-footer__col--brand">
+          <img src="./nav-logo-mark.png" alt="Manik Rana" class="lv7-footer__logo" />
+        </div>
+
+        <div class="lv7-footer__col">
+          <p class="lv7-footer__label">Navigation</p>
+          <ul class="lv7-footer__list">
+            <li><a href="/">Home</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="#" id="lv7-footer-contact">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="lv7-footer__col">
+          <p class="lv7-footer__label">Social</p>
+          <ul class="lv7-footer__list">
+            <li><a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a></li>
+            <li><a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="mailto:manikrana831@gmail.com">Gmail</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="lv7-footer__bottom">
+        <p class="lv7-footer__copy">&copy; 2026 | Manik Rana</p>
+        <div class="lv7-footer__legal">
+          <a href="#privacy">Privacy Policy</a>
+          <a href="#terms">Terms of Use</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ===================== VIEW 2 — CONTACT ===================== -->
+  <section class="lv7-view" id="proj-view-contact" aria-hidden="true">
+    <div class="lv7-contact">
+      <div class="lv7-contact__top">
+        <h1 class="lv7-contact__heading">CONTACT</h1>
+        <p class="lv7-contact__intro">Book a call or send me a message and we&rsquo;ll find out together how and if I can help you.</p>
+      </div>
+
+      <div class="lv7-contact__grid">
+        <div class="lv7-contact__col">
+          <h2 class="lv7-contact__label">&#8600; Call</h2>
+          <p class="lv7-contact__note">100% free and non-binding</p>
+          <a class="lv7-cta__btn lv7-cta__btn--dark" href="mailto:manikrana831@gmail.com">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.9 21 3 13.1 3 3c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+            <span>Book a Call</span>
+          </a>
+        </div>
+
+        <div class="lv7-contact__col">
+          <h2 class="lv7-contact__label">&#8600; Message</h2>
+          <form class="lv7-form" id="lv7-contact-form" novalidate>
+            <label class="lv7-form__field">
+              <span>Name*</span>
+              <input type="text" name="name" required />
+            </label>
+            <label class="lv7-form__field">
+              <span>Email*</span>
+              <input type="email" name="email" required />
+            </label>
+            <label class="lv7-form__field">
+              <span>Phone</span>
+              <input type="tel" name="phone" />
+            </label>
+            <label class="lv7-form__field">
+              <span>Website*</span>
+              <input type="text" name="website" required />
+            </label>
+            <label class="lv7-form__field lv7-form__field--area">
+              <span>Message*</span>
+              <textarea name="message" rows="3" required></textarea>
+            </label>
+            <button type="submit" class="lv7-form__submit">Send message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<!-- ===================== /#proj-root ===================== -->
+
 <!-- ===================== "About" entry transition =====================
      Clicking any real "About" link (href="/about") is intercepted
      (lv6-transition.ts) instead of navigating away: a staggered wipe
@@ -409,6 +655,11 @@
   <span class="lv6-transition-mobile__bar"></span>
   <span class="lv6-transition-mobile__bar"></span>
 </div>
+
+<!-- Cursor-follow trail (ported from /lab/lv7/) — scoped in JS to the
+     Projects/Contact views only, desktop/mouse only. See
+     projects-cursor-trail.ts. -->
+<canvas id="lv7-cursor-trail" class="lv7-cursor-trail" aria-hidden="true"></canvas>
 
 <script type="module" src="./main.tsx"></script>
 </body>

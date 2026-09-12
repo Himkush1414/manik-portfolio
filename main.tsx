@@ -9,10 +9,18 @@ import navLogo from './assets/logo.png';
 import RippleDistortion from './lab/lv1/RippleDistortion';
 import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
+import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
+import LogoLoop, { type LogoItem } from './LogoLoop';
 import './lv2.css';
 import './lab/lv1/lab.css';
 import './lv6-transition';
 import './lv6-about-mobile-nav';
+// Ported from /lab/lv7/ along with the Projects/Contact markup itself
+// (lv7's own copies are untouched) — row hover/cursor-follow-pill
+// behaviour (desktop only) and the decorative cursor-follow trail
+// (Projects/Contact only, desktop only).
+import './projects-rows';
+import './projects-cursor-trail';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
 console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
@@ -593,8 +601,12 @@ document.querySelectorAll<HTMLElement>('.nav').forEach(nav => {
   });
 });
 
-// smooth-scroll for in-page anchors, consistent with the rest of the site
-document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(a => {
+// smooth-scroll for in-page anchors, consistent with the rest of the site.
+// a[href="#projects"] is excluded — lv6-transition.ts now intercepts that
+// href itself (the Projects view-swap), so letting this generic handler
+// also fire on it would additionally scrollIntoView() whatever #projects
+// resolves to at that moment, fighting the transition's own scroll-to-top.
+document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]:not([href="#projects"])').forEach(a => {
   a.addEventListener('click', e => {
     const id = a.getAttribute('href');
     if (!id || id.length < 2) return;
@@ -604,3 +616,57 @@ document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(a => {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
+
+// ==========================================================================
+// PROJECTS — LogoLoop tech-stack strip, ported from /lab/lv7/'s current
+// build (same icon set/props/recolouring; lv7's own copy is untouched).
+// ==========================================================================
+const PROJ_ICON_COLOR = '#111111';
+const projTechLogos: LogoItem[] = [
+  { node: <SiReact color={PROJ_ICON_COLOR} />, title: 'React', ariaLabel: 'React' },
+  { node: <SiNextdotjs color={PROJ_ICON_COLOR} />, title: 'Next.js', ariaLabel: 'Next.js' },
+  { node: <SiTypescript color={PROJ_ICON_COLOR} />, title: 'TypeScript', ariaLabel: 'TypeScript' },
+  { node: <SiTailwindcss color={PROJ_ICON_COLOR} />, title: 'Tailwind CSS', ariaLabel: 'Tailwind CSS' },
+  { node: <SiSupabase color={PROJ_ICON_COLOR} />, title: 'Supabase', ariaLabel: 'Supabase' },
+  { node: <SiVite color={PROJ_ICON_COLOR} />, title: 'Vite', ariaLabel: 'Vite' },
+  { node: <SiVercel color={PROJ_ICON_COLOR} />, title: 'Vercel', ariaLabel: 'Vercel' },
+];
+const projLogoLoopMount = document.getElementById('lv7-logoloop-mount');
+if (projLogoLoopMount) {
+  createRoot(projLogoLoopMount).render(
+    <LogoLoop
+      logos={projTechLogos}
+      speed={55}
+      direction="left"
+      logoHeight={72}
+      gap={64}
+      hoverSpeed={0}
+      scaleOnHover
+      fadeOut
+      fadeOutColor="#E3E1DC"
+      ariaLabel="Tech stack"
+    />
+  );
+}
+
+// ==========================================================================
+// PROJECTS — Contact form, ported from /lab/lv7/. No backend exists
+// anywhere on the site (same as the footer's own no-op newsletter signup
+// above), so this matches that established pattern: validate, then show a
+// confirmation state.
+// ==========================================================================
+const projContactForm = document.getElementById('lv7-contact-form') as HTMLFormElement | null;
+if (projContactForm) {
+  const projSubmitBtn = projContactForm.querySelector<HTMLButtonElement>('.lv7-form__submit');
+  projContactForm.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!projContactForm.reportValidity()) return;
+    projContactForm.classList.add('is-sent');
+    if (projSubmitBtn) projSubmitBtn.textContent = "Thanks — I'll be in touch.";
+    setTimeout(() => {
+      projContactForm.reset();
+      projContactForm.classList.remove('is-sent');
+      if (projSubmitBtn) projSubmitBtn.textContent = 'Send message';
+    }, 3200);
+  });
+}

@@ -1,0 +1,594 @@
+/* ============================================================
+   / (the main site) — Projects + Contact, ported from /lab/lv7/'s current
+   build (fonts, nav-shell pattern, palette, footer, effects) into the main
+   site as two more inline views alongside the existing Home content and
+   the existing About iframe. lv7 itself is untouched — this is its own
+   copy, scoped to #proj-root instead of body.lv7 so it never leaks into
+   Home's own (navy) styling, which keeps using styles.css/lv2.css as
+   before. See projects-transition.ts for the 4-way view switching and
+   projects-rows.ts / projects-cursor-trail.ts for the row/cursor behaviour.
+
+   ONE deliberate change from lv7's own build: the mobile row treatment.
+   lv7 uses tap-to-expand on touch; this integration instead shows every
+   row's info (year/category, name, thumbnail) directly and statically on
+   mobile, with the whole desktop-only hover/cursor-follow/cursor-trail
+   layer fully disabled there — see the @media block near the row rules,
+   and projects-rows.ts / projects-cursor-trail.ts for the matching JS.
+   ============================================================ */
+
+#proj-root {
+  --lv7-bg: #E3E1DC;
+  --lv7-ink: #111111;
+  --lv7-line: rgba(17, 17, 17, 0.16);
+  --lv7-radius: 16px;
+  --lv7-radius-sm: 10px;
+  --lv7-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --lv7-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --lv7-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --lv7-font-body: 'Sora', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --lv7-gutter: clamp(24px, 4vw, 64px);
+  --lv7-gutter-left: clamp(10px, 1.4vw, 26px);
+}
+
+#proj-root, #proj-root * { box-sizing: border-box; }
+#proj-root {
+  display: none;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: var(--lv7-bg);
+  color: var(--lv7-ink);
+  font-family: var(--lv7-font-body);
+  letter-spacing: 0;
+}
+#proj-root.is-active { display: block; }
+#proj-root a { color: inherit; text-decoration: none; }
+
+/* ============================================================
+   FLOATING NAV
+   ============================================================ */
+.lv7-nav__logo,
+.lv7-nav__links,
+.lv7-nav__contact {
+  position: fixed;
+  top: 28px;
+  z-index: 600;
+  transition: transform 0.55s var(--lv7-ease), opacity 0.4s ease;
+}
+
+.lv7-nav__logo {
+  left: clamp(8px, 1.2vw, 18px);
+  top: 7px;
+  display: flex;
+  align-items: center;
+  width: 84px;
+  height: 84px;
+}
+.lv7-nav__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.lv7-nav__logo.is-hidden { transform: translateX(-200px); opacity: 0; }
+
+.lv7-nav__links {
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 36px;
+  background: none;
+  border: none;
+}
+.lv7-nav__links.is-hidden { transform: translate(-50%, -120px); opacity: 0; }
+.lv7-nav__link {
+  font-family: var(--lv7-font-body);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 4px;
+  position: relative;
+}
+.lv7-nav__link::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--lv7-ease);
+}
+.lv7-nav__link:hover::after { transform: scaleX(1); }
+
+.lv7-nav__contact {
+  right: var(--lv7-gutter);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(17, 17, 17, 0.3);
+  background: var(--lv7-bg);
+  color: var(--lv7-ink);
+  border-radius: 999px;
+  padding: 6px 18px 6px 6px;
+  cursor: pointer;
+  font-family: var(--lv7-font-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+.lv7-nav__contact.is-hidden { transform: translateX(140px); opacity: 0; }
+.lv7-nav__contact:hover {
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  transition: background 0.3s ease, color 0.3s ease, transform 0.55s var(--lv7-ease), opacity 0.4s ease;
+}
+.lv7-nav__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .lv7-nav__logo, .lv7-nav__contact { top: 18px; }
+  .lv7-nav__logo { width: 60px; height: 60px; top: 6px; }
+  .lv7-nav__contact { padding: 5px 14px 5px 5px; }
+  .lv7-nav__links { top: 18px; gap: 22px; }
+  .lv7-nav__link { font-size: 13px; }
+  .lv7-nav__contact span { display: none; }
+  .lv7-nav__avatar { width: 26px; height: 26px; }
+}
+
+/* ============================================================
+   VIEWS — Projects (default within #proj-root) / Contact.
+   ============================================================ */
+.lv7-view { display: none; }
+.lv7-view.is-active { display: block; }
+
+/* ============================================================
+   PROJECTS — headline + list + logo strip + CTA
+   ============================================================ */
+.lv7-projects {
+  width: 100%;
+  padding: 168px var(--lv7-gutter) 0 var(--lv7-gutter-left);
+}
+
+.lv7-projects__heading {
+  font-family: var(--lv7-font-display);
+  font-weight: 700;
+  font-size: clamp(96px, 16.5vw, 196px);
+  line-height: 0.88;
+  letter-spacing: 0.005em;
+  margin: 28px 0 56px;
+  -webkit-text-stroke: 1.5px currentColor;
+}
+
+.lv7-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--lv7-line);
+  transition: border-color 0.3s ease;
+}
+.lv7-list:has(> .lv7-row:first-child.is-active) { border-top-color: transparent; }
+
+.lv7-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 92px;
+  padding: 0;
+  border-bottom: 1px solid var(--lv7-line);
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--lv7-ink);
+  border-radius: 0;
+  transition: height 0.55s var(--lv7-ease), background-color 0.45s ease, color 0.45s ease,
+    border-radius 0.55s var(--lv7-ease), padding 0.55s var(--lv7-ease), border-color 0.3s ease;
+}
+.lv7-row.is-active {
+  height: 200px;
+  padding: 0 32px;
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  border-radius: var(--lv7-radius);
+}
+.lv7-row:has(+ .lv7-row.is-active) { border-bottom-color: transparent; }
+
+.lv7-row__meta {
+  flex: 0 0 32%;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.lv7-row__thumb {
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-radius: var(--lv7-radius);
+  overflow: hidden;
+  opacity: 0;
+  transition: width 0.6s var(--lv7-spring), height 0.6s var(--lv7-spring), opacity 0.35s ease 0.05s;
+}
+.lv7-row.is-active .lv7-row__thumb {
+  width: 230px;
+  height: 138px;
+  opacity: 1;
+}
+.lv7-row__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.lv7-row__name {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lv7-row__link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.lv7-row__arrow {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  display: grid;
+  place-items: center;
+  transition: transform 0.4s var(--lv7-ease);
+}
+.lv7-row__arrow-icon {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+  display: block;
+}
+.lv7-row.is-active .lv7-row__arrow-icon { filter: invert(1); }
+.lv7-row.is-active .lv7-row__arrow { transform: rotate(45deg); }
+.lv7-row--nolink { cursor: default; }
+.lv7-row--nolink .lv7-row__link { display: none; }
+.lv7-row__arrow--disabled { opacity: 0.35; }
+
+.lv7-row__pill {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--lv7-ink);
+  border: 1px solid rgba(227, 225, 220, 0.45);
+  color: var(--lv7-bg);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity 0.3s ease, transform 0.35s var(--lv7-spring), left 0.12s ease-out, top 0.12s ease-out;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+}
+.lv7-row__pill svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; flex: 0 0 auto; }
+.lv7-row.is-active .lv7-row__pill { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* ============================================================
+   MOBILE ROWS — deliberately different from lv7's own mobile fallback.
+   No hover-expand, no cursor-follow pill (hidden outright), no
+   interaction required: every row shows its year/category, name and
+   thumbnail directly and statically, stacked for a narrow screen.
+   ASSUMPTION FLAG: thumbnail always visible on mobile — not spec'd
+   either way, flagged in the chat reply.
+   ============================================================ */
+@media (max-width: 720px) {
+  .lv7-projects { padding-top: 130px; }
+  /* rows are now standalone cards (see below), not a bordered list */
+  .lv7-list { border-top: none; }
+  .lv7-row {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+    padding: 22px;
+    gap: 12px;
+    margin-bottom: 18px;
+    cursor: default;
+    border-bottom: none;
+    /* permanently the same look the desktop ".is-active" hover state
+       uses — no interaction on mobile, so this is just the row's own
+       resting style here, not a toggled state. */
+    background: var(--lv7-ink);
+    color: var(--lv7-bg);
+    border-radius: var(--lv7-radius);
+  }
+  .lv7-row:last-child { margin-bottom: 0; }
+  .lv7-row__pill { display: none; }
+  .lv7-row__meta { flex: none; font-size: 10px; }
+  .lv7-row__thumb {
+    width: 100%;
+    height: 46vw;
+    max-height: 220px;
+    opacity: 1;
+  }
+  .lv7-row__name {
+    white-space: normal;
+    font-size: clamp(28px, 8vw, 40px);
+  }
+  .lv7-row__arrow { align-self: flex-end; margin-top: -46px; }
+  /* the arrow artwork is solid black on transparent — needs to flip to
+     white to stay visible against the row's now-permanently-dark card. */
+  .lv7-row__arrow-icon { filter: invert(1); }
+}
+
+/* ============================================================
+   LOGO LOOP strip
+   ============================================================ */
+.lv7-logoloop {
+  margin: 88px calc(-1 * var(--lv7-gutter)) 96px calc(-1 * var(--lv7-gutter-left));
+  padding: 28px var(--lv7-gutter) 28px var(--lv7-gutter-left);
+  color: var(--lv7-ink);
+}
+.lv7-logoloop svg { display: block; }
+
+/* ============================================================
+   CTA — "Ready for your new website?"
+   ============================================================ */
+.lv7-cta {
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  text-align: center;
+  padding: 168px var(--lv7-gutter);
+  margin: 0 calc(-1 * var(--lv7-gutter)) 0 calc(-1 * var(--lv7-gutter-left));
+  border-radius: var(--lv7-radius) var(--lv7-radius) 0 0;
+}
+.lv7-cta__kicker {
+  margin: 0 0 22px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+.lv7-cta__headline {
+  margin: 0 0 48px;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: clamp(48px, 8.5vw, 112px);
+  line-height: 1.02;
+}
+.lv7-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 38px;
+  border-radius: 999px;
+  background: var(--lv7-bg);
+  color: var(--lv7-ink);
+  font-family: var(--lv7-font-body);
+  font-weight: 700;
+  font-size: 17px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.4s var(--lv7-ease), box-shadow 0.4s var(--lv7-ease), filter 0.3s ease;
+}
+.lv7-cta__btn svg { width: 19px; height: 19px; fill: currentColor; }
+.lv7-cta__btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  filter: brightness(1.06);
+}
+.lv7-cta__btn--dark {
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  border: 1px solid rgba(17, 17, 17, 0.35);
+}
+.lv7-cta__btn--dark:hover { filter: brightness(1.3); }
+
+.lv7-cta__btn--avatar { padding: 7px 34px 7px 7px; text-transform: uppercase; }
+.lv7-cta__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .lv7-cta { padding: 110px var(--lv7-gutter); }
+}
+
+/* ============================================================
+   CONTACT VIEW
+   ============================================================ */
+.lv7-contact {
+  width: 100%;
+  min-height: 100vh;
+  padding: 168px var(--lv7-gutter) 96px;
+  display: flex;
+  flex-direction: column;
+}
+.lv7-contact__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-bottom: 96px;
+}
+.lv7-contact__heading {
+  margin: 0;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: clamp(72px, 13vw, 150px);
+  line-height: 0.9;
+}
+.lv7-contact__intro {
+  max-width: 360px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+.lv7-contact__grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 64px;
+  flex: 1;
+}
+.lv7-contact__label {
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: 28px;
+  margin: 0 0 12px;
+}
+.lv7-contact__note {
+  margin: 0 0 28px;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.lv7-form { display: flex; flex-direction: column; gap: 22px; }
+.lv7-form__field { display: flex; flex-direction: column; gap: 6px; }
+.lv7-form__field span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.lv7-form__field input,
+.lv7-form__field textarea {
+  border: none;
+  border-bottom: 1px solid var(--lv7-line);
+  background: transparent;
+  color: var(--lv7-ink);
+  font-family: var(--lv7-font-body);
+  font-size: 16px;
+  padding: 6px 2px;
+  resize: none;
+  transition: border-color 0.3s ease;
+}
+.lv7-form__field input:focus,
+.lv7-form__field textarea:focus {
+  outline: none;
+  border-bottom-color: var(--lv7-ink);
+}
+.lv7-form__submit {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: none;
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  font-family: var(--lv7-font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.3s ease, transform 0.4s var(--lv7-ease);
+}
+.lv7-form__submit:hover { filter: brightness(1.3); transform: translateY(-2px); }
+.lv7-form.is-sent .lv7-form__submit { filter: brightness(1.3); }
+
+@media (max-width: 860px) {
+  .lv7-contact__grid { grid-template-columns: 1fr; gap: 56px; }
+}
+
+/* ============================================================
+   FOOTER — local to the Projects/Contact views only; the existing Home
+   footer (#lv2-footer) is untouched.
+   ============================================================ */
+.lv7-footer {
+  width: 100%;
+  padding: 0 var(--lv7-gutter) 24px;
+  color: var(--lv7-ink);
+}
+.lv7-footer__cols {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 32px 0 28px;
+  border-top: 1px solid var(--lv7-line);
+}
+.lv7-footer__col--brand { flex: 0 0 auto; }
+.lv7-footer__logo { width: 84px; height: 84px; object-fit: contain; display: block; }
+.lv7-footer__col { flex: 0 0 auto; min-width: 120px; }
+.lv7-footer__label {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+.lv7-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lv7-footer__list a { font-size: 12.5px; font-weight: 600; }
+.lv7-footer__list a:hover { opacity: 0.6; }
+.lv7-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--lv7-line);
+  font-size: 11px;
+}
+.lv7-footer__copy { margin: 0; opacity: 0.65; }
+.lv7-footer__legal { display: flex; gap: 18px; }
+.lv7-footer__legal a { opacity: 0.65; }
+.lv7-footer__legal a:hover { opacity: 1; }
+
+@media (max-width: 640px) {
+  .lv7-footer__logo { width: 60px; height: 60px; }
+}
+@media (max-width: 560px) {
+  .lv7-footer__cols { gap: 24px; }
+}
+
+/* ============================================================
+   CURSOR TRAIL — desktop/mouse only (see projects-cursor-trail.ts).
+   ============================================================ */
+.lv7-cursor-trail {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 700;
+  pointer-events: none;
+}

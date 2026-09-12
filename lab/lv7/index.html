@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — Projects</title>
+<meta name="description" content="Manik Rana — selected projects." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet" />
+<!-- LogoLoop (react-bits) ships styled with Tailwind utility classes, and
+     this project has no Tailwind build step of its own — the play CDN
+     compiles those classes at runtime, scoped to this one page only. -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- lv7 is fully self-contained now that its footer is local (fix #6) —
+     the shared site-wide styles.css is no longer needed here. -->
+<link rel="stylesheet" href="./lv7-transition.css" />
+<link rel="stylesheet" href="./lv7.css" />
+</head>
+<body class="lv7">
+
+<!-- ===================== FLOATING NAV (no bar/strip — bare elements) =====================
+     Three independent groups, each its own fixed-position element so they can
+     separate and exit in three different directions on scroll (see lv7-nav.ts):
+     logo -> left, links -> up, contact -> right. Reassembles in reverse on
+     scroll back up toward the top. -->
+<a class="lv7-nav__logo" id="lv7-logo" href="#projects" aria-label="Manik Rana — Projects (home)">
+  <img src="./nav-logo-mark.png" alt="" />
+</a>
+
+<nav class="lv7-nav__links" id="lv7-nav-links" aria-label="Primary">
+  <a class="lv7-nav__link" href="/" data-lv7-nav="home">Home</a>
+  <a class="lv7-nav__link" href="/about" data-lv7-nav="about">About</a>
+</nav>
+
+<button class="lv7-nav__contact" id="lv7-contact-btn" type="button" aria-label="Contact">
+  <img class="lv7-nav__avatar" src="./contact-photo.jpeg" alt="" />
+  <span>Contact</span>
+</button>
+
+<!-- ===================== VIEW 1 — PROJECTS (default) ===================== -->
+<main class="lv7-view lv7-view--projects is-active" id="lv7-view-projects">
+
+  <section class="lv7-projects" id="projects" aria-label="Projects">
+    <h1 class="lv7-projects__heading">PROJECTS</h1>
+
+    <ul class="lv7-list" id="lv7-list">
+      <li class="lv7-row" data-index="0">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>VIEW LIVE WEBSITE</span>
+        </div>
+        <p class="lv7-row__meta">2025, Cafe, Restaurant</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/blossom-cafe.png" alt="Blossom Cafe" loading="lazy" /></div>
+        <h2 class="lv7-row__name">Blossom Cafe</h2>
+        <a class="lv7-row__link" href="https://theblossomcafe.in" target="_blank" rel="noopener" aria-label="Open Blossom Cafe live site"></a>
+        <span class="lv7-row__arrow" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+
+      <li class="lv7-row" data-index="1">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>VIEW LIVE WEBSITE</span>
+        </div>
+        <p class="lv7-row__meta">2026, Industries</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/nr-industries.png" alt="NR Industries" loading="lazy" /></div>
+        <h2 class="lv7-row__name">NR Industries</h2>
+        <a class="lv7-row__link" href="https://nrpower.in" target="_blank" rel="noopener" aria-label="Open NR Industries live site"></a>
+        <span class="lv7-row__arrow" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+
+      <li class="lv7-row" data-index="2">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>VIEW LIVE WEBSITE</span>
+        </div>
+        <p class="lv7-row__meta">2025, Edu. Platform</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/lyu.png" alt="LYU" loading="lazy" /></div>
+        <h2 class="lv7-row__name">LYU</h2>
+        <a class="lv7-row__link" href="https://lyu-local-youth-upliftment.vercel.app" target="_blank" rel="noopener" aria-label="Open LYU live site"></a>
+        <span class="lv7-row__arrow" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+
+      <li class="lv7-row" data-index="3">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>VIEW LIVE WEBSITE</span>
+        </div>
+        <p class="lv7-row__meta">2025, Travel Agency</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/ridexplorer.png" alt="RideXplorer" loading="lazy" /></div>
+        <h2 class="lv7-row__name">RideXplorer</h2>
+        <a class="lv7-row__link" href="https://ridexplorer-p4hw.vercel.app" target="_blank" rel="noopener" aria-label="Open RideXplorer live site"></a>
+        <span class="lv7-row__arrow" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+
+      <!-- CONTENT FLAG: no final project name was given for this one (an
+           earlier, unrelated-looking prototype of the NR Industries build) —
+           "Industrial Solutions Co." is a generic placeholder, not a final
+           name. Flagged again in the chat reply. -->
+      <li class="lv7-row" data-index="4">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>VIEW LIVE WEBSITE</span>
+        </div>
+        <p class="lv7-row__meta">2026, Industries</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/industrial-solutions.png" alt="Industrial Solutions Co." loading="lazy" /></div>
+        <h2 class="lv7-row__name">Industrial Solutions Co.</h2>
+        <a class="lv7-row__link" href="https://nr-industries-website.vercel.app" target="_blank" rel="noopener" aria-label="Open Industrial Solutions Co. live site"></a>
+        <span class="lv7-row__arrow" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+
+      <!-- GAP FLAG: no live link was found for this one — the "view live
+           website" affordance is present for visual consistency but disabled
+           (no href, aria-disabled) rather than guessing a URL. -->
+      <li class="lv7-row lv7-row--nolink" data-index="5">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>NO LIVE LINK YET</span>
+        </div>
+        <p class="lv7-row__meta">2026, Product Company</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/super-management.png" alt="Super Management System" loading="lazy" /></div>
+        <h2 class="lv7-row__name">Super Management System</h2>
+        <span class="lv7-row__link" aria-disabled="true"></span>
+        <span class="lv7-row__arrow lv7-row__arrow--disabled" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+
+      <li class="lv7-row" data-index="6">
+        <div class="lv7-row__pill" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          <span>VIEW LIVE WEBSITE</span>
+        </div>
+        <p class="lv7-row__meta">2026, Hotel</p>
+        <div class="lv7-row__thumb"><img src="./projects-img/hotelos.png" alt="HotelOS" loading="lazy" /></div>
+        <h2 class="lv7-row__name">HotelOS</h2>
+        <a class="lv7-row__link" href="https://hotel-management-project-eta.vercel.app" target="_blank" rel="noopener" aria-label="Open HotelOS live site"></a>
+        <span class="lv7-row__arrow" aria-hidden="true">
+          <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+        </span>
+      </li>
+    </ul>
+
+    <div class="lv7-logoloop" id="lv7-logoloop-mount" aria-label="Tech stack"></div>
+
+    <section class="lv7-cta" aria-label="Get in touch">
+      <p class="lv7-cta__kicker">Let&rsquo;s talk!</p>
+      <h2 class="lv7-cta__headline">READY FOR YOUR<br />NEW WEBSITE?</h2>
+      <a class="lv7-cta__btn lv7-cta__btn--avatar" id="lv7-book-call" href="mailto:manikrana831@gmail.com">
+        <img class="lv7-cta__avatar" src="./contact-photo.jpeg" alt="" />
+        <span>Contact Me</span>
+      </a>
+    </section>
+  </section>
+
+  <!-- ===================== FOOTER — fix #6: replaced entirely with a NEW
+       footer local to lv7 only. Does not reuse or edit the site's shared
+       dark hero footer (still used unchanged everywhere else). ===================== -->
+  <footer class="lv7-footer">
+    <div class="lv7-footer__cols">
+      <div class="lv7-footer__col lv7-footer__col--brand">
+        <img src="./nav-logo-mark.png" alt="Manik Rana" class="lv7-footer__logo" />
+      </div>
+
+      <div class="lv7-footer__col">
+        <p class="lv7-footer__label">Navigation</p>
+        <ul class="lv7-footer__list">
+          <li><a href="/" data-lv7-nav="home">Home</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="/about" data-lv7-nav="about">About</a></li>
+          <li><a href="#" id="lv7-footer-contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- GAP: no social platforms/handles were given for this fresh footer.
+           These three carry over the same real LinkedIn/GitHub/Gmail links
+           already used site-wide elsewhere (not invented) — flagged in the
+           chat reply in case a different/updated set should replace them. -->
+      <div class="lv7-footer__col">
+        <p class="lv7-footer__label">Social</p>
+        <ul class="lv7-footer__list">
+          <li><a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="mailto:manikrana831@gmail.com">Gmail</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="lv7-footer__bottom">
+      <p class="lv7-footer__copy">&copy; 2026 | Manik Rana</p>
+      <!-- No Legal Notice / Privacy / Cookies pages exist anywhere on the
+           site yet — same inert placeholders every other route already
+           uses (href="#privacy"/"#terms"), not new routes. No language
+           switcher: this site isn't bilingual. -->
+      <div class="lv7-footer__legal">
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#terms">Terms of Use</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<!-- ===================== VIEW 2 — CONTACT (same-document view swap, no
+     modal — reached only via the column-strip transition, same mechanism as
+     Home/About below) ===================== -->
+<section class="lv7-view lv7-view--contact" id="lv7-view-contact" aria-hidden="true">
+  <div class="lv7-contact">
+    <div class="lv7-contact__top">
+      <h1 class="lv7-contact__heading">CONTACT</h1>
+      <p class="lv7-contact__intro">Book a call or send me a message and we&rsquo;ll find out together how and if I can help you.</p>
+    </div>
+
+    <div class="lv7-contact__grid">
+      <div class="lv7-contact__col">
+        <h2 class="lv7-contact__label">&#8600; Call</h2>
+        <p class="lv7-contact__note">100% free and non-binding</p>
+        <a class="lv7-cta__btn lv7-cta__btn--dark" href="mailto:manikrana831@gmail.com">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.9 21 3 13.1 3 3c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+          <span>Book a Call</span>
+        </a>
+      </div>
+
+      <div class="lv7-contact__col">
+        <h2 class="lv7-contact__label">&#8600; Message</h2>
+        <form class="lv7-form" id="lv7-contact-form" novalidate>
+          <label class="lv7-form__field">
+            <span>Name*</span>
+            <input type="text" name="name" required />
+          </label>
+          <label class="lv7-form__field">
+            <span>Email*</span>
+            <input type="email" name="email" required />
+          </label>
+          <label class="lv7-form__field">
+            <span>Phone</span>
+            <input type="tel" name="phone" />
+          </label>
+          <label class="lv7-form__field">
+            <span>Website*</span>
+            <input type="text" name="website" required />
+          </label>
+          <label class="lv7-form__field lv7-form__field--area">
+            <span>Message*</span>
+            <textarea name="message" rows="3" required></textarea>
+          </label>
+          <button type="submit" class="lv7-form__submit">Send message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Home / About — preloaded hidden iframes, exactly
+     lv6's own pattern for About, extended to a second destination (Home).
+     Both stay loaded for lv7's whole lifetime so the swap under the cover
+     never has anything left to finish loading. ===================== -->
+<div id="lv7-frame-home" class="lv7-frame-wrap" aria-hidden="true">
+  <iframe id="lv7-frame-home-el" class="lv7-frame" src="/" title="Home" tabindex="-1"></iframe>
+</div>
+<div id="lv7-frame-about" class="lv7-frame-wrap" aria-hidden="true">
+  <iframe id="lv7-frame-about-el" class="lv7-frame" src="/about/" title="About" tabindex="-1"></iframe>
+</div>
+
+<!-- ===================== Column-strip transition overlays (same mechanism
+     as lv6-transition, generalized to a JS-set colour per crossing instead
+     of two fixed themes — see lv7-transition.ts/css). ===================== -->
+<div id="lv7-transition" class="lv7-transition" aria-hidden="true">
+  <span class="lv7-transition__col"></span>
+  <span class="lv7-transition__col"></span>
+  <span class="lv7-transition__col"></span>
+  <span class="lv7-transition__col"></span>
+  <span class="lv7-transition__col"></span>
+  <span class="lv7-transition__col"></span>
+  <span class="lv7-transition__col"></span>
+</div>
+<div id="lv7-transition-mobile" class="lv7-transition-mobile" aria-hidden="true">
+  <span class="lv7-transition-mobile__bar"></span>
+  <span class="lv7-transition-mobile__bar"></span>
+  <span class="lv7-transition-mobile__bar"></span>
+  <span class="lv7-transition-mobile__bar"></span>
+  <span class="lv7-transition-mobile__bar"></span>
+</div>
+
+<!-- ===================== Cursor-follow trail — small rounded square that
+     chases the real cursor with a short fading black streak behind it.
+     Drawn on canvas (lv7-cursor-trail.ts); scoped in JS to the Projects and
+     Contact views only (mouse/desktop only — see the script). ===================== -->
+<canvas id="lv7-cursor-trail" class="lv7-cursor-trail" aria-hidden="true"></canvas>
+
+<script type="module" src="./main.tsx"></script>
+</body>
+</html>

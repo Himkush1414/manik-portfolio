@@ -1,0 +1,72 @@
+/* ============================================================
+   /lab/lv7 — the same staggered column-wipe mechanism as lab/lv6's
+   About<->Home transition (lv6-transition.css/.ts), copied into lv7's own
+   files (per scope: don't edit the lv6 original) and generalised from two
+   fixed themes to an arbitrary colour set at runtime — lv7 has four
+   crossings (Projects/Contact/Home/About) instead of lv6's two, and the
+   colour rule is "whichever page is being LEFT", not a fixed pair.
+   See lv7-transition.ts for the sequencing/colour logic.
+   ============================================================ */
+
+.lv7-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  pointer-events: none;
+}
+.lv7-transition.is-active { pointer-events: auto; }
+.lv7-transition__col {
+  flex: 0 0 calc(100% / 7 + 2px);
+  margin-right: -2px;
+  height: 100%;
+  background: var(--tcolor, #E3E1DC);
+  /* leading-edge shadow (fix #9): moves with the column's own transform, so
+     it reads as a sweep of depth even when a crossing's colour is close to
+     the page behind it (e.g. Projects <-> Contact, both the same warm
+     off-white family). */
+  box-shadow: 0 -22px 44px rgba(0, 0, 0, 0.18);
+  transform: translateY(100%);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.lv7-transition.theme-gradient .lv7-transition__col { background: var(--tgrad); }
+.lv7-transition.is-covering .lv7-transition__col { transform: translateY(0); }
+.lv7-transition.is-revealing .lv7-transition__col { transform: translateY(100%); }
+
+.lv7-transition-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  pointer-events: none;
+}
+@media (max-width: 720px) {
+  .lv7-transition { display: none; }
+  .lv7-transition-mobile { display: flex; }
+}
+.lv7-transition-mobile.is-active { pointer-events: auto; }
+.lv7-transition-mobile__bar {
+  flex: 0 0 calc(100% / 5 + 2px);
+  margin-bottom: -2px;
+  width: 100%;
+  background: var(--tcolor, #E3E1DC);
+  box-shadow: 22px 0 44px rgba(0, 0, 0, 0.18);
+  transform: translateX(-100%);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.lv7-transition-mobile.theme-gradient .lv7-transition-mobile__bar {
+  background-image: var(--tgrad);
+  background-size: 100% 500%;
+}
+.lv7-transition-mobile.theme-gradient .lv7-transition-mobile__bar:nth-child(1) { background-position-y: 0%; }
+.lv7-transition-mobile.theme-gradient .lv7-transition-mobile__bar:nth-child(2) { background-position-y: 25%; }
+.lv7-transition-mobile.theme-gradient .lv7-transition-mobile__bar:nth-child(3) { background-position-y: 50%; }
+.lv7-transition-mobile.theme-gradient .lv7-transition-mobile__bar:nth-child(4) { background-position-y: 75%; }
+.lv7-transition-mobile.theme-gradient .lv7-transition-mobile__bar:nth-child(5) { background-position-y: 100%; }
+.lv7-transition-mobile.is-covering .lv7-transition-mobile__bar { transform: translateX(0); }
+.lv7-transition-mobile.is-revealing .lv7-transition-mobile__bar { transform: translateX(100%); }

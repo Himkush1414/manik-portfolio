@@ -17,13 +17,15 @@ const smMount = document.getElementById('sm-root');
 const contactLinks = document.getElementById('contact-links');
 
 if (smMount) {
-  // "Home" is a real link off lv5 entirely (the main site's root); the
-  // other three stay in-page (`#`) since none of them are real destinations
-  // yet — see the per-item click handling below for what each does instead.
+  // "Home" and "Projects" are real links off lv5 entirely (the main
+  // site's root, the second with a #projects hash the main site's own
+  // script picks up on load to land straight on its Projects view); the
+  // other two stay in-page (`#`) since neither is a real destination —
+  // see the per-item click handling below for what each does instead.
   const smItems = [
     { label: 'Home', ariaLabel: 'Go to the main site', link: '/' },
     { label: 'About', ariaLabel: 'This section', link: '#' },
-    { label: 'Works', ariaLabel: 'Works (coming soon)', link: '#' },
+    { label: 'Projects', ariaLabel: 'Go to Projects', link: '/#projects' },
     { label: 'Contact', ariaLabel: 'Show contact links', link: '#' },
   ];
 
@@ -66,16 +68,16 @@ if (smMount) {
     });
   });
 
-  // Home is a genuine <a href="/"> — left to navigate normally, no
-  // handler needed. The other three are each handled on their own terms:
-  // About is this very section (nothing to navigate to, just close),
-  // Works has no destination yet (placeholder, just close), and Contact
-  // reveals the social links panel in place instead of closing.
+  // Home and Projects are genuine <a href> links — left to navigate
+  // normally, no handler needed. The other two are each handled on their
+  // own terms: About is this very section (nothing to navigate to, just
+  // close), and Contact reveals the social links panel in place instead
+  // of closing.
   smMount.addEventListener('click', e => {
     const item = (e.target as HTMLElement).closest('.sm-panel-item') as HTMLElement | null;
     if (!item) return;
     const index = Number(item.dataset.index);
-    if (index === 1) return; // Home: real navigation, let it proceed
+    if (index === 1 || index === 3) return; // Home / Projects: real navigation, let it proceed
 
     e.preventDefault();
     if (index === 4) {

@@ -1,0 +1,626 @@
+/* ============================================================
+   /lab/lv7 — "Projects" page. A new route copied from /lab/lv6/'s shell
+   (fonts, nav-shell pattern, column-strip transition system) but with
+   entirely new page content, its own light/near-black palette, and its own
+   local footer (see .lv7-footer below) — fully self-contained, no
+   dependency on the shared site-wide styles.css.
+   ============================================================ */
+
+:root {
+  --lv7-bg: #E3E1DC;
+  --lv7-ink: #111111;
+  --lv7-line: rgba(17, 17, 17, 0.16);
+  --lv7-radius: 16px;
+  --lv7-radius-sm: 10px;
+  --lv7-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --lv7-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --lv7-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --lv7-font-body: 'Sora', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  /* single source of truth for the page's left/right inset — the nav
+     (logo/contact) and every content edge (rows' right edge, footer) all key
+     off this so they land flush with each other. */
+  --lv7-gutter: clamp(24px, 4vw, 64px);
+  /* the headline and each row's "{year}, {category}" label intentionally
+     sit further left than everything else — their own, smaller inset. */
+  --lv7-gutter-left: clamp(10px, 1.4vw, 26px);
+}
+
+/* Page reset, kept local to lv7 rather than relying on the shared
+   styles.css reset (this page no longer imports that file's footer either —
+   see the new .lv7-footer below). */
+body.lv7, body.lv7 * { box-sizing: border-box; }
+body.lv7 { margin: 0; padding: 0; overflow-x: hidden; }
+
+body.lv7 {
+  background: var(--lv7-bg);
+  color: var(--lv7-ink);
+  font-family: var(--lv7-font-body);
+  letter-spacing: 0;
+}
+body.lv7 a { color: inherit; text-decoration: none; }
+
+/* ============================================================
+   FLOATING NAV — no bar/strip behind it, three independent groups so each
+   can exit in its own direction on scroll (see lv7-nav.ts).
+   ============================================================ */
+.lv7-nav__logo,
+.lv7-nav__links,
+.lv7-nav__contact {
+  position: fixed;
+  top: 28px;
+  z-index: 600;
+  transition: transform 0.55s var(--lv7-ease), opacity 0.4s ease;
+}
+
+.lv7-nav__logo {
+  /* deliberately its own, much smaller inset than --lv7-gutter — near the
+     screen edge, not aligned with the rest of the content. */
+  left: clamp(8px, 1.2vw, 18px);
+  /* the shared top:28px above is for the .lv7-nav__contact/.lv7-nav__links
+     baseline; the logo's own box is much taller (84px) than the contact
+     pill (~42px), so it needs a higher top to land on the same visual
+     centre-line as the contact button, not just the same top edge. */
+  top: 7px;
+  display: flex;
+  align-items: center;
+  width: 84px;
+  height: 84px;
+}
+.lv7-nav__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.lv7-nav__logo.is-hidden { transform: translateX(-200px); opacity: 0; }
+
+.lv7-nav__links {
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 36px;
+  background: none;
+  border: none;
+}
+.lv7-nav__links.is-hidden { transform: translate(-50%, -120px); opacity: 0; }
+.lv7-nav__link {
+  font-family: var(--lv7-font-body);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 4px;
+  position: relative;
+}
+.lv7-nav__link::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--lv7-ease);
+}
+.lv7-nav__link:hover::after { transform: scaleX(1); }
+
+.lv7-nav__contact {
+  right: var(--lv7-gutter);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(17, 17, 17, 0.3);
+  background: var(--lv7-bg);
+  color: var(--lv7-ink);
+  border-radius: 999px;
+  padding: 6px 18px 6px 6px;
+  cursor: pointer;
+  font-family: var(--lv7-font-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+.lv7-nav__contact.is-hidden { transform: translateX(140px); opacity: 0; }
+.lv7-nav__contact:hover {
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  transition: background 0.3s ease, color 0.3s ease, transform 0.55s var(--lv7-ease), opacity 0.4s ease;
+}
+.lv7-nav__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .lv7-nav__logo, .lv7-nav__contact { top: 18px; }
+  .lv7-nav__logo { width: 60px; height: 60px; top: 6px; }
+  .lv7-nav__contact { padding: 5px 14px 5px 5px; }
+  .lv7-nav__links { top: 18px; gap: 22px; }
+  .lv7-nav__link { font-size: 13px; }
+  .lv7-nav__contact span { display: none; }
+  .lv7-nav__avatar { width: 26px; height: 26px; }
+}
+
+/* ============================================================
+   VIEWS — Projects (default) / Contact. Simple show/hide; the column-strip
+   overlay is what actually sells the transition between them.
+   ============================================================ */
+.lv7-view { display: none; }
+.lv7-view.is-active { display: block; }
+
+/* ============================================================
+   PROJECTS — headline + list + logo strip + CTA
+   ============================================================ */
+.lv7-projects {
+  width: 100%;
+  /* left inset is deliberately smaller than the right one — the headline
+     and row labels sit further left than the rows' own right edge (arrow)
+     and the rest of the nav/footer, which still key off --lv7-gutter. */
+  padding: 168px var(--lv7-gutter) 0 var(--lv7-gutter-left);
+}
+
+.lv7-projects__heading {
+  font-family: var(--lv7-font-display);
+  font-weight: 700;
+  font-size: clamp(96px, 16.5vw, 196px);
+  line-height: 0.88;
+  letter-spacing: 0.005em;
+  margin: 28px 0 56px;
+  /* Bebas Neue only ships one real weight — font-weight:700 above triggers
+     the browser's synthetic-bold rendering; the stroke reinforces it so the
+     "bolder" look doesn't depend on that browser behaviour alone. */
+  -webkit-text-stroke: 1.5px currentColor;
+}
+
+.lv7-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--lv7-line);
+  transition: border-color 0.3s ease;
+}
+/* the divider above the very first row belongs to the LIST, not to any row
+   — when that first row is the one expanded/curved, hide it the same way. */
+.lv7-list:has(> .lv7-row:first-child.is-active) { border-top-color: transparent; }
+
+.lv7-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 92px;
+  padding: 0;
+  border-bottom: 1px solid var(--lv7-line);
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--lv7-ink);
+  border-radius: 0;
+  transition: height 0.55s var(--lv7-ease), background-color 0.45s ease, color 0.45s ease,
+    border-radius 0.55s var(--lv7-ease), padding 0.55s var(--lv7-ease), border-color 0.3s ease;
+}
+.lv7-row.is-active {
+  height: 200px;
+  padding: 0 32px;
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  /* the expanded row itself now curves too, not just the thumbnail/pill/
+     buttons inside it — matches the page's soft-medium radius language. */
+  border-radius: var(--lv7-radius);
+}
+/* the divider sitting right above a row belongs to the PRECEDING row's own
+   border-bottom (a separate, still-flat element) — it doesn't know this
+   row just grew rounded top corners, so left alone it runs straight across
+   them. Hide it on whichever row precedes the one currently expanded. */
+.lv7-row:has(+ .lv7-row.is-active) { border-bottom-color: transparent; }
+
+.lv7-row__meta {
+  /* flush with the row's own left edge (which is flush with the headline/nav
+     — see --lv7-gutter), with a wide, proportional gap held open before the
+     name starts (fix #4) — roughly a third of the row's own width. */
+  flex: 0 0 32%;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.lv7-row__thumb {
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-radius: var(--lv7-radius);
+  overflow: hidden;
+  opacity: 0;
+  transition: width 0.6s var(--lv7-spring), height 0.6s var(--lv7-spring), opacity 0.35s ease 0.05s;
+}
+.lv7-row.is-active .lv7-row__thumb {
+  width: 230px;
+  height: 138px;
+  opacity: 1;
+}
+.lv7-row__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.lv7-row__name {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lv7-row__link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.lv7-row__arrow {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  display: grid;
+  place-items: center;
+  transition: transform 0.4s var(--lv7-ease);
+}
+/* fits within a 19x19 box without stretching — the source PNG is landscape
+   (1536x1024), not square, so object-fit:contain letterboxes it inside the
+   square box rather than distorting it. */
+.lv7-row__arrow-icon {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+  display: block;
+}
+/* the artwork itself is solid black on a transparent background (no light
+   variant) — on the row's inverted/hover state (near-black background) it
+   would otherwise vanish. Flip it to white there via filter, same asset. */
+.lv7-row.is-active .lv7-row__arrow-icon { filter: invert(1); }
+.lv7-row.is-active .lv7-row__arrow { transform: rotate(45deg); }
+.lv7-row--nolink { cursor: default; }
+.lv7-row--nolink .lv7-row__link { display: none; }
+.lv7-row__arrow--disabled { opacity: 0.35; }
+
+/* cursor-follow "VIEW LIVE WEBSITE" pill — kept genuinely small/compact
+   (fix #10), positioned by lv7-projects.ts on every mousemove within the
+   hovered row, clamped to stay inside it. Default left/top (before the
+   first mousemove — e.g. keyboard focus, or the instant mouseenter fires)
+   sits centred on the row rather than pinned to a corner. */
+.lv7-row__pill {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  /* purely decorative — the full-row <a> (z-index 2) must stay clickable
+     underneath it, including at the exact point the cursor (and therefore
+     this pill) currently sits. */
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--lv7-ink);
+  border: 1px solid rgba(227, 225, 220, 0.45);
+  color: var(--lv7-bg);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity 0.3s ease, transform 0.35s var(--lv7-spring), left 0.12s ease-out, top 0.12s ease-out;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+}
+.lv7-row__pill svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; flex: 0 0 auto; }
+.lv7-row.is-active .lv7-row__pill { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+@media (max-width: 720px) {
+  .lv7-projects { padding-top: 130px; }
+  .lv7-row { gap: 14px; }
+  .lv7-row__meta { flex-basis: 110px; font-size: 10px; }
+  .lv7-row.is-active { height: 180px; padding: 0 20px; }
+  .lv7-row.is-active .lv7-row__thumb { width: 130px; height: 130px; }
+}
+@media (max-width: 480px) {
+  .lv7-row__meta { display: none; }
+}
+
+/* ============================================================
+   LOGO LOOP strip
+   ============================================================ */
+.lv7-logoloop {
+  /* full-bleed edge-to-edge, breaking out of .lv7-projects's own (now
+     asymmetric) inset by exactly its own left/right padding, so the ticker
+     reads as continuous with no visible container edge on either side. */
+  margin: 88px calc(-1 * var(--lv7-gutter)) 96px calc(-1 * var(--lv7-gutter-left));
+  padding: 28px var(--lv7-gutter) 28px var(--lv7-gutter-left);
+  color: var(--lv7-ink);
+}
+.lv7-logoloop svg { display: block; }
+
+/* ============================================================
+   CTA — "Ready for your new website?"
+   ============================================================ */
+.lv7-cta {
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  text-align: center;
+  padding: 168px var(--lv7-gutter);
+  margin: 0 calc(-1 * var(--lv7-gutter)) 0 calc(-1 * var(--lv7-gutter-left));
+  border-radius: var(--lv7-radius) var(--lv7-radius) 0 0;
+}
+.lv7-cta__kicker {
+  margin: 0 0 22px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+.lv7-cta__headline {
+  margin: 0 0 48px;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: clamp(48px, 8.5vw, 112px);
+  line-height: 1.02;
+}
+.lv7-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 38px;
+  border-radius: 999px;
+  background: var(--lv7-bg);
+  color: var(--lv7-ink);
+  font-family: var(--lv7-font-body);
+  font-weight: 700;
+  font-size: 17px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.4s var(--lv7-ease), box-shadow 0.4s var(--lv7-ease), filter 0.3s ease;
+}
+.lv7-cta__btn svg { width: 19px; height: 19px; fill: currentColor; }
+.lv7-cta__btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  filter: brightness(1.06);
+}
+.lv7-cta__btn--dark {
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  border: 1px solid rgba(17, 17, 17, 0.35);
+}
+.lv7-cta__btn--dark:hover { filter: brightness(1.3); }
+
+/* fix #8: circular photo avatar in place of an icon, tucked at the very
+   start of the pill. */
+.lv7-cta__btn--avatar { padding: 7px 34px 7px 7px; text-transform: uppercase; }
+.lv7-cta__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .lv7-cta { padding: 110px var(--lv7-gutter); }
+}
+
+/* ============================================================
+   CONTACT VIEW
+   ============================================================ */
+.lv7-contact {
+  width: 100%;
+  min-height: 100vh;
+  padding: 168px var(--lv7-gutter) 96px;
+  display: flex;
+  flex-direction: column;
+}
+.lv7-contact__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-bottom: 96px;
+}
+.lv7-contact__heading {
+  margin: 0;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: clamp(72px, 13vw, 150px);
+  line-height: 0.9;
+}
+.lv7-contact__intro {
+  max-width: 360px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+.lv7-contact__grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 64px;
+  flex: 1;
+}
+.lv7-contact__label {
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: 28px;
+  margin: 0 0 12px;
+}
+.lv7-contact__note {
+  margin: 0 0 28px;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.lv7-form { display: flex; flex-direction: column; gap: 22px; }
+.lv7-form__field { display: flex; flex-direction: column; gap: 6px; }
+.lv7-form__field span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.lv7-form__field input,
+.lv7-form__field textarea {
+  border: none;
+  border-bottom: 1px solid var(--lv7-line);
+  background: transparent;
+  color: var(--lv7-ink);
+  font-family: var(--lv7-font-body);
+  font-size: 16px;
+  padding: 6px 2px;
+  resize: none;
+  transition: border-color 0.3s ease;
+}
+.lv7-form__field input:focus,
+.lv7-form__field textarea:focus {
+  outline: none;
+  border-bottom-color: var(--lv7-ink);
+}
+.lv7-form__submit {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: none;
+  background: var(--lv7-ink);
+  color: var(--lv7-bg);
+  font-family: var(--lv7-font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.3s ease, transform 0.4s var(--lv7-ease);
+}
+.lv7-form__submit:hover { filter: brightness(1.3); transform: translateY(-2px); }
+.lv7-form.is-sent .lv7-form__submit { filter: brightness(1.3); }
+
+@media (max-width: 860px) {
+  .lv7-contact__grid { grid-template-columns: 1fr; gap: 56px; }
+}
+
+/* ============================================================
+   FOOTER — fix #6: a NEW footer, local to lv7 only (does not touch/reuse
+   the site's shared dark hero footer used elsewhere). Light page palette,
+   thin dividers matching the row-list style, three columns (brand / nav /
+   social) then a bottom bar.
+   ============================================================ */
+.lv7-footer {
+  width: 100%;
+  padding: 0 var(--lv7-gutter) 24px;
+  color: var(--lv7-ink);
+}
+.lv7-footer__cols {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 32px 0 28px;
+  border-top: 1px solid var(--lv7-line);
+}
+.lv7-footer__col--brand { flex: 0 0 auto; }
+/* matches the nav logo's own size exactly (.lv7-nav__logo) at every
+   breakpoint — see the 640px override below for the mobile size match. */
+.lv7-footer__logo { width: 84px; height: 84px; object-fit: contain; display: block; }
+.lv7-footer__col { flex: 0 0 auto; min-width: 120px; }
+.lv7-footer__label {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+.lv7-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lv7-footer__list a { font-size: 12.5px; font-weight: 600; }
+.lv7-footer__list a:hover { opacity: 0.6; }
+.lv7-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--lv7-line);
+  font-size: 11px;
+}
+.lv7-footer__copy { margin: 0; opacity: 0.65; }
+.lv7-footer__legal { display: flex; gap: 18px; }
+.lv7-footer__legal a { opacity: 0.65; }
+.lv7-footer__legal a:hover { opacity: 1; }
+
+/* same 640px breakpoint the nav logo itself shrinks at, so the two stay
+   matched across that range too, not just above/below it separately. */
+@media (max-width: 640px) {
+  .lv7-footer__logo { width: 60px; height: 60px; }
+}
+@media (max-width: 560px) {
+  .lv7-footer__cols { gap: 24px; }
+}
+
+/* ============================================================
+   Home/About preload iframes — same visual pattern as lv6's About frame.
+   ============================================================ */
+.lv7-frame-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  opacity: 0;
+  pointer-events: none;
+}
+.lv7-frame-wrap.is-visible { opacity: 1; pointer-events: auto; }
+.lv7-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+#lv7-frame-home-el { background: #0A1E38; }
+#lv7-frame-about-el { background: #3A3632; }
+
+/* ============================================================
+   CURSOR TRAIL — canvas-drawn small rounded square + fading streak that
+   follows the cursor (see lv7-cursor-trail.ts for the drawing/easing and
+   the Projects/Contact scoping). This just pins the canvas full-viewport,
+   above all page content, and inert to clicks.
+   ============================================================ */
+.lv7-cursor-trail {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 700;
+  pointer-events: none;
+}

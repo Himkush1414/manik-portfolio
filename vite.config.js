@@ -28,6 +28,13 @@ import { resolve } from "path";
 //  - "/about/"        -> the live About page linked from the main site's nav
 //                        (a duplicate of /lab/lv5/'s content, deployed at its
 //                        own real path rather than under /lab/)
+//  - "/lab/lv7/"      -> new standalone route: a "Projects" page (copied from
+//                        /lab/lv6/'s shell — same fonts/footer/nav-shell/
+//                        column-strip transition system), extended with two
+//                        more transition destinations (Home, About, both
+//                        preloaded in hidden iframes like lv6's About) plus a
+//                        same-document "Contact" view, a floating nav that
+//                        decomposes on scroll, and a 7-project index list.
 //  - "/lab/home-v0/"  -> the original vanilla homepage, archived (index.html +
 //                        styles.css + script.js, no build step of its own)
 
@@ -37,7 +44,7 @@ import { resolve } from "path";
 //  - force no-store on /lab/* HTML so a browser/proxy cache can't pin a stale
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
-const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/home-v0/"];
+const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/home-v0/"];
 const SITE_ROUTES = ["/about/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
@@ -74,6 +81,7 @@ export default defineConfig({
         labLv4: resolve(__dirname, "lab/lv4/index.html"),
         labLv5: resolve(__dirname, "lab/lv5/index.html"),
         labLv6: resolve(__dirname, "lab/lv6/index.html"),
+        labLv7: resolve(__dirname, "lab/lv7/index.html"),
         about: resolve(__dirname, "about/index.html"),
         homeV0: resolve(__dirname, "lab/home-v0/index.html"),
       },
