@@ -512,8 +512,6 @@ if (smMount) {
     { label: 'About', ariaLabel: 'Jump to About', link: '/about' },
     { label: 'Projects', ariaLabel: 'Jump to Projects', link: '#projects' },
     { label: 'Games', ariaLabel: 'Jump to Games', link: '#games' },
-    { label: 'Fun', ariaLabel: 'Jump to Fun', link: '#fun' },
-    { label: 'Dashboard', ariaLabel: 'Jump to Dashboard', link: '#dashboard' },
   ];
   const smSocials = [
     { label: 'GitHub', link: 'https://github.com/Himkush1414' },
