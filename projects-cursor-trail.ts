@@ -15,9 +15,15 @@ export {}; // forces module scope — see lv6-about-mobile-nav.ts for why: witho
 // segments tapering width/alpha from full at the head to ~0 at the tail —
 // not repeated stamped copies of the square.
 //
-// Scope: Projects + Contact only, desktop/mouse only. Coarse pointers
-// (touch) skip this entirely — see projects-rows.ts for the matching
-// "no hover/no cursor-follow at all on mobile" rule for the row list.
+// Scope: Projects + Contact only, desktop viewport only. Coarse pointers
+// (touch) skip mounting entirely below; a live width check (mobileMQ, the
+// same 720px breakpoint the rest of this integration's mobile treatment
+// uses) additionally stops it drawing at mobile/narrow viewport widths
+// regardless of pointer type — e.g. a touch laptop with a fine pointer
+// but a narrow window, or just resizing the browser across the
+// breakpoint — so "mobile" is judged by actual viewport size, not only
+// by input capability. See projects-rows.ts for the matching "no hover/
+// no cursor-follow at all on mobile" rule for the row list.
 // Home is this document's own default content and About is a hidden
 // iframe (see projects-transition.ts) — mouse movement over an iframe
 // never reaches this document's own mousemove listener at all, so the
@@ -26,6 +32,7 @@ export {}; // forces module scope — see lv6-about-mobile-nav.ts for why: witho
 // so leaving (or returning to) scope never shows a stale trail jumping
 // from wherever it was last left.
 const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+const mobileMQ = window.matchMedia('(max-width: 720px)');
 const canvas = document.getElementById('lv7-cursor-trail') as HTMLCanvasElement | null;
 
 if (canvas && !coarsePointer) {
@@ -110,7 +117,7 @@ if (canvas && !coarsePointer) {
       requestAnimationFrame(frame);
       ctx!.clearRect(0, 0, canvas!.width / dpr, canvas!.height / dpr);
 
-      if (!isScopedViewActive()) {
+      if (mobileMQ.matches || !isScopedViewActive()) {
         points.length = 0;
         return;
       }
