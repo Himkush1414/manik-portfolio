@@ -14,6 +14,13 @@ body.lv5 {
   --edge: clamp(20px, 3.4vw, 56px);
   --font-display: 'Bodoni Moda', 'Times New Roman', serif;
   --font-body: Helvetica, Arial, sans-serif;
+  /* Chapter II/III/IV photo treatment — Manik-confirmed: --bg-dark (the
+     same brown the column-wipe transition bars use when leaving About),
+     applied as a subtle warm wash + light blur over all 11 image slots,
+     desktop and mobile. One shared pair of values so every slot stays
+     identical and either can be nudged from a single place. */
+  --photo-tint: rgba(58, 54, 50, 0.14);
+  --photo-blur: 1px;
 
   margin: 0;
   min-height: 100vh;
@@ -638,6 +645,15 @@ body.lv5 img { max-width: 100%; display: block; }
   object-fit: cover;
   object-position: center;
   display: block;
+  /* subtle warm wash + light blur (see body.lv5's --photo-tint/--photo-blur
+     above) — the inset box-shadow tints the image itself with no extra
+     DOM node needed, staying below the label (still a later, on-top
+     sibling per normal stacking); the slight scale keeps the blur's edge
+     falloff safely outside the box rather than softening its own edge,
+     clipped by the parent's own overflow:hidden either way. */
+  box-shadow: inset 0 0 0 999px var(--photo-tint);
+  filter: blur(var(--photo-blur));
+  transform: scale(1.03);
 }
 
 /* ---- shared "rising curtain" reveal ----
@@ -764,6 +780,11 @@ body.lv5 img { max-width: 100%; display: block; }
   object-fit: cover;
   object-position: center;
   display: block;
+  /* same subtle warm wash + light blur as .preview-ph__img — see body.lv5's
+     --photo-tint/--photo-blur for the shared values/reasoning. */
+  box-shadow: inset 0 0 0 999px var(--photo-tint);
+  filter: blur(var(--photo-blur));
+  transform: scale(1.03);
 }
 
 /* the "conceal" layer: a second sheet that rises up from the bottom on
@@ -1358,6 +1379,11 @@ body.lv5 img { max-width: 100%; display: block; }
   object-fit: cover;
   object-position: center;
   display: block;
+  /* same subtle warm wash + light blur as desktop's .preview-ph__img —
+     see body.lv5's --photo-tint/--photo-blur for the shared values. */
+  box-shadow: inset 0 0 0 999px var(--photo-tint);
+  filter: blur(var(--photo-blur));
+  transform: scale(1.03);
 }
 .m-panel--ch2 .m-more-link,
 .m-panel--ch4 .m-more-link {
@@ -1412,6 +1438,11 @@ body.lv5 img { max-width: 100%; display: block; }
   object-fit: cover;
   object-position: center;
   display: block;
+  /* same subtle warm wash + light blur as desktop's .ch3__col-bg__img —
+     see body.lv5's --photo-tint/--photo-blur for the shared values. */
+  box-shadow: inset 0 0 0 999px var(--photo-tint);
+  filter: blur(var(--photo-blur));
+  transform: scale(1.03);
 }
 .m-ch3__cover {
   background: var(--bg-dark);
