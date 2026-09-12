@@ -1312,26 +1312,45 @@ body.lv5 img { max-width: 100%; display: block; }
   border-radius: 2px;
   margin-bottom: 14px;
 }
+/* now just a positioning/clipping context for the .m-preview-ph stack
+   below (mirrors desktop's .ch2__preview-stack/.ch4__preview-stack) — the
+   scroll-triggered clip-path wipe (.m-wipe-target, see the shared-reveal
+   comment above) still applies to this whole element, revealing whichever
+   .m-preview-ph is currently .is-active underneath it. */
 .m-preview__inner {
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+}
+/* one of these sits behind the list, all stacked in the same box — same
+   mechanic as desktop's .preview-ph (tap swaps which one is .is-active,
+   see mobile.ts's initChapterPreviews), reusing the same shared
+   "rising curtain" keyframes (.is-rising, defined once above, not
+   duplicated here). */
+.m-preview-ph {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 14px;
+  text-align: center;
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 15px;
+  font-size: 14px;
   color: rgba(46, 43, 42, 0.55);
+  transform: translateY(100%);
 }
-.m-preview__inner[data-tone="a"] {
-  background: #EFE9DD;
-}
-/* the real photo now filling the card — position:relative on the parent
-   above makes this fill exactly that box; sits behind the label the same
-   way .preview-ph__img does on desktop (first in DOM, both z-index:auto,
-   so the flex-item span still paints on top per normal stacking order). */
-.m-preview__img {
+.m-preview-ph.is-active { transform: translateY(0); }
+.m-preview-ph[data-tone="a"] { background: #EFE9DD; }
+.m-preview-ph[data-tone="b"] { background: #E7E2E8; }
+.m-preview-ph[data-tone="c"] { background: #E3E8E3; }
+.m-preview-ph[data-tone="d"] { background: #EDE4E0; }
+/* the real photo — sits behind the label the same way .preview-ph__img
+   does on desktop (first in DOM, both z-index:auto, so the flex-item
+   span still paints on top per normal stacking order). */
+.m-preview-ph__img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1368,7 +1387,40 @@ body.lv5 img { max-width: 100%; display: block; }
   line-height: 1.6;
   opacity: 0.75;
 }
+/* each discipline's background image, tap-revealed (mobile.ts:
+   initChapterThreeReveals) — mirrors desktop's .ch3__col-bg/.ch3__col-cover
+   exactly, including reusing the same shared .is-rising keyframes. Sits
+   inside .m-panel--ch3, which (via the base .m-panel rule) is already
+   position:relative + overflow:hidden, so these need nothing extra from
+   their parent to be correctly positioned/clipped. */
+.m-ch3__bg,
+.m-ch3__cover {
+  position: absolute;
+  inset: 0;
+  transform: translateY(100%);
+  will-change: transform;
+}
+.m-ch3__bg[data-tone="a"] { background: linear-gradient(180deg, #4A4038, var(--bg-dark) 75%); }
+.m-ch3__bg[data-tone="b"] { background: linear-gradient(180deg, #3A4548, var(--bg-dark) 75%); }
+.m-ch3__bg[data-tone="c"] { background: linear-gradient(180deg, #453A45, var(--bg-dark) 75%); }
+.m-ch3__bg[data-tone="d"] { background: linear-gradient(180deg, #3A4238, var(--bg-dark) 75%); }
+.m-ch3__bg__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.m-ch3__cover {
+  background: var(--bg-dark);
+}
 .m-ch3__section {
+  position: relative;
+  /* explicit z-index keeps the text above .m-ch3__bg/.m-ch3__cover always
+     — same defensive reasoning as desktop's .ch3__col-content. */
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
