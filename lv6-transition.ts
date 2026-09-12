@@ -238,26 +238,44 @@ document.getElementById('lv7-footer-contact')?.addEventListener('click', e => {
   goTo('contact');
 });
 
-// Wire up the About iframe's own internal "Home" link the same way as
-// before (delegated on the iframe's OWN document, a separate browsing
-// context — this never collides with the outer document.body.contains
-// listener above).
+// Wire up the About iframe's own internal "Home" and "Projects" links
+// (delegated on the iframe's OWN document, a separate browsing context —
+// this never collides with the outer document's own click listener
+// above). Both are genuine <a href="/"> / <a href="/#projects"> inside
+// About's own markup (about/menu.tsx) — left unintercepted THERE on
+// purpose, as a real fallback for visiting /about/ standalone (outside
+// this iframe). But inside the iframe, letting either navigate for real
+// would navigate the IFRAME itself to that URL — reloading the entire
+// main site nested inside the small About frame instead of swapping the
+// OUTER page's own view, and doing so as a full page load explains the
+// "laggy" click too: it was actually a full navigate-and-reload, not a
+// slow JS transition. Bug was that only "/" got this treatment before —
+// "/#projects" was added to about/menu.tsx later but never wired here,
+// so it fell through to the native (broken) navigation.
 let wiredDoc: Document | null = null;
-function wireAboutFrameHomeLink() {
+function wireAboutFrameLinks() {
   const doc = frame?.contentDocument;
   if (!doc || doc === wiredDoc) return;
   wiredDoc = doc;
   doc.addEventListener('click', e => {
-    const a = (e.target as HTMLElement).closest('a[href="/"]');
-    if (!a) return;
-    e.preventDefault();
-    goTo('home');
+    const target = e.target as HTMLElement;
+    const projects = target.closest('a[href="/#projects"]');
+    if (projects) {
+      e.preventDefault();
+      goTo('projects');
+      return;
+    }
+    const home = target.closest('a[href="/"]');
+    if (home) {
+      e.preventDefault();
+      goTo('home');
+    }
   });
 }
 if (frame) {
-  frame.addEventListener('load', wireAboutFrameHomeLink);
+  frame.addEventListener('load', wireAboutFrameLinks);
   if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
-    wireAboutFrameHomeLink();
+    wireAboutFrameLinks();
   }
 }
 
