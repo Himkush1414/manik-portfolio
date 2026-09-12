@@ -627,6 +627,18 @@ body.lv5 img { max-width: 100%; display: block; }
 .preview-ph[data-tone="b"] { background: #E7E2E8; }
 .preview-ph[data-tone="c"] { background: #E3E8E3; }
 .preview-ph[data-tone="d"] { background: #EDE4E0; }
+/* the real photo now filling the card — sits behind the label (first in
+   DOM, both z-index:auto, so the flex-item span still paints on top per
+   normal stacking order) and behind the tone colour as a load fallback. */
+.preview-ph__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
 
 /* ---- shared "rising curtain" reveal ----
    Used by both this preview box and "CHAPTER III"'s column backgrounds
@@ -740,6 +752,19 @@ body.lv5 img { max-width: 100%; display: block; }
 .ch3__col-bg[data-tone="b"] { background: linear-gradient(180deg, #3A4548, var(--bg-dark) 75%); }
 .ch3__col-bg[data-tone="c"] { background: linear-gradient(180deg, #453A45, var(--bg-dark) 75%); }
 .ch3__col-bg[data-tone="d"] { background: linear-gradient(180deg, #3A4238, var(--bg-dark) 75%); }
+/* the real photo now filling each discipline's reveal — .ch3__col-bg is
+   already position:absolute (a positioning context of its own), so this
+   just fills that same box; the tone gradient above stays as a load
+   fallback behind it. */
+.ch3__col-bg__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
 
 /* the "conceal" layer: a second sheet that rises up from the bottom on
    mouseleave, covering the now-revealed .ch3__col-bg underneath (rather
@@ -1288,6 +1313,7 @@ body.lv5 img { max-width: 100%; display: block; }
   margin-bottom: 14px;
 }
 .m-preview__inner {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
@@ -1300,6 +1326,19 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 .m-preview__inner[data-tone="a"] {
   background: #EFE9DD;
+}
+/* the real photo now filling the card — position:relative on the parent
+   above makes this fill exactly that box; sits behind the label the same
+   way .preview-ph__img does on desktop (first in DOM, both z-index:auto,
+   so the flex-item span still paints on top per normal stacking order). */
+.m-preview__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 .m-panel--ch2 .m-more-link,
 .m-panel--ch4 .m-more-link {
