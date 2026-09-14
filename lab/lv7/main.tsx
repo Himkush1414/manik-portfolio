@@ -32,7 +32,7 @@ if (logoLoopMount) {
       direction="left"
       logoHeight={72}
       gap={64}
-      hoverSpeed={0}
+      pauseOnHover={false}
       scaleOnHover
       fadeOut
       fadeOutColor="#E3E1DC"
