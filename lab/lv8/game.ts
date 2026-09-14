@@ -131,14 +131,14 @@ export class WormholeGame {
     this.callbacks = callbacks;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x06060c, 0.014);
+    this.scene.fog = new THREE.FogExp2(0x15100d, 0.014);
 
     this.camera = new THREE.PerspectiveCamera(62, 1, 0.1, 400);
     this.camera.position.set(0, 3.4, SHIP_Z + 7);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.setClearColor(0x06060c, 1);
+    this.renderer.setClearColor(0x15100d, 1);
     container.appendChild(this.renderer.domElement);
 
     this.addLights();
@@ -160,9 +160,9 @@ export class WormholeGame {
   // ---- setup -----------------------------------------------------------
 
   private addLights() {
-    const hemi = new THREE.HemisphereLight(0x4ce0e8, 0x0a0a14, 0.9);
+    const hemi = new THREE.HemisphereLight(0xa8492f, 0x0a0605, 0.9);
     this.scene.add(hemi);
-    const key = new THREE.DirectionalLight(0xe8e9f0, 0.6);
+    const key = new THREE.DirectionalLight(0xffcf9e, 0.6);
     key.position.set(2, 4, 6);
     this.scene.add(key);
   }
@@ -170,12 +170,12 @@ export class WormholeGame {
   private makeSegment(): THREE.Group {
     const group = new THREE.Group();
 
-    // main body: low-poly (8-sided) open cylinder, dark with a faint cool
-    // tint so it isn't a pure silhouette against the fog
+    // main body: low-poly (8-sided) open cylinder, dark with a faint warm
+    // ember tint so it isn't a pure silhouette against the fog
     const bodyGeo = new THREE.CylinderGeometry(TUNNEL_RADIUS, TUNNEL_RADIUS, SEGMENT_LENGTH, 8, 1, true);
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0e18,
-      emissive: 0x0c2530,
+      color: 0x180f0a,
+      emissive: 0x3a1912,
       emissiveIntensity: 0.4,
       side: THREE.BackSide,
       roughness: 0.85,
@@ -187,7 +187,7 @@ export class WormholeGame {
 
     // bright emissive accent ring at the segment's leading edge
     const ringGeo = new THREE.TorusGeometry(TUNNEL_RADIUS, 0.16, 6, 8);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x4ce0e8 });
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xa83421 });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.position.z = -SEGMENT_LENGTH / 2;
     group.add(ring);
@@ -208,8 +208,8 @@ export class WormholeGame {
   private buildShip(): THREE.Group {
     const group = new THREE.Group();
 
-    const hullMat = new THREE.MeshStandardMaterial({ color: 0x0d1a1f, roughness: 0.4, metalness: 0.5 });
-    const accentMat = new THREE.MeshBasicMaterial({ color: 0x4ce0e8 });
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0x1a100c, roughness: 0.4, metalness: 0.5 });
+    const accentMat = new THREE.MeshBasicMaterial({ color: 0xa83421 });
 
     const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.4, 6), hullMat);
     fuselage.rotation.x = -Math.PI / 2;
@@ -237,7 +237,7 @@ export class WormholeGame {
   }
 
   private buildTrail() {
-    const mat = () => new THREE.MeshBasicMaterial({ color: 0x4ce0e8, transparent: true, opacity: 0 });
+    const mat = () => new THREE.MeshBasicMaterial({ color: 0xa83421, transparent: true, opacity: 0 });
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       const bead = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), mat());
       bead.visible = false;
@@ -248,8 +248,10 @@ export class WormholeGame {
 
   private buildProjectilePool() {
     const geo = new THREE.CapsuleGeometry(0.09, 0.6, 2, 4);
+    // a hotter ember tone than the structural lit-red accents elsewhere —
+    // reads clearly as active fired energy against the tunnel/ship
     for (let i = 0; i < PROJECTILE_MAX_POOL; i++) {
-      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x4ce0e8 }));
+      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffc988 }));
       mesh.rotation.x = Math.PI / 2;
       mesh.visible = false;
       this.scene.add(mesh);
@@ -261,7 +263,7 @@ export class WormholeGame {
     const geo = new THREE.OctahedronGeometry(0.75, 0);
     const mat = new THREE.MeshStandardMaterial({
       color: 0x2a0f10,
-      emissive: 0xff6a4c,
+      emissive: 0xff8a3d,
       emissiveIntensity: 0.55,
       roughness: 0.5,
       metalness: 0.3,
@@ -289,10 +291,12 @@ export class WormholeGame {
 
   private buildStreakPool() {
     const geo = new THREE.PlaneGeometry(0.06, 6);
+    // same hot ember tone as the projectiles (no violet secondary accent
+    // any more — everything stays within the warm red/brown family)
     for (let i = 0; i < STREAK_POOL; i++) {
       const mesh = new THREE.Mesh(
         geo,
-        new THREE.MeshBasicMaterial({ color: 0xa85cf0, transparent: true, opacity: 0, side: THREE.DoubleSide })
+        new THREE.MeshBasicMaterial({ color: 0xffc988, transparent: true, opacity: 0, side: THREE.DoubleSide })
       );
       mesh.visible = false;
       this.scene.add(mesh);

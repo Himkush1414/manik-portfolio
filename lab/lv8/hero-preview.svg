@@ -1,19 +1,19 @@
 <svg viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wormhole tunnel preview">
   <defs>
     <radialGradient id="bg" cx="50%" cy="46%" r="75%">
-      <stop offset="0%" stop-color="#0b1220" />
-      <stop offset="55%" stop-color="#06060c" />
-      <stop offset="100%" stop-color="#020204" />
+      <stop offset="0%" stop-color="#2a1710" />
+      <stop offset="55%" stop-color="#15100d" />
+      <stop offset="100%" stop-color="#0a0705" />
     </radialGradient>
     <radialGradient id="core" cx="50%" cy="46%" r="10%">
-      <stop offset="0%" stop-color="#e8fbfd" />
-      <stop offset="45%" stop-color="#4ce0e8" />
-      <stop offset="100%" stop-color="#4ce0e8" stop-opacity="0" />
+      <stop offset="0%" stop-color="#ffdcb8" />
+      <stop offset="45%" stop-color="#a83421" />
+      <stop offset="100%" stop-color="#a83421" stop-opacity="0" />
     </radialGradient>
     <linearGradient id="streakV" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#a85cf0" stop-opacity="0" />
-      <stop offset="50%" stop-color="#a85cf0" stop-opacity="0.9" />
-      <stop offset="100%" stop-color="#a85cf0" stop-opacity="0" />
+      <stop offset="0%" stop-color="#ffc988" stop-opacity="0" />
+      <stop offset="50%" stop-color="#ffc988" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ffc988" stop-opacity="0" />
     </linearGradient>
     <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="3.2" />
@@ -23,7 +23,7 @@
   <rect width="640" height="400" fill="url(#bg)" />
 
   <!-- tunnel rings, receding toward the vanishing point -->
-  <g fill="none" stroke="#4ce0e8" stroke-width="1.4" opacity="0.85">
+  <g fill="none" stroke="#a83421" stroke-width="1.4" opacity="0.85">
     <ellipse cx="320" cy="184" rx="18" ry="11" opacity="0.95" />
     <ellipse cx="320" cy="184" rx="42" ry="26" opacity="0.85" />
     <ellipse cx="320" cy="184" rx="78" ry="49" opacity="0.7" />
@@ -32,7 +32,7 @@
     <ellipse cx="320" cy="184" rx="290" ry="188" opacity="0.16" />
   </g>
   <!-- radial struts -->
-  <g stroke="#1c2a33" stroke-width="1" opacity="0.6">
+  <g stroke="#3a1912" stroke-width="1" opacity="0.6">
     <line x1="320" y1="184" x2="320" y2="-40" />
     <line x1="320" y1="184" x2="320" y2="410" />
     <line x1="320" y1="184" x2="20" y2="10" />
@@ -43,7 +43,7 @@
 
   <rect width="640" height="400" fill="url(#core)" />
 
-  <!-- hyperspace streak accents, violet, sparing -->
+  <!-- hyperspace streak accents, hot ember highlight, sparing -->
   <g filter="url(#soft)">
     <rect x="80" y="120" width="150" height="2.5" fill="url(#streakV)" transform="rotate(-8 155 121)" />
     <rect x="420" y="255" width="130" height="2" fill="url(#streakV)" transform="rotate(6 485 256)" />
@@ -51,9 +51,9 @@
 
   <!-- player ship silhouette, low-poly, bottom-center -->
   <g transform="translate(320 300)">
-    <polygon points="0,-22 26,16 0,6 -26,16" fill="#0d1a1f" stroke="#4ce0e8" stroke-width="1.5" />
-    <polygon points="0,-22 10,10 0,6" fill="#132229" />
-    <circle cx="0" cy="18" r="5" fill="#4ce0e8" opacity="0.9" filter="url(#soft)" />
+    <polygon points="0,-22 26,16 0,6 -26,16" fill="#1a100c" stroke="#a83421" stroke-width="1.5" />
+    <polygon points="0,-22 10,10 0,6" fill="#241610" />
+    <circle cx="0" cy="18" r="5" fill="#a83421" opacity="0.9" filter="url(#soft)" />
   </g>
 
   <!-- vignette -->

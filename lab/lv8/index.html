@@ -33,21 +33,16 @@
 </nav>
 
 <!-- ===================== HUB =====================
-     Headline + Bento grid game-select. The whole hub (including this
-     cursor-trail canvas) is hidden once a game is actually running — see
-     lv8-cursor-trail.ts / main.ts. -->
+     Headline + Bento grid game-select. Hidden once a game is actually
+     running — see main.ts. -->
 <div id="lv8-hub" class="lv8-hub">
 
-  <canvas id="lv8-cursor-trail" class="lv8-cursor-trail" aria-hidden="true"></canvas>
-
   <!-- ===================== ANIMATED HERO =====================
-       Full-viewport ambient bar field (lv8-hero-bars.ts builds the bars
-       themselves once at load and on major resize; every bar's own
-       breathing motion after that is pure CSS — nothing here drives it
-       per-frame). Bar count is computed from viewport width so density
-       stays constant instead of thinning out on an ultra-wide screen. -->
-  <header class="lv8-hero">
-    <div class="lv8-hero__bars" id="lv8-hero-bars" aria-hidden="true"></div>
+       Strip-field background: a WebGL field of thin vertical strips that
+       bend toward the cursor, revealing a brighter face as they turn (see
+       lv8-strip-field.ts — genuinely 3D, not a flat colour swap). -->
+  <header class="lv8-hero" id="lv8-hero">
+    <canvas class="lv8-strip-field" id="lv8-strip-field" aria-hidden="true"></canvas>
     <div class="lv8-hero__scrim" aria-hidden="true"></div>
     <p class="lv8-hero__kicker">MANIK RANA // EXPERIMENTS</p>
     <h1 class="lv8-hero__headline">

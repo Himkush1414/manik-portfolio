@@ -1,13 +1,13 @@
-// /lab/lv8 — hub bootstrap. Deliberately light: the only heavy import
-// (three.js, via ./game) is dynamic, inside the "PLAY" click handler
-// below, so it never loads just from visiting this page, let alone any
-// other route on the site.
-import { setHubActive } from './lv8-cursor-trail';
-import './lv8-hero-bars';
+// /lab/lv8 — hub bootstrap. The strip-field hero background (three.js)
+// loads eagerly, since it IS the hero's visible background — but ./game,
+// the actual playable scene, stays a dynamic import inside the "PLAY"
+// click handler below, so its own weight never loads just from visiting
+// this page. Neither one loads for any other route on the site regardless.
+import { setHeroActive } from './lv8-strip-field';
 import type { WormholeGame as WormholeGameType, WormholeGameCallbacks } from './game';
 
 // Freshness beacon, matching the convention every other route on this site uses.
-console.log('%clab/lv8 build 2026-09-14 (Games Lab)', 'color:#4CE0E8;font-weight:600;background:#06060C;padding:2px 6px');
+console.log('%clab/lv8 build 2026-09-14 (Games Lab)', 'color:#A83421;font-weight:600;background:#15100D;padding:2px 6px');
 
 const backBtn = document.getElementById('lv8-nav-back');
 backBtn?.addEventListener('click', () => {
@@ -64,12 +64,12 @@ function showHub() {
   gameOverEl.classList.remove('is-active');
   gameOverEl.setAttribute('aria-hidden', 'true');
   hub.hidden = false;
-  setHubActive(true);
+  setHeroActive(true);
 }
 
 function showGame() {
   hub.hidden = true;
-  setHubActive(false);
+  setHeroActive(false);
   overlay.classList.add('is-active');
   overlay.setAttribute('aria-hidden', 'false');
   hud.setAttribute('aria-hidden', 'false');
