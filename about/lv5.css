@@ -766,6 +766,15 @@ body.lv5 img { max-width: 100%; display: block; }
      line into its neighbour instead of wrapping. */
   flex: 1 1 25%;
   min-width: 0;
+  /* .ch3__num/.ch3__title size themselves off this column's own width
+     (cqw units below), not the viewport's — vw-based sizing shrank far
+     slower than the column itself did as the window narrowed (the fixed-px
+     static region/gutters eat a bigger share of a narrower window), so at
+     in-between widths the text stayed at its floor size while its column
+     kept shrinking underneath it, overflowing past the column's edge and
+     getting cut off by its own overflow:hidden below. Sizing from the
+     column's actual width instead tracks it exactly, at any ratio. */
+  container-type: inline-size;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -779,7 +788,13 @@ body.lv5 img { max-width: 100%; display: block; }
 .ch3__col-bg,
 .ch3__col-cover {
   position: absolute;
-  inset: 0;
+  /* 1px overscan on every edge (not inset:0) rather than an exact fit: as
+     this slides via translateY, any subpixel rounding in the column's own
+     (flex-computed, rarely a whole number) height would otherwise show up
+     as a thin gap/seam of the panel background flashing at its edge mid-
+     transition — the column's own overflow:hidden clips the 1px overshoot
+     away, so this never bleeds into neighbouring columns. */
+  inset: -1px;
   /* hidden below the column at rest — only a running .is-rising animation
      (triggered on hover/hover-leave, main.ts) ever brings it into view */
   transform: translateY(100%);
@@ -848,7 +863,7 @@ body.lv5 img { max-width: 100%; display: block; }
 .ch3__num {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(32px, 3.2vw, 52px);
+  font-size: clamp(20px, 22cqw, 52px);
   line-height: 1;
   color: var(--accent);
 }
@@ -869,7 +884,7 @@ body.lv5 img { max-width: 100%; display: block; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: clamp(14px, 1.35vw, 20px);
+  font-size: clamp(12px, 8.3cqw, 20px);
   line-height: 1.25;
   overflow-wrap: break-word;
   hyphens: auto;
@@ -1446,7 +1461,10 @@ body.lv5 img { max-width: 100%; display: block; }
 .m-ch3__bg,
 .m-ch3__cover {
   position: absolute;
-  inset: 0;
+  /* same 1px overscan as desktop's .ch3__col-bg/.ch3__col-cover, to avoid a
+     subpixel seam during the translateY transition — clipped by the panel's
+     own overflow:hidden either way */
+  inset: -1px;
   transform: translateY(100%);
   will-change: transform;
 }

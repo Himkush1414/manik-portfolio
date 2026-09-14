@@ -202,10 +202,32 @@ function applyState(p: number) {
   workBox.style.borderRadius = `${radius}px`;
 }
 
+// Runs only while the scroll position is actually easing toward a target —
+// not forever. Previously this rAF loop just kept calling itself every
+// frame for the lifetime of the page, even at complete rest (current ===
+// target, nothing left to animate), burning a style recalc + a handful of
+// property writes 60 times a second for no visible effect. That constant
+// background main-thread work was competing with "CHAPTER III"'s hover
+// interactions (each hover/leave forces a synchronous reflow to restart its
+// curtain animation — see triggerRise below) for the same frame budget,
+// which is what read as laggy cursor tracking there. looping/startLoop
+// below make the loop idle whenever there's nothing to ease, and any input
+// that moves `target` (wheel/touch/keydown/resize) wakes it back up.
+let looping = false;
+function startLoop() {
+  if (looping) return;
+  looping = true;
+  rafId = requestAnimationFrame(loop);
+}
 function loop() {
   current += (target - current) * EASE;
   if (Math.abs(target - current) < SETTLE_EPSILON) current = target;
   applyState(current);
+  if (current === target) {
+    looping = false;
+    rafId = null;
+    return;
+  }
   rafId = requestAnimationFrame(loop);
 }
 
@@ -218,7 +240,7 @@ function loop() {
 // wheel/touch events, but gating them too keeps this file's behaviour
 // honest about which layout it belongs to.
 if (!IS_MOBILE_LAYOUT) {
-  rafId = requestAnimationFrame(loop);
+  startLoop();
 
   about.addEventListener(
     'wheel',
@@ -228,6 +250,7 @@ if (!IS_MOBILE_LAYOUT) {
       const scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
       target += dx * scale;
       clampTarget();
+      startLoop();
     },
     { passive: false }
   );
@@ -253,6 +276,7 @@ if (!IS_MOBILE_LAYOUT) {
       const dx = touchStartX - e.touches[0].clientX;
       target = touchStartTarget + dx * 1.6;
       clampTarget();
+      startLoop();
     },
     { passive: false }
   );
@@ -264,13 +288,18 @@ if (!IS_MOBILE_LAYOUT) {
     if (e.key === 'ArrowRight' || e.key === 'PageDown') {
       target += viewportWidth() * 0.6;
       clampTarget();
+      startLoop();
     } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
       target -= viewportWidth() * 0.6;
       clampTarget();
+      startLoop();
     }
   });
 
-  window.addEventListener('resize', clampTarget);
+  window.addEventListener('resize', () => {
+    clampTarget();
+    startLoop();
+  });
 }
 
 // ---------------------------------------------------------------
