@@ -604,8 +604,9 @@ body.lv5 img { max-width: 100%; display: block; }
   width: clamp(260px, 30vw, 440px);
   aspect-ratio: 16 / 10;
 }
+/* CHAPTER IV's preview box: portrait shape, enlarged */
 .ch4__preview-stack {
-  width: clamp(160px, 19vw, 260px);
+  width: clamp(200px, 23vw, 320px);
   aspect-ratio: 3 / 4;
 }
 /* rest-state placeholder — a single thin diagonal line corner-to-corner,
@@ -637,7 +638,14 @@ body.lv5 img { max-width: 100%; display: block; }
    from main.ts, not by this class. */
 .preview-ph {
   position: absolute;
-  inset: 0;
+  /* 1px overscan (not an exact inset:0 fit) — same reasoning as Chapter
+     III's .ch3__col-bg/.ch3__col-cover: this slides via translateY too,
+     against a box whose height comes from a vw-driven clamp/aspect-ratio
+     and so is rarely a whole pixel, and an exact fit lets subpixel
+     rounding show as a thin stray line/gap at the box's top edge mid-
+     transition at some viewport ratios. The 1px overshoot is clipped by
+     the stack's own overflow:hidden either way. */
+  inset: -1px;
   display: flex;
   align-items: center;
   justify-content: center;
