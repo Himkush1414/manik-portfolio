@@ -206,6 +206,19 @@
   </div>
 </div>
 
+<!-- ===================== LEVEL-10 PORTAL =====================
+     The one scripted checkpoint in an otherwise fully procedural ramp.
+     game.ts pauses itself the instant level 10 is reached and fires
+     onPortal; main.ts just shows this exact message and resumes on
+     "Ready" — see main.ts's onPortal handler. -->
+<div id="lv8-portal" class="lv8-pause lv8-portal" aria-hidden="true">
+  <div class="lv8-settings__panel">
+    <span class="lv8-setup__eyebrow">LEVEL 10 CLEARED</span>
+    <p class="lv8-portal__message">Congratulations player, you have succeeded to clear level 10. Now the journey from here will be much harder. Are you ready?</p>
+    <button class="lv8-tile__cta" id="lv8-portal-ready" type="button"><span>READY</span></button>
+  </div>
+</div>
+
 <!-- ===================== GAME OVERLAY =====================
      Empty until setup completes and dynamically imports game.ts, which
      mounts a canvas into #lv8-game-canvas-wrap and drives everything
@@ -254,7 +267,28 @@
   <div class="lv8-flash" id="lv8-flash" aria-hidden="true"></div>
 
   <div class="lv8-gameover" id="lv8-gameover" aria-hidden="true">
+    <!-- PIP — the wormhole's resident narrator spirit. Delivers the bad
+         news with one randomly-picked light/funny line each run (see
+         main.ts's GAMEOVER_QUIPS + renderGameOver). Purely decorative
+         SVG, no per-frame cost. -->
+    <svg class="lv8-gameover__mascot" viewBox="0 0 120 120" aria-hidden="true">
+      <ellipse cx="60" cy="100" rx="26" ry="6" fill="rgba(21,16,13,0.5)" />
+      <circle cx="60" cy="62" r="34" fill="url(#pip-body)" />
+      <path d="M60 26 Q66 10 78 14 Q70 20 68 30 Z" fill="var(--lv8-lit)" />
+      <circle cx="48" cy="58" r="7" fill="var(--lv8-darkest)" />
+      <circle cx="74" cy="58" r="7" fill="var(--lv8-darkest)" />
+      <circle cx="50" cy="56" r="2.4" fill="var(--lv8-text)" />
+      <circle cx="76" cy="56" r="2.4" fill="var(--lv8-text)" />
+      <path d="M46 78 Q60 70 74 78" stroke="var(--lv8-darkest)" stroke-width="3" fill="none" stroke-linecap="round" />
+      <defs>
+        <radialGradient id="pip-body" cx="35%" cy="30%" r="75%">
+          <stop offset="0%" stop-color="var(--lv8-hostile)" />
+          <stop offset="100%" stop-color="var(--lv8-mid)" />
+        </radialGradient>
+      </defs>
+    </svg>
     <p class="lv8-gameover__kicker">RUN TERMINATED</p>
+    <p class="lv8-gameover__quip" id="lv8-gameover-quip"></p>
     <h2 class="lv8-gameover__score">SCORE: <span id="lv8-gameover-score">0</span></h2>
     <button class="lv8-tile__cta" id="lv8-restart-btn" type="button">
       <span>RESTART</span>

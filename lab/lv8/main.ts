@@ -87,6 +87,7 @@ const flashEl = document.getElementById('lv8-flash') as HTMLElement;
 const gameOverEl = document.getElementById('lv8-gameover') as HTMLElement;
 const gameOverScoreEl = document.getElementById('lv8-gameover-score') as HTMLElement;
 const gameOverKickerEl = document.querySelector('#lv8-gameover .lv8-gameover__kicker') as HTMLElement | null;
+const gameOverQuipEl = document.getElementById('lv8-gameover-quip') as HTMLElement;
 const exitBtn = document.getElementById('lv8-game-exit') as HTMLButtonElement;
 const restartBtn = document.getElementById('lv8-restart-btn') as HTMLButtonElement;
 const gameOverExitBtn = document.getElementById('lv8-gameover-exit') as HTMLButtonElement;
@@ -112,6 +113,8 @@ const remapBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('.lv8-
 const pauseEl = document.getElementById('lv8-pause') as HTMLElement;
 const pauseResumeBtn = document.getElementById('lv8-pause-resume') as HTMLButtonElement;
 const pauseSettingsBtn = document.getElementById('lv8-pause-settings') as HTMLButtonElement;
+const portalEl = document.getElementById('lv8-portal') as HTMLElement;
+const portalReadyBtn = document.getElementById('lv8-portal-ready') as HTMLButtonElement;
 const pauseExitBtn = document.getElementById('lv8-pause-exit') as HTMLButtonElement;
 
 let activeGame: WormholeGameType | null = null;
@@ -139,11 +142,33 @@ function renderLevel(level: number) {
 }
 
 let bonusToastTimer: number | undefined;
-function showBonusToast(kind: 'life' | 'frenzy') {
-  bonusToastEl.textContent = kind === 'life' ? 'SECRET FOUND — EXTRA LIFE' : 'SECRET FOUND — FRENZY MODE';
+function showToast(text: string, durationMs = 2400) {
+  bonusToastEl.textContent = text;
   bonusToastEl.classList.add('is-active');
   window.clearTimeout(bonusToastTimer);
-  bonusToastTimer = window.setTimeout(() => bonusToastEl.classList.remove('is-active'), 2400);
+  bonusToastTimer = window.setTimeout(() => bonusToastEl.classList.remove('is-active'), durationMs);
+}
+function showBonusToast(kind: 'life' | 'frenzy') {
+  showToast(kind === 'life' ? 'SECRET FOUND — EXTRA LIFE' : 'SECRET FOUND — FRENZY MODE');
+}
+function showMilestoneToast(level: number, bonus: number) {
+  showToast(`MILESTONE — LEVEL ${level} CLEARED — +${bonus}`, 3000);
+}
+
+// PIP's game-over lines — one picked at random per run. Kept light: the
+// obstacle course is unforgiving, the narrator doesn't need to be.
+const GAMEOVER_QUIPS = [
+  'The void says hi.',
+  "That's one way to end a run.",
+  'Textbook navigational error. Very dramatic, 10/10.',
+  'Skill issue, respectfully.',
+  "On the bright side, you're very aerodynamic now.",
+  "PIP has seen worse. PIP has also seen better.",
+  'Congratulations, you have unlocked: gravity.',
+  'That obstacle was rated PG. You were rated "oof."',
+];
+function randomQuip(): string {
+  return GAMEOVER_QUIPS[Math.floor(Math.random() * GAMEOVER_QUIPS.length)];
 }
 
 // ---------------------------------------------------------------
@@ -156,6 +181,8 @@ function showHub() {
   gameOverEl.classList.remove('is-active');
   gameOverEl.setAttribute('aria-hidden', 'true');
   pauseEl.classList.remove('is-active');
+  portalEl.classList.remove('is-active');
+  portalEl.setAttribute('aria-hidden', 'true');
   setupEl.classList.remove('is-active');
   hub.hidden = false;
   setHeroActive(true);
@@ -325,7 +352,12 @@ pauseSettingsBtn.addEventListener('click', () => {
 window.addEventListener('keydown', e => {
   if (e.key !== 'Escape' || !activeGame) return;
   if (pauseEl.classList.contains('is-active')) closePause();
-  else if (!settingsEl.classList.contains('is-active') && !gameOverEl.classList.contains('is-active')) openPause();
+  else if (
+    !settingsEl.classList.contains('is-active') &&
+    !gameOverEl.classList.contains('is-active') &&
+    !portalEl.classList.contains('is-active')
+  )
+    openPause();
 });
 
 // ---------------------------------------------------------------
@@ -360,6 +392,7 @@ async function launchGame() {
     onGameOver: (finalScore, level) => {
       if (gameOverKickerEl) gameOverKickerEl.textContent = `RUN TERMINATED, ${playerName} — LEVEL ${level}`;
       gameOverScoreEl.textContent = String(finalScore);
+      gameOverQuipEl.textContent = randomQuip();
       gameOverEl.classList.add('is-active');
       gameOverEl.setAttribute('aria-hidden', 'false');
     },
@@ -375,6 +408,15 @@ async function launchGame() {
     },
     onBonus: kind => {
       showBonusToast(kind);
+    },
+    onPortal: () => {
+      // game.ts has already paused itself before firing this — just show
+      // the scripted checkpoint and hand control back to "Ready"
+      portalEl.classList.add('is-active');
+      portalEl.setAttribute('aria-hidden', 'false');
+    },
+    onMilestone: (level, bonus) => {
+      showMilestoneToast(level, bonus);
     },
   };
 
@@ -404,6 +446,11 @@ restartBtn?.addEventListener('click', () => {
   gameOverEl.classList.remove('is-active');
   gameOverEl.setAttribute('aria-hidden', 'true');
   activeGame?.restart();
+});
+portalReadyBtn?.addEventListener('click', () => {
+  portalEl.classList.remove('is-active');
+  portalEl.setAttribute('aria-hidden', 'true');
+  activeGame?.resume();
 });
 
 // leaving the desktop breakpoint mid-game (e.g. devtools resize) shouldn't

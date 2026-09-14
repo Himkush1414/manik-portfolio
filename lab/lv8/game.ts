@@ -30,6 +30,8 @@ export interface WormholeGameCallbacks {
   onHit: () => void; // player took damage — main.ts pulses the screen-flash overlay
   onCrash: () => void; // obstacle collision specifically — instant, harder feedback than a miss
   onBonus: (kind: 'life' | 'frenzy') => void; // secret target found
+  onPortal: (level: number, bonus: number) => void; // the level-10 scripted checkpoint — game is already paused when this fires
+  onMilestone: (level: number, bonus: number) => void; // levels 20/30/40 — lighter, non-blocking achievement notice
 }
 
 export type ControlScheme = 'keyboard' | 'mouse';
@@ -84,14 +86,52 @@ const BURST_SHARDS = 8;
 const BURST_LIFE = 0.45;
 
 // ---- levels / dual fail conditions -------------------------------------
-// Phase 3's own interim level clock (survival-time based) — Phase 4 formalises
-// the full 50-level procedural ramp and milestone/portal system on top of
-// this same `level` counter; this is deliberately the simplest rule that
-// makes the level-10 rule switch (below) testable on its own.
-const LEVEL_DURATION = 26; // seconds of survival per level, before Phase 4's ramp replaces this
+const LEVEL_DURATION = 26; // seconds of survival per level
 const HEARTS_FROM_LEVEL = 10; // "Level 10 onward" per the brief
 const HEALTH_MAX = 100;
 const HEALTH_LOSS_PER_MISS = 22;
+
+// ---- Phase 4: 50-level procedural difficulty ramp ----------------------
+// One function maps level -> every difficulty knob (spawn rates, speeds,
+// gap sizes) — a real parameter curve, not hand-authored per-level layouts.
+// `levelProgress` saturates fast (exponential, not linear) so the brief's
+// "by level 20, practically impossible to clear" falls out of the curve
+// itself: level 20 already sits at ~92% of the way to the hardest the game
+// ever gets, while levels 21-50 still exist and keep squeezing the last
+// few percent for whoever gets that far.
+const LEVEL_CAP = 50;
+const MILESTONE_LEVELS = [10, 20, 30, 40];
+const MILESTONE_BONUS_SCORE = 500;
+
+function levelProgress(level: number): number {
+  return 1 - Math.exp(-Math.min(level, LEVEL_CAP) / 8);
+}
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+interface LevelParams {
+  enemySpawnInterval: number;
+  enemySpeedMin: number;
+  enemySpeedMax: number;
+  enemyWeaveAmp: number;
+  obstacleInterval: number;
+  obstacleSafeRadius: number;
+  obstacleSpeed: number;
+  debrisRockRadius: number;
+}
+function getLevelParams(level: number): LevelParams {
+  const p = levelProgress(level);
+  return {
+    enemySpawnInterval: lerp(1.35, 0.3, p),
+    enemySpeedMin: lerp(30, 52, p),
+    enemySpeedMax: lerp(40, 68, p),
+    enemyWeaveAmp: lerp(1.6, 3.4, p),
+    obstacleInterval: lerp(7.2, 1.7, p),
+    obstacleSafeRadius: lerp(2.6, 0.85, p),
+    obstacleSpeed: lerp(34, 60, p),
+    debrisRockRadius: lerp(1.0, 1.7, p),
+  };
+}
 
 // ---- obstacles (terrain/debris — instant destruction on contact,
 // independent of the miss-based health/hearts systems above) -----------
@@ -728,6 +768,7 @@ export class WormholeGame {
     this.nextSecretCheckAt = SECRET_CHECK_INTERVAL;
     this.frenzyUntil = -Infinity;
     this.gameOver = false;
+    this.paused = false;
     this.shipX = this.shipY = this.targetX = this.targetY = 0;
     this.trailHistory = [];
     for (const e of this.enemies) {
@@ -824,6 +865,18 @@ export class WormholeGame {
     if (next !== this.level) {
       this.level = next;
       this.callbacks.onLevelChange(this.level);
+      if (MILESTONE_LEVELS.includes(this.level)) {
+        this.score += MILESTONE_BONUS_SCORE;
+        this.callbacks.onScoreChange(this.score);
+        if (this.level === 10) {
+          // the one scripted checkpoint — game.ts pauses itself so main.ts
+          // only has to show the message and call resume() on "Ready"
+          this.pause();
+          this.callbacks.onPortal(this.level, MILESTONE_BONUS_SCORE);
+        } else {
+          this.callbacks.onMilestone(this.level, MILESTONE_BONUS_SCORE);
+        }
+      }
     }
   }
 
@@ -1022,7 +1075,7 @@ export class WormholeGame {
   private updateEnemies(dt: number) {
     if (this.elapsed >= this.nextSpawnAt) {
       this.spawnWave();
-      let interval = Math.max(0.42, 1.5 - this.elapsed * 0.012);
+      let interval = getLevelParams(this.level).enemySpawnInterval;
       if (this.frenzyActive) interval *= 0.4; // secret bonus: faster spawns alongside quad-fire
       this.nextSpawnAt = this.elapsed + interval;
     }
@@ -1057,6 +1110,7 @@ export class WormholeGame {
   }
 
   private spawnWave() {
+    const params = getLevelParams(this.level);
     const group2 = Math.random() < 0.3;
     const count = group2 ? 2 : 1;
     const baseAngle = Math.random() * Math.PI * 2;
@@ -1065,12 +1119,12 @@ export class WormholeGame {
       if (!slot) return;
       const angle = baseAngle + i * 1.1;
       const r = 2 + Math.random() * 4.5;
-      const speed = 24 + Math.min(this.elapsed * 0.4, 30) + Math.random() * 6;
+      const speed = params.enemySpeedMin + Math.random() * (params.enemySpeedMax - params.enemySpeedMin);
       slot.active = true;
       slot.z = ENEMY_SPAWN_Z;
       slot.baseX = Math.cos(angle) * r;
       slot.baseY = Math.sin(angle) * r;
-      slot.weaveAmp = 1.5 + Math.random() * 2.5;
+      slot.weaveAmp = params.enemyWeaveAmp * (0.6 + Math.random() * 0.8);
       slot.weaveFreq = 0.6 + Math.random() * 0.8;
       slot.phase = Math.random() * Math.PI * 2;
       slot.speed = speed;
@@ -1085,10 +1139,7 @@ export class WormholeGame {
   private updateObstacles(dt: number) {
     if (this.elapsed >= this.nextObstacleAt) {
       this.spawnObstacle();
-      // gets more frequent as levels climb, floor keeps it from becoming
-      // an unbroken wall of set pieces
-      const interval = Math.max(3.2, 7.5 - this.level * 0.25);
-      this.nextObstacleAt = this.elapsed + interval;
+      this.nextObstacleAt = this.elapsed + getLevelParams(this.level).obstacleInterval;
     }
 
     for (const o of this.obstacles) {
@@ -1111,23 +1162,25 @@ export class WormholeGame {
     const slot = this.obstacles.find(o => !o.active);
     if (!slot) return;
 
+    const params = getLevelParams(this.level);
     const types: ObstacleType[] = ['ring', 'split', 'debris'];
     const type = types[Math.floor(Math.random() * types.length)];
     slot.type = type;
     slot.active = true;
     slot.tested = false;
     slot.z = OBSTACLE_SPAWN_Z;
-    slot.speed = 34 + Math.min(this.level * 1.1, 26);
+    slot.speed = params.obstacleSpeed;
     slot.group.position.set(0, 0, slot.z);
     slot.group.rotation.z = Math.random() * Math.PI * 2;
     slot.group.visible = true;
 
     for (const child of slot.group.children) child.visible = child.name === type;
 
-    // safe-zone radius narrows as levels climb (never below a floor that
-    // keeps it theoretically passable) — this is the actual "narrowing
-    // sections" difficulty knob
-    const safeR = Math.max(1.5, 2.6 - this.level * 0.045);
+    // safe-zone radius narrows as levels climb, driven by the same level
+    // parameter curve as everything else — this is the actual "narrowing
+    // sections" difficulty knob, and the main reason level ~20 is "practically
+    // impossible": the gap shrinks well below comfortable steering precision
+    const safeR = params.obstacleSafeRadius;
 
     if (type === 'ring') {
       const ringWall = slot.group.children.find(c => c.name === 'ring') as THREE.Group;
@@ -1155,7 +1208,7 @@ export class WormholeGame {
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
         child.position.set(x, y, 0);
-        slot.gaps.push({ x, y, r: 1.1 });
+        slot.gaps.push({ x, y, r: params.debrisRockRadius });
       }
     }
   }

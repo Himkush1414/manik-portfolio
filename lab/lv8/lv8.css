@@ -204,6 +204,7 @@ body.lv8 {
 }
 @media (prefers-reduced-motion: reduce) {
   .lv8-hero__watermark { animation: none; opacity: 0.45; }
+  .lv8-gameover__mascot { animation: none; }
 }
 
 @media (max-width: 720px) {
@@ -671,12 +672,30 @@ body.lv8 {
   padding: 20px;
 }
 .lv8-gameover.is-active { display: flex; }
+.lv8-gameover__mascot {
+  width: 88px;
+  height: 88px;
+  filter: drop-shadow(0 0 16px rgba(168, 52, 33, 0.5));
+  animation: lv8-mascot-bob 3s ease-in-out infinite;
+}
+@keyframes lv8-mascot-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
 .lv8-gameover__kicker {
   margin: 0;
   font-family: var(--lv8-font-mono);
   font-size: 12px;
   letter-spacing: 0.2em;
   color: var(--lv8-hostile);
+}
+.lv8-gameover__quip {
+  margin: -8px 0 0;
+  max-width: 320px;
+  color: var(--lv8-text-dim);
+  font-family: var(--lv8-font-body);
+  font-size: 13px;
+  font-style: italic;
 }
 .lv8-gameover__score {
   margin: 0;
@@ -818,8 +837,17 @@ body.lv8 {
 }
 .lv8-pause { z-index: 1200; }
 .lv8-settings { z-index: 1300; } /* always above setup (1100) and pause (1200) — opened from either */
+.lv8-portal { z-index: 1250; } /* the level-10 checkpoint — above the pause menu, below settings */
 .lv8-settings.is-active,
 .lv8-pause.is-active { display: flex; }
+.lv8-portal__message {
+  margin: 0;
+  color: var(--lv8-text);
+  font-family: var(--lv8-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: center;
+}
 .lv8-settings__panel {
   display: flex;
   flex-direction: column;
