@@ -37,6 +37,13 @@ import { resolve } from "path";
 //                        decomposes on scroll, and a 7-project index list.
 //  - "/lab/home-v0/"  -> the original vanilla homepage, archived (index.html +
 //                        styles.css + script.js, no build step of its own)
+//  - "/lab/lv8/"      -> new standalone route, fully isolated: a "Games" hub
+//                        (own nav/footer/palette, not part of the Home/About/
+//                        Projects transition family, not linked from anywhere
+//                        yet) with one flagship playable game, a Three.js
+//                        wormhole rail-shooter, dynamically imported only when
+//                        "PLAY" is pressed so its weight never touches any
+//                        other route's bundle.
 
 // Dev-only helpers:
 //  - redirect slash-less URLs for /lab/* and /about (Vite's SPA fallback
@@ -44,7 +51,7 @@ import { resolve } from "path";
 //  - force no-store on /lab/* HTML so a browser/proxy cache can't pin a stale
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
-const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/home-v0/"];
+const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/home-v0/"];
 const SITE_ROUTES = ["/about/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
@@ -82,6 +89,7 @@ export default defineConfig({
         labLv5: resolve(__dirname, "lab/lv5/index.html"),
         labLv6: resolve(__dirname, "lab/lv6/index.html"),
         labLv7: resolve(__dirname, "lab/lv7/index.html"),
+        labLv8: resolve(__dirname, "lab/lv8/index.html"),
         about: resolve(__dirname, "about/index.html"),
         homeV0: resolve(__dirname, "lab/home-v0/index.html"),
       },

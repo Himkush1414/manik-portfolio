@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — Games Lab</title>
+<meta name="description" content="Manik Rana — LV8, a games/experiments hub. Flagship: a Three.js wormhole rail-shooter." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Bebas Neue/Sora: the same display/body pair already established on
+     /lab/lv7/ (brand continuity across tabs). Space Mono is new here,
+     reserved for the in-game HUD only — see lv8.css — so the flight-
+     computer read stays distinct from the marketing type around it. -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./lv8.css" />
+</head>
+<body class="lv8">
+
+<!-- ===================== NAV =====================
+     Same minimal floating pattern as lv7 (no bar background, logo left) —
+     but this route isn't part of the Home/About/Projects transition family
+     and isn't linked from anywhere yet, so the right-side items are plain
+     placeholders, not wired into that transition-color system. -->
+<nav class="lv8-nav" aria-label="Primary">
+  <a class="lv8-nav__logo" href="/" aria-label="Manik Rana — home">
+    <img src="./nav-logo-mark.png" alt="" />
+  </a>
+  <div class="lv8-nav__links">
+    <a class="lv8-nav__link" href="/">Home</a>
+    <button class="lv8-nav__link lv8-nav__link--btn" type="button" id="lv8-nav-back">Back</button>
+  </div>
+</nav>
+
+<!-- ===================== HUB =====================
+     Headline + Bento grid game-select. The whole hub (including this
+     cursor-trail canvas) is hidden once a game is actually running — see
+     lv8-cursor-trail.ts / main.ts. -->
+<div id="lv8-hub" class="lv8-hub">
+
+  <canvas id="lv8-cursor-trail" class="lv8-cursor-trail" aria-hidden="true"></canvas>
+
+  <header class="lv8-hero">
+    <p class="lv8-hero__kicker">MANIK RANA // EXPERIMENTS</p>
+    <h1 class="lv8-hero__headline">GAMES <span class="lv8-hero__slash">//</span> LAB</h1>
+    <p class="lv8-hero__sub">Playable experiments. Real-time 3D, built light. One flagship run to start — more incoming.</p>
+  </header>
+
+  <section class="lv8-bento" aria-label="Game selection">
+
+    <!-- HERO TILE — the only live, playable entry right now. -->
+    <article class="lv8-tile lv8-tile--hero">
+      <div class="lv8-tile__preview" aria-hidden="true">
+        <img src="./hero-preview.svg" alt="" class="lv8-tile__preview-img" id="lv8-hero-preview-img" />
+        <div class="lv8-tile__preview-fade"></div>
+      </div>
+      <div class="lv8-tile__body">
+        <span class="lv8-tile__eyebrow">FLAGSHIP // 01</span>
+        <h2 class="lv8-tile__title">WORMHOLE RUN</h2>
+        <p class="lv8-tile__tagline">A third-person rail-shooter down a collapsing hyperspace tunnel. Weave, fire, survive the ramp.</p>
+        <button class="lv8-tile__cta" id="lv8-play-btn" type="button">
+          <span>PLAY</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="lv8-tile__note" id="lv8-desktop-note" hidden>Desktop only for now — come back on a larger screen with a keyboard.</p>
+      </div>
+    </article>
+
+    <!-- COMING SOON — non-interactive, muted, signals the hub grows past one game. -->
+    <article class="lv8-tile lv8-tile--soon">
+      <span class="lv8-tile__eyebrow">02</span>
+      <h3 class="lv8-tile__title lv8-tile__title--sm">ASTEROID DRIFT</h3>
+      <span class="lv8-tile__soon-badge">COMING SOON</span>
+    </article>
+
+    <article class="lv8-tile lv8-tile--soon">
+      <span class="lv8-tile__eyebrow">03</span>
+      <h3 class="lv8-tile__title lv8-tile__title--sm">SIGNAL DEFENSE</h3>
+      <span class="lv8-tile__soon-badge">COMING SOON</span>
+    </article>
+
+    <article class="lv8-tile lv8-tile--soon">
+      <span class="lv8-tile__eyebrow">04</span>
+      <h3 class="lv8-tile__title lv8-tile__title--sm">DOCKING PROTOCOL</h3>
+      <span class="lv8-tile__soon-badge">COMING SOON</span>
+    </article>
+
+  </section>
+
+  <footer class="lv8-footer">
+    <div class="lv8-footer__divider" aria-hidden="true"></div>
+    <div class="lv8-footer__row">
+      <img src="./nav-logo-mark.png" alt="Manik Rana" class="lv8-footer__logo" />
+      <span class="lv8-footer__flavor">LV8 // EXPERIMENTAL BUILD — CLIENT-SIDE, STATELESS, NO BACKEND</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ===================== GAME OVERLAY =====================
+     Empty until "PLAY" dynamically imports game.ts, which mounts a canvas
+     into #lv8-game-canvas-wrap and drives everything below imperatively.
+     Hidden (and inert) whenever the hub is showing. -->
+<div id="lv8-game-overlay" class="lv8-game-overlay" aria-hidden="true">
+  <div id="lv8-game-canvas-wrap" class="lv8-game-canvas-wrap"></div>
+
+  <div class="lv8-hud" id="lv8-hud" aria-hidden="true">
+    <span class="lv8-hud__score">SCORE <b id="lv8-hud-score">0</b></span>
+    <span class="lv8-hud__lives" id="lv8-hud-lives" aria-label="Lives remaining">●●●</span>
+  </div>
+
+  <button class="lv8-game-exit" id="lv8-game-exit" type="button" aria-label="Exit to hub">EXIT</button>
+
+  <div class="lv8-flash" id="lv8-flash" aria-hidden="true"></div>
+
+  <div class="lv8-gameover" id="lv8-gameover" aria-hidden="true">
+    <p class="lv8-gameover__kicker">RUN TERMINATED</p>
+    <h2 class="lv8-gameover__score">SCORE: <span id="lv8-gameover-score">0</span></h2>
+    <button class="lv8-tile__cta" id="lv8-restart-btn" type="button">
+      <span>RESTART</span>
+    </button>
+    <button class="lv8-gameover__exit" id="lv8-gameover-exit" type="button">BACK TO HUB</button>
+  </div>
+</div>
+
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

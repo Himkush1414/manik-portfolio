@@ -1,0 +1,462 @@
+/* ============================================================
+   /lab/lv8 — "Games // Lab". Fully standalone: its own palette, fonts,
+   nav, footer — nothing here is shared with any other route. Everything
+   is scoped to body.lv8.
+   ============================================================ */
+
+body.lv8 {
+  --lv8-bg: #06060C;
+  --lv8-bg-raised: #0B0C16;
+  --lv8-cyan: #4CE0E8;
+  --lv8-violet: #A85CF0;
+  --lv8-text: #E8E9F0;
+  --lv8-text-dim: rgba(232, 233, 240, 0.6);
+  --lv8-hostile: #FF6A4C;
+  --lv8-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --lv8-font-body: 'Sora', Helvetica, Arial, sans-serif;
+  --lv8-font-mono: 'Space Mono', 'Courier New', monospace;
+  --lv8-gutter: clamp(20px, 4vw, 64px);
+  --lv8-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  margin: 0;
+  min-height: 100vh;
+  background: var(--lv8-bg);
+  color: var(--lv8-text);
+  font-family: var(--lv8-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+body.lv8 * { box-sizing: border-box; }
+body.lv8 img { max-width: 100%; display: block; }
+body.lv8 button { font: inherit; }
+
+/* a very faint starfield wash behind everything, cheap (no canvas/webgl) —
+   keeps the near-black background from reading flat */
+body.lv8 {
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(232, 233, 240, 0.5), transparent),
+    radial-gradient(1px 1px at 78% 14%, rgba(232, 233, 240, 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 55% 68%, rgba(76, 224, 232, 0.4), transparent),
+    radial-gradient(1px 1px at 32% 82%, rgba(232, 233, 240, 0.3), transparent),
+    radial-gradient(1px 1px at 90% 55%, rgba(168, 92, 240, 0.35), transparent),
+    radial-gradient(1px 1px at 65% 35%, rgba(232, 233, 240, 0.25), transparent);
+  background-repeat: no-repeat;
+}
+
+/* ============================================================
+   NAV — same minimal floating pattern as lv7 (logo left, no bar
+   background), but a standalone page's own placeholder links.
+   ============================================================ */
+.lv8-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px var(--lv8-gutter);
+}
+.lv8-nav__logo {
+  display: flex;
+  align-items: center;
+  width: 46px;
+  height: 46px;
+}
+.lv8-nav__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(76, 224, 232, 0.35));
+}
+.lv8-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.lv8-nav__link {
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  font-family: var(--lv8-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lv8-text-dim);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+.lv8-nav__link:hover { color: var(--lv8-cyan); }
+
+/* ============================================================
+   HUB — headline + Bento grid. Positioned relative so the cursor-trail
+   canvas (fixed, full-viewport) reads as scoped to this section: it's
+   simply removed from the layout (and its rAF loop paused, see
+   lv8-cursor-trail.ts) the instant the game overlay takes over.
+   ============================================================ */
+.lv8-hub {
+  position: relative;
+  padding: clamp(110px, 16vh, 170px) var(--lv8-gutter) 0;
+}
+
+.lv8-cursor-trail {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.lv8-hero {
+  max-width: 900px;
+  margin: 0 0 clamp(40px, 6vh, 72px);
+}
+.lv8-hero__kicker {
+  margin: 0 0 14px;
+  font-family: var(--lv8-font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--lv8-cyan);
+  opacity: 0.85;
+}
+.lv8-hero__headline {
+  margin: 0 0 18px;
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: clamp(56px, 9vw, 128px);
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  color: var(--lv8-text);
+  text-shadow:
+    0 0 6px rgba(76, 224, 232, 0.55),
+    0 0 22px rgba(76, 224, 232, 0.35),
+    0 0 60px rgba(76, 224, 232, 0.2);
+}
+.lv8-hero__slash {
+  color: var(--lv8-cyan);
+  opacity: 0.9;
+}
+.lv8-hero__sub {
+  margin: 0;
+  max-width: 52ch;
+  font-size: clamp(14px, 1.3vw, 17px);
+  line-height: 1.6;
+  color: var(--lv8-text-dim);
+}
+
+/* ---- Bento grid ---- */
+.lv8-bento {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-auto-rows: minmax(120px, auto);
+  gap: clamp(14px, 1.6vw, 22px);
+  padding-bottom: clamp(60px, 10vh, 110px);
+}
+.lv8-tile {
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid rgba(76, 224, 232, 0.18);
+  background: var(--lv8-bg-raised);
+  overflow: hidden;
+  padding: 22px;
+}
+
+/* hero tile: spans the full column height across the three implicit rows
+   the "coming soon" tiles occupy one-per-row alongside it (grid
+   auto-placement fills column 2 rows 1-3 automatically since column 1 is
+   already spoken for — no per-tile placement rules needed). */
+.lv8-tile--hero {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 420px;
+  padding: 32px;
+  border-color: rgba(76, 224, 232, 0.35);
+  box-shadow: 0 0 0 1px rgba(76, 224, 232, 0.08), 0 30px 80px -30px rgba(76, 224, 232, 0.25);
+}
+.lv8-tile__preview {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.lv8-tile__preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+.lv8-tile__preview-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 6, 12, 0.15) 0%, rgba(6, 6, 12, 0.55) 55%, var(--lv8-bg-raised) 96%);
+}
+.lv8-tile__body {
+  position: relative;
+  z-index: 1;
+}
+.lv8-tile__eyebrow {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--lv8-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--lv8-cyan);
+  opacity: 0.85;
+}
+.lv8-tile__title {
+  margin: 0 0 10px;
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: clamp(30px, 3.4vw, 46px);
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+.lv8-tile__tagline {
+  margin: 0 0 22px;
+  max-width: 46ch;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--lv8-text-dim);
+}
+.lv8-tile__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--lv8-cyan);
+  background: transparent;
+  color: var(--lv8-cyan);
+  font-family: var(--lv8-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--lv8-ease);
+}
+.lv8-tile__cta:hover {
+  background: var(--lv8-cyan);
+  color: #04141a;
+  box-shadow: 0 0 24px rgba(76, 224, 232, 0.55);
+  transform: translateY(-2px);
+}
+.lv8-tile__cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.lv8-tile__cta:disabled:hover {
+  background: transparent;
+  color: var(--lv8-cyan);
+  box-shadow: none;
+}
+.lv8-tile__note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--lv8-text-dim);
+  font-style: italic;
+}
+
+/* coming-soon tiles: muted/desaturated, non-interactive */
+.lv8-tile--soon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-color: rgba(232, 233, 240, 0.1);
+  filter: saturate(0.5) brightness(0.75);
+  cursor: default;
+}
+.lv8-tile--soon .lv8-tile__eyebrow { color: var(--lv8-text-dim); }
+.lv8-tile__title--sm { font-size: clamp(20px, 2vw, 26px); }
+.lv8-tile__soon-badge {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 233, 240, 0.25);
+  font-family: var(--lv8-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--lv8-text-dim);
+}
+
+@media (max-width: 860px) {
+  .lv8-bento {
+    grid-template-columns: 1fr;
+  }
+  .lv8-tile--hero {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 340px;
+  }
+}
+
+/* ============================================================
+   FOOTER — distinct from every other tab's footer (own layout: a single
+   thin cyan divider, then one row: logo left / flavor line right).
+   ============================================================ */
+.lv8-footer {
+  padding: 0 0 clamp(28px, 5vh, 48px);
+}
+.lv8-footer__divider {
+  height: 1px;
+  margin-bottom: 22px;
+  background: linear-gradient(90deg, rgba(76, 224, 232, 0.55), rgba(76, 224, 232, 0.05) 70%);
+}
+.lv8-footer__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.lv8-footer__logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  opacity: 0.9;
+}
+.lv8-footer__flavor {
+  font-family: var(--lv8-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--lv8-text-dim);
+}
+
+/* ============================================================
+   GAME OVERLAY — full-viewport, replaces the hub entirely while a run is
+   active. Hidden by default; main.ts toggles .is-active on "PLAY".
+   ============================================================ */
+.lv8-game-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--lv8-bg);
+  display: none;
+}
+.lv8-game-overlay.is-active { display: block; }
+
+.lv8-game-canvas-wrap {
+  position: absolute;
+  inset: 0;
+}
+.lv8-game-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lv8-hud {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-family: var(--lv8-font-mono);
+  pointer-events: none;
+}
+.lv8-hud__score {
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  color: var(--lv8-cyan);
+  text-shadow: 0 0 10px rgba(76, 224, 232, 0.6);
+}
+.lv8-hud__score b { font-size: 18px; }
+.lv8-hud__lives {
+  font-size: 18px;
+  letter-spacing: 0.15em;
+  color: var(--lv8-hostile);
+  text-shadow: 0 0 10px rgba(255, 106, 76, 0.55);
+}
+
+.lv8-game-exit {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 233, 240, 0.3);
+  background: rgba(6, 6, 12, 0.5);
+  color: var(--lv8-text-dim);
+  font-family: var(--lv8-font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.lv8-game-exit:hover {
+  color: var(--lv8-cyan);
+  border-color: var(--lv8-cyan);
+}
+
+.lv8-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 106, 76, 0.35), rgba(255, 106, 76, 0) 70%);
+  opacity: 0;
+}
+.lv8-flash.is-hit {
+  animation: lv8-flash-pulse 0.35s ease-out;
+}
+@keyframes lv8-flash-pulse {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.lv8-gameover {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(6, 6, 12, 0.86);
+  text-align: center;
+  padding: 20px;
+}
+.lv8-gameover.is-active { display: flex; }
+.lv8-gameover__kicker {
+  margin: 0;
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--lv8-hostile);
+}
+.lv8-gameover__score {
+  margin: 0;
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: clamp(32px, 6vw, 56px);
+  color: var(--lv8-text);
+  text-shadow: 0 0 20px rgba(76, 224, 232, 0.45);
+}
+.lv8-gameover__exit {
+  background: none;
+  border: none;
+  color: var(--lv8-text-dim);
+  font-family: var(--lv8-font-body);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.lv8-gameover__exit:hover { color: var(--lv8-cyan); }
