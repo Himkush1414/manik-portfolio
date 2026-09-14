@@ -20,6 +20,16 @@
 //      there is no boundary to see past, only more (sparser, dimmer)
 //      particles receding into the fog.
 import * as THREE from 'three';
+// Bloom/glow via three.js's own bundled postprocessing addons — no new npm
+// dependency needed (these ship inside the already-installed `three`
+// package, typed via the already-installed `@types/three`), and since
+// this whole module is only ever dynamically imported from main.ts, the
+// composer/passes stay just as isolated to lv8's own chunk as everything
+// else here.
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 export interface WormholeGameCallbacks {
   onScoreChange: (score: number) => void;
@@ -32,6 +42,7 @@ export interface WormholeGameCallbacks {
   onBonus: (kind: 'life' | 'frenzy') => void; // secret target found
   onPortal: (level: number, bonus: number) => void; // the level-10 scripted checkpoint — game is already paused when this fires
   onMilestone: (level: number, bonus: number) => void; // levels 20/30/40 — lighter, non-blocking achievement notice
+  onSpeedChange: (speed: number) => void; // HUD readout — throttled, not fired every frame
 }
 
 export type ControlScheme = 'keyboard' | 'mouse';
@@ -66,11 +77,15 @@ const SHIP_Z = 6; // ship's fixed z (world scrolls past it, it never moves in z)
 // ---- particle vortex (replaces the old solid-cylinder tunnel — see
 // buildParticleField) ---------------------------------------------------
 const PARTICLE_COUNT = 4000;
-const PARTICLE_MIN_R = TUNNEL_RADIUS * 0.12;
-const PARTICLE_MAX_R = TUNNEL_RADIUS * 1.3;
+// a real minimum keeps a clear flight corridor down the tunnel's own axis
+// — too small (particles allowed near r=0) and the ones at close range
+// pile up directly in front of the camera into an unreadable bright blob
+// instead of reading as walls around an open path
+const PARTICLE_MIN_R = TUNNEL_RADIUS * 0.42;
+const PARTICLE_MAX_R = TUNNEL_RADIUS * 1.15;
 const PARTICLE_Z_FAR = -190;
 const PARTICLE_Z_NEAR = SHIP_Z + 9; // recycle once a particle passes this
-const PARTICLE_VIOLET_CHANCE = 0.08; // rare secondary-accent flecks
+const PARTICLE_SPARK_CHANCE = 0.08; // rare hotter-gold flecks among the base amber field
 const SHIP_EASE = 6.5; // higher = snappier glide toward target
 const FIRE_COOLDOWN = 0.16; // seconds between shots
 const PROJECTILE_SPEED = 95;
@@ -91,20 +106,45 @@ const HEARTS_FROM_LEVEL = 10; // "Level 10 onward" per the brief
 const HEALTH_MAX = 100;
 const HEALTH_LOSS_PER_MISS = 22;
 
-// ---- Phase 4: 50-level procedural difficulty ramp ----------------------
-// One function maps level -> every difficulty knob (spawn rates, speeds,
-// gap sizes) — a real parameter curve, not hand-authored per-level layouts.
-// `levelProgress` saturates fast (exponential, not linear) so the brief's
-// "by level 20, practically impossible to clear" falls out of the curve
-// itself: level 20 already sits at ~92% of the way to the hardest the game
-// ever gets, while levels 21-50 still exist and keep squeezing the last
-// few percent for whoever gets that far.
+// ---- Phase 4 (revised): 50-level procedural difficulty ramp ------------
+// One function still maps level -> every difficulty knob — a real
+// parameter curve, not hand-authored per-level layouts — but the curve
+// itself is now a small set of hand-picked (level, progress) keyframes
+// with a smoothstep ease between each pair, not a single exponential.
+// That's what makes "levels 1-5 are a genuine on-ramp, escalation kicks
+// in at 5, escalates further at 10, keeps climbing to 50" an exact,
+// checkable property of the curve instead of an approximation: progress
+// barely moves across 1-5, jumps hard across 5-10, then keeps climbing.
 const LEVEL_CAP = 50;
 const MILESTONE_LEVELS = [10, 20, 30, 40];
 const MILESTONE_BONUS_SCORE = 500;
 
+const PROGRESS_KEYFRAMES: [level: number, progress: number][] = [
+  [1, 0.0],
+  [5, 0.08], // on-ramp: levels 1-5 stay near baseline, deliberately easy
+  [10, 0.4], // escalation clearly kicks in right after level 5
+  [20, 0.78], // escalates further from level 10
+  [30, 0.9],
+  [40, 0.96],
+  [50, 1.0], // continues increasing all the way to level 50
+];
+
+function smoothstep(t: number): number {
+  const c = Math.min(Math.max(t, 0), 1);
+  return c * c * (3 - 2 * c);
+}
+
 function levelProgress(level: number): number {
-  return 1 - Math.exp(-Math.min(level, LEVEL_CAP) / 8);
+  const lvl = Math.min(Math.max(level, 1), LEVEL_CAP);
+  for (let i = 0; i < PROGRESS_KEYFRAMES.length - 1; i++) {
+    const [l0, p0] = PROGRESS_KEYFRAMES[i];
+    const [l1, p1] = PROGRESS_KEYFRAMES[i + 1];
+    if (lvl <= l1) {
+      const t = (lvl - l0) / (l1 - l0);
+      return p0 + (p1 - p0) * smoothstep(t);
+    }
+  }
+  return 1;
 }
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -118,18 +158,20 @@ interface LevelParams {
   obstacleSafeRadius: number;
   obstacleSpeed: number;
   debrisRockRadius: number;
+  tunnelSpeedMultiplier: number; // how fast the world streams past — its own on-ramp, not just a difficulty knob
 }
 function getLevelParams(level: number): LevelParams {
   const p = levelProgress(level);
   return {
-    enemySpawnInterval: lerp(1.35, 0.3, p),
-    enemySpeedMin: lerp(30, 52, p),
-    enemySpeedMax: lerp(40, 68, p),
-    enemyWeaveAmp: lerp(1.6, 3.4, p),
-    obstacleInterval: lerp(7.2, 1.7, p),
-    obstacleSafeRadius: lerp(2.6, 0.85, p),
-    obstacleSpeed: lerp(34, 60, p),
-    debrisRockRadius: lerp(1.0, 1.7, p),
+    enemySpawnInterval: lerp(1.6, 0.3, p),
+    enemySpeedMin: lerp(24, 52, p),
+    enemySpeedMax: lerp(32, 68, p),
+    enemyWeaveAmp: lerp(1.2, 3.4, p),
+    obstacleInterval: lerp(8.5, 1.7, p),
+    obstacleSafeRadius: lerp(2.9, 0.85, p),
+    obstacleSpeed: lerp(26, 60, p),
+    debrisRockRadius: lerp(0.9, 1.7, p),
+    tunnelSpeedMultiplier: lerp(0.55, 1.2, p),
   };
 }
 
@@ -145,6 +187,11 @@ const SECRET_MAX_POOL = 2;
 const SECRET_CHECK_INTERVAL = 20; // roll for a spawn at most this often
 const SECRET_SPAWN_CHANCE = 0.35; // per roll — genuinely uncommon, not a guaranteed per-level pickup
 const FRENZY_DURATION = 9;
+
+// ---- HUD speed readout ---------------------------------------------------
+const SPEED_READOUT_INTERVAL = 0.15; // throttled — no need to touch the DOM every frame for one stat
+const SPEED_BASE = 220;
+const SPEED_RANGE = 260;
 
 type Enemy = {
   active: boolean;
@@ -211,13 +258,24 @@ type Secret = {
   speed: number;
 };
 
-export type Viewpoint = 'cockpit' | 'chase';
+// 'third' = classic distant chase camera; 'second' = the same chase
+// framing pulled in much closer ("second-person" per the brief — not a
+// standard camera term, translated here as a tighter/more intimate chase
+// variant; see the chat reply). Cockpit kept as a third option alongside
+// both, per the brief's default assumption.
+export type Viewpoint = 'cockpit' | 'third' | 'second';
+const CHASE_OFFSETS: Record<'third' | 'second', { y: number; z: number; fov: number }> = {
+  third: { y: 3.4, z: 7, fov: 62 },
+  second: { y: 2.1, z: 3.4, fov: 70 },
+};
 
 export class WormholeGame {
   private container: HTMLElement;
   private callbacks: WormholeGameCallbacks;
 
   private renderer: THREE.WebGLRenderer;
+  private composer!: EffectComposer;
+  private bloomPass!: UnrealBloomPass;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private viewpoint: Viewpoint = 'cockpit';
@@ -237,11 +295,22 @@ export class WormholeGame {
   private particlePos!: Float32Array;
   private particleColor!: Float32Array;
   private particleBaseColor!: Float32Array; // un-brightened colour, re-scaled into particleColor per frame
+  private particleSize!: Float32Array; // per-particle base size variance (bigger = reads as "nearer layer")
   private particleZ!: Float32Array;
   private particleSpeed!: Float32Array;
   private vanishingGlow!: THREE.Sprite;
-  private readonly particleCyan = new THREE.Color(0x4ce0e8);
-  private readonly particleViolet = new THREE.Color(0xa85cf0);
+  private tunnelHaze!: THREE.Mesh;
+  // referenced directly for disposal — it lives inside the particle
+  // ShaderMaterial's custom uniforms, which the generic scene.traverse()
+  // disposal pass in dispose() has no way to reach on its own (unlike a
+  // built-in material's .map, which that pass already handles)
+  private particleDotTexture!: THREE.CanvasTexture;
+  // warm palette only (the strip-field/Bento correction pass explicitly
+  // retired every cyan/violet accent site-wide) — a common amber base
+  // fleck plus a rarer hotter pale-gold spark for sparkle variety, no
+  // second hue family
+  private readonly particleAmber = new THREE.Color(0xff8a3d);
+  private readonly particleSpark = new THREE.Color(0xffe9a8);
 
   private enemies: Enemy[] = [];
   private projectiles: Projectile[] = [];
@@ -271,6 +340,8 @@ export class WormholeGame {
   private nextObstacleAt = 5;
   private nextSecretCheckAt = SECRET_CHECK_INTERVAL;
   private frenzyUntil = -Infinity;
+  private nextSpeedReadoutAt = 0;
+  private lastDisplaySpeed = -1;
   private running = false;
   private gameOver = false;
   private paused = false;
@@ -325,10 +396,35 @@ export class WormholeGame {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setClearColor(0x15100d, 1);
+    // RenderPass bakes the renderer's sRGB output encoding into every
+    // fragment it draws regardless of which target it's rendering into —
+    // including EffectComposer's own offscreen intermediate buffer, which
+    // is meant to stay in LINEAR space until the final OutputPass encodes
+    // it once for the actual screen. Leaving outputColorSpace at its
+    // default (sRGB) here meant that encode happened TWICE — once baked
+    // into the offscreen render, once again in OutputPass — which is what
+    // was blowing every dark background into a flat, washed-out grey no
+    // matter how bloom itself was tuned. Forcing linear here and letting
+    // OutputPass (below) do the one real sRGB encode fixes it.
+    this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
     container.appendChild(this.renderer.domElement);
+
+    // Bloom pass: the only thing that turns additive particles/emissive
+    // materials into an actual soft glow instead of hard flat colour —
+    // threshold kept high enough that only genuinely bright pixels (the
+    // particle field, engine/projectile embers, enemy eyes) bleed light,
+    // not the whole dim scene.
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.45, 0.4, 0.62);
+    this.composer.addPass(this.bloomPass);
+    // required as the last pass: applies the one real sRGB encode for the
+    // actual screen output (see the outputColorSpace note above).
+    this.composer.addPass(new OutputPass());
 
     this.addLights();
     this.buildParticleField();
+    this.buildTunnelHaze();
     this.ship = this.buildShip();
     this.scene.add(this.ship);
     this.buildTrail();
@@ -379,47 +475,70 @@ export class WormholeGame {
     return tex;
   }
 
-  // The tunnel itself: a single THREE.Points cloud of particles streaming
-  // outward along radial lines toward the camera, plus a soft haze sprite
-  // marking the dark vanishing point ahead. This is what replaces the old
-  // solid-cylinder tunnel — a finite-radius solid wall always has an edge
-  // the camera can see past at some angle (the exact "visible boundary"
-  // complaint being fixed); a dense particle field with no hard edge of
-  // its own, backed by fog + a haze sprite, has nothing to see past.
+  // The tunnel itself: a single custom-shader THREE.Points cloud of
+  // particles streaming outward along radial lines toward the camera,
+  // backed by a soft haze cylinder (buildTunnelHaze) and a vanishing-point
+  // glow sprite. This is what replaces the old solid-cylinder tunnel — a
+  // finite-radius solid wall always has an edge the camera can see past at
+  // some angle (the "visible boundary" complaint); a dense particle field
+  // with no hard edge of its own has nothing to see past.
+  //
+  // A plain PointsMaterial only offers ONE uniform size for every particle
+  // — sizeAttenuation makes near ones bigger too, but the effect reads as
+  // subtle at normal sizes. A small custom ShaderMaterial gives each
+  // particle its own base size (aSize) that then ALSO attenuates with
+  // distance in the vertex shader, compounding into a size difference
+  // that's obvious at a glance, not just technically present.
   private buildParticleField() {
     const dotTex = this.makeRadialTexture('rgba(255,255,255,1)', 'rgba(255,255,255,0)');
+    this.particleDotTexture = dotTex;
 
     const positions = new Float32Array(PARTICLE_COUNT * 3);
     const colors = new Float32Array(PARTICLE_COUNT * 3);
+    const sizes = new Float32Array(PARTICLE_COUNT);
     this.particleZ = new Float32Array(PARTICLE_COUNT);
     this.particleSpeed = new Float32Array(PARTICLE_COUNT);
+    this.particleSize = sizes;
     this.particleBaseColor = new Float32Array(PARTICLE_COUNT * 3);
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      this.resetParticle(i, positions, this.particleCyan, this.particleViolet, true);
+      this.resetParticle(i, positions, true);
     }
     colors.set(this.particleBaseColor);
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
     this.particlePos = positions;
     this.particleColor = colors;
 
-    // PointsMaterial has no per-vertex size, only a single uniform size —
-    // sizeAttenuation alone already gives "closer = bigger" for free
-    // (it's driven by the camera projection, not per-vertex data), which
-    // covers the size half of the depth cue; the brightness half (closer
-    // = brighter) is handled by rewriting the colour buffer every frame
-    // in updateParticles instead of needing a custom shader for it.
-    const mat = new THREE.PointsMaterial({
-      size: 0.55,
-      map: dotTex,
-      vertexColors: true,
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uMap: { value: dotTex } },
+      vertexShader: `
+        attribute float aSize;
+        attribute vec3 aColor;
+        varying vec3 vColor;
+        void main() {
+          vColor = aColor;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float dist = max(-mvPosition.z, 1.0);
+          gl_PointSize = min(aSize * (190.0 / dist), 42.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        varying vec3 vColor;
+        uniform sampler2D uMap;
+        void main() {
+          vec4 tex = texture2D(uMap, gl_PointCoord);
+          gl_FragColor = vec4(vColor, 1.0) * tex;
+        }
+      `,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
     });
     this.particles = new THREE.Points(geo, mat);
     this.scene.add(this.particles);
@@ -427,15 +546,68 @@ export class WormholeGame {
     // dark vanishing point the particles stream out of/toward — a big
     // soft sprite far down the tunnel, additive so it reads as a glow,
     // not a flat disc
-    const glowTex = this.makeRadialTexture('rgba(168,52,33,0.55)', 'rgba(21,16,13,0)');
+    const glowTex = this.makeRadialTexture('rgba(255,138,61,0.48)', 'rgba(21,16,13,0)');
     const glowMat = new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
     this.vanishingGlow = new THREE.Sprite(glowMat);
-    this.vanishingGlow.scale.set(70, 70, 1);
+    this.vanishingGlow.scale.set(58, 58, 1);
     this.vanishingGlow.position.set(0, 0, PARTICLE_Z_FAR + 10);
     this.scene.add(this.vanishingGlow);
   }
 
-  private resetParticle(i: number, positions: Float32Array, cyan: THREE.Color, violet: THREE.Color, initialSpread: boolean) {
+  // A soft, dark-to-warm cylindrical haze wall the camera sits inside of —
+  // the "volumetric" base layer underneath the particles, and the thing
+  // that makes the tunnel legibly read as an enclosing tube (not just a
+  // field of dots floating in a void). Built once and never moved: the
+  // ship's z position is fixed and the world scrolls past it, so a static
+  // mesh spanning the same z-range as the particle field costs nothing
+  // per frame. Additive + BackSide (we're always inside it, looking at its
+  // inner face) with vertex colours that go fully black at the far end —
+  // additive black contributes nothing, so it fades out for free with no
+  // per-vertex alpha needed.
+  private buildTunnelHaze() {
+    const length = PARTICLE_Z_NEAR - PARTICLE_Z_FAR + 30;
+    const radialSegments = 28;
+    const heightSegments = 22;
+    const geo = new THREE.CylinderGeometry(TUNNEL_RADIUS * 1.03, TUNNEL_RADIUS * 1.03, length, radialSegments, heightSegments, true);
+
+    const dark = new THREE.Color(0x15100d);
+    const warm = new THREE.Color(0xa83421);
+    const posAttr = geo.attributes.position;
+    const colors = new Float32Array(posAttr.count * 3);
+    for (let i = 0; i < posAttr.count; i++) {
+      const y = posAttr.getY(i); // -length/2 (far) .. +length/2 (near, toward camera)
+      const t = smoothstep((y + length / 2) / length);
+      const bright = t * t; // concentrate the glow near the ship, not spread evenly
+      // faint vertical ribs (angle-based) so the wall reads as structured
+      // panelling, not a smooth featureless gradient — subtle, stays under
+      // the particle layer rather than competing with it
+      const angle = Math.atan2(posAttr.getZ(i), posAttr.getX(i));
+      const rib = 0.85 + 0.15 * Math.sin(angle * 14);
+      const r = dark.r + (warm.r - dark.r) * bright * rib;
+      const g = dark.g + (warm.g - dark.g) * bright * rib;
+      const b = dark.b + (warm.b - dark.b) * bright * rib;
+      colors[i * 3] = r * bright; // additive-black-at-far trick: scale by
+      colors[i * 3 + 1] = g * bright; // brightness again so the far end
+      colors[i * 3 + 2] = b * bright; // truly goes to (near) zero, not dark red
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const mat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.22,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.BackSide,
+      fog: false,
+    });
+    this.tunnelHaze = new THREE.Mesh(geo, mat);
+    this.tunnelHaze.rotation.x = Math.PI / 2; // cylinder's local Y (height) becomes world Z (tunnel length)
+    this.tunnelHaze.position.z = (PARTICLE_Z_FAR + PARTICLE_Z_NEAR) / 2;
+    this.scene.add(this.tunnelHaze);
+  }
+
+  private resetParticle(i: number, positions: Float32Array, initialSpread: boolean) {
     const angle = Math.random() * Math.PI * 2;
     // sqrt-distributed radius so particles don't bunch up near the centre
     const r = PARTICLE_MIN_R + (PARTICLE_MAX_R - PARTICLE_MIN_R) * Math.sqrt(Math.random());
@@ -445,10 +617,15 @@ export class WormholeGame {
     positions[i * 3 + 1] = Math.sin(angle) * r;
     positions[i * 3 + 2] = z;
     this.particleZ[i] = z;
-    this.particleSpeed[i] = 46 + Math.random() * 40;
+    this.particleSpeed[i] = 40 + Math.random() * 46;
+    // each particle keeps its own random base size for its whole life —
+    // combined with the shader's own distance attenuation, this is what
+    // makes "near = bigger" compound into an obvious difference instead
+    // of a uniform field that merely shrinks smoothly with distance
+    this.particleSize[i] = 3.4 + Math.random() * 6.2;
 
     const brightness = 0.55 + Math.random() * 0.45;
-    const c = Math.random() < PARTICLE_VIOLET_CHANCE ? violet : cyan;
+    const c = Math.random() < PARTICLE_SPARK_CHANCE ? this.particleSpark : this.particleAmber;
     this.particleBaseColor[i * 3] = c.r * brightness;
     this.particleBaseColor[i * 3 + 1] = c.g * brightness;
     this.particleBaseColor[i * 3 + 2] = c.b * brightness;
@@ -683,26 +860,34 @@ export class WormholeGame {
   }
 
   private handleResize() {
-    const w = this.container.clientWidth || window.innerWidth;
-    const h = this.container.clientHeight || window.innerHeight;
+    // window.innerWidth/innerHeight, not just container.clientWidth — the
+    // container is a position:fixed, inset:0 overlay so the two should
+    // always agree, but reading directly off the viewport is one less
+    // link in the chain that could ever produce a letterboxed canvas.
+    const w = window.innerWidth || this.container.clientWidth;
+    const h = window.innerHeight || this.container.clientHeight;
     this.camera.aspect = w / Math.max(h, 1);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
+    // composer.setSize() would otherwise size bloom's own (5-mip, ~12
+    // extra full-screen blur passes per frame) render targets at full
+    // resolution too — a soft glow doesn't need that, and halving it here
+    // cuts bloom's own cost roughly 4x for no visible quality loss.
+    this.bloomPass.setSize(Math.round(w / 2), Math.round(h / 2));
   }
 
   // ---- viewpoint -----------------------------------------------------
 
   // Cockpit (default): the camera IS the pilot's eyes — no ship exterior
-  // ever in view (that exterior view was exactly what made the old
-  // tunnel's edge visible/breaking immersion). Chase: the previous
-  // third-person framing, kept as a selectable alternate. Safe to call
-  // at any time, including mid-run (see Phase 2's pause-menu viewpoint
-  // switch).
+  // ever in view. Third: the classic distant chase framing. Second: the
+  // same chase framing pulled in noticeably closer. Safe to call at any
+  // time, including mid-run (see Phase 2's pause-menu viewpoint switch).
   setViewpoint(vp: Viewpoint) {
     this.viewpoint = vp;
-    this.ship.visible = vp === 'chase';
+    this.ship.visible = vp !== 'cockpit';
     this.cockpitFrameEl?.classList.toggle('is-active', vp === 'cockpit');
-    this.camera.fov = vp === 'cockpit' ? 78 : 62;
+    this.camera.fov = vp === 'cockpit' ? 78 : CHASE_OFFSETS[vp].fov;
     this.camera.updateProjectionMatrix();
   }
 
@@ -767,6 +952,8 @@ export class WormholeGame {
     this.nextObstacleAt = 5;
     this.nextSecretCheckAt = SECRET_CHECK_INTERVAL;
     this.frenzyUntil = -Infinity;
+    this.nextSpeedReadoutAt = 0;
+    this.lastDisplaySpeed = -1;
     this.gameOver = false;
     this.paused = false;
     this.shipX = this.shipY = this.targetX = this.targetY = 0;
@@ -826,6 +1013,9 @@ export class WormholeGame {
         m.dispose();
       }
     });
+    this.composer.dispose();
+    this.bloomPass.dispose();
+    this.particleDotTexture.dispose();
     this.renderer.dispose();
     if (this.cockpitFrameEl) this.cockpitFrameEl.classList.remove('is-active');
     if (this.renderer.domElement.parentElement === this.container) {
@@ -840,12 +1030,13 @@ export class WormholeGame {
     const dt = Math.min((time - this.lastFrameTime) / 1000, 1 / 20);
     this.lastFrameTime = time;
     if (this.running && !this.gameOver && !this.paused) this.update(dt);
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   };
 
   private update(dt: number) {
     this.elapsed += dt;
     this.updateLevel();
+    this.updateSpeedReadout();
     this.updateInput(dt);
     this.updateShip(dt);
     this.updateTrail();
@@ -877,6 +1068,25 @@ export class WormholeGame {
           this.callbacks.onMilestone(this.level, MILESTONE_BONUS_SCORE);
         }
       }
+    }
+  }
+
+  // Speed HUD readout — a fictional but honest number: it's literally
+  // derived from the same level-progress curve driving the tunnel's own
+  // rush-past speed (see updateParticles), plus a little live wobble so it
+  // doesn't read as a static label. Throttled to a few times a second
+  // rather than every frame, and only pushed to the callback when the
+  // rounded value actually changes, since main.ts writes it straight to
+  // the DOM.
+  private updateSpeedReadout() {
+    if (this.elapsed < this.nextSpeedReadoutAt) return;
+    this.nextSpeedReadoutAt = this.elapsed + SPEED_READOUT_INTERVAL;
+    const p = levelProgress(this.level);
+    const wobble = Math.sin(this.elapsed * 3.1) * 8 + Math.sin(this.elapsed * 1.7) * 5;
+    const speed = Math.round(SPEED_BASE + SPEED_RANGE * p + wobble);
+    if (speed !== this.lastDisplaySpeed) {
+      this.lastDisplaySpeed = speed;
+      this.callbacks.onSpeedChange(speed);
     }
   }
 
@@ -1024,30 +1234,36 @@ export class WormholeGame {
     const col = this.particleColor;
     const base = this.particleBaseColor;
     const depthRange = PARTICLE_Z_NEAR - PARTICLE_Z_FAR;
+    // ties the tunnel's own perceived rush-past speed to the same level
+    // curve as everything else — levels 1-5 stream past noticeably slower,
+    // which is a big part of "level 1 feels like an on-ramp, not a wall"
+    const speedMul = getLevelParams(this.level).tunnelSpeedMultiplier;
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      let z = this.particleZ[i] + this.particleSpeed[i] * dt;
+      let z = this.particleZ[i] + this.particleSpeed[i] * speedMul * dt;
       if (z > PARTICLE_Z_NEAR) {
         // recycled to the far end with a fresh angle/radius — same
         // "reposition, never regrow" rule as every other pool here
-        this.resetParticle(i, pos, this.particleCyan, this.particleViolet, false);
+        this.resetParticle(i, pos, false);
         z = this.particleZ[i];
       } else {
         this.particleZ[i] = z;
         pos[i * 3 + 2] = z;
       }
 
-      // depth cue: brightness ramps up toward the camera (size already
-      // scales for free via the material's sizeAttenuation)
+      // depth cue: brightness ramps up toward the camera, steeply (far
+      // particles fade close to fully dark) so the near/far contrast reads
+      // as obvious layering rather than a subtle gradient — size does the
+      // same job on the shader side (see buildParticleField's aSize).
       const t = Math.min(Math.max((z - PARTICLE_Z_FAR) / depthRange, 0), 1);
-      const bright = 0.1 + t * t * 0.9;
+      const bright = 0.04 + t * t * t * 0.85;
       col[i * 3] = base[i * 3] * bright;
       col[i * 3 + 1] = base[i * 3 + 1] * bright;
       col[i * 3 + 2] = base[i * 3 + 2] * bright;
     }
 
     this.particles.geometry.attributes.position.needsUpdate = true;
-    this.particles.geometry.attributes.color.needsUpdate = true;
+    this.particles.geometry.attributes.aColor.needsUpdate = true;
   }
 
   // ---- projectiles -------------------------------------------------------
@@ -1466,20 +1682,22 @@ export class WormholeGame {
       return;
     }
 
-    // Chase (legacy third-person): full 1:1 tracking of the ship's own
-    // position (eased, not an instant snap, for smoothness/weight) — not
-    // a fraction of it. A partial-tracking factor reads nicer as subtle
-    // parallax right up until the ship nears the edge of its movement
-    // radius, where the camera falls behind enough that the ship drifts
-    // out of frame entirely — breaking the "ship always in frame" Star
-    // Fox framing this mode is built on. Constant relative offset once
-    // eased in means the ship stays framed at rest regardless of where in
-    // the tunnel it is.
+    // Third/Second person: full 1:1 tracking of the ship's own position
+    // (eased, not an instant snap, for smoothness/weight) — not a fraction
+    // of it. A partial-tracking factor reads nicer as subtle parallax right
+    // up until the ship nears the edge of its movement radius, where the
+    // camera falls behind enough that the ship drifts out of frame
+    // entirely — breaking the "ship always in frame" Star Fox framing both
+    // of these modes are built on. Constant relative offset once eased in
+    // means the ship stays framed at rest regardless of where in the
+    // tunnel it is. Second-person uses the exact same logic, just a
+    // noticeably closer/lower offset (see CHASE_OFFSETS).
+    const offsets = CHASE_OFFSETS[this.viewpoint as 'third' | 'second'];
     const targetCamX = this.shipX + shakeX;
-    const targetCamY = this.shipY + 3.4 + shakeY;
+    const targetCamY = this.shipY + offsets.y + shakeY;
     this.camera.position.x += (targetCamX - this.camera.position.x) * ease;
     this.camera.position.y += (targetCamY - this.camera.position.y) * ease;
-    this.camera.position.z = SHIP_Z + 7;
+    this.camera.position.z = SHIP_Z + offsets.z;
     this.camera.lookAt(this.shipX, this.shipY + 1, SHIP_Z - 24);
   }
 }

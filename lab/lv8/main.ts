@@ -79,6 +79,7 @@ const canvasWrap = document.getElementById('lv8-game-canvas-wrap') as HTMLElemen
 const hud = document.getElementById('lv8-hud') as HTMLElement;
 const scoreEl = document.getElementById('lv8-hud-score') as HTMLElement;
 const levelEl = document.getElementById('lv8-hud-level') as HTMLElement;
+const speedEl = document.getElementById('lv8-hud-speed') as HTMLElement;
 const livesEl = document.getElementById('lv8-hud-lives') as HTMLElement;
 const healthWrapEl = document.getElementById('lv8-hud-health-wrap') as HTMLElement;
 const healthFillEl = document.getElementById('lv8-hud-health-fill') as HTMLElement;
@@ -372,6 +373,7 @@ async function launchGame() {
 
   showGame();
   scoreEl.textContent = '0';
+  speedEl.textContent = '0';
   renderLives(3);
   renderHealth(HEALTH_MAX);
   renderLevel(1);
@@ -417,6 +419,9 @@ async function launchGame() {
     },
     onMilestone: (level, bonus) => {
       showMilestoneToast(level, bonus);
+    },
+    onSpeedChange: speed => {
+      speedEl.textContent = String(speed);
     },
   };
 

@@ -501,10 +501,15 @@ body.lv8 {
   transform: translateX(-50%);
 }
 
-/* Cockpit framing overlay — implied canopy struts at the lower corners
-   and a faint upper dash edge, minimal and non-obstructive (the middle
-   and most of the screen stay completely clear). Pure CSS/SVG, no 3D
-   geometry, no per-frame cost. */
+/* Cockpit framing overlay — a full-viewport canopy: angled side pillars,
+   a header strip, a dashboard edge at the bottom, and a faint glass tint
+   wash across the WHOLE screen (not just the edges) so it reads as
+   looking out through a windscreen from the pilot's seat. Deliberately
+   light-handed on the tint/vignette — the previous heavy inset shadow
+   here read as a letterbox eating into the edges, which is exactly the
+   "not full width" complaint; the canopy shapes alone already sell the
+   framing without darkening the middle of the screen. Pure CSS/SVG, no
+   3D geometry, no per-frame cost. */
 .lv8-cockpit {
   position: absolute;
   inset: 0;
@@ -513,19 +518,35 @@ body.lv8 {
   display: none;
 }
 .lv8-cockpit.is-active { display: block; }
+.lv8-cockpit__glass {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(115deg, rgba(255, 197, 148, 0.035) 0%, rgba(255, 197, 148, 0) 22%, rgba(255, 197, 148, 0) 78%, rgba(255, 197, 148, 0.03) 100%),
+    radial-gradient(140% 100% at 50% 118%, rgba(168, 52, 33, 0.08), transparent 55%);
+}
 .lv8-cockpit__frame {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
-.lv8-cockpit__frame path {
-  fill: var(--lv8-darkest);
-  opacity: 0.88;
+.lv8-cockpit__pillar {
+  fill: var(--lv8-bg-raised);
+  opacity: 0.94;
 }
-.lv8-cockpit::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  box-shadow: inset 0 0 120px 20px rgba(21, 16, 13, 0.55);
+.lv8-cockpit__header {
+  fill: var(--lv8-darkest);
+  opacity: 0.7;
+}
+.lv8-cockpit__dash {
+  fill: var(--lv8-bg-raised);
+  opacity: 0.96;
+}
+.lv8-cockpit__dash-edge {
+  stroke: var(--lv8-lit);
+  stroke-width: 2.5;
+  opacity: 0.45;
 }
 
 .lv8-hud {
@@ -559,6 +580,12 @@ body.lv8 {
   color: var(--lv8-text-dim);
 }
 .lv8-hud__level b { color: var(--lv8-text); }
+.lv8-hud__speed {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--lv8-text-dim);
+}
+.lv8-hud__speed b { color: var(--lv8-hostile); }
 .lv8-hud__lives {
   font-size: 18px;
   letter-spacing: 0.15em;

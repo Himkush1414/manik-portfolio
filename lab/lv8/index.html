@@ -141,9 +141,13 @@
         <strong>COCKPIT</strong>
         <span>First-person, from the pilot's deck</span>
       </button>
-      <button class="lv8-setup__option" data-value="chase" type="button">
-        <strong>THIRD-PERSON CHASE</strong>
-        <span>Classic behind-the-ship framing</span>
+      <button class="lv8-setup__option" data-value="second" type="button">
+        <strong>SECOND-PERSON</strong>
+        <span>Close behind the ship — tight and intimate</span>
+      </button>
+      <button class="lv8-setup__option" data-value="third" type="button">
+        <strong>THIRD-PERSON</strong>
+        <span>Classic distant chase framing</span>
       </button>
     </div>
     <div class="lv8-setup__row">
@@ -188,7 +192,8 @@
       <span>Viewpoint</span>
       <div class="lv8-setup__options lv8-setup__options--compact" id="lv8-settings-viewpoint-options">
         <button class="lv8-setup__option" data-value="cockpit" type="button"><strong>COCKPIT</strong></button>
-        <button class="lv8-setup__option" data-value="chase" type="button"><strong>CHASE</strong></button>
+        <button class="lv8-setup__option" data-value="second" type="button"><strong>SECOND-PERSON</strong></button>
+        <button class="lv8-setup__option" data-value="third" type="button"><strong>THIRD-PERSON</strong></button>
       </div>
     </div>
 
@@ -233,15 +238,21 @@
        this is active (see .lv8-hide-cursor). -->
   <div class="lv8-reticle" id="lv8-reticle" aria-hidden="true"></div>
 
-  <!-- Cockpit framing — minimal implied canopy/instrument silhouette at
-       the screen edges, CSS only (no 3D cockpit geometry). Shown only in
-       Cockpit viewpoint (main.ts toggles is-active); irrelevant in
-       Third-Person Chase. -->
+  <!-- Cockpit framing — a full-viewport canopy: side pillars, a header
+       strip, an instrument-dash edge at the bottom, and a faint glass
+       tint wash over the ENTIRE screen (not just the edges) so it reads
+       as looking out through a windscreen, not a bare camera with some
+       decoration around it. Pure CSS/SVG, no 3D geometry, no per-frame
+       cost. Shown only in Cockpit viewpoint (main.ts toggles is-active);
+       irrelevant in Third-/Second-Person. -->
   <div class="lv8-cockpit" id="lv8-cockpit" aria-hidden="true">
+    <div class="lv8-cockpit__glass" aria-hidden="true"></div>
     <svg class="lv8-cockpit__frame" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0,600 L0,460 Q120,380 260,600 Z" />
-      <path d="M1000,600 L1000,460 Q880,380 740,600 Z" />
-      <path d="M0,0 L0,40 Q500,90 1000,40 L1000,0 Z" />
+      <path class="lv8-cockpit__pillar" d="M0,0 L86,0 L34,600 L0,600 Z" />
+      <path class="lv8-cockpit__pillar" d="M1000,0 L914,0 L966,600 L1000,600 Z" />
+      <path class="lv8-cockpit__header" d="M0,0 L1000,0 L1000,22 Q500,50 0,22 Z" />
+      <path class="lv8-cockpit__dash" d="M0,600 L0,468 Q500,404 1000,468 L1000,600 Z" />
+      <path class="lv8-cockpit__dash-edge" d="M0,468 Q500,404 1000,468" fill="none" />
     </svg>
   </div>
 
@@ -249,6 +260,7 @@
     <span class="lv8-hud__group">
       <span class="lv8-hud__score">SCORE <b id="lv8-hud-score">0</b></span>
       <span class="lv8-hud__level">LEVEL <b id="lv8-hud-level">1</b></span>
+      <span class="lv8-hud__speed">SPEED <b id="lv8-hud-speed">0</b> KM/S</span>
     </span>
     <span class="lv8-hud__group lv8-hud__group--right">
       <!-- levels 1-9: continuous bar. Level 10+: 3-heart display. Never
