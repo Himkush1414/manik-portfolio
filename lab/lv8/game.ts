@@ -28,6 +28,30 @@ export interface WormholeGameCallbacks {
   onHit: () => void; // player took damage — main.ts pulses the screen-flash overlay
 }
 
+export type ControlScheme = 'keyboard' | 'mouse';
+export interface KeyBindings {
+  left: string;
+  right: string;
+  up: string;
+  down: string;
+}
+export interface GameSettings {
+  controlScheme: ControlScheme;
+  keyBindings: KeyBindings;
+  sensitivity: number; // multiplies movement responsiveness
+}
+export const DEFAULT_KEY_BINDINGS: KeyBindings = { left: 'a', right: 'd', up: 'w', down: 's' };
+export const DEFAULT_SETTINGS: GameSettings = {
+  controlScheme: 'keyboard',
+  keyBindings: { ...DEFAULT_KEY_BINDINGS },
+  sensitivity: 1,
+};
+
+export interface WormholeGameOptions {
+  viewpoint?: Viewpoint;
+  settings?: Partial<GameSettings>;
+}
+
 // ---- tunable constants -----------------------------------------------
 const TUNNEL_RADIUS = 9;
 const SHIP_MOVE_RADIUS = 6.6; // ship is kept within this — always short of the walls
@@ -74,6 +98,9 @@ type Projectile = {
   x: number;
   y: number;
   z: number;
+  vx: number;
+  vy: number;
+  vz: number;
 };
 
 type Streak = {
@@ -131,6 +158,14 @@ export class WormholeGame {
 
   private keys = new Set<string>();
   private lastFireTime = -Infinity;
+  private settings: GameSettings = { ...DEFAULT_SETTINGS, keyBindings: { ...DEFAULT_KEY_BINDINGS } };
+
+  // mouse aim (Keyboard + Mouse control scheme only — movement stays on
+  // keys either way, see updateInput). Tracked unconditionally (cheap);
+  // only acted on while settings.controlScheme === 'mouse'.
+  private mouseNdcX = 0;
+  private mouseNdcY = 0;
+  private mouseDown = false;
 
   private score = 0;
   private lives = START_LIVES;
@@ -139,23 +174,48 @@ export class WormholeGame {
   private nextStreakAt = 2;
   private running = false;
   private gameOver = false;
+  private paused = false;
   private rafId: number | null = null;
   private lastFrameTime = 0;
 
   private onKeyDown = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
-    if (['a', 'd', 'w', 's', ' '].includes(k)) e.preventDefault();
+    const kb = this.settings.keyBindings;
+    if ([kb.left, kb.right, kb.up, kb.down, ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
+      e.preventDefault();
+    }
     this.keys.add(k);
   };
   private onKeyUp = (e: KeyboardEvent) => {
     this.keys.delete(e.key.toLowerCase());
   };
   private onResize = () => this.handleResize();
+  private onMouseMove = (e: MouseEvent) => {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouseNdcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouseNdcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    if (this.settings.controlScheme === 'mouse' && this.reticleEl) {
+      this.reticleEl.style.left = `${e.clientX}px`;
+      this.reticleEl.style.top = `${e.clientY}px`;
+    }
+  };
+  private onMouseDown = () => {
+    this.mouseDown = true;
+  };
+  private onMouseUp = () => {
+    this.mouseDown = false;
+  };
   private cockpitFrameEl = document.getElementById('lv8-cockpit');
+  private reticleEl = document.getElementById('lv8-reticle');
 
-  constructor(container: HTMLElement, callbacks: WormholeGameCallbacks, initialViewpoint: Viewpoint = 'cockpit') {
+  constructor(
+    container: HTMLElement,
+    callbacks: WormholeGameCallbacks,
+    options: WormholeGameOptions = {}
+  ) {
     this.container = container;
     this.callbacks = callbacks;
+    if (options.settings) this.applySettings(options.settings);
 
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x15100d, 0.021);
@@ -177,12 +237,17 @@ export class WormholeGame {
     this.buildEnemyPool();
     this.buildStreakPool();
     this.buildBurstPool();
-    this.setViewpoint(initialViewpoint);
+    this.setViewpoint(options.viewpoint ?? 'cockpit');
+    this.reticleEl?.classList.toggle('is-active', this.settings.controlScheme === 'mouse');
+    this.container.classList.toggle('lv8-hide-cursor', this.settings.controlScheme === 'mouse');
 
     this.handleResize();
     window.addEventListener('resize', this.onResize);
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('mousemove', this.onMouseMove);
+    window.addEventListener('mousedown', this.onMouseDown);
+    window.addEventListener('mouseup', this.onMouseUp);
   }
 
   // ---- setup -----------------------------------------------------------
@@ -335,10 +400,9 @@ export class WormholeGame {
     // reads clearly as active fired energy against the tunnel/ship
     for (let i = 0; i < PROJECTILE_MAX_POOL; i++) {
       const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffc988 }));
-      mesh.rotation.x = Math.PI / 2;
       mesh.visible = false;
       this.scene.add(mesh);
-      this.projectiles.push({ active: false, mesh, x: 0, y: 0, z: 0 });
+      this.projectiles.push({ active: false, mesh, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: -PROJECTILE_SPEED });
     }
   }
 
@@ -463,6 +527,44 @@ export class WormholeGame {
     return this.viewpoint;
   }
 
+  // ---- settings ------------------------------------------------------
+
+  private applySettings(partial: Partial<GameSettings>) {
+    this.settings = {
+      ...this.settings,
+      ...partial,
+      keyBindings: { ...this.settings.keyBindings, ...(partial.keyBindings ?? {}) },
+    };
+  }
+
+  // Public entry point — called from the pause menu (Phase 2) to change
+  // sensitivity/bindings/control scheme live, mid-run, with no need to
+  // reconstruct the game.
+  setSettings(partial: Partial<GameSettings>) {
+    this.applySettings(partial);
+    this.reticleEl?.classList.toggle('is-active', this.settings.controlScheme === 'mouse');
+    this.container.classList.toggle('lv8-hide-cursor', this.settings.controlScheme === 'mouse');
+  }
+
+  getSettings(): GameSettings {
+    return { ...this.settings, keyBindings: { ...this.settings.keyBindings } };
+  }
+
+  // ---- pause -----------------------------------------------------------
+
+  pause() {
+    this.paused = true;
+  }
+
+  resume() {
+    this.paused = false;
+    this.lastFrameTime = performance.now(); // avoid a huge dt jump on the first frame back
+  }
+
+  isPaused(): boolean {
+    return this.paused;
+  }
+
   // ---- lifecycle ---------------------------------------------------------
 
   start() {
@@ -506,6 +608,11 @@ export class WormholeGame {
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('mousemove', this.onMouseMove);
+    window.removeEventListener('mousedown', this.onMouseDown);
+    window.removeEventListener('mouseup', this.onMouseUp);
+    this.reticleEl?.classList.remove('is-active');
+    this.container.classList.remove('lv8-hide-cursor');
 
     this.scene.traverse(obj => {
       const mesh = obj as THREE.Mesh;
@@ -533,7 +640,7 @@ export class WormholeGame {
     this.rafId = requestAnimationFrame(this.loop);
     const dt = Math.min((time - this.lastFrameTime) / 1000, 1 / 20);
     this.lastFrameTime = time;
-    if (this.running && !this.gameOver) this.update(dt);
+    if (this.running && !this.gameOver && !this.paused) this.update(dt);
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -554,11 +661,16 @@ export class WormholeGame {
   // ---- ship / input --------------------------------------------------
 
   private updateInput(dt: number) {
-    const moveStep = 22 * dt;
-    if (this.keys.has('a')) this.targetX -= moveStep;
-    if (this.keys.has('d')) this.targetX += moveStep;
-    if (this.keys.has('w')) this.targetY += moveStep;
-    if (this.keys.has('s')) this.targetY -= moveStep;
+    // Movement is always keys, regardless of control scheme — only aim/
+    // fire changes between "Keyboard" (Space, straight ahead) and
+    // "Keyboard + Mouse" (click, aimed at the cursor). Bindings and
+    // sensitivity are both live-configurable (see setSettings).
+    const moveStep = 22 * dt * this.settings.sensitivity;
+    const kb = this.settings.keyBindings;
+    if (this.keys.has(kb.left)) this.targetX -= moveStep;
+    if (this.keys.has(kb.right)) this.targetX += moveStep;
+    if (this.keys.has(kb.up)) this.targetY += moveStep;
+    if (this.keys.has(kb.down)) this.targetY -= moveStep;
 
     const len = Math.hypot(this.targetX, this.targetY);
     if (len > SHIP_MOVE_RADIUS) {
@@ -567,7 +679,11 @@ export class WormholeGame {
       this.targetY *= scale;
     }
 
-    if (this.keys.has(' ')) this.fire();
+    if (this.settings.controlScheme === 'mouse') {
+      if (this.mouseDown) this.fire();
+    } else if (this.keys.has(' ')) {
+      this.fire();
+    }
   }
 
   private updateShip(dt: number) {
@@ -618,8 +734,42 @@ export class WormholeGame {
     slot.x = this.shipX;
     slot.y = this.shipY;
     slot.z = SHIP_Z - 1.4;
+
+    if (this.settings.controlScheme === 'mouse') {
+      const target = this.unprojectMouse();
+      const dx = target.x - slot.x;
+      const dy = target.y - slot.y;
+      const dz = target.z - slot.z;
+      const len = Math.hypot(dx, dy, dz) || 1;
+      slot.vx = (dx / len) * PROJECTILE_SPEED;
+      slot.vy = (dy / len) * PROJECTILE_SPEED;
+      slot.vz = (dz / len) * PROJECTILE_SPEED;
+    } else {
+      slot.vx = 0;
+      slot.vy = 0;
+      slot.vz = -PROJECTILE_SPEED;
+    }
+
     slot.mesh.visible = true;
     slot.mesh.position.set(slot.x, slot.y, slot.z);
+    // orient the bolt to match its actual travel direction (only on fire,
+    // not per-frame — the capsule's long axis is Y by default, hence the
+    // extra 90-degree twist after lookAt points its Z at the target)
+    slot.mesh.lookAt(slot.x + slot.vx, slot.y + slot.vy, slot.z + slot.vz);
+    slot.mesh.rotateX(Math.PI / 2);
+  }
+
+  // Projects the mouse's screen position through the camera onto a fixed
+  // plane well down the tunnel, giving a real 3D aim point for "Keyboard
+  // + Mouse" mode's fired bolts — not just a flat screen-space offset.
+  // Only called on an actual fire (cooldown-limited), never per frame, so
+  // the small allocation here is negligible.
+  private unprojectMouse(): THREE.Vector3 {
+    const vec = new THREE.Vector3(this.mouseNdcX, this.mouseNdcY, 0.5).unproject(this.camera);
+    const dir = vec.sub(this.camera.position).normalize();
+    const planeZ = SHIP_Z - 70;
+    const dist = dir.z !== 0 ? (planeZ - this.camera.position.z) / dir.z : 1;
+    return this.camera.position.clone().addScaledVector(dir, dist);
   }
 
   // ---- particle tunnel ---------------------------------------------------
@@ -660,9 +810,15 @@ export class WormholeGame {
   private updateProjectiles(dt: number) {
     for (const p of this.projectiles) {
       if (!p.active) continue;
-      p.z -= PROJECTILE_SPEED * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.z += p.vz * dt;
       p.mesh.position.set(p.x, p.y, p.z);
-      if (p.z < ENEMY_SPAWN_Z - 10) {
+      // mouse-aimed bolts can drift sideways out of the tunnel, not just
+      // forward past the far end — both are "gone", not just the old
+      // straight-ahead z check
+      const outOfRange = p.z < ENEMY_SPAWN_Z - 10 || Math.abs(p.x) > TUNNEL_RADIUS * 2.2 || Math.abs(p.y) > TUNNEL_RADIUS * 2.2;
+      if (outOfRange) {
         p.active = false;
         p.mesh.visible = false;
       }

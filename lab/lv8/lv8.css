@@ -458,6 +458,47 @@ body.lv8 {
   width: 100%;
   height: 100%;
 }
+.lv8-game-canvas-wrap.lv8-hide-cursor,
+.lv8-game-canvas-wrap.lv8-hide-cursor canvas {
+  cursor: none;
+}
+
+/* Mouse-aim reticle (Keyboard + Mouse scheme only) */
+.lv8-reticle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  pointer-events: none;
+  display: none;
+  border: 1.5px solid var(--lv8-lit);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(168, 52, 33, 0.6);
+}
+.lv8-reticle.is-active { display: block; }
+.lv8-reticle::before,
+.lv8-reticle::after {
+  content: '';
+  position: absolute;
+  background: var(--lv8-lit);
+}
+.lv8-reticle::before {
+  top: 50%;
+  left: -6px;
+  right: -6px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+.lv8-reticle::after {
+  left: 50%;
+  top: -6px;
+  bottom: -6px;
+  width: 1px;
+  transform: translateX(-50%);
+}
 
 /* Cockpit framing overlay — implied canopy struts at the lower corners
    and a faint upper dash edge, minimal and non-obstructive (the middle
@@ -592,3 +633,196 @@ body.lv8 {
   cursor: pointer;
 }
 .lv8-gameover__exit:hover { color: var(--lv8-lit); }
+
+/* ============================================================
+   PRE-GAME SETUP WIZARD — name -> control scheme -> viewpoint -> play.
+   One full-viewport overlay, one <= panel visible at a time (main.ts
+   toggles .is-active on the matching [data-step]).
+   ============================================================ */
+.lv8-setup {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--lv8-darkest);
+  background-image: radial-gradient(120% 90% at 50% 20%, rgba(168, 52, 33, 0.12), transparent 60%);
+  padding: 20px;
+}
+.lv8-setup.is-active { display: flex; }
+.lv8-setup__panel {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+}
+.lv8-setup__panel.is-active { display: flex; }
+.lv8-setup__eyebrow {
+  font-family: var(--lv8-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--lv8-lit);
+}
+.lv8-setup__title {
+  margin: 0;
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 4.5vw, 42px);
+  letter-spacing: 0.01em;
+  color: var(--lv8-text);
+}
+.lv8-setup__input {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 52, 33, 0.4);
+  background: var(--lv8-bg-raised);
+  color: var(--lv8-text);
+  font-family: var(--lv8-font-body);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.lv8-setup__input:focus {
+  outline: none;
+  border-color: var(--lv8-lit);
+  box-shadow: 0 0 0 3px rgba(168, 52, 33, 0.2);
+}
+.lv8-setup__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.lv8-setup__options--compact { gap: 8px; }
+.lv8-setup__option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(242, 231, 218, 0.16);
+  background: var(--lv8-bg-raised);
+  color: var(--lv8-text);
+  font-family: var(--lv8-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.lv8-setup__option strong {
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 0.03em;
+}
+.lv8-setup__option span {
+  font-size: 12px;
+  color: var(--lv8-text-dim);
+}
+.lv8-setup__option:hover { border-color: rgba(168, 52, 33, 0.5); }
+.lv8-setup__option.is-selected {
+  border-color: var(--lv8-lit);
+  background: rgba(168, 52, 33, 0.12);
+  box-shadow: 0 0 0 1px rgba(168, 52, 33, 0.3);
+}
+.lv8-setup__row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   SETTINGS PANEL + PAUSE MENU — shared visual language with the setup
+   wizard above (same option-list pattern for scheme/viewpoint).
+   ============================================================ */
+.lv8-settings,
+.lv8-pause {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(21, 16, 13, 0.98);
+  padding: 20px;
+}
+.lv8-pause { z-index: 1200; }
+.lv8-settings { z-index: 1300; } /* always above setup (1100) and pause (1200) — opened from either */
+.lv8-settings.is-active,
+.lv8-pause.is-active { display: flex; }
+.lv8-settings__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 8px;
+}
+.lv8-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lv8-text-dim);
+}
+.lv8-settings__field input[type='range'] {
+  width: 100%;
+  accent-color: var(--lv8-lit);
+}
+.lv8-settings__remap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lv8-remap-btn {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(242, 231, 218, 0.16);
+  background: var(--lv8-bg-raised);
+  color: var(--lv8-text);
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.lv8-remap-btn:hover { border-color: var(--lv8-lit); }
+.lv8-remap-btn.is-listening {
+  border-color: var(--lv8-lit);
+  color: var(--lv8-lit);
+  animation: lv8-flash-pulse 0.9s ease-in-out infinite alternate;
+}
+
+/* ============================================================
+   In-game pause trigger — small button, top-left, opposite the score.
+   ============================================================ */
+.lv8-game-pause {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 231, 218, 0.3);
+  background: rgba(21, 16, 13, 0.5);
+  color: var(--lv8-text-dim);
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.lv8-game-pause:hover {
+  color: var(--lv8-lit);
+  border-color: var(--lv8-lit);
+}

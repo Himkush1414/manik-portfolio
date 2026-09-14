@@ -103,12 +103,122 @@
 
 </div>
 
+<!-- ===================== PRE-GAME SETUP WIZARD =====================
+     Shown between the hub and the actual game canvas: name -> control
+     scheme -> viewpoint -> play. Purely in-memory/session state (no
+     backend/persistence — explicitly deferred, see chat reply); the name
+     is held only to personalise this session's own UI. -->
+<div id="lv8-setup" class="lv8-setup" aria-hidden="true">
+
+  <div class="lv8-setup__panel" data-step="name">
+    <span class="lv8-setup__eyebrow">STEP 1 // IDENTIFICATION</span>
+    <h2 class="lv8-setup__title">STATE YOUR CALLSIGN</h2>
+    <input class="lv8-setup__input" id="lv8-name-input" type="text" maxlength="18" placeholder="PILOT NAME" autocomplete="off" />
+    <button class="lv8-tile__cta" id="lv8-name-next" type="button"><span>CONTINUE</span></button>
+  </div>
+
+  <div class="lv8-setup__panel" data-step="controls">
+    <span class="lv8-setup__eyebrow">STEP 2 // CONTROL SCHEME</span>
+    <h2 class="lv8-setup__title">HOW WILL YOU FLY?</h2>
+    <div class="lv8-setup__options" id="lv8-control-options">
+      <button class="lv8-setup__option" data-value="keyboard" type="button">
+        <strong>KEYBOARD</strong>
+        <span>Move with keys, fire with Space</span>
+      </button>
+      <button class="lv8-setup__option" data-value="mouse" type="button">
+        <strong>KEYBOARD + MOUSE</strong>
+        <span>Move with keys, aim &amp; fire with the mouse</span>
+      </button>
+    </div>
+    <button class="lv8-tile__cta" id="lv8-controls-next" type="button"><span>CONTINUE</span></button>
+  </div>
+
+  <div class="lv8-setup__panel" data-step="viewpoint">
+    <span class="lv8-setup__eyebrow">STEP 3 // VIEWPOINT</span>
+    <h2 class="lv8-setup__title">CHOOSE YOUR VIEW</h2>
+    <div class="lv8-setup__options" id="lv8-viewpoint-options">
+      <button class="lv8-setup__option" data-value="cockpit" type="button">
+        <strong>COCKPIT</strong>
+        <span>First-person, from the pilot's deck</span>
+      </button>
+      <button class="lv8-setup__option" data-value="chase" type="button">
+        <strong>THIRD-PERSON CHASE</strong>
+        <span>Classic behind-the-ship framing</span>
+      </button>
+    </div>
+    <div class="lv8-setup__row">
+      <button class="lv8-gameover__exit" id="lv8-setup-settings-btn" type="button">SETTINGS</button>
+      <button class="lv8-tile__cta" id="lv8-setup-play-btn" type="button"><span>PLAY</span></button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== SETTINGS PANEL =====================
+     Shared: opened from the setup wizard above OR from the in-game pause
+     menu below — main.ts remembers which and returns there on close. -->
+<div id="lv8-settings" class="lv8-settings" aria-hidden="true">
+  <div class="lv8-settings__panel">
+    <span class="lv8-setup__eyebrow">SETTINGS</span>
+
+    <label class="lv8-settings__field">
+      <span>Sensitivity</span>
+      <input type="range" id="lv8-sensitivity" min="0.5" max="2" step="0.05" value="1" />
+    </label>
+
+    <div class="lv8-settings__field">
+      <span>Movement keys (click to rebind)</span>
+      <div class="lv8-settings__remap">
+        <button class="lv8-remap-btn" id="lv8-remap-up" data-dir="up" type="button">UP: W</button>
+        <button class="lv8-remap-btn" id="lv8-remap-down" data-dir="down" type="button">DOWN: S</button>
+        <button class="lv8-remap-btn" id="lv8-remap-left" data-dir="left" type="button">LEFT: A</button>
+        <button class="lv8-remap-btn" id="lv8-remap-right" data-dir="right" type="button">RIGHT: D</button>
+      </div>
+    </div>
+
+    <div class="lv8-settings__field">
+      <span>Control scheme</span>
+      <div class="lv8-setup__options lv8-setup__options--compact" id="lv8-settings-control-options">
+        <button class="lv8-setup__option" data-value="keyboard" type="button"><strong>KEYBOARD</strong></button>
+        <button class="lv8-setup__option" data-value="mouse" type="button"><strong>KEYBOARD + MOUSE</strong></button>
+      </div>
+    </div>
+
+    <div class="lv8-settings__field">
+      <span>Viewpoint</span>
+      <div class="lv8-setup__options lv8-setup__options--compact" id="lv8-settings-viewpoint-options">
+        <button class="lv8-setup__option" data-value="cockpit" type="button"><strong>COCKPIT</strong></button>
+        <button class="lv8-setup__option" data-value="chase" type="button"><strong>CHASE</strong></button>
+      </div>
+    </div>
+
+    <button class="lv8-tile__cta" id="lv8-settings-close" type="button"><span>DONE</span></button>
+  </div>
+</div>
+
+<!-- ===================== PAUSE MENU ===================== -->
+<div id="lv8-pause" class="lv8-pause" aria-hidden="true">
+  <div class="lv8-settings__panel">
+    <span class="lv8-setup__eyebrow">PAUSED</span>
+    <button class="lv8-tile__cta" id="lv8-pause-resume" type="button"><span>RESUME</span></button>
+    <button class="lv8-gameover__exit" id="lv8-pause-settings" type="button">SETTINGS</button>
+    <button class="lv8-gameover__exit" id="lv8-pause-exit" type="button">EXIT TO HUB</button>
+  </div>
+</div>
+
 <!-- ===================== GAME OVERLAY =====================
-     Empty until "PLAY" dynamically imports game.ts, which mounts a canvas
-     into #lv8-game-canvas-wrap and drives everything below imperatively.
-     Hidden (and inert) whenever the hub is showing. -->
+     Empty until setup completes and dynamically imports game.ts, which
+     mounts a canvas into #lv8-game-canvas-wrap and drives everything
+     below imperatively. Hidden (and inert) whenever the hub is showing. -->
 <div id="lv8-game-overlay" class="lv8-game-overlay" aria-hidden="true">
+  <button class="lv8-game-pause" id="lv8-game-pause" type="button" aria-label="Pause">II</button>
   <div id="lv8-game-canvas-wrap" class="lv8-game-canvas-wrap"></div>
+
+  <!-- Mouse-aim reticle — Keyboard + Mouse control scheme only (see
+       game.ts's onMouseMove/setSettings). Follows the raw cursor
+       position; the OS cursor itself is hidden over the canvas while
+       this is active (see .lv8-hide-cursor). -->
+  <div class="lv8-reticle" id="lv8-reticle" aria-hidden="true"></div>
 
   <!-- Cockpit framing — minimal implied canopy/instrument silhouette at
        the screen edges, CSS only (no 3D cockpit geometry). Shown only in
