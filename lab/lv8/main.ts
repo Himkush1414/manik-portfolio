@@ -3,6 +3,7 @@
 // below, so it never loads just from visiting this page, let alone any
 // other route on the site.
 import { setHubActive } from './lv8-cursor-trail';
+import './lv8-hero-bars';
 import type { WormholeGame as WormholeGameType, WormholeGameCallbacks } from './game';
 
 // Freshness beacon, matching the convention every other route on this site uses.

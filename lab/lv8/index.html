@@ -40,10 +40,21 @@
 
   <canvas id="lv8-cursor-trail" class="lv8-cursor-trail" aria-hidden="true"></canvas>
 
+  <!-- ===================== ANIMATED HERO =====================
+       Full-viewport ambient bar field (lv8-hero-bars.ts builds the bars
+       themselves once at load and on major resize; every bar's own
+       breathing motion after that is pure CSS — nothing here drives it
+       per-frame). Bar count is computed from viewport width so density
+       stays constant instead of thinning out on an ultra-wide screen. -->
   <header class="lv8-hero">
+    <div class="lv8-hero__bars" id="lv8-hero-bars" aria-hidden="true"></div>
+    <div class="lv8-hero__scrim" aria-hidden="true"></div>
     <p class="lv8-hero__kicker">MANIK RANA // EXPERIMENTS</p>
-    <h1 class="lv8-hero__headline">GAMES <span class="lv8-hero__slash">//</span> LAB</h1>
-    <p class="lv8-hero__sub">Playable experiments. Real-time 3D, built light. One flagship run to start — more incoming.</p>
+    <h1 class="lv8-hero__headline">
+      <span>THE RUN NEVER ENDS.</span>
+      <span>NEITHER SHOULD YOU.</span>
+    </h1>
+    <p class="lv8-hero__watermark" aria-hidden="true">LV8</p>
   </header>
 
   <section class="lv8-bento" aria-label="Game selection">

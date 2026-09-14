@@ -100,7 +100,6 @@ body.lv8 {
    ============================================================ */
 .lv8-hub {
   position: relative;
-  padding: clamp(110px, 16vh, 170px) var(--lv8-gutter) 0;
 }
 
 .lv8-cursor-trail {
@@ -112,12 +111,73 @@ body.lv8 {
   pointer-events: none;
 }
 
+/* ============================================================
+   HERO — full-viewport ambient bar field behind a two-line headline and
+   a breathing brand watermark. The bars themselves are built once by
+   lv8-hero-bars.ts; every bar's own motion after that is pure CSS
+   (@keyframes lv8-bar-breathe below), so this costs nothing per frame.
+   ============================================================ */
 .lv8-hero {
-  max-width: 900px;
-  margin: 0 0 clamp(40px, 6vh, 72px);
+  position: relative;
+  min-height: 100svh;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(110px, 16vh, 170px) var(--lv8-gutter) clamp(60px, 10vh, 100px);
+}
+
+.lv8-hero__bars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: stretch;
+}
+.lv8-hero__bar {
+  flex: var(--bar-grow, 1) 1 0;
+  height: 100%;
+  /* a band of lit accent partway down each bar, not a flat top/bottom
+     ramp — reads as light catching an uneven fold, not a floor glow */
+  background: linear-gradient(
+    180deg,
+    #06060c 0%,
+    #06060c calc(var(--bar-band, 40%) - 22%),
+    var(--bar-accent, #4ce0e8) var(--bar-band, 40%),
+    #06060c calc(var(--bar-band, 40%) + 30%),
+    #06060c 100%
+  );
+  opacity: var(--bar-min, 0.5);
+  animation: lv8-bar-breathe var(--bar-dur, 6s) ease-in-out infinite;
+  animation-delay: var(--bar-delay, 0s);
+}
+@keyframes lv8-bar-breathe {
+  0%, 100% { opacity: var(--bar-min, 0.45); }
+  50% { opacity: var(--bar-max, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv8-hero__bar { animation: none; }
+}
+
+/* darkens the lower-middle band so the headline stays legible over the
+   busy bar field without hiding it outright */
+.lv8-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(120% 70% at 18% 45%, rgba(6, 6, 12, 0.72) 0%, rgba(6, 6, 12, 0.28) 45%, rgba(6, 6, 12, 0) 75%);
+  pointer-events: none;
+}
+
+.lv8-hero__kicker,
+.lv8-hero__headline,
+.lv8-hero__watermark {
+  position: relative;
+  z-index: 2;
 }
 .lv8-hero__kicker {
-  margin: 0 0 14px;
+  margin: 0 0 18px;
   font-family: var(--lv8-font-body);
   font-size: 12px;
   font-weight: 700;
@@ -127,28 +187,58 @@ body.lv8 {
   opacity: 0.85;
 }
 .lv8-hero__headline {
-  margin: 0 0 18px;
+  margin: 0;
+  /* generous, not a tight ch-cap — each span is meant to read as ONE
+     line; a narrow max-width here just forces an unwanted internal wrap
+     on top of the deliberate one from the two <span>s */
+  max-width: min(90vw, 900px);
   font-family: var(--lv8-font-display);
   font-weight: 400;
-  font-size: clamp(56px, 9vw, 128px);
-  line-height: 0.92;
+  font-size: clamp(34px, 6.2vw, 84px);
+  line-height: 1.08;
   letter-spacing: 0.01em;
   color: var(--lv8-text);
   text-shadow:
-    0 0 6px rgba(76, 224, 232, 0.55),
-    0 0 22px rgba(76, 224, 232, 0.35),
-    0 0 60px rgba(76, 224, 232, 0.2);
+    0 2px 10px rgba(6, 6, 12, 0.85),
+    0 0 22px rgba(76, 224, 232, 0.3);
 }
-.lv8-hero__slash {
-  color: var(--lv8-cyan);
-  opacity: 0.9;
+.lv8-hero__headline span {
+  display: block;
+  white-space: nowrap;
 }
-.lv8-hero__sub {
+
+.lv8-hero__watermark {
+  position: absolute;
+  right: clamp(12px, 2.6vw, 40px);
+  bottom: clamp(8px, 2vh, 28px);
+  z-index: 1;
   margin: 0;
-  max-width: 52ch;
-  font-size: clamp(14px, 1.3vw, 17px);
-  line-height: 1.6;
-  color: var(--lv8-text-dim);
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: clamp(90px, 16vw, 240px);
+  line-height: 1;
+  color: var(--lv8-cyan);
+  text-shadow: 0 0 40px rgba(76, 224, 232, 0.4);
+  animation: lv8-watermark-breathe 7s ease-in-out infinite;
+  user-select: none;
+}
+@keyframes lv8-watermark-breathe {
+  0%, 100% { opacity: 0.16; }
+  50% { opacity: 0.8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv8-hero__watermark { animation: none; opacity: 0.45; }
+}
+
+@media (max-width: 720px) {
+  .lv8-hero { padding-bottom: clamp(140px, 30vh, 220px); }
+  .lv8-hero__headline { max-width: 94vw; font-size: clamp(24px, 8vw, 44px); }
+  .lv8-hero__watermark {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: clamp(24px, 6vh, 56px);
+    font-size: clamp(64px, 30vw, 120px);
+  }
 }
 
 /* ---- Bento grid ---- */
@@ -157,7 +247,10 @@ body.lv8 {
   grid-template-columns: 2fr 1fr;
   grid-auto-rows: minmax(120px, auto);
   gap: clamp(14px, 1.6vw, 22px);
-  padding-bottom: clamp(60px, 10vh, 110px);
+  /* .lv8-hub itself carries no padding any more (the hero above needs to
+     bleed full-width for its bar background) — gutter lives here and on
+     the footer instead, each applying it themselves. */
+  padding: clamp(28px, 5vh, 56px) var(--lv8-gutter) clamp(60px, 10vh, 110px);
 }
 .lv8-tile {
   position: relative;
@@ -304,7 +397,7 @@ body.lv8 {
    thin cyan divider, then one row: logo left / flavor line right).
    ============================================================ */
 .lv8-footer {
-  padding: 0 0 clamp(28px, 5vh, 48px);
+  padding: 0 var(--lv8-gutter) clamp(28px, 5vh, 48px);
 }
 .lv8-footer__divider {
   height: 1px;
