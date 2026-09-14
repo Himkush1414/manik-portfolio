@@ -23,9 +23,13 @@ import * as THREE from 'three';
 
 export interface WormholeGameCallbacks {
   onScoreChange: (score: number) => void;
-  onLivesChange: (lives: number) => void;
-  onGameOver: (finalScore: number) => void;
+  onLivesChange: (lives: number) => void; // 3-heart system, levels 10+ (and always shown 0-3 at start)
+  onHealthChange: (health: number) => void; // 0-100 bar, levels 1-9 only
+  onLevelChange: (level: number) => void;
+  onGameOver: (finalScore: number, level: number) => void;
   onHit: () => void; // player took damage — main.ts pulses the screen-flash overlay
+  onCrash: () => void; // obstacle collision specifically — instant, harder feedback than a miss
+  onBonus: (kind: 'life' | 'frenzy') => void; // secret target found
 }
 
 export type ControlScheme = 'keyboard' | 'mouse';
@@ -79,6 +83,29 @@ const BURST_POOL_SIZE = 64; // shards per burst (8) * up to 8 concurrent kills
 const BURST_SHARDS = 8;
 const BURST_LIFE = 0.45;
 
+// ---- levels / dual fail conditions -------------------------------------
+// Phase 3's own interim level clock (survival-time based) — Phase 4 formalises
+// the full 50-level procedural ramp and milestone/portal system on top of
+// this same `level` counter; this is deliberately the simplest rule that
+// makes the level-10 rule switch (below) testable on its own.
+const LEVEL_DURATION = 26; // seconds of survival per level, before Phase 4's ramp replaces this
+const HEARTS_FROM_LEVEL = 10; // "Level 10 onward" per the brief
+const HEALTH_MAX = 100;
+const HEALTH_LOSS_PER_MISS = 22;
+
+// ---- obstacles (terrain/debris — instant destruction on contact,
+// independent of the miss-based health/hearts systems above) -----------
+const OBSTACLE_MAX_POOL = 6; // set pieces, not a swarm — only a couple active at once
+const OBSTACLE_SPAWN_Z = -170;
+const OBSTACLE_HIT_Z_WINDOW = 1.4; // how close to SHIP_Z counts as "reached the ship" for a hit test
+type ObstacleType = 'ring' | 'split' | 'debris';
+
+// ---- secret bonus targets — rare, deliberately easy to miss -----------
+const SECRET_MAX_POOL = 2;
+const SECRET_CHECK_INTERVAL = 20; // roll for a spawn at most this often
+const SECRET_SPAWN_CHANCE = 0.35; // per roll — genuinely uncommon, not a guaranteed per-level pickup
+const FRENZY_DURATION = 9;
+
 type Enemy = {
   active: boolean;
   group: THREE.Group;
@@ -119,6 +146,31 @@ type BurstShard = {
   life: number;
 };
 
+// A single obstacle "set piece". `group` holds every visual part; the
+// actual hit-test geometry is described separately (gapX/gapY/gapRadius
+// pairs, or rock offsets+radii for debris) since it needs to run as plain
+// math against the ship's own (x,y), not a mesh-vs-mesh check — obstacles
+// pass the ship at speed and are only ever tested for a brief window
+// around z === SHIP_Z (see checkObstacleCollision).
+type Obstacle = {
+  active: boolean;
+  type: ObstacleType;
+  group: THREE.Group;
+  z: number;
+  speed: number;
+  tested: boolean; // hit-tested once per pass, not every frame it's near SHIP_Z
+  gaps: { x: number; y: number; r: number }[]; // safe zones (ring/split) OR solid rocks (debris — inverted test)
+};
+
+type Secret = {
+  active: boolean;
+  group: THREE.Group;
+  x: number;
+  y: number;
+  z: number;
+  speed: number;
+};
+
 export type Viewpoint = 'cockpit' | 'chase';
 
 export class WormholeGame {
@@ -155,6 +207,8 @@ export class WormholeGame {
   private projectiles: Projectile[] = [];
   private streaks: Streak[] = [];
   private burstShards: BurstShard[] = [];
+  private obstacles: Obstacle[] = [];
+  private secrets: Secret[] = [];
 
   private keys = new Set<string>();
   private lastFireTime = -Infinity;
@@ -169,9 +223,14 @@ export class WormholeGame {
 
   private score = 0;
   private lives = START_LIVES;
+  private health = HEALTH_MAX;
+  private level = 1;
   private elapsed = 0;
   private nextSpawnAt = 1.2;
   private nextStreakAt = 2;
+  private nextObstacleAt = 5;
+  private nextSecretCheckAt = SECRET_CHECK_INTERVAL;
+  private frenzyUntil = -Infinity;
   private running = false;
   private gameOver = false;
   private paused = false;
@@ -237,6 +296,8 @@ export class WormholeGame {
     this.buildEnemyPool();
     this.buildStreakPool();
     this.buildBurstPool();
+    this.buildObstaclePool();
+    this.buildSecretPool();
     this.setViewpoint(options.viewpoint ?? 'cockpit');
     this.reticleEl?.classList.toggle('is-active', this.settings.controlScheme === 'mouse');
     this.container.classList.toggle('lv8-hide-cursor', this.settings.controlScheme === 'mouse');
@@ -499,6 +560,88 @@ export class WormholeGame {
     }
   }
 
+  // Each pooled slot carries all three obstacle "looks" as hidden children
+  // and just shows the one that matches whatever type it's spawned as —
+  // simpler than three separate pools, and with only OBSTACLE_MAX_POOL (6)
+  // slots the handful of extra idle meshes per slot costs nothing.
+  private buildObstaclePool() {
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0x2a1712,
+      emissive: 0x6f2417,
+      emissiveIntensity: 0.5,
+      roughness: 0.8,
+      side: THREE.DoubleSide,
+    });
+    const edgeMat = new THREE.MeshBasicMaterial({ color: 0xa83421 });
+    const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x241812, roughness: 0.95, flatShading: true });
+
+    for (let i = 0; i < OBSTACLE_MAX_POOL; i++) {
+      const group = new THREE.Group();
+
+      // "ring" look: a flat annulus (solid material) with a bright inner
+      // edge marking the safe opening
+      const ringGroup = new THREE.Group();
+      ringGroup.name = 'ring';
+      const ringWall = new THREE.Mesh(new THREE.RingGeometry(2.4, TUNNEL_RADIUS * 1.05, 24), wallMat);
+      ringGroup.add(ringWall);
+      const ringEdge = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.12, 6, 24), edgeMat);
+      ringGroup.add(ringEdge);
+      group.add(ringGroup);
+
+      // "split" look: one central blocking slab, safe gaps on either side
+      const splitGroup = new THREE.Group();
+      splitGroup.name = 'split';
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(4.4, TUNNEL_RADIUS * 2, 0.6), wallMat);
+      splitGroup.add(slab);
+      const slabEdgeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, TUNNEL_RADIUS * 2, 0.7), edgeMat);
+      slabEdgeL.position.x = -2.2;
+      splitGroup.add(slabEdgeL);
+      const slabEdgeR = slabEdgeL.clone();
+      slabEdgeR.position.x = 2.2;
+      splitGroup.add(slabEdgeR);
+      group.add(splitGroup);
+
+      // "debris" look: a handful of irregular rocks, individually dodged
+      const debrisGroup = new THREE.Group();
+      debrisGroup.name = 'debris';
+      for (let r = 0; r < 4; r++) {
+        const rock = new THREE.Mesh(rockGeo, rockMat);
+        rock.scale.setScalar(0.6 + Math.random() * 0.5);
+        rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+        debrisGroup.add(rock);
+      }
+      group.add(debrisGroup);
+
+      group.visible = false;
+      this.scene.add(group);
+      this.obstacles.push({ active: false, type: 'ring', group, z: OBSTACLE_SPAWN_Z, speed: 0, tested: false, gaps: [] });
+    }
+  }
+
+  private buildSecretPool() {
+    const geo = new THREE.OctahedronGeometry(0.4, 0);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.95 });
+    for (let i = 0; i < SECRET_MAX_POOL; i++) {
+      const group = new THREE.Group();
+      const core = new THREE.Mesh(geo, mat);
+      group.add(core);
+      const glow = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: this.makeRadialTexture('rgba(255,233,168,0.9)', 'rgba(255,233,168,0)'),
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        })
+      );
+      glow.scale.set(2.2, 2.2, 1);
+      group.add(glow);
+      group.visible = false;
+      this.scene.add(group);
+      this.secrets.push({ active: false, group, x: 0, y: 0, z: OBSTACLE_SPAWN_Z, speed: 0 });
+    }
+  }
+
   private handleResize() {
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
@@ -576,9 +719,14 @@ export class WormholeGame {
   restart() {
     this.score = 0;
     this.lives = START_LIVES;
+    this.health = HEALTH_MAX;
+    this.level = 1;
     this.elapsed = 0;
     this.nextSpawnAt = 1.2;
     this.nextStreakAt = 2;
+    this.nextObstacleAt = 5;
+    this.nextSecretCheckAt = SECRET_CHECK_INTERVAL;
+    this.frenzyUntil = -Infinity;
     this.gameOver = false;
     this.shipX = this.shipY = this.targetX = this.targetY = 0;
     this.trailHistory = [];
@@ -598,8 +746,18 @@ export class WormholeGame {
       b.active = false;
       b.mesh.visible = false;
     }
+    for (const o of this.obstacles) {
+      o.active = false;
+      o.group.visible = false;
+    }
+    for (const s of this.secrets) {
+      s.active = false;
+      s.group.visible = false;
+    }
     this.callbacks.onScoreChange(this.score);
     this.callbacks.onLivesChange(this.lives);
+    this.callbacks.onHealthChange(this.health);
+    this.callbacks.onLevelChange(this.level);
     this.running = true;
   }
 
@@ -646,16 +804,27 @@ export class WormholeGame {
 
   private update(dt: number) {
     this.elapsed += dt;
+    this.updateLevel();
     this.updateInput(dt);
     this.updateShip(dt);
     this.updateTrail();
     this.updateParticles(dt);
     this.updateProjectiles(dt);
     this.updateEnemies(dt);
+    this.updateObstacles(dt);
+    this.updateSecrets(dt);
     this.updateStreaks(dt);
     this.updateBursts(dt);
     this.checkCollisions();
     this.updateCamera(dt);
+  }
+
+  private updateLevel() {
+    const next = 1 + Math.floor(this.elapsed / LEVEL_DURATION);
+    if (next !== this.level) {
+      this.level = next;
+      this.callbacks.onLevelChange(this.level);
+    }
   }
 
   // ---- ship / input --------------------------------------------------
@@ -728,28 +897,51 @@ export class WormholeGame {
     const now = this.elapsed;
     if (now - this.lastFireTime < FIRE_COOLDOWN) return;
     this.lastFireTime = now;
+
+    let dirX: number;
+    let dirY: number;
+    let dirZ: number;
+    if (this.settings.controlScheme === 'mouse') {
+      const target = this.unprojectMouse();
+      const dx = target.x - this.shipX;
+      const dy = target.y - this.shipY;
+      const dz = target.z - (SHIP_Z - 1.4);
+      const len = Math.hypot(dx, dy, dz) || 1;
+      dirX = dx / len;
+      dirY = dy / len;
+      dirZ = dz / len;
+    } else {
+      dirX = 0;
+      dirY = 0;
+      dirZ = -1;
+    }
+
+    if (this.frenzyActive) {
+      // secret-bonus reward: quad-fire, a small angular spread around the
+      // same base aim direction rather than 4 identical overlapping bolts
+      const spreads: [number, number][] = [
+        [-0.09, 0.05],
+        [-0.03, -0.05],
+        [0.03, 0.05],
+        [0.09, -0.05],
+      ];
+      for (const [ox, oy] of spreads) this.spawnProjectile(dirX + ox, dirY + oy, dirZ);
+    } else {
+      this.spawnProjectile(dirX, dirY, dirZ);
+    }
+  }
+
+  private spawnProjectile(dirX: number, dirY: number, dirZ: number) {
     const slot = this.projectiles.find(p => !p.active);
     if (!slot) return;
+    const len = Math.hypot(dirX, dirY, dirZ) || 1;
     slot.active = true;
     slot.x = this.shipX;
     slot.y = this.shipY;
     slot.z = SHIP_Z - 1.4;
-
-    if (this.settings.controlScheme === 'mouse') {
-      const target = this.unprojectMouse();
-      const dx = target.x - slot.x;
-      const dy = target.y - slot.y;
-      const dz = target.z - slot.z;
-      const len = Math.hypot(dx, dy, dz) || 1;
-      slot.vx = (dx / len) * PROJECTILE_SPEED;
-      slot.vy = (dy / len) * PROJECTILE_SPEED;
-      slot.vz = (dz / len) * PROJECTILE_SPEED;
-    } else {
-      slot.vx = 0;
-      slot.vy = 0;
-      slot.vz = -PROJECTILE_SPEED;
-    }
-
+    slot.vx = (dirX / len) * PROJECTILE_SPEED;
+    slot.vy = (dirY / len) * PROJECTILE_SPEED;
+    slot.vz = (dirZ / len) * PROJECTILE_SPEED;
     slot.mesh.visible = true;
     slot.mesh.position.set(slot.x, slot.y, slot.z);
     // orient the bolt to match its actual travel direction (only on fire,
@@ -830,7 +1022,8 @@ export class WormholeGame {
   private updateEnemies(dt: number) {
     if (this.elapsed >= this.nextSpawnAt) {
       this.spawnWave();
-      const interval = Math.max(0.42, 1.5 - this.elapsed * 0.012);
+      let interval = Math.max(0.42, 1.5 - this.elapsed * 0.012);
+      if (this.frenzyActive) interval *= 0.4; // secret bonus: faster spawns alongside quad-fire
       this.nextSpawnAt = this.elapsed + interval;
     }
 
@@ -887,11 +1080,183 @@ export class WormholeGame {
     }
   }
 
+  // ---- obstacles (fail condition A) --------------------------------------
+
+  private updateObstacles(dt: number) {
+    if (this.elapsed >= this.nextObstacleAt) {
+      this.spawnObstacle();
+      // gets more frequent as levels climb, floor keeps it from becoming
+      // an unbroken wall of set pieces
+      const interval = Math.max(3.2, 7.5 - this.level * 0.25);
+      this.nextObstacleAt = this.elapsed + interval;
+    }
+
+    for (const o of this.obstacles) {
+      if (!o.active) continue;
+      o.z += o.speed * dt;
+      o.group.position.z = o.z;
+
+      if (!o.tested && o.z >= SHIP_Z - OBSTACLE_HIT_Z_WINDOW) {
+        o.tested = true;
+        this.checkObstacleCollision(o);
+      }
+      if (o.z > SHIP_Z + OBSTACLE_HIT_Z_WINDOW + 2) {
+        o.active = false;
+        o.group.visible = false;
+      }
+    }
+  }
+
+  private spawnObstacle() {
+    const slot = this.obstacles.find(o => !o.active);
+    if (!slot) return;
+
+    const types: ObstacleType[] = ['ring', 'split', 'debris'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    slot.type = type;
+    slot.active = true;
+    slot.tested = false;
+    slot.z = OBSTACLE_SPAWN_Z;
+    slot.speed = 34 + Math.min(this.level * 1.1, 26);
+    slot.group.position.set(0, 0, slot.z);
+    slot.group.rotation.z = Math.random() * Math.PI * 2;
+    slot.group.visible = true;
+
+    for (const child of slot.group.children) child.visible = child.name === type;
+
+    // safe-zone radius narrows as levels climb (never below a floor that
+    // keeps it theoretically passable) — this is the actual "narrowing
+    // sections" difficulty knob
+    const safeR = Math.max(1.5, 2.6 - this.level * 0.045);
+
+    if (type === 'ring') {
+      const ringWall = slot.group.children.find(c => c.name === 'ring') as THREE.Group;
+      (ringWall.children[0] as THREE.Mesh).geometry.dispose();
+      (ringWall.children[0] as THREE.Mesh).geometry = new THREE.RingGeometry(safeR, TUNNEL_RADIUS * 1.05, 24);
+      (ringWall.children[1] as THREE.Mesh).scale.setScalar(safeR / 2.4);
+      slot.gaps = [{ x: 0, y: 0, r: safeR }];
+    } else if (type === 'split') {
+      const gapOffset = 2.2 + safeR; // the two safe lanes flanking the central slab
+      const splitGroup = slot.group.children.find(c => c.name === 'split') as THREE.Group;
+      splitGroup.children[1].position.x = -gapOffset + safeR * 0.6;
+      splitGroup.children[2].position.x = gapOffset - safeR * 0.6;
+      slot.gaps = [
+        { x: -gapOffset, y: 0, r: safeR },
+        { x: gapOffset, y: 0, r: safeR },
+      ];
+    } else {
+      // debris: the "gaps" list is repurposed as solid rocks to avoid —
+      // hit test is inverted for this type (see checkObstacleCollision)
+      const debrisGroup = slot.group.children.find(c => c.name === 'debris') as THREE.Group;
+      slot.gaps = [];
+      for (const child of debrisGroup.children) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = 1.5 + Math.random() * (TUNNEL_RADIUS * 0.75);
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        child.position.set(x, y, 0);
+        slot.gaps.push({ x, y, r: 1.1 });
+      }
+    }
+  }
+
+  private checkObstacleCollision(o: Obstacle) {
+    if (o.type === 'debris') {
+      // hit if the ship is too close to ANY rock
+      for (const rock of o.gaps) {
+        const d = Math.hypot(this.shipX - rock.x, this.shipY - rock.y);
+        if (d < rock.r + 0.9) {
+          this.crashShip();
+          return;
+        }
+      }
+      return;
+    }
+    // ring/split: hit unless the ship is inside AT LEAST ONE safe gap
+    const clear = o.gaps.some(g => Math.hypot(this.shipX - g.x, this.shipY - g.y) < g.r);
+    if (!clear) this.crashShip();
+  }
+
+  // ---- secret bonus targets -----------------------------------------------
+
+  private updateSecrets(dt: number) {
+    if (this.elapsed >= this.nextSecretCheckAt) {
+      this.nextSecretCheckAt = this.elapsed + SECRET_CHECK_INTERVAL;
+      if (Math.random() < SECRET_SPAWN_CHANCE) this.spawnSecret();
+    }
+    for (const s of this.secrets) {
+      if (!s.active) continue;
+      s.z += s.speed * dt;
+      s.group.position.set(s.x, s.y, s.z);
+      s.group.rotation.y += dt * 2;
+      if (s.z > SHIP_Z + 3) {
+        s.active = false;
+        s.group.visible = false;
+      }
+    }
+  }
+
+  private spawnSecret() {
+    const slot = this.secrets.find(s => !s.active);
+    if (!slot) return;
+    // deliberately tucked out near the tunnel wall, off the path most
+    // players hold — finding it takes actually exploring, not just flying
+    // straight and shooting
+    const angle = Math.random() * Math.PI * 2;
+    const r = TUNNEL_RADIUS * 0.85;
+    slot.active = true;
+    slot.x = Math.cos(angle) * r;
+    slot.y = Math.sin(angle) * r;
+    slot.z = OBSTACLE_SPAWN_Z;
+    slot.speed = 30;
+    slot.group.position.set(slot.x, slot.y, slot.z);
+    slot.group.visible = true;
+  }
+
+  private applyBonus() {
+    const kind: 'life' | 'frenzy' = Math.random() < 0.5 ? 'life' : 'frenzy';
+    if (kind === 'life') {
+      if (this.level < HEARTS_FROM_LEVEL) {
+        this.health = HEALTH_MAX;
+        this.callbacks.onHealthChange(this.health);
+      } else {
+        this.lives = Math.min(this.lives + 1, START_LIVES + 1);
+        this.callbacks.onLivesChange(this.lives);
+      }
+    } else {
+      this.frenzyUntil = this.elapsed + FRENZY_DURATION;
+    }
+    this.callbacks.onBonus(kind);
+  }
+
+  private get frenzyActive() {
+    return this.elapsed < this.frenzyUntil;
+  }
+
+  // Fail condition (B): a target got past the player without being
+  // destroyed. Budgeted differently depending on level — see the brief:
+  // levels 1-9 deplete a continuous health bar, level 10+ switches
+  // entirely to the existing 3-heart system (never both at once).
   private damagePlayer() {
-    this.lives -= 1;
-    this.callbacks.onLivesChange(this.lives);
     this.triggerHitFeedback();
-    if (this.lives <= 0) this.endGame();
+    if (this.level < HEARTS_FROM_LEVEL) {
+      this.health = Math.max(0, this.health - HEALTH_LOSS_PER_MISS);
+      this.callbacks.onHealthChange(this.health);
+      if (this.health <= 0) this.endGame();
+    } else {
+      this.lives -= 1;
+      this.callbacks.onLivesChange(this.lives);
+      if (this.lives <= 0) this.endGame();
+    }
+  }
+
+  // Fail condition (A): the ship hit terrain/an obstacle directly.
+  // Instant destruction at ANY level, regardless of remaining
+  // health/hearts — a completely separate consequence from a missed
+  // target, never routed through damagePlayer().
+  private crashShip() {
+    this.callbacks.onCrash();
+    this.endGame();
   }
 
   private shakeUntil = 0;
@@ -904,7 +1269,7 @@ export class WormholeGame {
   private endGame() {
     this.gameOver = true;
     this.running = false;
-    this.callbacks.onGameOver(this.score);
+    this.callbacks.onGameOver(this.score, this.level);
   }
 
   // ---- streaks -----------------------------------------------------------
@@ -986,6 +1351,7 @@ export class WormholeGame {
   private checkCollisions() {
     for (const p of this.projectiles) {
       if (!p.active) continue;
+
       for (const e of this.enemies) {
         if (!e.active) continue;
         const dx = p.x - e.group.position.x;
@@ -999,6 +1365,23 @@ export class WormholeGame {
           this.score += 10;
           this.callbacks.onScoreChange(this.score);
           this.triggerBurst(e.group.position.x, e.group.position.y, e.group.position.z);
+          break;
+        }
+      }
+      if (!p.active) continue; // already consumed by an enemy hit above
+
+      for (const s of this.secrets) {
+        if (!s.active) continue;
+        const dx = p.x - s.x;
+        const dy = p.y - s.y;
+        const dz = p.z - s.z;
+        if (dx * dx + dy * dy + dz * dz < HIT_RADIUS * HIT_RADIUS) {
+          p.active = false;
+          p.mesh.visible = false;
+          s.active = false;
+          s.group.visible = false;
+          this.triggerBurst(s.x, s.y, s.z);
+          this.applyBonus();
           break;
         }
       }

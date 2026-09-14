@@ -55,6 +55,10 @@ DESKTOP_MQ.addEventListener('change', applyDesktopGate);
 // ---------------------------------------------------------------
 const DEFAULT_KEY_BINDINGS: KeyBindings = { left: 'a', right: 'd', up: 'w', down: 's' };
 const DIR_LABELS: Record<keyof KeyBindings, string> = { up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT' };
+// Mirrors game.ts's own HEARTS_FROM_LEVEL — duplicated for the same reason
+// DEFAULT_KEY_BINDINGS is: main.ts can only import TYPES from ./game.
+const HEARTS_FROM_LEVEL = 10;
+const HEALTH_MAX = 100;
 
 let playerName = 'PILOT';
 let controlScheme: ControlScheme = 'keyboard';
@@ -74,7 +78,11 @@ const overlay = document.getElementById('lv8-game-overlay') as HTMLElement;
 const canvasWrap = document.getElementById('lv8-game-canvas-wrap') as HTMLElement;
 const hud = document.getElementById('lv8-hud') as HTMLElement;
 const scoreEl = document.getElementById('lv8-hud-score') as HTMLElement;
+const levelEl = document.getElementById('lv8-hud-level') as HTMLElement;
 const livesEl = document.getElementById('lv8-hud-lives') as HTMLElement;
+const healthWrapEl = document.getElementById('lv8-hud-health-wrap') as HTMLElement;
+const healthFillEl = document.getElementById('lv8-hud-health-fill') as HTMLElement;
+const bonusToastEl = document.getElementById('lv8-bonus-toast') as HTMLElement;
 const flashEl = document.getElementById('lv8-flash') as HTMLElement;
 const gameOverEl = document.getElementById('lv8-gameover') as HTMLElement;
 const gameOverScoreEl = document.getElementById('lv8-gameover-score') as HTMLElement;
@@ -113,6 +121,29 @@ let listeningForKey: keyof KeyBindings | null = null;
 
 function renderLives(lives: number) {
   livesEl.textContent = '●'.repeat(Math.max(lives, 0)) + '○'.repeat(Math.max(3 - lives, 0));
+}
+
+function renderHealth(health: number) {
+  healthFillEl.style.width = `${Math.max(0, Math.min(100, (health / HEALTH_MAX) * 100))}%`;
+}
+
+// Two fail conditions never display at once: levels 1-9 show the health
+// bar (miss-based damage), level 10+ switches entirely to the 3-heart
+// display — driven by the game's own onLevelChange callback so it can
+// never drift out of sync with which system is actually active.
+function renderLevel(level: number) {
+  levelEl.textContent = String(level);
+  const heartsActive = level >= HEARTS_FROM_LEVEL;
+  healthWrapEl.hidden = heartsActive;
+  livesEl.hidden = !heartsActive;
+}
+
+let bonusToastTimer: number | undefined;
+function showBonusToast(kind: 'life' | 'frenzy') {
+  bonusToastEl.textContent = kind === 'life' ? 'SECRET FOUND — EXTRA LIFE' : 'SECRET FOUND — FRENZY MODE';
+  bonusToastEl.classList.add('is-active');
+  window.clearTimeout(bonusToastTimer);
+  bonusToastTimer = window.setTimeout(() => bonusToastEl.classList.remove('is-active'), 2400);
 }
 
 // ---------------------------------------------------------------
@@ -310,6 +341,8 @@ async function launchGame() {
   showGame();
   scoreEl.textContent = '0';
   renderLives(3);
+  renderHealth(HEALTH_MAX);
+  renderLevel(1);
 
   const callbacks: WormholeGameCallbacks = {
     onScoreChange: score => {
@@ -318,8 +351,14 @@ async function launchGame() {
     onLivesChange: lives => {
       renderLives(lives);
     },
-    onGameOver: finalScore => {
-      if (gameOverKickerEl) gameOverKickerEl.textContent = `RUN TERMINATED, ${playerName}`;
+    onHealthChange: health => {
+      renderHealth(health);
+    },
+    onLevelChange: level => {
+      renderLevel(level);
+    },
+    onGameOver: (finalScore, level) => {
+      if (gameOverKickerEl) gameOverKickerEl.textContent = `RUN TERMINATED, ${playerName} — LEVEL ${level}`;
       gameOverScoreEl.textContent = String(finalScore);
       gameOverEl.classList.add('is-active');
       gameOverEl.setAttribute('aria-hidden', 'false');
@@ -328,6 +367,14 @@ async function launchGame() {
       flashEl.classList.remove('is-hit');
       void (flashEl as HTMLElement).offsetWidth; // restart the CSS animation
       flashEl.classList.add('is-hit');
+    },
+    onCrash: () => {
+      flashEl.classList.remove('is-crash');
+      void (flashEl as HTMLElement).offsetWidth;
+      flashEl.classList.add('is-crash');
+    },
+    onBonus: kind => {
+      showBonusToast(kind);
     },
   };
 

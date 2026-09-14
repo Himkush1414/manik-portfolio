@@ -233,9 +233,21 @@
   </div>
 
   <div class="lv8-hud" id="lv8-hud" aria-hidden="true">
-    <span class="lv8-hud__score">SCORE <b id="lv8-hud-score">0</b></span>
-    <span class="lv8-hud__lives" id="lv8-hud-lives" aria-label="Lives remaining">●●●</span>
+    <span class="lv8-hud__group">
+      <span class="lv8-hud__score">SCORE <b id="lv8-hud-score">0</b></span>
+      <span class="lv8-hud__level">LEVEL <b id="lv8-hud-level">1</b></span>
+    </span>
+    <span class="lv8-hud__group lv8-hud__group--right">
+      <!-- levels 1-9: continuous bar. Level 10+: 3-heart display. Never
+           both at once — main.ts toggles which is visible on level-up. -->
+      <span class="lv8-hud__health" id="lv8-hud-health-wrap">
+        <span class="lv8-hud__health-fill" id="lv8-hud-health-fill"></span>
+      </span>
+      <span class="lv8-hud__lives" id="lv8-hud-lives" aria-label="Lives remaining" hidden>●●●</span>
+    </span>
   </div>
+
+  <div class="lv8-bonus-toast" id="lv8-bonus-toast" aria-hidden="true"></div>
 
   <button class="lv8-game-exit" id="lv8-game-exit" type="button" aria-label="Exit to hub">EXIT</button>
 

@@ -546,11 +546,66 @@ body.lv8 {
   text-shadow: 0 0 10px rgba(168, 52, 33, 0.6);
 }
 .lv8-hud__score b { font-size: 18px; }
+.lv8-hud__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lv8-hud__group--right { align-items: flex-end; }
+.lv8-hud__level {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--lv8-text-dim);
+}
+.lv8-hud__level b { color: var(--lv8-text); }
 .lv8-hud__lives {
   font-size: 18px;
   letter-spacing: 0.15em;
   color: var(--lv8-hostile);
   text-shadow: 0 0 10px rgba(255, 138, 61, 0.55);
+}
+/* health bar — levels 1-9 only; hidden the instant the 3-heart system
+   (above) takes over from level 10, never shown alongside it */
+.lv8-hud__health {
+  display: block;
+  width: 140px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 138, 61, 0.4);
+  background: rgba(21, 16, 13, 0.6);
+  overflow: hidden;
+}
+.lv8-hud__health-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--lv8-lit), var(--lv8-hostile));
+  transition: width 0.25s ease;
+}
+
+/* transient "found a secret" notice */
+.lv8-bonus-toast {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 4;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--lv8-lit);
+  background: rgba(21, 16, 13, 0.85);
+  color: var(--lv8-text);
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.lv8-bonus-toast.is-active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .lv8-game-exit {
@@ -589,6 +644,16 @@ body.lv8 {
 }
 @keyframes lv8-flash-pulse {
   0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+/* crash (obstacle collision) reads as harder/more terminal than a miss:
+   redder, brighter, and lingers longer before the game-over screen shows */
+.lv8-flash.is-crash {
+  background: radial-gradient(circle at 50% 50%, rgba(220, 40, 20, 0.85), rgba(220, 40, 20, 0) 75%);
+  animation: lv8-flash-crash 0.6s ease-out;
+}
+@keyframes lv8-flash-crash {
+  0% { opacity: 1; }
   100% { opacity: 0; }
 }
 
