@@ -8,6 +8,13 @@
 // inner panel) to get a pinned-while-scrolling feel without jacking scroll
 // at all — the pin comes from CSS position:sticky, not JS.
 //
+// Unlike desktop, Chapter II/III/IV's images here are never gated behind a
+// tap — every image slot is statically visible from the start (see lv5.css:
+// .m-list__item/.m-ch3__bg), consistent with the rest of this mobile
+// layout's "no interaction required" feel. This file has no code for them
+// beyond the generic scroll-triggered .m-reveal/.m-reveal--wipe handling
+// below, which they use like everything else on the page.
+//
 // Everything in this file is gated behind IS_MOBILE so it's a genuine
 // no-op on desktop rather than just invisible/unused.
 //
@@ -102,72 +109,6 @@ function initMobileWork() {
 }
 
 // ---------------------------------------------------------------
-// "Rising curtain" reveal — the mobile equivalent of main.ts's own
-// triggerRise (duplicated rather than imported/shared: main.ts and
-// mobile.ts are two fully independent files by design in this route, see
-// the file header). Reuses the exact same .is-rising keyframes already
-// defined once in lv5.css for the desktop version — nothing new to add
-// there for this to work.
-// ---------------------------------------------------------------
-function triggerRise(el: HTMLElement) {
-  el.classList.remove('is-rising');
-  void el.offsetWidth; // force reflow so re-adding the class restarts the animation
-  el.classList.add('is-rising');
-}
-
-// ---------------------------------------------------------------
-// "CHAPTER II" / "CHAPTER IV" — the mobile equivalent of main.ts's
-// wireHoverPreview: no persistent cursor on touch, so the trigger is a
-// tap (click — mobile browsers fire it for taps with no extra delay once
-// a proper viewport meta tag is set, which this page already has) on a
-// list item instead of mouseenter. Same swap logic, same shared
-// .is-rising animation, both outgoing and incoming playing independently.
-// ---------------------------------------------------------------
-function initChapterPreviews(panelSelector: string) {
-  const panel = document.querySelector(panelSelector);
-  if (!panel) return;
-  const list = panel.querySelector('.m-list');
-  const stack = panel.querySelector('.m-preview__inner');
-  if (!list || !stack) return;
-  let activeKey = stack.querySelector<HTMLElement>('[data-key].is-active')?.dataset.key ?? null;
-  list.querySelectorAll<HTMLElement>('[data-key]').forEach(item => {
-    item.addEventListener('click', () => {
-      const key = item.dataset.key;
-      if (!key || key === activeKey) return;
-      const prev = activeKey ? stack.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null;
-      const next = stack.querySelector<HTMLElement>(`[data-key="${key}"]`);
-      if (prev) {
-        prev.classList.remove('is-active');
-        triggerRise(prev);
-      }
-      if (next) {
-        next.classList.add('is-active');
-        triggerRise(next);
-      }
-      activeKey = key;
-    });
-  });
-}
-
-// ---------------------------------------------------------------
-// "CHAPTER III" — the mobile equivalent of main.ts's per-column hover
-// reveal. Each discipline already gets its own dedicated full-screen
-// panel (marked [data-ch3-tap]; the lead-in panel isn't), so there's no
-// separate list to tap — tapping anywhere on that panel reveals its own
-// background image, mirroring "hovering the column reveals the column's
-// own image" one-to-one. No tap-to-hide: there's no equivalent of
-// mouseleave on a full-screen panel the user is scrolling through, and
-// scrolling on to the next panel already reads as "done with this one".
-// ---------------------------------------------------------------
-function initChapterThreeReveals() {
-  document.querySelectorAll<HTMLElement>('[data-ch3-tap]').forEach(panel => {
-    const bg = panel.querySelector<HTMLElement>('.m-ch3__bg');
-    if (!bg) return;
-    panel.addEventListener('click', () => triggerRise(bg));
-  });
-}
-
-// ---------------------------------------------------------------
 // Live local-time readout, mobile hero — a separate element/id from the
 // desktop version (main.ts owns that one) so the two layouts stay fully
 // independent, per their own small live clock each.
@@ -191,7 +132,4 @@ if (IS_MOBILE) {
   initReveals();
   initMobileWork();
   initMobileClock();
-  initChapterPreviews('.m-panel--ch2');
-  initChapterPreviews('.m-panel--ch4');
-  initChapterThreeReveals();
 }

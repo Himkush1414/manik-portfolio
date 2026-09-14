@@ -316,19 +316,23 @@
     <span class="m-chapter m-reveal">CHAPTER II</span>
     <span class="m-label m-reveal">Selected Work</span>
     <ul class="m-list">
-      <li class="m-list__item m-reveal" data-key="websites">Web Pages</li>
-      <li class="m-list__item m-reveal" data-key="os">OS Systems</li>
-      <li class="m-list__item m-reveal" data-key="frontend">Front-End Design</li>
-      <li class="m-list__item m-reveal" data-key="games">Games</li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="a">
+        <img class="m-list__item-img m-wipe-target" src="./ch2-web-page.png" alt="" />
+        <span class="m-list__item-label">Web Pages</span>
+      </li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="b">
+        <img class="m-list__item-img m-wipe-target" src="./ch2-os-system.png" alt="" />
+        <span class="m-list__item-label">OS Systems</span>
+      </li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="c">
+        <img class="m-list__item-img m-wipe-target" src="./ch2-frontend-design.png" alt="" />
+        <span class="m-list__item-label">Front-End Design</span>
+      </li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="d">
+        <img class="m-list__item-img m-wipe-target" src="./ch2-games.png" alt="" />
+        <span class="m-list__item-label">Games</span>
+      </li>
     </ul>
-    <div class="m-preview m-reveal m-reveal--wipe">
-      <div class="m-preview__inner m-wipe-target">
-        <div class="m-preview-ph is-active" data-key="websites" data-tone="a"><img class="m-preview-ph__img" src="./ch2-web-page.png" alt="" /><span>Web Pages</span></div>
-        <div class="m-preview-ph" data-key="os" data-tone="b"><img class="m-preview-ph__img" src="./ch2-os-system.png" alt="" /><span>OS Systems</span></div>
-        <div class="m-preview-ph" data-key="frontend" data-tone="c"><img class="m-preview-ph__img" src="./ch2-frontend-design.png" alt="" /><span>Front-End Design</span></div>
-        <div class="m-preview-ph" data-key="games" data-tone="d"><img class="m-preview-ph__img" src="./ch2-games.png" alt="" /><span>Games</span></div>
-      </div>
-    </div>
     <p class="m-caption m-reveal">Work spanning products, interfaces, and systems.</p>
     <a href="#" class="m-more-link m-reveal">
       <span>View All Work</span>
@@ -339,15 +343,16 @@
   <!-- MOBILE PANEL 5 — "CHAPTER III": a lead-in panel (heading + intro
        line), then one full-screen panel per discipline, each revealed in
        turn as the user scrolls — the vertical equivalent of desktop's
-       four side-by-side columns. -->
+       four side-by-side columns. Each discipline's background is always
+       visible (no tap needed), just wiped in on scroll like every other
+       image slot on this mobile layout. -->
   <section class="m-panel m-panel--ch3">
     <span class="m-chapter m-reveal">CHAPTER III</span>
     <p class="m-ch3__intro m-reveal">Designing digital experiences with clarity, structure, and intention.</p>
   </section>
 
-  <section class="m-panel m-panel--ch3" data-ch3-tap>
-    <div class="m-ch3__bg" data-tone="a"><img class="m-ch3__bg__img" src="./ch3-product-design.webp" alt="" /></div>
-    <div class="m-ch3__cover"></div>
+  <section class="m-panel m-panel--ch3">
+    <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="a"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-product-design.webp" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">01</span>
       <h3 class="m-ch3__title">Product Design</h3>
@@ -355,9 +360,8 @@
     </div>
   </section>
 
-  <section class="m-panel m-panel--ch3" data-ch3-tap>
-    <div class="m-ch3__bg" data-tone="b"><img class="m-ch3__bg__img" src="./ch3-digital-experiences.jpg" alt="" /></div>
-    <div class="m-ch3__cover"></div>
+  <section class="m-panel m-panel--ch3">
+    <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="b"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-digital-experiences.jpg" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">02</span>
       <h3 class="m-ch3__title">Digital Experiences</h3>
@@ -365,9 +369,8 @@
     </div>
   </section>
 
-  <section class="m-panel m-panel--ch3" data-ch3-tap>
-    <div class="m-ch3__bg" data-tone="c"><img class="m-ch3__bg__img" src="./ch3-visual-design.png" alt="" /></div>
-    <div class="m-ch3__cover"></div>
+  <section class="m-panel m-panel--ch3">
+    <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="c"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-visual-design.png" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">03</span>
       <h3 class="m-ch3__title">Visual Design</h3>
@@ -375,9 +378,8 @@
     </div>
   </section>
 
-  <section class="m-panel m-panel--ch3" data-ch3-tap>
-    <div class="m-ch3__bg" data-tone="d"><img class="m-ch3__bg__img" src="./ch3-development.png" alt="" /></div>
-    <div class="m-ch3__cover"></div>
+  <section class="m-panel m-panel--ch3">
+    <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="d"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-development.png" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">04</span>
       <h3 class="m-ch3__title">Development</h3>
@@ -390,19 +392,21 @@
     <span class="m-chapter m-reveal">CHAPTER IV</span>
     <span class="m-label m-reveal">Selected Experiences</span>
     <ul class="m-list">
-      <li class="m-list__item m-reveal" data-key="one">Project One</li>
-      <li class="m-list__item m-reveal" data-key="two">Project Two</li>
-      <li class="m-list__item m-reveal" data-key="three">Project Three</li>
-      <li class="m-list__item m-reveal" data-key="more">And More</li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="a">
+        <img class="m-list__item-img m-wipe-target" src="./ch2-web-page.png" alt="" />
+        <span class="m-list__item-label">Project One</span>
+      </li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="b">
+        <img class="m-list__item-img m-wipe-target" src="./ch2-frontend-design.png" alt="" />
+        <span class="m-list__item-label">Project Two</span>
+      </li>
+      <li class="m-list__item m-reveal m-reveal--wipe" data-tone="c">
+        <img class="m-list__item-img m-wipe-target" src="./ch4-project-three.png" alt="" />
+        <span class="m-list__item-label">Project Three</span>
+      </li>
+      <!-- "And More" gets no image/effect, same as desktop -->
+      <li class="m-list__item m-list__item--plain m-reveal">And More</li>
     </ul>
-    <div class="m-preview m-reveal m-reveal--wipe">
-      <div class="m-preview__inner m-wipe-target">
-        <div class="m-preview-ph is-active" data-key="one" data-tone="a"><img class="m-preview-ph__img" src="./ch2-web-page.png" alt="" /><span>Project One</span></div>
-        <div class="m-preview-ph" data-key="two" data-tone="b"><img class="m-preview-ph__img" src="./ch2-frontend-design.png" alt="" /><span>Project Two</span></div>
-        <div class="m-preview-ph" data-key="three" data-tone="c"><img class="m-preview-ph__img" src="./ch4-project-three.png" alt="" /><span>Project Three</span></div>
-        <div class="m-preview-ph" data-key="more" data-tone="d"><span>And More</span></div>
-      </div>
-    </div>
     <p class="m-caption m-reveal">Work spanning interfaces, tools, and small experiments.</p>
   </section>
 
