@@ -595,22 +595,46 @@ body.lv5 img { max-width: 100%; display: block; }
   position: relative;
   border-radius: 2px;
   overflow: hidden;
+  /* bordered box at rest (see .preview-empty below) — nothing filled this
+     box before a title was hovered, so it needs its own visible edge */
+  border: 1px solid rgba(46, 43, 42, 0.22);
 }
-/* CHAPTER II's preview box: landscape (wider than tall), and a touch
-   bigger than before — CHAPTER IV's stays its original portrait shape/size */
+/* CHAPTER II's preview box: landscape (wider than tall), enlarged */
 .ch2__preview-stack {
-  width: clamp(220px, 25vw, 360px);
+  width: clamp(260px, 30vw, 440px);
   aspect-ratio: 16 / 10;
 }
 .ch4__preview-stack {
   width: clamp(160px, 19vw, 260px);
   aspect-ratio: 3 / 4;
 }
+/* rest-state placeholder — a single thin diagonal line corner-to-corner,
+   nothing else. Painted as the FIRST child of the stack, so with every
+   .preview-ph below defaulting to translateY(100%) (hidden) it's simply
+   whatever is left visible whenever nothing is hovered; no active/inactive
+   toggling of its own needed. SVG (not a CSS gradient) so the line stays a
+   true straight corner-to-corner diagonal regardless of the box's own
+   aspect ratio. */
+.preview-empty {
+  position: absolute;
+  inset: 0;
+}
+.preview-empty svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.preview-empty line {
+  stroke: rgba(46, 43, 42, 0.22);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
 /* one of these sits behind each list, all stacked in the same box.
    .is-active marks the one currently "at rest" (visible, unanimated) —
-   only ever true for exactly one at a time. Every rise/exit transition
-   between them is played by .is-rising (see the shared curtain-reveal
-   keyframes below), triggered from main.ts, not by this class. */
+   only ever true for exactly one at a time, or none at rest (see
+   .preview-empty above). Every rise/exit transition between them is played
+   by .is-rising (see the shared curtain-reveal keyframes below), triggered
+   from main.ts, not by this class. */
 .preview-ph {
   position: absolute;
   inset: 0;

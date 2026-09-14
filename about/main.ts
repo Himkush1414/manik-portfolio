@@ -289,32 +289,38 @@ function triggerRise(el: HTMLElement) {
 }
 
 // "CHAPTER II" / "CHAPTER IV": a list of items paired with a single preview
-// box that shows whichever item's image the cursor is currently over,
-// defaulting to the first item (already sitting at rest, unanimated) so the
-// box is never empty. Switching hover targets rises the new image in while
-// the old one keeps rising and exits — both play independently.
+// box that shows whichever item's image the cursor is currently over. At
+// rest — nothing hovered — no item is active, so the box sits on its empty
+// "diagonal line" placeholder (.preview-empty, painted behind every
+// .preview-ph so it's automatically all that's visible once none of them
+// are covering it; see lv5.css). Hovering a title rises that item's image
+// in; leaving the whole list (not just switching between items) rises the
+// current one back out and returns to that empty state.
 function wireHoverPreview(listSelector: string, stackSelector: string) {
-  const list = document.querySelector(listSelector);
-  const stack = document.querySelector(stackSelector);
+  const list = document.querySelector<HTMLElement>(listSelector);
+  const stack = document.querySelector<HTMLElement>(stackSelector);
   if (!list || !stack) return;
-  let activeKey = stack.querySelector<HTMLElement>('[data-key].is-active')?.dataset.key ?? null;
+  let activeKey: string | null = null;
+
+  function setActive(key: string | null) {
+    if (key === activeKey) return;
+    const prev = activeKey ? stack!.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null;
+    const next = key ? stack!.querySelector<HTMLElement>(`[data-key="${key}"]`) : null;
+    if (prev) {
+      prev.classList.remove('is-active');
+      triggerRise(prev);
+    }
+    if (next) {
+      next.classList.add('is-active');
+      triggerRise(next);
+    }
+    activeKey = key;
+  }
+
   list.querySelectorAll<HTMLElement>('[data-key]').forEach(item => {
-    item.addEventListener('mouseenter', () => {
-      const key = item.dataset.key;
-      if (!key || key === activeKey) return;
-      const prev = activeKey ? stack.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null;
-      const next = stack.querySelector<HTMLElement>(`[data-key="${key}"]`);
-      if (prev) {
-        prev.classList.remove('is-active');
-        triggerRise(prev);
-      }
-      if (next) {
-        next.classList.add('is-active');
-        triggerRise(next);
-      }
-      activeKey = key;
-    });
+    item.addEventListener('mouseenter', () => setActive(item.dataset.key ?? null));
   });
+  list.addEventListener('mouseleave', () => setActive(null));
 }
 wireHoverPreview('.ch2__list', '.ch2__preview-stack');
 wireHoverPreview('.ch4__list', '.ch4__preview-stack');
