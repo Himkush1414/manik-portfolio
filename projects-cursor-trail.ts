@@ -3,17 +3,31 @@ export {}; // forces module scope — see lv6-about-mobile-nav.ts for why: witho
 // namespace, and lv7's own (untouched) copy of this file declares the same
 // top-level names, causing a "Cannot redeclare" TS error across the two.
 
-// / (the main site) — ported verbatim from /lab/lv7/lv7-cursor-trail.ts
-// (lv7's own copy untouched), only the two scoped-view element ids changed
-// to match this integration's own Projects/Contact view ids.
+// / (the main site) — ported from /lab/lv7/lv7-cursor-trail.ts (lv7's own
+// copy untouched), with the same two divergences this file already had
+// before this port: the two scoped-view element ids match this
+// integration's own Projects/Contact view ids, and mobileMQ additionally
+// gates on actual viewport width (see below) — neither touched here.
 //
-// Decorative cursor-follow trail: a small rounded square that chases the
-// real cursor with a slight smoothing lag, leaving a short black streak
-// behind it that fades out quickly rather than staying on screen. The
-// trail is ONE continuous stroked path through a short rolling buffer of
-// the square's own recent (eased) positions — round-capped/round-joined
-// segments tapering width/alpha from full at the head to ~0 at the tail —
-// not repeated stamped copies of the square.
+// Decorative cursor-follow box: a small rounded square that chases the
+// real cursor with a slight smoothing lag. No trail behind it (removed —
+// this used to also draw a short fading black streak; see git history if
+// that's ever wanted back).
+//
+// Colour: rather than detecting what's underneath (hit-testing an element,
+// or maintaining a per-section colour list — brittle at every new section
+// and every boundary), the canvas itself is composited with
+// mix-blend-mode: difference (see .lv7-cursor-trail in projects.css). The
+// whole Projects/Contact surface only ever uses two colours, --lv7-bg
+// (#E3E1DC) and --lv7-ink (#111111), always as a background/foreground
+// pair, never mixed — so the square is filled with their sum, #F4F2ED
+// (0xE3+0x11, 0xE1+0x11, 0xDC+0x11 per channel). Because difference is
+// `|backdrop - source|`, and source = bgA + bgB, that resolves to EXACTLY
+// bgB wherever the backdrop is bgA, and EXACTLY bgA wherever it's bgB —
+// automatically, per pixel, at full opacity — so it inverts cleanly right
+// at every light/dark boundary (including a single dark character on the
+// light background, or the dark inverted hover-row/CTA sections) with no
+// JS detection needed at all.
 //
 // Scope: Projects + Contact only, desktop viewport only. Coarse pointers
 // (touch) skip mounting entirely below; a live width check (mobileMQ, the
@@ -27,10 +41,10 @@ export {}; // forces module scope — see lv6-about-mobile-nav.ts for why: witho
 // Home is this document's own default content and About is a hidden
 // iframe (see projects-transition.ts) — mouse movement over an iframe
 // never reaches this document's own mousemove listener at all, so the
-// trail already can't track the cursor there; isScopedViewActive() below
-// additionally empties the point buffer whenever neither view is active,
-// so leaving (or returning to) scope never shows a stale trail jumping
-// from wherever it was last left.
+// box already can't track the cursor there; isScopedViewActive() below
+// additionally resets hasMoved whenever neither view is active, so
+// leaving (or returning to) scope never shows a stale box jumping from
+// wherever it was last left.
 const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 const mobileMQ = window.matchMedia('(max-width: 720px)');
 const canvas = document.getElementById('lv7-cursor-trail') as HTMLCanvasElement | null;
@@ -41,9 +55,8 @@ if (canvas && !coarsePointer) {
     const SIZE = 14;
     const RADIUS = 5;
     const EASE = 0.22;
-    const MAX_POINTS = 16;
-    const TRAIL_MAX_WIDTH = 10;
-    const TRAIL_MAX_ALPHA = 0.85;
+    // exact difference-blend source colour — see file header for the maths
+    const FILL = '#F4F2ED';
 
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
     function resize() {
@@ -91,26 +104,8 @@ if (canvas && !coarsePointer) {
       ctx!.arcTo(x0, y0 + SIZE, x0, y0, RADIUS);
       ctx!.arcTo(x0, y0, x0 + SIZE, y0, RADIUS);
       ctx!.closePath();
-      ctx!.fillStyle = '#111111';
+      ctx!.fillStyle = FILL;
       ctx!.fill();
-    }
-
-    const points: { x: number; y: number }[] = [];
-
-    function drawTrail() {
-      const n = points.length;
-      if (n < 2) return;
-      ctx!.lineCap = 'round';
-      ctx!.lineJoin = 'round';
-      for (let i = 0; i < n - 1; i++) {
-        const t = (i + 1) / n;
-        ctx!.beginPath();
-        ctx!.moveTo(points[i].x, points[i].y);
-        ctx!.lineTo(points[i + 1].x, points[i + 1].y);
-        ctx!.lineWidth = TRAIL_MAX_WIDTH * t;
-        ctx!.strokeStyle = `rgba(17, 17, 17, ${(TRAIL_MAX_ALPHA * t).toFixed(3)})`;
-        ctx!.stroke();
-      }
     }
 
     function frame() {
@@ -118,7 +113,7 @@ if (canvas && !coarsePointer) {
       ctx!.clearRect(0, 0, canvas!.width / dpr, canvas!.height / dpr);
 
       if (mobileMQ.matches || !isScopedViewActive()) {
-        points.length = 0;
+        hasMoved = false;
         return;
       }
       if (!hasMoved) return;
@@ -126,10 +121,6 @@ if (canvas && !coarsePointer) {
       x += (targetX - x) * EASE;
       y += (targetY - y) * EASE;
 
-      points.push({ x, y });
-      if (points.length > MAX_POINTS) points.shift();
-
-      drawTrail();
       drawRoundedSquare(x, y);
     }
     requestAnimationFrame(frame);

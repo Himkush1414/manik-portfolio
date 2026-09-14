@@ -53,7 +53,11 @@
   position: fixed;
   top: 28px;
   z-index: 600;
-  transition: transform 0.55s var(--lv7-ease), opacity 0.4s ease;
+  /* slowed down from 0.55s/0.4s, same fix as lv7 — the scroll-hide/
+     reappear decompose was reading as an abrupt snap, not a considered
+     exit; same directions/easing curve/trigger, just given more time to
+     play out. */
+  transition: transform 1.1s var(--lv7-ease), opacity 0.85s ease;
 }
 
 .lv7-nav__logo {
@@ -122,7 +126,8 @@
 .lv7-nav__contact:hover {
   background: var(--lv7-ink);
   color: var(--lv7-bg);
-  transition: background 0.3s ease, color 0.3s ease, transform 0.55s var(--lv7-ease), opacity 0.4s ease;
+  /* transform/opacity durations kept in sync with the base rule above */
+  transition: background 0.3s ease, color 0.3s ease, transform 1.1s var(--lv7-ease), opacity 0.85s ease;
 }
 .lv7-nav__avatar {
   width: 30px;
@@ -582,7 +587,14 @@
 }
 
 /* ============================================================
-   CURSOR TRAIL — desktop/mouse only (see projects-cursor-trail.ts).
+   CURSOR BOX — desktop/mouse only (see projects-cursor-trail.ts).
+   mix-blend-mode: difference is what makes the square automatically
+   switch between --lv7-ink and --lv7-bg depending on whatever it's
+   currently drawn over — see projects-cursor-trail.ts's header comment
+   for the exact maths; this element must stay a direct-enough descendant
+   of <body> (no isolation/its-own-stacking-context ancestor in between)
+   for that to blend against the actual page content beneath it, not just
+   its own local box.
    ============================================================ */
 .lv7-cursor-trail {
   position: fixed;
@@ -591,4 +603,5 @@
   height: 100vh;
   z-index: 700;
   pointer-events: none;
+  mix-blend-mode: difference;
 }

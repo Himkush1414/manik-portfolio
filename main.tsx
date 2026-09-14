@@ -17,10 +17,13 @@ import './lv6-transition';
 import './lv6-about-mobile-nav';
 // Ported from /lab/lv7/ along with the Projects/Contact markup itself
 // (lv7's own copies are untouched) — row hover/cursor-follow-pill
-// behaviour (desktop only) and the decorative cursor-follow trail
-// (Projects/Contact only, desktop only).
+// behaviour (desktop only), the decorative cursor-follow box
+// (Projects/Contact only, desktop only), and the floating nav's
+// scroll decompose/reassemble (see projects-nav.ts for why this one was
+// added now rather than at the original port).
 import './projects-rows';
 import './projects-cursor-trail';
+import './projects-nav';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
 console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
@@ -638,7 +641,7 @@ if (projLogoLoopMount) {
       direction="left"
       logoHeight={72}
       gap={64}
-      hoverSpeed={0}
+      pauseOnHover={false}
       scaleOnHover
       fadeOut
       fadeOutColor="#E3E1DC"
