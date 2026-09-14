@@ -459,6 +459,33 @@ body.lv8 {
   height: 100%;
 }
 
+/* Cockpit framing overlay — implied canopy struts at the lower corners
+   and a faint upper dash edge, minimal and non-obstructive (the middle
+   and most of the screen stay completely clear). Pure CSS/SVG, no 3D
+   geometry, no per-frame cost. */
+.lv8-cockpit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+}
+.lv8-cockpit.is-active { display: block; }
+.lv8-cockpit__frame {
+  width: 100%;
+  height: 100%;
+}
+.lv8-cockpit__frame path {
+  fill: var(--lv8-darkest);
+  opacity: 0.88;
+}
+.lv8-cockpit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 120px 20px rgba(21, 16, 13, 0.55);
+}
+
 .lv8-hud {
   position: absolute;
   top: 20px;

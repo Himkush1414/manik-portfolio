@@ -110,6 +110,18 @@
 <div id="lv8-game-overlay" class="lv8-game-overlay" aria-hidden="true">
   <div id="lv8-game-canvas-wrap" class="lv8-game-canvas-wrap"></div>
 
+  <!-- Cockpit framing — minimal implied canopy/instrument silhouette at
+       the screen edges, CSS only (no 3D cockpit geometry). Shown only in
+       Cockpit viewpoint (main.ts toggles is-active); irrelevant in
+       Third-Person Chase. -->
+  <div class="lv8-cockpit" id="lv8-cockpit" aria-hidden="true">
+    <svg class="lv8-cockpit__frame" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,600 L0,460 Q120,380 260,600 Z" />
+      <path d="M1000,600 L1000,460 Q880,380 740,600 Z" />
+      <path d="M0,0 L0,40 Q500,90 1000,40 L1000,0 Z" />
+    </svg>
+  </div>
+
   <div class="lv8-hud" id="lv8-hud" aria-hidden="true">
     <span class="lv8-hud__score">SCORE <b id="lv8-hud-score">0</b></span>
     <span class="lv8-hud__lives" id="lv8-hud-lives" aria-label="Lives remaining">●●●</span>
