@@ -174,9 +174,17 @@ body.lv8 {
 }
 /* end state once the flip has fully completed — main.ts adds this after
    triggerFlipReveal's callback fires, per the hidden-not-removed note in
-   index.html (keeps a future reverse transition possible) */
+   index.html (keeps a future reverse transition possible).
+   visibility, NOT display: this still needs to reserve its own 100vh of
+   normal-flow space, since #lv8-page2 is position:absolute (never
+   contributes flow height on its own) — display:none here was
+   collapsing that space entirely, which pulled everything below (the
+   new #lv8-about section, see chat reply) up underneath page2 instead
+   of after it. Caught by checking the actual DOM rects, not just a
+   screenshot. */
 .lv8-hero.is-hidden {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .lv8-strip-field {
@@ -625,6 +633,87 @@ body.lv8 {
   .lv8-page2__bigtext { font-size: clamp(40px, 18vw, 90px); bottom: 2%; }
   .lv8-page2__portrait { width: 86vw; height: 58%; }
 }
+
+/* ============================================================
+   ABOUT / PHILOSOPHY — new section below page 2 (see chat reply).
+   Structure from the Utomic reference (left copy / right dial+photo /
+   bottom marquee); dark theme + Inter throughout, matching page 2's own
+   look rather than the reference's light one.
+   ============================================================ */
+.lv8-about {
+  position: relative;
+  display: none; /* main.ts sets .is-visible the same moment page 2 is shown — see below */
+  background: radial-gradient(120% 90% at 15% 0%, #14100c 0%, #0a0705 55%, #050403 100%);
+  padding: clamp(56px, 9vh, 100px) var(--lv8-gutter) 0;
+  overflow: hidden;
+}
+/* without this, scrolling past the ORIGINAL hero (never clicking "Move
+   Next" at all) would already reach this section, since it's a plain
+   in-flow sibling right after #lv8-page2 in the DOM — it's only meant
+   to be reachable via page 2 (see chat reply: "below page 2's content"). */
+.lv8-about.is-visible {
+  display: block;
+}
+.lv8-about__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr; /* right column lands next checkpoint */
+  gap: clamp(32px, 6vw, 80px);
+  align-items: center;
+  padding-bottom: clamp(56px, 9vh, 100px);
+}
+
+.lv8-about__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+}
+.lv8-about__eyebrow {
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lv8-lit);
+}
+.lv8-about__headline {
+  margin: 0;
+  font-family: var(--lv8-font-page2);
+  font-weight: 500;
+  font-size: clamp(22px, 2.6vw, 34px);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--lv8-text);
+  max-width: 46ch;
+}
+.lv8-about__cta {
+  margin-top: 6px;
+  padding: 13px 28px;
+  border-radius: 999px;
+  border: 1px solid var(--lv8-lit);
+  background: transparent;
+  color: var(--lv8-lit);
+  font-family: var(--lv8-font-page2);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: default; /* inert — see chat reply, same as page 2's Contact */
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+.lv8-about__cta:hover {
+  background: var(--lv8-lit);
+  color: var(--lv8-darkest);
+  box-shadow: 0 0 24px rgba(168, 52, 33, 0.4);
+}
+
+@media (max-width: 900px) {
+  .lv8-about__inner { grid-template-columns: 1fr; text-align: center; }
+  .lv8-about__left { align-items: center; }
+}
+
+/* right column (dial/clock/photo) + skills marquee land in the next
+   two checkpoints (see chat reply) */
 
 /* ============================================================
    GAMES SECTION — the actual games hub content (list-based selection),

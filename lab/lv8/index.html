@@ -127,6 +127,32 @@
 
   </div>
 
+  <!-- ===================== ABOUT / PHILOSOPHY =====================
+       New section, reached by scrolling down past page 2's portrait
+       (see chat reply). #lv8-page2 above is position:absolute over the
+       hero's own 100vh box, so this plain in-flow section naturally
+       starts right where that box ends — no scroll-linking needed.
+       Structure (left copy column / right dial+photo column / bottom
+       marquee) borrowed from the Utomic reference; dark theme + Inter
+       throughout to match page 2's own established look, NOT the
+       reference's light one (see chat reply — flag back if a light
+       section was actually wanted). -->
+  <section class="lv8-about" id="lv8-about" aria-label="About Manik">
+    <div class="lv8-about__inner">
+
+      <div class="lv8-about__left">
+        <span class="lv8-about__eyebrow">WHO I AM</span>
+        <h2 class="lv8-about__headline">I believe that using different methods to create something new isn't a bad thing. In the end, it doesn't matter how you did it or what tools you used — what matters is that you completed it, and it works the way you wanted it to.</h2>
+        <button class="lv8-about__cta" type="button">Let's Connect</button>
+      </div>
+
+      <!-- right column (live clock + photo) lands in the next checkpoint -->
+
+    </div>
+
+    <!-- skills marquee lands in the checkpoint after that -->
+  </section>
+
   <!-- ===================== GAMES SECTION =====================
        Supersedes the old Bento grid (see chat reply — the two were
        redundant/conflicting game-selection UIs, so the grid was removed

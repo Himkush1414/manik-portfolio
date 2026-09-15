@@ -47,6 +47,7 @@ backBtn?.addEventListener('click', () => {
 // ---------------------------------------------------------------
 const heroEl = document.getElementById('lv8-hero');
 const page2El = document.getElementById('lv8-page2');
+const aboutEl = document.getElementById('lv8-about');
 const moveNextBtn = document.getElementById('lv8-move-next');
 const siteNavEl = document.querySelector('.lv8-nav');
 let moveNextFired = false;
@@ -58,6 +59,10 @@ moveNextBtn?.addEventListener('click', () => {
   heroEl?.classList.add('is-transitioning');
   page2El?.classList.add('is-visible', 'is-entering');
   page2El?.setAttribute('aria-hidden', 'false');
+  // the new section below page 2 (see chat reply) — only reachable once
+  // "Move Next" has actually been clicked, not by scrolling past the
+  // original hero directly (see .lv8-about.is-visible's comment)
+  aboutEl?.classList.add('is-visible');
   // page 2 has its own logo/wordmark + menu + contact top bar — the
   // site-wide nav would otherwise sit on top of it (caught visually)
   siteNavEl?.classList.add('is-hidden');
