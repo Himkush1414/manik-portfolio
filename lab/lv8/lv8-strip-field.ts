@@ -1,11 +1,31 @@
-// /lab/lv8 — hero background: a field of thin vertical strips tiled edge
-// to edge. At rest every strip sits at its darkest resting tone; as the
+// /lab/lv8 — hero background: a curtain of vertical strips tiled edge to
+// edge, each independently randomised (width, resting tone, depth) so the
+// field reads as folded fabric rather than a flat, uniform grid. As the
 // cursor approaches, nearby strips physically ROTATE (around their own
-// vertical axis) toward the cursor, and rotating is what reveals a
-// brighter face underneath — not a flat colour swap synced to a fake
-// rotation. Each strip is a thin box: front/back faces carry the
-// palette's darkest tone, the two side faces carry its brightest tone, so
-// turning a strip is genuinely what brings that brighter face into view.
+// vertical axis) toward the cursor, and rotating is what reveals a darker
+// face underneath — not a flat colour swap synced to a fake rotation.
+//
+// Per-strip variation, all seeded at layout() time:
+//  - width: random in [STRIP_WIDTH_MIN, STRIP_WIDTH_MAX], strips still
+//    tile with zero gaps (only occasional slight overlap, never a gap).
+//  - resting tone: each strip independently samples a point along the
+//    5-stop warm-palette gradient (see GRADIENT_STOPS) via THREE's
+//    InstancedMesh.instanceColor, so neighbours sit at visibly different
+//    points on the palette instead of all glowing the same red.
+//  - depth: a small random Z offset plus a few px of X overlap with the
+//    previous strip gives genuine layered depth (some strips sit slightly
+//    in front of/behind their neighbour, like folded panels) rather than
+//    everything flush on one plane; a subtle brightness multiplier tied
+//    to that same Z offset reinforces the fold.
+//
+// The hover reveal itself is still a genuine geometry trick, not a colour
+// tween: each strip's box has its front/back faces baked WHITE and its
+// two side faces baked to a fixed DARK/LIT ratio (see REVEAL_RATIO). Both
+// get multiplied by that instance's own sampled resting colour, so the
+// front face reads as exactly that strip's resting tone, and rotating to
+// reveal the side face always lands strictly darker than that same tone
+// — proximity darkens every strip relative to its own resting shade,
+// never brightens, regardless of where on the gradient it started.
 //
 // Three.js, loaded eagerly — this IS the hero background, visible before
 // any interaction, so deferring it would just show an empty section until
@@ -27,22 +47,51 @@ export function setHeroActive(v: boolean) {
 }
 
 if (canvas && container) {
-  const DARK = new THREE.Color('#15100D');
-  const LIT = new THREE.Color('#A83421');
+  // Warm palette, darkest to brightest — each strip samples a random
+  // point along this at rest instead of every strip using the same stop.
+  const GRADIENT_STOPS = ['#15100D', '#3A1912', '#4B1D15', '#6F2417', '#A83421'].map(
+    h => new THREE.Color(h)
+  );
+  const DARK = GRADIENT_STOPS[0];
+  const LIT = GRADIENT_STOPS[GRADIENT_STOPS.length - 1];
+  // Every channel increases monotonically from DARK to LIT across the
+  // palette, so this ratio is <=1 on every channel for any resting colour
+  // sampled from the gradient — multiplying by it can only darken.
+  const REVEAL_RATIO = new THREE.Color(DARK.r / LIT.r, DARK.g / LIT.g, DARK.b / LIT.b);
 
-  const STRIP_WIDTH = 5; // CSS px, per spec — edge-to-edge, no gaps
+  function sampleGradient(t: number) {
+    const segments = GRADIENT_STOPS.length - 1;
+    const scaled = THREE.MathUtils.clamp(t, 0, 1) * segments;
+    const idx = Math.min(Math.floor(scaled), segments - 1);
+    return GRADIENT_STOPS[idx].clone().lerp(GRADIENT_STOPS[idx + 1], scaled - idx);
+  }
+
+  const STRIP_WIDTH_MIN = 30; // CSS px — per-strip width is randomised across this range
+  const STRIP_WIDTH_MAX = 40;
+  const OVERLAP_MAX = 6; // px a strip may occasionally tuck under its neighbour
   const STRIP_DEPTH = 7;
+  const DEPTH_JITTER = 14; // px of random Z offset per strip — the "folded panel" cue
   const MAX_INSTANCES = 900; // comfortably covers even a 4500px-wide screen
   const MAX_ROTATION = THREE.MathUtils.degToRad(74);
   const PROXIMITY_RADIUS = 130; // px — how far a strip's reach extends from the cursor
-  const EASE_RATE = 6; // higher = snaps toward target proximity faster
+  // Tuned back up from an earlier pass that over-corrected into sluggish/
+  // laggy territory — this is a middle ground between that and the
+  // original too-sharp snap (tracks the cursor closely, still has a
+  // touch of smoothing so it doesn't teleport). Likely still needs a
+  // live micro-adjustment once seen on the real page.
+  const EASE_RATE = 3.2; // bend/darken response — ~310ms to settle
+  const MOUSE_EASE_RATE = 8; // cursor-position smoothing — light, ~125ms
 
-  function buildStripGeometry(width: number, height: number, depth: number) {
-    const geo = new THREE.BoxGeometry(width, height, depth);
+  function buildStripGeometry(height: number, depth: number) {
+    // Unit width — actual per-instance width comes from dummy.scale.x in
+    // layout(), since InstancedMesh shares one geometry across instances.
+    const geo = new THREE.BoxGeometry(1, height, depth);
     // BoxGeometry's 24 vertices are laid out one face at a time, in the
-    // fixed order +X, -X, +Y, -Y, +Z, -Z (4 vertices each) — the two side
-    // faces (+X/-X) get the LIT colour, everything else stays DARK, so
-    // only rotating the box brings the lit faces into view.
+    // fixed order +X, -X, +Y, -Y, +Z, -Z (4 vertices each). Front/back are
+    // baked WHITE (a no-op multiplier) so the resting face shows exactly
+    // this instance's own sampled colour; the two side faces are baked to
+    // REVEAL_RATIO so turning the strip always reveals a darker version
+    // of that same colour, not an unrelated flat tone.
     const colors = new Float32Array(24 * 3);
     const paint = (faceIndex: number, c: THREE.Color) => {
       for (let i = 0; i < 4; i++) {
@@ -52,12 +101,12 @@ if (canvas && container) {
         colors[o + 2] = c.b;
       }
     };
-    paint(0, LIT); // +X side
-    paint(1, LIT); // -X side
-    paint(2, DARK); // +Y top
-    paint(3, DARK); // -Y bottom
-    paint(4, DARK); // +Z front
-    paint(5, DARK); // -Z back
+    paint(0, REVEAL_RATIO); // +X side
+    paint(1, REVEAL_RATIO); // -X side
+    paint(2, new THREE.Color(1, 1, 1)); // +Y top
+    paint(3, new THREE.Color(1, 1, 1)); // -Y bottom
+    paint(4, new THREE.Color(1, 1, 1)); // +Z front
+    paint(5, new THREE.Color(1, 1, 1)); // -Z back
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     return geo;
   }
@@ -71,13 +120,13 @@ if (canvas && container) {
   camera.position.z = 200;
 
   // Unlit on purpose: the dark/lit reveal already comes entirely from the
-  // geometry's own baked-in vertex colours (dark front/back, lit sides —
-  // see buildStripGeometry), so a lit material would only add shading on
-  // top of that for a small nicety at a real per-frame cost across
-  // hundreds of instances. Kept simple for headroom given how many
-  // strips a wide viewport needs.
+  // geometry's own baked-in vertex colours combined with each instance's
+  // own colour (see buildStripGeometry / instanceColor), so a lit
+  // material would only add shading on top of that for a small nicety at
+  // a real per-frame cost across hundreds of instances. Kept simple for
+  // headroom given how many strips a wide viewport needs.
   const material = new THREE.MeshBasicMaterial({ vertexColors: true });
-  const geometry = buildStripGeometry(STRIP_WIDTH, 100, STRIP_DEPTH); // height rebuilt on resize
+  const geometry = buildStripGeometry(100, STRIP_DEPTH); // height rebuilt on resize
   const mesh = new THREE.InstancedMesh(geometry, material, MAX_INSTANCES);
   mesh.count = 0;
   scene.add(mesh);
@@ -87,7 +136,10 @@ if (canvas && container) {
   let count = 0;
   const proximity = new Float32Array(MAX_INSTANCES);
   const stripX = new Float32Array(MAX_INSTANCES);
+  const stripZ = new Float32Array(MAX_INSTANCES);
+  const stripWidthPx = new Float32Array(MAX_INSTANCES);
   const dummy = new THREE.Object3D();
+  const tintColor = new THREE.Color();
 
   function layout() {
     width = container!.clientWidth;
@@ -101,20 +153,39 @@ if (canvas && container) {
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
 
-    count = Math.min(Math.ceil(width / STRIP_WIDTH), MAX_INSTANCES);
-    mesh.count = count;
-
     // rebuild geometry only when the height actually changed enough to
     // matter (viewport height rarely changes as often as width) — cheap
     // either way, but no reason to churn a new BufferGeometry every resize
     if (Math.abs((geometry.parameters.height as number) - height) > 4) {
       mesh.geometry.dispose();
-      mesh.geometry = buildStripGeometry(STRIP_WIDTH, height, STRIP_DEPTH);
+      mesh.geometry = buildStripGeometry(height, STRIP_DEPTH);
     }
 
-    for (let i = 0; i < count; i++) {
-      stripX[i] = -width / 2 + STRIP_WIDTH * (i + 0.5);
+    // Cumulative tiling: each strip gets a random width in range, an
+    // occasional few px of overlap with the previous strip (never a gap),
+    // a random Z offset for layered depth, and a resting colour sampled
+    // independently from the palette gradient.
+    let x = -width / 2;
+    let i = 0;
+    while (x < width / 2 && i < MAX_INSTANCES) {
+      const w = STRIP_WIDTH_MIN + Math.random() * (STRIP_WIDTH_MAX - STRIP_WIDTH_MIN);
+      const overlap = Math.random() * OVERLAP_MAX;
+      const z = (Math.random() * 2 - 1) * DEPTH_JITTER;
+
+      stripWidthPx[i] = w;
+      stripX[i] = x + w / 2;
+      stripZ[i] = z;
+
+      const shade = THREE.MathUtils.mapLinear(z, -DEPTH_JITTER, DEPTH_JITTER, 0.82, 1.12);
+      tintColor.copy(sampleGradient(Math.random())).multiplyScalar(shade);
+      mesh.setColorAt(i, tintColor);
+
+      x += w - overlap;
+      i++;
     }
+    count = i;
+    mesh.count = count;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }
   layout();
 
@@ -132,6 +203,7 @@ if (canvas && container) {
   const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
   let mouseActive = false;
   let mouseWorldX = 0;
+  let smoothMouseX = 0;
 
   if (!coarsePointer) {
     window.addEventListener('mousemove', e => {
@@ -159,14 +231,18 @@ if (canvas && container) {
     const dt = Math.min((time - lastTime) / 1000, 1 / 20);
     lastTime = time;
     const easeAmount = 1 - Math.exp(-EASE_RATE * dt);
+    const mouseEaseAmount = 1 - Math.exp(-MOUSE_EASE_RATE * dt);
+
+    if (mouseActive) smoothMouseX += (mouseWorldX - smoothMouseX) * mouseEaseAmount;
 
     for (let i = 0; i < count; i++) {
-      const dist = mouseActive ? Math.abs(stripX[i] - mouseWorldX) : Infinity;
+      const dist = mouseActive ? Math.abs(stripX[i] - smoothMouseX) : Infinity;
       const target = smoothstep(1 - dist / PROXIMITY_RADIUS);
       proximity[i] += (target - proximity[i]) * easeAmount;
 
-      dummy.position.set(stripX[i], 0, 0);
+      dummy.position.set(stripX[i], 0, stripZ[i]);
       dummy.rotation.set(0, proximity[i] * MAX_ROTATION, 0);
+      dummy.scale.set(stripWidthPx[i], 1, 1);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }

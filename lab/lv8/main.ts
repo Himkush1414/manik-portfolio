@@ -32,21 +32,148 @@ backBtn?.addEventListener('click', () => {
 // ---------------------------------------------------------------
 // Desktop-only gate for the game itself. WASD + Space (or a mouse) has no
 // sane touch equivalent to improvise here without shipping a half-working
-// control scheme (flagged back explicitly, see the chat reply) — the
-// hub/Bento section itself still renders and reads fine on a narrow/touch
-// viewport, only the flagship tile's PLAY action is disabled there.
+// control scheme (flagged back explicitly, see the chat reply) — the hub/
+// games-list section itself still renders and reads fine on a narrow/
+// touch viewport, only the Play action is disabled there.
 // ---------------------------------------------------------------
 const DESKTOP_MQ = window.matchMedia('(min-width: 861px) and (hover: hover) and (pointer: fine)');
-const playBtn = document.getElementById('lv8-play-btn') as HTMLButtonElement | null;
+const playBtn = document.getElementById('lv8-games-play') as HTMLButtonElement | null;
 const desktopNote = document.getElementById('lv8-desktop-note');
-
+// actual DOM writes happen in renderGamesPanel() below, the single place
+// that decides whether Play is even showing right now — this just
+// re-runs that whenever the breakpoint itself changes (resize, devtools).
 function applyDesktopGate() {
-  const ok = DESKTOP_MQ.matches;
-  if (playBtn) playBtn.disabled = !ok;
-  if (desktopNote) desktopNote.hidden = ok;
+  renderGamesPanel();
 }
-applyDesktopGate();
 DESKTOP_MQ.addEventListener('change', applyDesktopGate);
+
+// ---------------------------------------------------------------
+// Games list — right-hand scrollable list of entries; hovering one drives
+// the left preview/description panels live, clicking "arms" it (shows its
+// Play button, only while still hovering that same entry). Only one entry
+// is playable today (the wormhole shooter); the rest are non-interactive
+// placeholders carried over from the old Bento grid's "coming soon" tiles
+// — that grid is now gone outright (see chat reply on the overlap flag).
+// ---------------------------------------------------------------
+interface GameListEntry {
+  eyebrow: string;
+  name: string;
+  tagline: string;
+  previewSrc: string | null; // null -> muted "COMING SOON" placeholder, no art yet
+  playable: boolean;
+}
+const GAME_LIST: Record<string, GameListEntry> = {
+  wormhole: {
+    eyebrow: 'FLAGSHIP // 01',
+    name: 'WORMHOLE RUN',
+    tagline: 'A third-person rail-shooter down a collapsing hyperspace tunnel. Weave, fire, survive the ramp.',
+    previewSrc: './hero-preview.svg',
+    playable: true,
+  },
+  asteroid: {
+    eyebrow: 'IN DEVELOPMENT // 02',
+    name: 'ASTEROID DRIFT',
+    tagline: 'Not built yet — reserved for the next entry in the games lab.',
+    previewSrc: null,
+    playable: false,
+  },
+  signal: {
+    eyebrow: 'IN DEVELOPMENT // 03',
+    name: 'SIGNAL DEFENSE',
+    tagline: 'Not built yet — reserved for the next entry in the games lab.',
+    previewSrc: null,
+    playable: false,
+  },
+  docking: {
+    eyebrow: 'IN DEVELOPMENT // 04',
+    name: 'DOCKING PROTOCOL',
+    tagline: 'Not built yet — reserved for the next entry in the games lab.',
+    previewSrc: null,
+    playable: false,
+  },
+};
+
+const gamesListEl = document.getElementById('lv8-games-list') as HTMLElement | null;
+const gamesItemEls = Array.from(document.querySelectorAll<HTMLElement>('.lv8-games__item'));
+const previewImgEl = document.getElementById('lv8-games-preview-img') as HTMLImageElement | null;
+const previewSoonEl = document.getElementById('lv8-games-preview-soon');
+const detailEyebrowEl = document.getElementById('lv8-games-detail-eyebrow');
+const detailTitleEl = document.getElementById('lv8-games-detail-title');
+const detailTaglineEl = document.getElementById('lv8-games-detail-tagline');
+
+let hoveredGame: string | null = null;
+let armedGame: string | null = null;
+
+function renderGamesPanel() {
+  const id = hoveredGame ?? 'wormhole';
+  const entry = GAME_LIST[id];
+  if (!entry) return;
+
+  if (detailEyebrowEl) detailEyebrowEl.textContent = entry.eyebrow;
+  if (detailTitleEl) detailTitleEl.textContent = entry.name;
+  if (detailTaglineEl) detailTaglineEl.textContent = entry.tagline;
+
+  if (previewImgEl && previewSoonEl) {
+    // previewSoonEl is absolute-positioned over the whole box, so showing
+    // it fully covers the (possibly stale) <img> underneath rather than
+    // needing to separately hide/show the image itself.
+    const hasArt = entry.previewSrc !== null;
+    previewSoonEl.hidden = hasArt;
+    if (hasArt) previewImgEl.src = entry.previewSrc as string;
+  }
+
+  // Play shows whenever the entry CURRENTLY DISPLAYED in the detail box
+  // (id, above) is the one the player armed by clicking it — sticky on
+  // purpose. It deliberately does NOT also require hoveredGame === id:
+  // the button lives in a separate box from the list, so the cursor has
+  // to leave the list row to reach it, which would otherwise hide the
+  // button before the click could land (caught live — the mouseleave on
+  // the list cleared hoveredGame mid-click and the button vanished out
+  // from under the pointer). The desktop-only note takes its place when
+  // that same condition is met but the viewport doesn't qualify.
+  const wantsPlay = entry.playable && armedGame === id;
+  const desktopOk = DESKTOP_MQ.matches;
+  if (playBtn) {
+    playBtn.hidden = !wantsPlay;
+    playBtn.disabled = !desktopOk;
+  }
+  if (desktopNote) desktopNote.hidden = !wantsPlay || desktopOk;
+
+  for (const item of gamesItemEls) {
+    const isActive = item.dataset.game === hoveredGame;
+    item.classList.toggle('is-active', isActive);
+    item.classList.toggle('is-armed', item.dataset.game === armedGame);
+  }
+}
+
+for (const item of gamesItemEls) {
+  const id = item.dataset.game ?? '';
+  item.addEventListener('mouseenter', () => {
+    hoveredGame = id;
+    renderGamesPanel();
+  });
+  item.addEventListener('focus', () => {
+    hoveredGame = id;
+    renderGamesPanel();
+  });
+  item.addEventListener('click', () => {
+    if (!GAME_LIST[id]?.playable) return;
+    armedGame = id;
+    hoveredGame = id;
+    renderGamesPanel();
+  });
+  item.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      item.click();
+    }
+  });
+}
+gamesListEl?.addEventListener('mouseleave', () => {
+  hoveredGame = null;
+  renderGamesPanel();
+});
+renderGamesPanel();
 
 // ---------------------------------------------------------------
 // Session state — in-memory only. No backend/persistence in this task

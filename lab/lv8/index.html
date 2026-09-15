@@ -33,8 +33,8 @@
 </nav>
 
 <!-- ===================== HUB =====================
-     Headline + Bento grid game-select. Hidden once a game is actually
-     running — see main.ts. -->
+     Warm hero + the games-list section + footer. Hidden once a game is
+     actually running — see main.ts. -->
 <div id="lv8-hub" class="lv8-hub">
 
   <!-- ===================== ANIMATED HERO =====================
@@ -44,6 +44,7 @@
   <header class="lv8-hero" id="lv8-hero">
     <canvas class="lv8-strip-field" id="lv8-strip-field" aria-hidden="true"></canvas>
     <div class="lv8-hero__scrim" aria-hidden="true"></div>
+    <div class="lv8-hero__fade" aria-hidden="true"></div>
     <p class="lv8-hero__kicker">MANIK RANA // EXPERIMENTS</p>
     <h1 class="lv8-hero__headline">
       <span>THE RUN NEVER ENDS.</span>
@@ -52,45 +53,61 @@
     <p class="lv8-hero__watermark" aria-hidden="true">LV8</p>
   </header>
 
-  <section class="lv8-bento" aria-label="Game selection">
+  <!-- ===================== GAMES SECTION =====================
+       Supersedes the old Bento grid (see chat reply — the two were
+       redundant/conflicting game-selection UIs, so the grid was removed
+       outright rather than left alongside this). Full-viewport black
+       panel: left column = preview picture (top) + description/Play
+       (bottom), right column = one full-height scrollable game list.
+       Hover in the list drives the preview live (main.ts); a click
+       "arms" a playable entry and reveals its Play button. -->
+  <section class="lv8-games" id="lv8-games" aria-label="Game selection">
+    <div class="lv8-games__inner">
 
-    <!-- HERO TILE — the only live, playable entry right now. -->
-    <article class="lv8-tile lv8-tile--hero">
-      <div class="lv8-tile__preview" aria-hidden="true">
-        <img src="./hero-preview.svg" alt="" class="lv8-tile__preview-img" id="lv8-hero-preview-img" />
-        <div class="lv8-tile__preview-fade"></div>
+      <div class="lv8-games__left">
+        <div class="lv8-games__preview" aria-hidden="true">
+          <img src="./hero-preview.svg" alt="" class="lv8-games__preview-img" id="lv8-games-preview-img" />
+          <div class="lv8-games__preview-soon" id="lv8-games-preview-soon" hidden>COMING SOON</div>
+        </div>
+        <div class="lv8-games__detail">
+          <span class="lv8-games__detail-eyebrow" id="lv8-games-detail-eyebrow">FLAGSHIP // 01</span>
+          <h2 class="lv8-games__detail-title" id="lv8-games-detail-title">WORMHOLE RUN</h2>
+          <p class="lv8-games__detail-tagline" id="lv8-games-detail-tagline">A third-person rail-shooter down a collapsing hyperspace tunnel. Weave, fire, survive the ramp.</p>
+          <button class="lv8-games__play" id="lv8-games-play" type="button" hidden>
+            <span>PLAY</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="lv8-games__note" id="lv8-desktop-note" hidden>Desktop only for now — come back on a larger screen with a keyboard.</p>
+        </div>
       </div>
-      <div class="lv8-tile__body">
-        <span class="lv8-tile__eyebrow">FLAGSHIP // 01</span>
-        <h2 class="lv8-tile__title">WORMHOLE RUN</h2>
-        <p class="lv8-tile__tagline">A third-person rail-shooter down a collapsing hyperspace tunnel. Weave, fire, survive the ramp.</p>
-        <button class="lv8-tile__cta" id="lv8-play-btn" type="button">
-          <span>PLAY</span>
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <p class="lv8-tile__note" id="lv8-desktop-note" hidden>Desktop only for now — come back on a larger screen with a keyboard.</p>
+
+      <div class="lv8-games__list-panel">
+        <span class="lv8-games__list-heading">SELECT // 01–04</span>
+        <ul class="lv8-games__list" id="lv8-games-list">
+          <li class="lv8-games__item is-active" data-game="wormhole" tabindex="0">
+            <span class="lv8-games__item-index">01</span>
+            <span class="lv8-games__item-name">WORMHOLE RUN</span>
+            <span class="lv8-games__item-status">PLAY</span>
+          </li>
+          <li class="lv8-games__item lv8-games__item--soon" data-game="asteroid" tabindex="0">
+            <span class="lv8-games__item-index">02</span>
+            <span class="lv8-games__item-name">ASTEROID DRIFT</span>
+            <span class="lv8-games__item-status">SOON</span>
+          </li>
+          <li class="lv8-games__item lv8-games__item--soon" data-game="signal" tabindex="0">
+            <span class="lv8-games__item-index">03</span>
+            <span class="lv8-games__item-name">SIGNAL DEFENSE</span>
+            <span class="lv8-games__item-status">SOON</span>
+          </li>
+          <li class="lv8-games__item lv8-games__item--soon" data-game="docking" tabindex="0">
+            <span class="lv8-games__item-index">04</span>
+            <span class="lv8-games__item-name">DOCKING PROTOCOL</span>
+            <span class="lv8-games__item-status">SOON</span>
+          </li>
+        </ul>
       </div>
-    </article>
 
-    <!-- COMING SOON — non-interactive, muted, signals the hub grows past one game. -->
-    <article class="lv8-tile lv8-tile--soon">
-      <span class="lv8-tile__eyebrow">02</span>
-      <h3 class="lv8-tile__title lv8-tile__title--sm">ASTEROID DRIFT</h3>
-      <span class="lv8-tile__soon-badge">COMING SOON</span>
-    </article>
-
-    <article class="lv8-tile lv8-tile--soon">
-      <span class="lv8-tile__eyebrow">03</span>
-      <h3 class="lv8-tile__title lv8-tile__title--sm">SIGNAL DEFENSE</h3>
-      <span class="lv8-tile__soon-badge">COMING SOON</span>
-    </article>
-
-    <article class="lv8-tile lv8-tile--soon">
-      <span class="lv8-tile__eyebrow">04</span>
-      <h3 class="lv8-tile__title lv8-tile__title--sm">DOCKING PROTOCOL</h3>
-      <span class="lv8-tile__soon-badge">COMING SOON</span>
-    </article>
-
+    </div>
   </section>
 
   <footer class="lv8-footer">
@@ -114,7 +131,7 @@
     <span class="lv8-setup__eyebrow">STEP 1 // IDENTIFICATION</span>
     <h2 class="lv8-setup__title">STATE YOUR CALLSIGN</h2>
     <input class="lv8-setup__input" id="lv8-name-input" type="text" maxlength="18" placeholder="PILOT NAME" autocomplete="off" />
-    <button class="lv8-tile__cta" id="lv8-name-next" type="button"><span>CONTINUE</span></button>
+    <button class="lv8-cta" id="lv8-name-next" type="button"><span>CONTINUE</span></button>
   </div>
 
   <div class="lv8-setup__panel" data-step="controls">
@@ -130,7 +147,7 @@
         <span>Move with keys, aim &amp; fire with the mouse</span>
       </button>
     </div>
-    <button class="lv8-tile__cta" id="lv8-controls-next" type="button"><span>CONTINUE</span></button>
+    <button class="lv8-cta" id="lv8-controls-next" type="button"><span>CONTINUE</span></button>
   </div>
 
   <div class="lv8-setup__panel" data-step="viewpoint">
@@ -152,7 +169,7 @@
     </div>
     <div class="lv8-setup__row">
       <button class="lv8-gameover__exit" id="lv8-setup-settings-btn" type="button">SETTINGS</button>
-      <button class="lv8-tile__cta" id="lv8-setup-play-btn" type="button"><span>PLAY</span></button>
+      <button class="lv8-cta" id="lv8-setup-play-btn" type="button"><span>PLAY</span></button>
     </div>
   </div>
 
@@ -197,7 +214,7 @@
       </div>
     </div>
 
-    <button class="lv8-tile__cta" id="lv8-settings-close" type="button"><span>DONE</span></button>
+    <button class="lv8-cta" id="lv8-settings-close" type="button"><span>DONE</span></button>
   </div>
 </div>
 
@@ -205,7 +222,7 @@
 <div id="lv8-pause" class="lv8-pause" aria-hidden="true">
   <div class="lv8-settings__panel">
     <span class="lv8-setup__eyebrow">PAUSED</span>
-    <button class="lv8-tile__cta" id="lv8-pause-resume" type="button"><span>RESUME</span></button>
+    <button class="lv8-cta" id="lv8-pause-resume" type="button"><span>RESUME</span></button>
     <button class="lv8-gameover__exit" id="lv8-pause-settings" type="button">SETTINGS</button>
     <button class="lv8-gameover__exit" id="lv8-pause-exit" type="button">EXIT TO HUB</button>
   </div>
@@ -220,7 +237,7 @@
   <div class="lv8-settings__panel">
     <span class="lv8-setup__eyebrow">LEVEL 10 CLEARED</span>
     <p class="lv8-portal__message">Congratulations player, you have succeeded to clear level 10. Now the journey from here will be much harder. Are you ready?</p>
-    <button class="lv8-tile__cta" id="lv8-portal-ready" type="button"><span>READY</span></button>
+    <button class="lv8-cta" id="lv8-portal-ready" type="button"><span>READY</span></button>
   </div>
 </div>
 
@@ -302,7 +319,7 @@
     <p class="lv8-gameover__kicker">RUN TERMINATED</p>
     <p class="lv8-gameover__quip" id="lv8-gameover-quip"></p>
     <h2 class="lv8-gameover__score">SCORE: <span id="lv8-gameover-score">0</span></h2>
-    <button class="lv8-tile__cta" id="lv8-restart-btn" type="button">
+    <button class="lv8-cta" id="lv8-restart-btn" type="button">
       <span>RESTART</span>
     </button>
     <button class="lv8-gameover__exit" id="lv8-gameover-exit" type="button">BACK TO HUB</button>

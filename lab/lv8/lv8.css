@@ -28,6 +28,22 @@ body.lv8 {
   --lv8-gutter: clamp(20px, 4vw, 64px);
   --lv8-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Games-hub identity — deliberately separate from the warm ramp above.
+     The warm palette is scoped to the hero/strip effect only; everything
+     that is actually the games hub (the section below + footer) uses
+     LV8's original cyan/violet-on-near-black identity instead. NOTE: an
+     earlier commit ("warm burnt-orange palette...") retired cyan/violet
+     site-wide, including from the old Bento tiles/footer/game HUD — this
+     reintroduces it *only* for the new games-list section and footer, so
+     the page now deliberately carries two palettes back to back. Flagged
+     back in the chat reply in case that split isn't actually wanted. */
+  --lv8g-bg: #06060C;
+  --lv8g-bg-raised: #0B0C16;
+  --lv8g-cyan: #4CE0E8;
+  --lv8g-violet: #A85CF0;
+  --lv8g-text: #E8E9F0;
+  --lv8g-text-dim: rgba(232, 233, 240, 0.6);
+
   margin: 0;
   min-height: 100vh;
   background: var(--lv8-bg);
@@ -72,8 +88,8 @@ body.lv8 {
 .lv8-nav__logo {
   display: flex;
   align-items: center;
-  width: 46px;
-  height: 46px;
+  width: 56px;
+  height: 56px;
 }
 .lv8-nav__logo img {
   width: 100%;
@@ -146,6 +162,19 @@ body.lv8 {
   pointer-events: none;
 }
 
+/* bottom fade — blends the strip field into the games section's near-
+   black straight underneath, so scrolling off the hero reads as one
+   continuous surface easing into the next section rather than a hard
+   cut at the hero's bottom edge. */
+.lv8-hero__fade {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 1;
+  height: clamp(120px, 22vh, 260px);
+  background: linear-gradient(180deg, rgba(6, 6, 12, 0) 0%, rgba(6, 6, 12, 0.9) 80%, #06060C 100%);
+  pointer-events: none;
+}
+
 .lv8-hero__kicker,
 .lv8-hero__headline,
 .lv8-hero__watermark {
@@ -170,7 +199,7 @@ body.lv8 {
   max-width: min(90vw, 900px);
   font-family: var(--lv8-font-display);
   font-weight: 400;
-  font-size: clamp(34px, 6.2vw, 84px);
+  font-size: clamp(34px, 6vw, 68px);
   line-height: 1.08;
   letter-spacing: 0.01em;
   color: var(--lv8-text);
@@ -218,204 +247,275 @@ body.lv8 {
   }
 }
 
-/* ---- Bento grid ---- */
-.lv8-bento {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-auto-rows: minmax(120px, auto);
-  gap: clamp(14px, 1.6vw, 22px);
-  /* .lv8-hub itself carries no padding any more (the hero above needs to
-     bleed full-width for its bar background) — gutter lives here and on
-     the footer instead, each applying it themselves. */
-  padding: clamp(28px, 5vh, 56px) var(--lv8-gutter) clamp(60px, 10vh, 110px);
-}
-/* Tile treatment: a thin left-edge accent strip that echoes the hero's
-   own strip motif — dark/dormant at rest, igniting up the same warm ramp
-   on hover — rather than a flat, disconnected card sitting on top of the
-   strip field. Everything else (raised panel, border, glow) stays in the
-   same warm-dark family as the hero so the boundary between the two
-   sections reads as one continuous surface. */
-.lv8-tile {
+/* ============================================================
+   GAMES SECTION — the actual games hub content (list-based selection),
+   directly below the hero. Full-viewport black panel on the cyan/violet
+   identity (see the --lv8g-* tokens up top) — a deliberate palette break
+   from the warm hero above it, per the chat reply.
+   ============================================================ */
+.lv8-games {
   position: relative;
-  border-radius: 6px;
-  border: 1px solid rgba(111, 36, 23, 0.35);
-  background: var(--lv8-bg-raised);
-  overflow: hidden;
-  padding: 22px 22px 22px 30px;
+  min-height: 100svh;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lv8g-bg);
+  padding: clamp(28px, 6vh, 64px) var(--lv8-gutter);
 }
-.lv8-tile::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: linear-gradient(180deg, var(--lv8-dark), var(--lv8-red));
-  opacity: 0.6;
-  transition: opacity 0.4s ease, box-shadow 0.4s ease;
+.lv8-games__inner {
+  width: 100%;
+  max-width: 1360px;
+  height: min(76vh, 720px);
+  min-height: 460px;
+  display: grid;
+  /* outer container: two ~50/50 columns */
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(14px, 1.6vw, 22px);
 }
 
-/* hero tile: spans the full column height across the three implicit rows
-   the "coming soon" tiles occupy one-per-row alongside it (grid
-   auto-placement fills column 2 rows 1-3 automatically since column 1 is
-   already spoken for — no per-tile placement rules needed). */
-.lv8-tile--hero {
-  grid-column: 1;
-  grid-row: 1 / span 3;
+/* left column: 2 stacked boxes, each ~half the container height */
+.lv8-games__left {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  min-height: 420px;
-  padding: 32px 32px 32px 40px;
-  border-color: rgba(168, 52, 33, 0.3);
-  box-shadow: 0 0 0 1px rgba(168, 52, 33, 0.08), 0 30px 80px -30px rgba(168, 52, 33, 0.3);
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s var(--lv8-ease);
+  gap: clamp(14px, 1.6vw, 22px);
+  min-height: 0; /* let the flex children actually shrink to their 50% share */
 }
-.lv8-tile--hero:hover {
-  border-color: rgba(168, 52, 33, 0.6);
-  box-shadow: 0 0 0 1px rgba(168, 52, 33, 0.16), 0 34px 90px -28px rgba(168, 52, 33, 0.5);
-  transform: translateY(-3px);
+.lv8-games__preview,
+.lv8-games__detail {
+  flex: 1 1 0;
+  min-height: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(76, 224, 232, 0.16);
+  background: var(--lv8g-bg-raised);
+  overflow: hidden;
 }
-.lv8-tile--hero:hover::before {
-  opacity: 1;
-  box-shadow: 0 0 18px 2px rgba(168, 52, 33, 0.65);
+
+.lv8-games__preview {
+  position: relative;
 }
-.lv8-tile__preview {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-.lv8-tile__preview-img {
+.lv8-games__preview-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center 30%;
-  /* the preview art is authored in this same palette already (see
-     hero-preview.svg) — a light desaturation/darken keeps it from
-     reading brighter than the rest of the resting page, brightening
-     slightly on hover along with everything else in the tile */
-  filter: saturate(0.9) brightness(0.82);
-  transition: filter 0.4s ease;
+  filter: saturate(0.95) brightness(0.88);
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
-.lv8-tile--hero:hover .lv8-tile__preview-img {
-  filter: saturate(1.05) brightness(1);
-}
-.lv8-tile__preview-fade {
+.lv8-games__preview-soon[hidden] { display: none; }
+.lv8-games__preview-soon {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(21, 16, 13, 0.1) 0%, rgba(21, 16, 13, 0.6) 55%, var(--lv8-bg-raised) 96%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--lv8g-text-dim);
+  background:
+    repeating-linear-gradient(135deg, rgba(76, 224, 232, 0.05) 0 2px, transparent 2px 14px),
+    var(--lv8g-bg-raised);
 }
-.lv8-tile__body {
+
+.lv8-games__detail {
   position: relative;
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(18px, 2.4vw, 30px);
 }
-.lv8-tile__eyebrow {
+.lv8-games__detail-eyebrow {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-family: var(--lv8-font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: var(--lv8-lit);
+  color: var(--lv8g-cyan);
   opacity: 0.9;
 }
-.lv8-tile__title {
-  margin: 0 0 10px;
+.lv8-games__detail-title {
+  margin: 0 0 8px;
   font-family: var(--lv8-font-display);
   font-weight: 400;
-  font-size: clamp(30px, 3.4vw, 46px);
+  font-size: clamp(24px, 2.6vw, 34px);
   line-height: 1;
   letter-spacing: 0.01em;
+  color: var(--lv8g-text);
 }
-.lv8-tile__tagline {
-  margin: 0 0 22px;
+.lv8-games__detail-tagline {
+  margin: 0;
   max-width: 46ch;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.55;
-  color: var(--lv8-text-dim);
+  color: var(--lv8g-text-dim);
 }
-.lv8-tile__cta {
+/* [hidden] alone loses to this class's own `display` in the cascade (both
+   land at equal specificity, author styles applied after the UA sheet) —
+   spell it out explicitly so toggling the hidden attribute actually hides
+   it instead of silently doing nothing. */
+.lv8-games__play[hidden] { display: none; }
+.lv8-games__play {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 22px;
+  align-self: flex-start;
+  margin-top: 16px;
+  padding: 11px 20px;
   border-radius: 999px;
-  border: 1px solid var(--lv8-lit);
+  border: 1px solid var(--lv8g-cyan);
   background: transparent;
-  color: var(--lv8-lit);
+  color: var(--lv8g-cyan);
   font-family: var(--lv8-font-body);
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.12em;
   cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--lv8-ease);
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--lv8-ease), opacity 0.2s ease;
 }
-.lv8-tile__cta:hover {
-  background: var(--lv8-lit);
-  color: var(--lv8-darkest);
-  box-shadow: 0 0 24px rgba(168, 52, 33, 0.55);
+.lv8-games__play:hover {
+  background: var(--lv8g-cyan);
+  color: #06060C;
+  box-shadow: 0 0 24px rgba(76, 224, 232, 0.5);
   transform: translateY(-2px);
 }
-.lv8-tile__cta:disabled {
+.lv8-games__play:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
-.lv8-tile__cta:disabled:hover {
+.lv8-games__play:disabled:hover {
   background: transparent;
-  color: var(--lv8-lit);
+  color: var(--lv8g-cyan);
   box-shadow: none;
 }
-.lv8-tile__note {
-  margin: 14px 0 0;
+.lv8-games__note {
+  margin: 10px 0 0;
   font-size: 12px;
-  color: var(--lv8-text-dim);
+  color: var(--lv8g-text-dim);
   font-style: italic;
 }
 
-/* coming-soon tiles: muted/desaturated, non-interactive — the accent
-   strip stays permanently dim (no hover state exists to ignite it) */
-.lv8-tile--soon {
+/* right column: one box spanning the full container height — "the
+   biggest," roughly double the area of either individual left box. */
+.lv8-games__list-panel {
+  border-radius: 6px;
+  border: 1px solid rgba(76, 224, 232, 0.16);
+  background: var(--lv8g-bg-raised);
+  padding: clamp(10px, 1.4vw, 18px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  border-color: rgba(242, 231, 218, 0.08);
-  filter: saturate(0.4) brightness(0.7);
-  cursor: default;
 }
-.lv8-tile--soon::before { opacity: 0.25; }
-.lv8-tile--soon .lv8-tile__eyebrow { color: var(--lv8-text-dim); }
-.lv8-tile__title--sm { font-size: clamp(20px, 2vw, 26px); }
-.lv8-tile__soon-badge {
-  align-self: flex-start;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(242, 231, 218, 0.2);
+.lv8-games__list-heading {
+  margin: 4px 8px 10px;
+  font-family: var(--lv8-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--lv8g-text-dim);
+}
+.lv8-games__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.lv8-games__item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 14px;
+  border-radius: 4px;
+  border-bottom: 1px solid rgba(232, 233, 240, 0.08);
+  cursor: pointer;
+  outline: none;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+.lv8-games__item:last-child { border-bottom: none; }
+.lv8-games__item-index {
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  color: var(--lv8g-text-dim);
+  width: 22px;
+}
+.lv8-games__item-name {
+  flex: 1;
+  font-family: var(--lv8-font-display);
+  font-weight: 400;
+  font-size: clamp(18px, 1.8vw, 24px);
+  letter-spacing: 0.02em;
+  color: var(--lv8g-text-dim);
+  transition: color 0.2s ease;
+}
+.lv8-games__item-status {
   font-family: var(--lv8-font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: var(--lv8-text-dim);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 233, 240, 0.18);
+  color: var(--lv8g-text-dim);
+}
+/* exclusive hover: only the strip under the cursor lights up (JS toggles
+   .is-active on a single <li> at a time — see main.ts) */
+.lv8-games__item.is-active,
+.lv8-games__item:focus-visible {
+  background: rgba(76, 224, 232, 0.08);
+}
+.lv8-games__item.is-active .lv8-games__item-name,
+.lv8-games__item:focus-visible .lv8-games__item-name {
+  color: var(--lv8g-text);
+}
+.lv8-games__item.is-active .lv8-games__item-status {
+  border-color: var(--lv8g-cyan);
+  color: var(--lv8g-cyan);
+}
+.lv8-games__item.is-armed .lv8-games__item-status {
+  background: var(--lv8g-cyan);
+  color: #06060C;
+  border-color: var(--lv8g-cyan);
+}
+.lv8-games__item--soon {
+  opacity: 0.55;
+}
+.lv8-games__item--soon.is-active {
+  background: rgba(232, 233, 240, 0.05);
+}
+.lv8-games__item--soon.is-active .lv8-games__item-name { color: var(--lv8g-text-dim); }
+/* violet used sparingly — a secondary accent flecked into the "soon"
+   status pills so the section isn't purely single-hue cyan */
+.lv8-games__item--soon .lv8-games__item-status {
+  color: var(--lv8g-violet);
+  border-color: rgba(168, 92, 240, 0.35);
 }
 
 @media (max-width: 860px) {
-  .lv8-bento {
+  .lv8-games__inner {
     grid-template-columns: 1fr;
+    height: auto;
   }
-  .lv8-tile--hero {
-    grid-column: 1;
-    grid-row: auto;
-    min-height: 340px;
-  }
+  .lv8-games__left { min-height: 420px; }
+  .lv8-games__list-panel { min-height: 260px; }
 }
 
 /* ============================================================
    FOOTER — distinct from every other tab's footer (own layout: a single
-   thin cyan divider, then one row: logo left / flavor line right).
+   thin cyan divider, then one row: logo left / flavor line right). Sits
+   on the same near-black games-hub identity as the section above it
+   (see --lv8g-* tokens) rather than the warm hero palette.
    ============================================================ */
 .lv8-footer {
-  padding: 0 var(--lv8-gutter) clamp(28px, 5vh, 48px);
+  background: var(--lv8g-bg);
+  padding: clamp(20px, 4vh, 32px) var(--lv8-gutter) clamp(28px, 5vh, 48px);
 }
 .lv8-footer__divider {
   height: 1px;
-  margin-bottom: 22px;
-  background: linear-gradient(90deg, rgba(168, 52, 33, 0.6), rgba(168, 52, 33, 0.05) 70%);
+  margin-bottom: 24px;
+  background: linear-gradient(90deg, rgba(76, 224, 232, 0.7), rgba(76, 224, 232, 0.06) 75%);
+  box-shadow: 0 0 12px rgba(76, 224, 232, 0.25);
 }
 .lv8-footer__row {
   display: flex;
@@ -428,13 +528,16 @@ body.lv8 {
   width: 30px;
   height: 30px;
   object-fit: contain;
-  opacity: 0.9;
+  /* the mark itself is a near-black silhouette (see nav-logo-mark.png) —
+     illegible on its own against near-black; a coloured glow outlines
+     its shape the same way the nav's copy of this mark already does. */
+  filter: drop-shadow(0 0 6px rgba(76, 224, 232, 0.6));
 }
 .lv8-footer__flavor {
   font-family: var(--lv8-font-mono);
   font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--lv8-text-dim);
+  letter-spacing: 0.1em;
+  color: var(--lv8g-text-dim);
 }
 
 /* ============================================================
@@ -744,6 +847,45 @@ body.lv8 {
   cursor: pointer;
 }
 .lv8-gameover__exit:hover { color: var(--lv8-lit); }
+
+/* ============================================================
+   SHARED — the warm pill CTA button used across every overlay that sits
+   on top of the hero/game (setup wizard, settings, pause, level-10
+   portal, restart). Not tied to any one of them — kept as one component
+   so they all move together.
+   ============================================================ */
+.lv8-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--lv8-lit);
+  background: transparent;
+  color: var(--lv8-lit);
+  font-family: var(--lv8-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--lv8-ease);
+}
+.lv8-cta:hover {
+  background: var(--lv8-lit);
+  color: var(--lv8-darkest);
+  box-shadow: 0 0 24px rgba(168, 52, 33, 0.55);
+  transform: translateY(-2px);
+}
+.lv8-cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.lv8-cta:disabled:hover {
+  background: transparent;
+  color: var(--lv8-lit);
+  box-shadow: none;
+}
 
 /* ============================================================
    PRE-GAME SETUP WIZARD — name -> control scheme -> viewpoint -> play.
