@@ -15,8 +15,12 @@
 //  - depth: a small random Z offset plus a few px of X overlap with the
 //    previous strip gives genuine layered depth (some strips sit slightly
 //    in front of/behind their neighbour, like folded panels) rather than
-//    everything flush on one plane; a subtle brightness multiplier tied
-//    to that same Z offset reinforces the fold.
+//    everything flush on one plane. This used to also modulate each
+//    strip's brightness by that same Z offset to sell the fold, but that
+//    read as a fake specular sheen across the field — removed so every
+//    strip shows its sampled palette colour completely flat/matte, no
+//    per-strip lighting cue at all; the geometric overlap alone still
+//    carries the depth read.
 //
 // The hover reveal itself is still a genuine geometry trick, not a colour
 // tween: each strip's box has its front/back faces baked WHITE and its
@@ -59,9 +63,9 @@ if (canvas && container) {
   // sampled from the gradient — multiplying by it can only darken. The
   // extra DARKEN_BOOST pushes the revealed face further still (strips at
   // the brightest end no longer just bottom out at DARK, they go past
-  // it, toward near-black) — pushed hard a second time (0.55 -> 0.18)
-  // after the first bump still read as too subtle.
-  const DARKEN_BOOST = 0.18;
+  // it, toward near-black) — pushed hard a third time now (0.55 -> 0.18
+  // -> 0.09), each prior round still reading as too subtle.
+  const DARKEN_BOOST = 0.09;
   const REVEAL_RATIO = new THREE.Color(
     (DARK.r / LIT.r) * DARKEN_BOOST,
     (DARK.g / LIT.g) * DARKEN_BOOST,
@@ -75,8 +79,8 @@ if (canvas && container) {
     return GRADIENT_STOPS[idx].clone().lerp(GRADIENT_STOPS[idx + 1], scaled - idx);
   }
 
-  const STRIP_WIDTH_MIN = 30; // CSS px — per-strip width is randomised across this range
-  const STRIP_WIDTH_MAX = 40;
+  const STRIP_WIDTH_MIN = 40; // CSS px — per-strip width is randomised across this range
+  const STRIP_WIDTH_MAX = 50;
   const OVERLAP_MAX = 6; // px a strip may occasionally tuck under its neighbour
   const STRIP_DEPTH = 7;
   const DEPTH_JITTER = 14; // px of random Z offset per strip — the "folded panel" cue
@@ -85,11 +89,13 @@ if (canvas && container) {
   // into an invisible sliver) so a fully-proximate strip reads as almost
   // entirely its dark side face, not a blended sliver of it.
   const MAX_ROTATION = THREE.MathUtils.degToRad(88);
-  // Widened substantially again (130 -> 180 last pass, now -> 540) so a
-  // strong majority of the field is within the cursor's reach at once —
-  // this is meant to read as a dramatic, whole-field reaction now, not a
-  // narrow spotlight around the cursor.
-  const PROXIMITY_RADIUS = 540; // px — how far a strip's reach extends from the cursor
+  // Widened again (130 -> 180 -> 540 -> now 1080) — rotation is already
+  // near its practical ceiling (see MAX_ROTATION above) so this round's
+  // "stronger" mostly has to come from DARKEN_BOOST and reach; at 1080px
+  // most of a typical desktop hero is within range whenever the cursor
+  // is anywhere over it, which is the point — a broad, obviously dramatic
+  // reaction rather than a localised one.
+  const PROXIMITY_RADIUS = 1080; // px — how far a strip's reach extends from the cursor
   // Tuned back up from an earlier pass that over-corrected into sluggish/
   // laggy territory — this is a middle ground between that and the
   // original too-sharp snap (tracks the cursor closely, still has a
@@ -192,8 +198,10 @@ if (canvas && container) {
       stripX[i] = x + w / 2;
       stripZ[i] = z;
 
-      const shade = THREE.MathUtils.mapLinear(z, -DEPTH_JITTER, DEPTH_JITTER, 0.82, 1.12);
-      tintColor.copy(sampleGradient(Math.random())).multiplyScalar(shade);
+      // No per-strip brightness modulation here on purpose (see the
+      // depth note up top) — every strip shows its sampled palette
+      // colour exactly, completely flat/matte.
+      tintColor.copy(sampleGradient(Math.random()));
       mesh.setColorAt(i, tintColor);
 
       x += w - overlap;
