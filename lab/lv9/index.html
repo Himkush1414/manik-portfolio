@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — LV9</title>
+<meta name="description" content="Manik Rana — LV9, an isolated copy of lv8's hero, Move Next transition, and page-2 figure section." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Same font set as lv8, which this route is ported from — Bebas Neue/
+     Sora for the hero, Inter for page 2's nav/wordmark/"CREATIVE DESIGN"
+     text (see lv9.css). Space Mono isn't needed here (it was lv8's
+     in-game HUD font only, and the game isn't part of this copy). -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./lv9.css" />
+</head>
+<body class="lv9">
+
+<!-- ===================== NAV =====================
+     Ported from lv8's nav as-is. -->
+<nav class="lv9-nav" aria-label="Primary">
+  <a class="lv9-nav__logo" href="/" aria-label="Manik Rana — home">
+    <img src="./nav-logo-mark.png" alt="" />
+  </a>
+  <div class="lv9-nav__links">
+    <a class="lv9-nav__link" href="/">Home</a>
+    <button class="lv9-nav__link lv9-nav__link--btn" type="button" id="lv9-nav-back">Back</button>
+  </div>
+</nav>
+
+<!-- ===================== HUB =====================
+     lv9 is deliberately just hero + "Move Next" flip transition + page
+     2's figure section, ported from lv8 as it currently exists (see
+     chat reply) — no game, no pre-game flow, no games-list section, no
+     About/philosophy section, no footer. -->
+<div id="lv9-hub" class="lv9-hub">
+
+  <!-- ===================== ANIMATED HERO =====================
+       Strip-field background: a WebGL field of thin vertical strips that
+       bend toward the cursor, revealing a darker face as they turn (see
+       lv9-strip-field.ts — genuinely 3D, not a flat colour swap). -->
+  <header class="lv9-hero" id="lv9-hero">
+    <canvas class="lv9-strip-field" id="lv9-strip-field" aria-hidden="true"></canvas>
+    <div class="lv9-hero__scrim" aria-hidden="true"></div>
+    <div class="lv9-hero__fade" aria-hidden="true"></div>
+    <p class="lv9-hero__kicker">MANIK RANA // EXPERIMENTS</p>
+    <h1 class="lv9-hero__headline">
+      <span>THE RUN NEVER ENDS.</span>
+      <span>NEITHER SHOULD YOU.</span>
+    </h1>
+    <p class="lv9-hero__watermark" aria-hidden="true">LV9</p>
+
+    <!-- ===================== MOVE NEXT =====================
+         Right-edge rail tab, vertical label. Click triggers the
+         strip-flip reveal of page 2 (see lv9-page2 below + main.ts). -->
+    <button class="lv9-move-next" id="lv9-move-next" type="button">
+      <span>Move Next.</span>
+    </button>
+  </header>
+
+  <!-- ===================== PAGE 2 =====================
+       Sits directly behind the hero's strip-field canvas (see z-index in
+       lv9.css) so it's revealed through the gaps as each strip flips
+       away — see triggerFlipReveal in lv9-strip-field.ts and the click
+       handler in main.ts. The "Home/About/Projects" menu and "Contact"
+       button are deliberately inert (lv9 is a standalone route not
+       wired into site navigation, same as lv8). No reverse transition
+       back to the hero (same as lv8) — hidden by default until the flip
+       completes (main.ts toggles .is-visible). -->
+  <div class="lv9-page2" id="lv9-page2" aria-hidden="true">
+
+    <div class="lv9-page2__ambient" aria-hidden="true">
+      <!-- two crossfading layers so the continuous "floating" drift never
+           stops while the colour palette itself can still swap smoothly
+           whenever the active portrait changes (see main.ts) -->
+      <div class="lv9-page2__ambient-layer is-active" id="lv9-ambient-a"></div>
+      <div class="lv9-page2__ambient-layer" id="lv9-ambient-b"></div>
+    </div>
+
+    <div class="lv9-page2__topbar lv9-page2__entry-top">
+      <div class="lv9-page2__brand">
+        <img src="./nav-logo-mark.png" alt="" class="lv9-page2__brand-mark" />
+        <span class="lv9-page2__brand-name">MANIK RANA</span>
+      </div>
+      <span class="lv9-page2__address">Himachal Pradesh, India.</span>
+      <div class="lv9-page2__actions">
+        <div class="lv9-page2__menu">
+          <button class="lv9-page2__menu-btn" id="lv9-page2-menu-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <line x1="3" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </button>
+          <div class="lv9-page2__menu-panel" id="lv9-page2-menu-panel" hidden>
+            <span class="lv9-page2__menu-item">Home</span>
+            <span class="lv9-page2__menu-item">About</span>
+            <span class="lv9-page2__menu-item">Projects</span>
+          </div>
+        </div>
+        <button class="lv9-page2__contact" type="button">Contact</button>
+      </div>
+    </div>
+
+    <p class="lv9-page2__bigtext lv9-page2__entry-rise" aria-hidden="true">CREATIVE DESIGN</p>
+
+    <div class="lv9-page2__portrait lv9-page2__entry-rise" aria-hidden="true">
+      <canvas id="lv9-portrait-canvas" class="lv9-page2__portrait-canvas"></canvas>
+    </div>
+
+    <!-- One-time entrance only — separate from the ongoing per-rotation
+         blur-swap between portraits. main.ts adds .is-entering on
+         #lv9-page2 the instant "Move Next" is clicked (so what the
+         strip-flip actually reveals is this white-blurred state, not
+         the finished layout) and removes it the instant the flip
+         completes, which is what triggers the transitions below —
+         CREATIVE DESIGN/the portrait rising from .lv9-page2__entry-rise,
+         the top bar easing in from .lv9-page2__entry-top, and this veil
+         itself fading away. -->
+    <div class="lv9-page2__veil" aria-hidden="true"></div>
+
+  </div>
+
+</div>
+
+<script type="module" src="./main.ts"></script>
+</body>
+</html>
