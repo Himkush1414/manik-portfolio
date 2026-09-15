@@ -56,8 +56,16 @@ if (canvas && container) {
   const LIT = GRADIENT_STOPS[GRADIENT_STOPS.length - 1];
   // Every channel increases monotonically from DARK to LIT across the
   // palette, so this ratio is <=1 on every channel for any resting colour
-  // sampled from the gradient — multiplying by it can only darken.
-  const REVEAL_RATIO = new THREE.Color(DARK.r / LIT.r, DARK.g / LIT.g, DARK.b / LIT.b);
+  // sampled from the gradient — multiplying by it can only darken. The
+  // extra DARKEN_BOOST pushes the revealed face further still (strips at
+  // the brightest end no longer just bottom out at DARK, they go past
+  // it) — made the whole effect read as too subtle at the old 1:1 ratio.
+  const DARKEN_BOOST = 0.55;
+  const REVEAL_RATIO = new THREE.Color(
+    (DARK.r / LIT.r) * DARKEN_BOOST,
+    (DARK.g / LIT.g) * DARKEN_BOOST,
+    (DARK.b / LIT.b) * DARKEN_BOOST
+  );
 
   function sampleGradient(t: number) {
     const segments = GRADIENT_STOPS.length - 1;
@@ -73,7 +81,10 @@ if (canvas && container) {
   const DEPTH_JITTER = 14; // px of random Z offset per strip — the "folded panel" cue
   const MAX_INSTANCES = 900; // comfortably covers even a 4500px-wide screen
   const MAX_ROTATION = THREE.MathUtils.degToRad(74);
-  const PROXIMITY_RADIUS = 130; // px — how far a strip's reach extends from the cursor
+  // Widened from 130 so more strips are actually within reach of the
+  // cursor at once — the effect was reading as a narrow, isolated column
+  // rather than a broader field response.
+  const PROXIMITY_RADIUS = 180; // px — how far a strip's reach extends from the cursor
   // Tuned back up from an earlier pass that over-corrected into sluggish/
   // laggy territory — this is a middle ground between that and the
   // original too-sharp snap (tracks the cursor closely, still has a
