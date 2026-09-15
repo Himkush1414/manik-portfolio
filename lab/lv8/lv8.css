@@ -356,8 +356,8 @@ body.lv8 {
    PORTRAIT_GRADIENTS in page2.ts), not a fixed palette. Two layers still
    crossfade on an image change (main.ts calls setAmbientForIndex the
    INSTANT a transition starts, not after it finishes, so the colour
-   cross-fade runs concurrently with the portrait's own blur/wipe rather
-   than only starting once that's already done — that sequential feel
+   cross-fade runs concurrently with the portrait's own blur transition
+   rather than only starting once that's already done — that sequential feel
    was the "turn the light off and on" complaint). The slow scale/drift
    on the layer itself is what keeps this "live" without touching the
    band structure — the gradient stops themselves never move. */

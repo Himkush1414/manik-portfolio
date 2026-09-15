@@ -1,26 +1,28 @@
 // /lab/lv8 — "page 2", revealed by the hero's strip-flip (see main.ts's
 // Move Next handler + lv8-strip-field.ts's triggerFlipReveal). Three
-// independent pieces live here, all driven off the same six portrait
+// independent pieces live here, all driven off the same five portrait
 // images:
 //
 //  1. a continuously-drifting ambient gradient behind everything — a
 //     strict 6-band vertical light-to-dark structure (see
 //     PORTRAIT_GRADIENTS below), never cursor-reactive, always live.
-//  2. the portraits themselves, rotating every ~7-10s via a blur-then-
-//     pixelated-wipe right-to-left, rendered on a <canvas> (see
-//     startPortraitCycle).
+//  2. the portraits themselves, rotating every ~7-10s via a blur-swap
+//     (no sliding/wiping motion — see runBlurTransition) rendered on a
+//     <canvas> (see startPortraitCycle).
 //  3. the inert menu dropdown + Contact button (no navigation — lv8 is a
 //     standalone route, see the chat reply and index.html's comment).
 //
 // Only imported (dynamically, from main.ts) once the flip-reveal starts,
-// same spirit as game.ts's own dynamic import — no reason to pay for six
-// portrait PNGs (~5MB) on a visit that never reaches "Move Next".
+// same spirit as game.ts's own dynamic import — no reason to pay for
+// five portrait PNGs (~4MB) on a visit that never reaches "Move Next".
 //
-// portrait-5.png's SOURCE was swapped ("man image 5.png" -> "man image
-// 7.png", per the chat reply) but it keeps the same project filename —
-// simplest fix, no rename/re-plumbing needed elsewhere.
+// "man image 7.png" (the green one that briefly replaced the old image 5)
+// is removed from the rotation entirely per the chat reply, not swapped
+// for anything — the 5 remaining files were renumbered so portrait-5.png
+// is now what used to be portrait-6.png ("man image 6.png"), keeping the
+// filenames sequential (portrait-1..5.png) rather than leaving a gap.
 
-const PORTRAIT_COUNT = 6;
+const PORTRAIT_COUNT = 5;
 const PORTRAIT_URLS = Array.from(
   { length: PORTRAIT_COUNT },
   (_, i) => new URL(`./portraits/portrait-${i + 1}.png`, import.meta.url).href
@@ -36,30 +38,25 @@ const PORTRAIT_URLS = Array.from(
 // lightness the brief's band table calls for (e.g. 0% stop ~92% light
 // "extremely light", 100% stop ~3% light "near-black"), with saturation
 // peaking at the 50% stop per "strongest colour in the middle band, not
-// a flat fade". Order matches portrait-1..6.png.
+// a flat fade". Order matches portrait-1..5.png.
 const GRADIENT_STOP_KEYS = ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6'] as const;
 const PORTRAIT_GRADIENTS: string[][] = [
   ['#e8eaed', '#bcc6dc', '#7495dc', '#1552d5', '#1b3774', '#111622', '#060709'], // 1 — blue
   ['#ede8e8', '#dcbcc0', '#dc7482', '#d5152e', '#741b27', '#221113', '#090607'], // 2 — red
   ['#ebe8ed', '#ccbcdc', '#a974dc', '#7615d5', '#481b74', '#1a1122', '#080609'], // 3 — violet
   ['#edeae8', '#dcc8bc', '#dc9b74', '#d55c15', '#743c1b', '#221711', '#090706'], // 4 — orange
-  ['#e8edec', '#bcdcd2', '#74dcbc', '#15d599', '#1b7458', '#11221d', '#060908'], // 5 — green (man image 7.png)
-  ['#e8e9ed', '#bcc4dc', '#748fdc', '#1546d5', '#1b3274', '#111522', '#060709'], // 6 — blue/violet
+  ['#e8e9ed', '#bcc4dc', '#748fdc', '#1546d5', '#1b3274', '#111522', '#060709'], // 5 — blue/violet (was "6")
 ];
 
 const ROTATE_MIN_MS = 7000;
 const ROTATE_MAX_MS = 10000;
-// Corrected transition (see chat reply): slower overall, and the reveal
-// now happens WHILE the canvas is blurred rather than snapping instantly
-// — three phases inside this one duration: blur in, wipe (under blur),
-// blur out. See runWipe.
-const WIPE_TOTAL_MS = 2600;
-const WIPE_PHASE1_FRAC = 0.28; // blur in — outgoing image only, no content change yet
-const WIPE_PHASE2_FRAC = 0.42; // the right-to-left reveal itself, still blurred
-// phase 3 (blur out) is whatever's left: 1 - PHASE1 - PHASE2
-const WIPE_BLUR_MAX_PX = 18;
-const WIPE_BAND_PX = 46; // width of the pixelated leading edge, in canvas px
-const WIPE_BLOCK = 10; // pixelation block size within that band
+// Corrected transition (see chat reply): no sliding/wiping motion at
+// all. Blur-in timing/intensity kept exactly as previously confirmed
+// correct; the swap now happens as a single instant cut at peak blur
+// (see runBlurTransition), not a reveal spread across a middle phase.
+const TRANSITION_TOTAL_MS = 2600;
+const BLUR_IN_FRAC = 0.28; // the swap fires the instant this fraction is crossed — peak blur
+const TRANSITION_BLUR_MAX_PX = 18;
 
 let started = false;
 let rafId: number | null = null;
@@ -91,8 +88,9 @@ export function stopPage2() {
 // restarts or jumps when the palette swaps. setAmbientForIndex is called
 // the INSTANT a portrait transition starts (see scheduleNext below), not
 // after it finishes, so this 2.2s crossfade runs concurrently with the
-// portrait's own (slower, 2.6s) blur/wipe — reading as one continuous
-// shift instead of the image changing and then the colour catching up.
+// portrait's own (slower, 2.6s) blur transition — reading as one
+// continuous shift instead of the image changing and then the colour
+// catching up.
 // ---------------------------------------------------------------
 const ambientA = document.getElementById('lv8-ambient-a');
 const ambientB = document.getElementById('lv8-ambient-b');
@@ -120,8 +118,9 @@ function setAmbientForIndex(index: number) {
 }
 
 // ---------------------------------------------------------------
-// Portrait cycle — pixelated right-to-left wipe between images, looping
-// 1 -> 2 -> ... -> 6 -> 1, roughly every 7-10s while idle.
+// Portrait cycle — blur-swap between images (no sliding/wiping — see
+// runBlurTransition), looping 1 -> 2 -> ... -> 5 -> 1, roughly every
+// 7-10s while idle.
 // ---------------------------------------------------------------
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -160,52 +159,10 @@ async function startPortraitCycle() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
-  function drawImageCover(image: HTMLImageElement, clipX?: number, clipWidth?: number) {
+  function drawImageCover(image: HTMLImageElement) {
     const { width: w, height: h } = canvas!;
     const rect = fitCover(image.naturalWidth, image.naturalHeight, w, h);
-    if (clipX === undefined) {
-      ctx!.drawImage(image, rect.x, rect.y, rect.w, rect.h);
-      return;
-    }
-    ctx!.save();
-    ctx!.beginPath();
-    ctx!.rect(clipX, 0, clipWidth ?? w - clipX, h);
-    ctx!.clip();
     ctx!.drawImage(image, rect.x, rect.y, rect.w, rect.h);
-    ctx!.restore();
-  }
-
-  // the blocky leading edge: downsample a narrow vertical band of the
-  // incoming image to big chunky pixels, then draw it back up scaled
-  // with smoothing off — genuinely pixelated, not a blur standing in.
-  function drawPixelatedBand(image: HTMLImageElement, bandX: number, bandW: number) {
-    const { width: w, height: h } = canvas!;
-    if (bandW <= 0 || bandX + bandW < 0 || bandX > w) return;
-    const x0 = Math.max(0, bandX);
-    const x1 = Math.min(w, bandX + bandW);
-    const clippedW = x1 - x0;
-    if (clippedW <= 0) return;
-
-    const blockCols = Math.max(1, Math.round(clippedW / WIPE_BLOCK));
-    const blockRows = Math.max(1, Math.round(h / WIPE_BLOCK));
-
-    const off = document.createElement('canvas');
-    off.width = blockCols;
-    off.height = blockRows;
-    const offCtx = off.getContext('2d');
-    if (!offCtx) return;
-    const rect = fitCover(image.naturalWidth, image.naturalHeight, w, h);
-    // shift the source draw so the offscreen canvas (which only covers
-    // [x0, x1)) still samples the correct slice of the full-cover image
-    offCtx.drawImage(image, rect.x - x0, rect.y, rect.w, rect.h);
-
-    ctx!.save();
-    ctx!.imageSmoothingEnabled = false;
-    ctx!.beginPath();
-    ctx!.rect(x0, 0, clippedW, h);
-    ctx!.clip();
-    ctx!.drawImage(off, x0, 0, clippedW, h);
-    ctx!.restore();
   }
 
   function renderStatic() {
@@ -220,55 +177,44 @@ async function startPortraitCycle() {
     return c * c * (3 - 2 * c);
   }
 
-  // Three phases inside one duration (see chat reply — corrects the old
-  // instant snap): the outgoing image blurs up first (no content change
-  // yet), THEN the right-to-left reveal happens while still blurred (so
-  // the swap itself reads as "the colours are changing" rather than "a
-  // new picture snapped in"), then the now-fully-incoming image blurs
-  // back down to crisp. The blur is a plain CSS filter on the canvas
-  // element — cheap, and it naturally also softens the pixelated band's
-  // hard block edges during phase 2 instead of fighting them.
-  function runWipe(fromIndex: number, toIndex: number): Promise<void> {
+  // No sliding/wiping motion (see chat reply — corrects the previous
+  // right-to-left wipe): the outgoing image blurs up, then AT peak blur
+  // the canvas content is swapped to the incoming image in one instant
+  // cut (not a reveal spread over time), then blur eases back down to
+  // crisp. The blur is a plain CSS filter on the canvas element, so the
+  // swap itself — hidden inside the blur — is the only content change;
+  // nothing ever moves left or right.
+  function runBlurTransition(fromIndex: number, toIndex: number): Promise<void> {
     return new Promise(resolve => {
       const start = performance.now();
-      const phase3Frac = 1 - WIPE_PHASE1_FRAC - WIPE_PHASE2_FRAC;
+      let swapped = false;
 
       function step(time: number) {
-        const t = Math.min((time - start) / WIPE_TOTAL_MS, 1);
-        const { width: w, height: h } = canvas!;
+        const t = Math.min((time - start) / TRANSITION_TOTAL_MS, 1);
 
         let blurPx: number;
-        let revealFrac: number;
-        if (t < WIPE_PHASE1_FRAC) {
-          blurPx = WIPE_BLUR_MAX_PX * smoothstep(t / WIPE_PHASE1_FRAC);
-          revealFrac = 0;
-        } else if (t < WIPE_PHASE1_FRAC + WIPE_PHASE2_FRAC) {
-          blurPx = WIPE_BLUR_MAX_PX;
-          revealFrac = smoothstep((t - WIPE_PHASE1_FRAC) / WIPE_PHASE2_FRAC);
+        if (t < BLUR_IN_FRAC) {
+          blurPx = TRANSITION_BLUR_MAX_PX * smoothstep(t / BLUR_IN_FRAC);
         } else {
-          const t3 = (t - WIPE_PHASE1_FRAC - WIPE_PHASE2_FRAC) / phase3Frac;
-          blurPx = WIPE_BLUR_MAX_PX * (1 - smoothstep(t3));
-          revealFrac = 1;
+          const tOut = (t - BLUR_IN_FRAC) / (1 - BLUR_IN_FRAC);
+          blurPx = TRANSITION_BLUR_MAX_PX * (1 - smoothstep(tOut));
         }
-
         canvas!.style.filter = blurPx > 0.4 ? `blur(${blurPx.toFixed(1)}px)` : 'none';
 
-        const revealX = w * (1 - revealFrac); // grows the revealed region from the right edge leftward
-        ctx!.clearRect(0, 0, w, h);
-        drawImageCover(images[fromIndex]); // untouched (not-yet-reached) portion underneath
-        drawImageCover(images[toIndex], revealX, w - revealX); // already-revealed portion
-        if (revealFrac > 0 && revealFrac < 1) {
-          drawPixelatedBand(images[toIndex], revealX - WIPE_BAND_PX / 2, WIPE_BAND_PX); // the sweeping blocky seam
+        if (!swapped && t >= BLUR_IN_FRAC) {
+          swapped = true;
+          renderStaticFor(toIndex); // the cut — happens once, at peak blur
         }
 
         if (t < 1) {
           rafId = requestAnimationFrame(step);
         } else {
           canvas!.style.filter = 'none';
-          renderStaticFor(toIndex);
           resolve();
         }
       }
+
+      renderStaticFor(fromIndex); // drawn once up front — nothing else changes the pixels during blur-in
       rafId = requestAnimationFrame(step);
     });
   }
@@ -284,10 +230,10 @@ async function startPortraitCycle() {
     rotateTimer = window.setTimeout(async () => {
       if (!started) return;
       const nextIndex = (activeIndex + 1) % PORTRAIT_COUNT;
-      // fired now, concurrently with the blur/wipe below, not after it
-      // resolves — see the ambient section's comment for why
+      // fired now, concurrently with the blur transition below, not
+      // after it resolves — see the ambient section's comment for why
       setAmbientForIndex(nextIndex);
-      await runWipe(activeIndex, nextIndex);
+      await runBlurTransition(activeIndex, nextIndex);
       activeIndex = nextIndex;
       if (started) scheduleNext();
     }, delay);
