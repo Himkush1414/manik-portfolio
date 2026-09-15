@@ -10,7 +10,7 @@
 // it) into this file's own eager bundle, defeating the point of the
 // dynamic import below entirely. DEFAULT_KEY_BINDINGS is therefore
 // duplicated locally rather than imported.
-import { setHeroActive } from './lv8-strip-field';
+import { setHeroActive, triggerFlipReveal } from './lv8-strip-field';
 import type {
   WormholeGame as WormholeGameType,
   WormholeGameCallbacks,
@@ -27,6 +27,40 @@ const backBtn = document.getElementById('lv8-nav-back');
 backBtn?.addEventListener('click', () => {
   if (window.history.length > 1) window.history.back();
   else window.location.href = '/';
+});
+
+// ---------------------------------------------------------------
+// "Move Next" — flips the hero's curtain strips away (see
+// triggerFlipReveal in lv8-strip-field.ts) to reveal page 2, whose own
+// behaviour (ambient background + portrait rotation + inert menu) lives
+// in page2.ts, dynamically imported here for the same reason game.ts is:
+// six portrait PNGs (~5MB) shouldn't load for a visit that never clicks
+// this. No reverse transition back to the hero exists yet — flagged in
+// the chat reply — so this is a one-way trip once clicked.
+// ---------------------------------------------------------------
+const heroEl = document.getElementById('lv8-hero');
+const page2El = document.getElementById('lv8-page2');
+const moveNextBtn = document.getElementById('lv8-move-next');
+const siteNavEl = document.querySelector('.lv8-nav');
+let moveNextFired = false;
+
+moveNextBtn?.addEventListener('click', () => {
+  if (moveNextFired) return;
+  moveNextFired = true;
+
+  heroEl?.classList.add('is-transitioning');
+  page2El?.classList.add('is-visible');
+  page2El?.setAttribute('aria-hidden', 'false');
+  // page 2 has its own logo/wordmark + menu + contact top bar — the
+  // site-wide nav would otherwise sit on top of it (caught visually)
+  siteNavEl?.classList.add('is-hidden');
+
+  void import('./page2').then(({ startPage2 }) => startPage2());
+
+  triggerFlipReveal(() => {
+    heroEl?.classList.add('is-hidden');
+    setHeroActive(false); // stop the (now invisible) strip canvas's own rAF loop
+  });
 });
 
 // ---------------------------------------------------------------

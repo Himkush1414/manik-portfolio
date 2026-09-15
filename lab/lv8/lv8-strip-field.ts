@@ -50,6 +50,19 @@ export function setHeroActive(v: boolean) {
   active = v;
 }
 
+// called from main.ts on "Move Next" — flips every strip on its own
+// vertical axis out to 90deg (edge-on to the camera, effectively
+// invisible width-wise), staggered left-to-right so it reads as a wave
+// sweeping across rather than everything flipping at once. Reuses the
+// exact same InstancedMesh/geometry as the hover-bend effect above — no
+// separate transition layer. The renderer is transparent (see below) so
+// page 2, sitting behind this canvas in the DOM, shows through the gaps
+// each strip leaves as it turns away. Not reversible yet (see main.ts).
+let triggerFlip: ((onDone: () => void) => void) | null = null;
+export function triggerFlipReveal(onDone: () => void) {
+  triggerFlip?.(onDone);
+}
+
 if (canvas && container) {
   // Warm palette, darkest to brightest — each strip samples a random
   // point along this at rest instead of every strip using the same stop.
@@ -133,9 +146,14 @@ if (canvas && container) {
     return geo;
   }
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  // alpha:true (clear alpha 0 below) so the flip-reveal can expose page 2
+  // sitting behind this canvas — at rest this looks identical to a fully
+  // opaque canvas since strips always tile edge-to-edge with zero gaps
+  // and never rotate past MAX_ROTATION (88deg) during normal hover, so
+  // there's never an actual transparent gap until triggerFlipReveal.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(0x15100d, 1);
+  renderer.setClearColor(0x15100d, 0);
 
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(0, 0, 0, 0, 0.1, 500);
@@ -246,6 +264,25 @@ if (canvas && container) {
     const c = Math.min(Math.max(t, 0), 1);
     return c * c * (3 - 2 * c);
   }
+  function easeOutCubic(t: number) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  // ---- flip-reveal (triggered by "Move Next", see triggerFlipReveal above) ----
+  const FLIP_ANGLE = THREE.MathUtils.degToRad(90); // edge-on — see triggerFlip's own comment
+  const FLIP_STAGGER_MS = 14; // per-strip delay, left to right — the "sweeping wave"
+  const FLIP_DURATION_MS = 900; // slow/deliberate per the brief, not a snap
+  let flipping = false;
+  let flipStartTime = 0;
+  let flipDoneCallback: (() => void) | null = null;
+  let flipFired = false;
+  triggerFlip = onDone => {
+    if (flipping) return;
+    flipping = true;
+    flipFired = false;
+    flipDoneCallback = onDone;
+    flipStartTime = performance.now();
+  };
 
   let lastTime = performance.now();
   function frame(time: number) {
@@ -254,6 +291,31 @@ if (canvas && container) {
 
     const dt = Math.min((time - lastTime) / 1000, 1 / 20);
     lastTime = time;
+
+    if (flipping) {
+      const elapsed = time - flipStartTime;
+      let allDone = true;
+      for (let i = 0; i < count; i++) {
+        const localT = (elapsed - i * FLIP_STAGGER_MS) / FLIP_DURATION_MS;
+        const clamped = Math.min(Math.max(localT, 0), 1);
+        if (clamped < 1) allDone = false;
+        const angle = easeOutCubic(clamped) * FLIP_ANGLE;
+
+        dummy.position.set(stripX[i], 0, stripZ[i]);
+        dummy.rotation.set(0, angle, 0);
+        dummy.scale.set(stripWidthPx[i], 1, 1);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      renderer.render(scene, camera);
+      if (allDone && !flipFired) {
+        flipFired = true;
+        flipDoneCallback?.();
+      }
+      return;
+    }
+
     const easeAmount = 1 - Math.exp(-EASE_RATE * dt);
     const mouseEaseAmount = 1 - Math.exp(-MOUSE_EASE_RATE * dt);
 

@@ -74,6 +74,10 @@ body.lv8 {
    NAV — same minimal floating pattern as lv7 (logo left, no bar
    background), but a standalone page's own placeholder links.
    ============================================================ */
+/* hidden once page 2 is up — it has its own logo+wordmark/menu/contact
+   top bar (see .lv8-page2__topbar) and having both at once just
+   overlapped/cluttered (caught during visual verification) */
+.lv8-nav.is-hidden { display: none; }
 .lv8-nav {
   position: fixed;
   top: 0;
@@ -133,6 +137,9 @@ body.lv8 {
    ============================================================ */
 .lv8-hero {
   position: relative;
+  z-index: 2; /* stacks above .lv8-page2 (z-index 1, same .lv8-hub) so the
+                 strip canvas visually covers page 2 until the flip
+                 reveals it through the gaps — see lv8-strip-field.ts */
   min-height: 100svh;
   min-height: 100vh;
   overflow: hidden;
@@ -141,6 +148,32 @@ body.lv8 {
   justify-content: center;
   padding: clamp(110px, 16vh, 170px) var(--lv8-gutter) clamp(60px, 10vh, 100px);
   background: var(--lv8-darkest);
+  transition: opacity 0.25s ease;
+}
+/* applied the instant "Move Next" is clicked — fades the headline/kicker/
+   watermark/move-next bar out of the way quickly so only the strip
+   canvas is left doing the (much slower) flip reveal underneath them */
+.lv8-hero.is-transitioning .lv8-hero__kicker,
+.lv8-hero.is-transitioning .lv8-hero__headline,
+.lv8-hero.is-transitioning .lv8-hero__watermark,
+.lv8-hero.is-transitioning .lv8-move-next,
+.lv8-hero.is-transitioning .lv8-hero__scrim,
+.lv8-hero.is-transitioning .lv8-hero__fade {
+  opacity: 0;
+  pointer-events: none;
+}
+/* the watermark's own infinite keyframe animation keeps writing to
+   opacity every frame, which otherwise fights (and wins over) the plain
+   opacity:0 above — caught visually, it was still breathing through the
+   flip. Killing the animation outright lets the static value stick. */
+.lv8-hero.is-transitioning .lv8-hero__watermark {
+  animation: none;
+}
+/* end state once the flip has fully completed — main.ts adds this after
+   triggerFlipReveal's callback fires, per the hidden-not-removed note in
+   index.html (keeps a future reverse transition possible) */
+.lv8-hero.is-hidden {
+  display: none;
 }
 
 .lv8-strip-field {
@@ -245,6 +278,253 @@ body.lv8 {
     bottom: clamp(24px, 6vh, 56px);
     font-size: clamp(64px, 30vw, 120px);
   }
+}
+
+/* ============================================================
+   MOVE NEXT — right-edge rail tab, hero only. Vertical label read top to
+   bottom (rotate the whole button rather than rely on writing-mode, which
+   varies subtly by engine for Latin text).
+   ============================================================ */
+.lv8-move-next {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 3;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 10px;
+  border: none;
+  border-left: 1px solid rgba(168, 52, 33, 0.3);
+  background: rgba(21, 16, 13, 0.35);
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+}
+.lv8-move-next:hover {
+  background: rgba(168, 52, 33, 0.16);
+  border-color: rgba(168, 52, 33, 0.6);
+}
+.lv8-move-next span {
+  display: block;
+  transform: rotate(90deg);
+  white-space: nowrap;
+  font-family: var(--lv8-font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lv8-text);
+}
+@media (max-width: 720px) {
+  /* after the base rule above, not before — an equal-specificity rule
+     earlier in the file loses to one later regardless of media query
+     (caught visually: the bar was still showing on a phone viewport) */
+  .lv8-move-next { display: none; } /* no cursor-driven flip metaphor on touch */
+}
+
+/* ============================================================
+   PAGE 2 — revealed by the strip-flip; sits directly behind the hero
+   (see .lv8-hero's z-index above). Structure from the Utomic reference,
+   content is Manik's own (see chat reply / index.html's comment).
+   ============================================================ */
+.lv8-page2 {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 1;
+  height: 100svh;
+  height: 100vh;
+  overflow: hidden;
+  display: none; /* main.ts sets .is-visible the moment the flip starts */
+}
+.lv8-page2.is-visible { display: block; }
+
+.lv8-page2__ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #0a0705; /* base while the extracted palette is still loading in */
+}
+/* two full-bleed, oversized radial-gradient layers, each quietly
+   drifting on its own (continuous, never cursor-reactive — see the
+   brief) — main.ts crossfades opacity between them whenever the active
+   portrait's extracted colours change, so the drift never has to
+   restart or jump. */
+.lv8-page2__ambient-layer {
+  position: absolute;
+  inset: -15%;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  background:
+    radial-gradient(48% 40% at var(--amb-x1, 25%) var(--amb-y1, 30%), var(--amb-c1, #1a1410) 0%, transparent 70%),
+    radial-gradient(55% 45% at var(--amb-x2, 75%) var(--amb-y2, 70%), var(--amb-c2, #120e0b) 0%, transparent 70%),
+    radial-gradient(60% 50% at var(--amb-x3, 50%) var(--amb-y3, 95%), var(--amb-c3, #0a0705) 0%, transparent 75%),
+    #0a0705;
+  animation: lv8-ambient-drift 26s ease-in-out infinite;
+}
+.lv8-page2__ambient-layer.is-active { opacity: 1; }
+.lv8-page2__ambient-layer--b { animation-delay: -9s; }
+@keyframes lv8-ambient-drift {
+  0%, 100% { --amb-x1: 22%; --amb-y1: 28%; --amb-x2: 78%; --amb-y2: 68%; --amb-x3: 46%; --amb-y3: 96%; }
+  33% { --amb-x1: 30%; --amb-y1: 40%; --amb-x2: 68%; --amb-y2: 76%; --amb-x3: 58%; --amb-y3: 90%; }
+  66% { --amb-x1: 16%; --amb-y1: 34%; --amb-x2: 74%; --amb-y2: 58%; --amb-x3: 40%; --amb-y3: 98%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv8-page2__ambient-layer { animation: none; }
+}
+
+.lv8-page2__topbar {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 22px var(--lv8-gutter) 0;
+}
+.lv8-page2__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: start;
+}
+.lv8-page2__brand-mark {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(168, 52, 33, 0.4));
+}
+.lv8-page2__brand-name {
+  font-family: var(--lv8-font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--lv8-text);
+}
+.lv8-page2__address {
+  justify-self: center;
+  font-family: var(--lv8-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--lv8-text-dim);
+  text-align: center;
+  white-space: nowrap;
+}
+.lv8-page2__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+}
+.lv8-page2__menu { position: relative; }
+.lv8-page2__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(242, 231, 218, 0.25);
+  background: rgba(21, 16, 13, 0.4);
+  color: var(--lv8-text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.lv8-page2__menu-btn:hover,
+.lv8-page2__menu-btn[aria-expanded='true'] {
+  border-color: var(--lv8-lit);
+  color: var(--lv8-lit);
+}
+/* [hidden] alone loses to this class's own `display` in the cascade
+   (equal specificity, author rule applied after the UA sheet) — spell it
+   out explicitly, same fix as .lv8-games__play's, or toggling `hidden`
+   silently does nothing. */
+.lv8-page2__menu-panel[hidden] { display: none; }
+.lv8-page2__menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(242, 231, 218, 0.14);
+  background: rgba(21, 16, 13, 0.95);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
+}
+.lv8-page2__menu-item {
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-family: var(--lv8-font-body);
+  font-size: 13px;
+  color: var(--lv8-text-dim);
+  /* inert by design (see chat reply) — no href, no click handler; the
+     hover state is purely visual so it doesn't read as broken */
+  cursor: default;
+}
+.lv8-page2__menu-item:hover { background: rgba(168, 52, 33, 0.12); color: var(--lv8-text); }
+.lv8-page2__contact {
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--lv8-lit);
+  background: transparent;
+  color: var(--lv8-lit);
+  font-family: var(--lv8-font-body);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  cursor: default; /* inert — see chat reply */
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.lv8-page2__contact:hover {
+  background: var(--lv8-lit);
+  color: var(--lv8-darkest);
+}
+
+.lv8-page2__bigtext {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  z-index: 1;
+  transform: translateX(-50%);
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  font-family: var(--lv8-font-body);
+  font-weight: 800;
+  font-size: clamp(40px, 9.4vw, 148px);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: rgba(242, 231, 218, 0.92);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.lv8-page2__portrait {
+  position: absolute;
+  right: 6%;
+  bottom: 0;
+  z-index: 2;
+  width: min(48vw, 720px);
+  height: 82%;
+  pointer-events: none;
+}
+.lv8-page2__portrait-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .lv8-page2__topbar { grid-template-columns: 1fr; row-gap: 10px; padding-top: 18px; }
+  .lv8-page2__brand,
+  .lv8-page2__address,
+  .lv8-page2__actions { justify-self: center; }
+  .lv8-page2__bigtext { font-size: clamp(40px, 16vw, 90px); bottom: 2%; }
+  .lv8-page2__portrait { width: 86vw; right: 50%; transform: translateX(50%); height: 58%; }
 }
 
 /* ============================================================

@@ -51,7 +51,67 @@
       <span>NEITHER SHOULD YOU.</span>
     </h1>
     <p class="lv8-hero__watermark" aria-hidden="true">LV8</p>
+
+    <!-- ===================== MOVE NEXT =====================
+         Right-edge rail tab, vertical label. Click triggers the
+         strip-flip reveal of page 2 (see lv8-page2 below + main.ts). -->
+    <button class="lv8-move-next" id="lv8-move-next" type="button">
+      <span>Move Next.</span>
+    </button>
   </header>
+
+  <!-- ===================== PAGE 2 =====================
+       Sits directly behind the hero's strip-field canvas (see z-index in
+       lv8.css) so it's revealed through the gaps as each strip flips
+       away — see triggerFlipReveal in lv8-strip-field.ts and the click
+       handler in main.ts. Structure/layout borrowed from the Utomic
+       reference screenshot; every piece of content is Manik's own. The
+       "Home/About/Projects" menu and "Contact" button are deliberately
+       inert (lv8 is a standalone route not wired into site navigation)
+       — see chat reply. No reverse transition back to the hero yet
+       (flagged in the chat reply) — hidden by default until the flip
+       completes (main.ts toggles .is-visible). -->
+  <div class="lv8-page2" id="lv8-page2" aria-hidden="true">
+
+    <div class="lv8-page2__ambient" aria-hidden="true">
+      <!-- two crossfading layers so the continuous "floating" drift never
+           stops while the colour palette itself can still swap smoothly
+           whenever the active portrait changes (see main.ts) -->
+      <div class="lv8-page2__ambient-layer is-active" id="lv8-ambient-a"></div>
+      <div class="lv8-page2__ambient-layer" id="lv8-ambient-b"></div>
+    </div>
+
+    <div class="lv8-page2__topbar">
+      <div class="lv8-page2__brand">
+        <img src="./nav-logo-mark.png" alt="" class="lv8-page2__brand-mark" />
+        <span class="lv8-page2__brand-name">MANIK RANA</span>
+      </div>
+      <span class="lv8-page2__address">Himachal Pradesh, India.</span>
+      <div class="lv8-page2__actions">
+        <div class="lv8-page2__menu">
+          <button class="lv8-page2__menu-btn" id="lv8-page2-menu-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <line x1="3" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </button>
+          <div class="lv8-page2__menu-panel" id="lv8-page2-menu-panel" hidden>
+            <span class="lv8-page2__menu-item">Home</span>
+            <span class="lv8-page2__menu-item">About</span>
+            <span class="lv8-page2__menu-item">Projects</span>
+          </div>
+        </div>
+        <button class="lv8-page2__contact" type="button">Contact</button>
+      </div>
+    </div>
+
+    <p class="lv8-page2__bigtext" aria-hidden="true">CREATIVE DESIGN</p>
+
+    <div class="lv8-page2__portrait" aria-hidden="true">
+      <canvas id="lv8-portrait-canvas" class="lv8-page2__portrait-canvas"></canvas>
+    </div>
+
+  </div>
 
   <!-- ===================== GAMES SECTION =====================
        Supersedes the old Bento grid (see chat reply — the two were
