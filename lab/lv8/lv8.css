@@ -88,8 +88,8 @@ body.lv8 {
 .lv8-nav__logo {
   display: flex;
   align-items: center;
-  width: 56px;
-  height: 56px;
+  width: 106px;
+  height: 106px;
 }
 .lv8-nav__logo img {
   width: 100%;
@@ -199,7 +199,7 @@ body.lv8 {
   max-width: min(90vw, 900px);
   font-family: var(--lv8-font-display);
   font-weight: 400;
-  font-size: clamp(34px, 6vw, 68px);
+  font-size: clamp(64px, 13vw, 190px);
   line-height: 1.08;
   letter-spacing: 0.01em;
   color: var(--lv8-text);
