@@ -11,11 +11,19 @@
 <!-- Same font set as lv8, which this route is ported from — Bebas Neue/
      Sora for the hero, Inter for page 2's nav/wordmark/"CREATIVE DESIGN"
      text (see lv9.css). Space Mono isn't needed here (it was lv8's
-     in-game HUD font only, and the game isn't part of this copy). Dancing
-     Script is new, lv9-only (see chat reply): a signature-style treatment
-     for the "Manik Rana" wordmark in page 2's top bar, distinct from the
-     clean sans used everywhere else on the site. -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+     in-game HUD font only, and the game isn't part of this copy). Three
+     more are new, lv9-only, page-2-top-row-only (see chat reply, which
+     supplied reference screenshots for each):
+     - Alex Brush — closest free match to "Astonilla" (a paid brush-
+       script font identified in the reference image), used for the
+       "Manik Rana" wordmark.
+     - Bodoni Moda — closest free match to the reference's bold flared-
+       serif display face ("Across Creation" by 177 Studio, a paid font),
+       used for the new short line on the top row's left side.
+     - Unbounded — closest free match to the reference's bold angular
+       geometric display face ("Across Others" by 177 Studio, also
+       paid), used for the new short line on the top row's right side. -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Alex+Brush&family=Bodoni+Moda:ital,wght@1,500&family=Unbounded:wght@700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="./lv9.css" />
 </head>
 <body class="lv9">
@@ -85,25 +93,37 @@
 
     <div class="lv9-page2__topbar lv9-page2__entry-top">
       <div class="lv9-page2__brand">
-        <img src="./nav-logo-mark.png" alt="" class="lv9-page2__brand-mark" />
-        <span class="lv9-page2__brand-name">Manik Rana</span>
+        <div class="lv9-page2__brand-row">
+          <img src="./nav-logo-mark.png" alt="" class="lv9-page2__brand-mark" />
+          <span class="lv9-page2__brand-name">Manik Rana</span>
+        </div>
+        <!-- new short line, left side of the top row (see chat reply —
+             reference image 2, "Across Creation Demo" by 177 Studio,
+             matched to Bodoni Moda; see lv9.css) -->
+        <p class="lv9-page2__brand-tagline">Creative Developer</p>
       </div>
       <span class="lv9-page2__address">Himachal Pradesh, India.</span>
       <div class="lv9-page2__actions">
-        <div class="lv9-page2__menu">
-          <button class="lv9-page2__menu-btn" id="lv9-page2-menu-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
-            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
-              <line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-              <line x1="3" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          </button>
-          <div class="lv9-page2__menu-panel" id="lv9-page2-menu-panel" hidden>
-            <span class="lv9-page2__menu-item">Home</span>
-            <span class="lv9-page2__menu-item">About</span>
-            <span class="lv9-page2__menu-item">Projects</span>
+        <!-- new short line, right side of the top row (see chat reply —
+             reference image 3, "Across Others Demo" by 177 Studio,
+             matched to Unbounded; see lv9.css) -->
+        <p class="lv9-page2__actions-tagline">Open For Work</p>
+        <div class="lv9-page2__actions-row">
+          <div class="lv9-page2__menu">
+            <button class="lv9-page2__menu-btn" id="lv9-page2-menu-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+              <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                <line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <line x1="3" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </button>
+            <div class="lv9-page2__menu-panel" id="lv9-page2-menu-panel" hidden>
+              <span class="lv9-page2__menu-item">Home</span>
+              <span class="lv9-page2__menu-item">About</span>
+              <span class="lv9-page2__menu-item">Projects</span>
+            </div>
           </div>
+          <button class="lv9-page2__contact" type="button">Contact</button>
         </div>
-        <button class="lv9-page2__contact" type="button">Contact</button>
       </div>
     </div>
 

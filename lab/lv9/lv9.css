@@ -29,9 +29,21 @@ body.lv9 {
   /* page 2 only — a clean geometric sans, closest available match to
      Inter/Helvetica Neue/SF Pro */
   --lv9-font-page2: 'Inter', 'Helvetica Neue', 'SF Pro Display', Helvetica, Arial, sans-serif;
-  /* page 2's "Manik Rana" wordmark only (see chat reply) — a signature-
-     style script, deliberately distinct from --lv9-font-page2 above */
-  --lv9-font-script: 'Dancing Script', cursive;
+  /* page 2 top row only (see chat reply, three reference screenshots —
+     each names the exact paid font used; these are the closest free
+     Google Fonts matches for each):
+     - wordmark: reference names "Astonilla" (bold brush-script, tall
+       swash ascenders) -> Alex Brush is the closest free brush script
+       with real thick/thin pen contrast.
+     - left tagline: reference is "Across Creation" by 177 Studio (a
+       bold flared-serif display face, editorial/fashion energy) ->
+       Bodoni Moda italic is the closest free high-contrast didone.
+     - right tagline: reference is "Across Others" by 177 Studio (a
+       bold angular geometric display face) -> Unbounded is the closest
+       free bold geometric display with that futuristic edge. */
+  --lv9-font-script: 'Alex Brush', cursive;
+  --lv9-font-editorial: 'Bodoni Moda', 'Playfair Display', Georgia, serif;
+  --lv9-font-angular: 'Unbounded', 'Arial Narrow', sans-serif;
   --lv9-gutter: clamp(20px, 4vw, 64px);
   --lv9-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -454,9 +466,25 @@ body.lv9 {
 }
 .lv9-page2__brand {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  justify-self: start;
+}
+.lv9-page2__brand-row {
+  display: flex;
   align-items: center;
   gap: 12px;
-  justify-self: start;
+}
+.lv9-page2__brand-tagline {
+  margin: 0 0 0 2px;
+  font-family: var(--lv9-font-editorial);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  color: var(--lv9-text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 .lv9-page2__brand-mark {
   /* modest increase (see chat reply) — same standard used elsewhere on
@@ -499,9 +527,25 @@ body.lv9 {
 }
 .lv9-page2__actions {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  justify-self: end;
+}
+.lv9-page2__actions-tagline {
+  margin: 0 2px 0 0;
+  font-family: var(--lv9-font-angular);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lv9-text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.lv9-page2__actions-row {
+  display: flex;
   align-items: center;
   gap: 12px;
-  justify-self: end;
 }
 .lv9-page2__menu { position: relative; }
 .lv9-page2__menu-btn {
@@ -630,6 +674,11 @@ body.lv9 {
   .lv9-page2__brand,
   .lv9-page2__address,
   .lv9-page2__actions { justify-self: center; }
+  /* the two new taglines (see chat reply) stay left-/right-aligned under
+     their own flex-start/flex-end columns above — on the stacked mobile
+     layout both columns centre under the address instead */
+  .lv9-page2__brand,
+  .lv9-page2__actions { align-items: center; }
   .lv9-page2__bigtext { font-size: clamp(40px, 18vw, 90px); bottom: 2%; }
   .lv9-page2__portrait { width: 86vw; height: 58%; }
 }
