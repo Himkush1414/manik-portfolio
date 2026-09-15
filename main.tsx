@@ -24,6 +24,7 @@ import './lv6-about-mobile-nav';
 import './projects-rows';
 import './projects-cursor-trail';
 import './projects-nav';
+import './skillsfun';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
 console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
@@ -603,11 +604,13 @@ document.querySelectorAll<HTMLElement>('.nav').forEach(nav => {
 });
 
 // smooth-scroll for in-page anchors, consistent with the rest of the site.
-// a[href="#projects"] is excluded — lv6-transition.ts now intercepts that
-// href itself (the Projects view-swap), so letting this generic handler
-// also fire on it would additionally scrollIntoView() whatever #projects
-// resolves to at that moment, fighting the transition's own scroll-to-top.
-document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]:not([href="#projects"])').forEach(a => {
+// a[href="#projects"] and a[href="#skills"] are excluded — lv6-transition.ts
+// now intercepts both hrefs itself (the Projects/Skills view-swaps), so
+// letting this generic handler also fire on either would additionally
+// scrollIntoView() whatever that id resolves to at that moment (for
+// #skills, a still-hidden #skillsfun-root), fighting the transition's own
+// scroll-to-top.
+document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]:not([href="#projects"]):not([href="#skills"])').forEach(a => {
   a.addEventListener('click', e => {
     const id = a.getAttribute('href');
     if (!id || id.length < 2) return;

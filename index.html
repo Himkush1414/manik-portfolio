@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="assets/logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Alex+Brush&family=Bodoni+Moda:ital,wght@1,500&family=Unbounded:wght@700;800&display=swap" rel="stylesheet" />
 <!-- LogoLoop (react-bits), used by the ported Projects section below,
      ships styled with Tailwind utility classes and this project has no
      Tailwind build step of its own — the play CDN compiles those classes
@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="./lv2.css" />
 <link rel="stylesheet" href="./lv6-transition.css" />
 <link rel="stylesheet" href="./projects.css" />
+<link rel="stylesheet" href="./skillsfun.css" />
 </head>
 <body class="lv2">
 
@@ -615,6 +616,229 @@
 
 </div>
 <!-- ===================== /#proj-root ===================== -->
+
+<!-- ===================== SKILL & FUN — ported from /lab/lv9's own hero
+     -> "Move Next" flip transition -> figure section -> About -> footer
+     (see chat reply), as a fifth toggled view alongside Home/Projects/
+     Contact/About. lv9 itself is untouched. Own entry nav (logo/Home),
+     own figure-section topbar (logo/wordmark/tagline/menu/Contact), own
+     About block and own footer — all scoped under #skillsfun-root so
+     none of it leaks into Home's styling, same pattern #proj-root
+     already uses for its own lv7 copy. Hidden by default; shown by
+     lv6-transition.ts, same mechanism as Projects/Contact/About. -->
+<div id="skillsfun-root">
+
+<nav class="skillsfun-nav" aria-label="Primary">
+  <a class="skillsfun-nav__logo" href="/" aria-label="Manik Rana — home">
+    <img src="./nav-logo-mark.png" alt="" />
+  </a>
+  <div class="skillsfun-nav__links">
+    <a class="skillsfun-nav__link" href="/">Home</a>
+  </div>
+</nav>
+
+<div id="skillsfun-hub" class="skillsfun-hub">
+
+  <!-- ===================== ANIMATED HERO =====================
+       Strip-field background: a WebGL field of thin vertical strips that
+       bend toward the cursor, revealing a darker face as they turn (see
+       skillsfun-strip-field.ts — genuinely 3D, not a flat colour swap). -->
+  <header class="skillsfun-hero" id="skillsfun-hero">
+    <canvas class="skillsfun-strip-field" id="skillsfun-strip-field" aria-hidden="true"></canvas>
+    <div class="skillsfun-hero__scrim" aria-hidden="true"></div>
+    <div class="skillsfun-hero__fade" aria-hidden="true"></div>
+    <p class="skillsfun-hero__kicker">MANIK RANA // SKILL &amp; FUN</p>
+    <h1 class="skillsfun-hero__headline">
+      <span>THE RUN NEVER ENDS.</span>
+      <span>NEITHER SHOULD YOU.</span>
+    </h1>
+    <p class="skillsfun-hero__watermark" aria-hidden="true">S+F</p>
+
+    <!-- ===================== MOVE NEXT =====================
+         Right-edge rail tab, vertical label. Click triggers the
+         strip-flip reveal of the figure section (see skillsfun-page2
+         below + skillsfun.ts). -->
+    <button class="skillsfun-move-next" id="skillsfun-move-next" type="button">
+      <span>Move Next.</span>
+    </button>
+  </header>
+
+  <!-- ===================== FIGURE SECTION =====================
+       Sits directly behind the hero's strip-field canvas (see z-index in
+       skillsfun.css) so it's revealed through the gaps as each strip
+       flips away — see triggerFlipReveal in skillsfun-strip-field.ts and
+       the click handler in skillsfun.ts. The small dropdown under the
+       menu button is decorative only (same as lv9); the topbar's own
+       Contact button is real here — wired to the same Contact view every
+       other Contact trigger on the site uses (see lv6-transition.ts). No
+       reverse transition back to the hero — hidden by default until the
+       flip completes (skillsfun.ts toggles .is-visible). -->
+  <div class="skillsfun-page2" id="skillsfun-page2" aria-hidden="true">
+
+    <div class="skillsfun-page2__ambient" aria-hidden="true">
+      <!-- two crossfading layers so the continuous "floating" drift never
+           stops while the colour palette itself can still swap smoothly
+           whenever the active portrait changes (see skillsfun-page2.ts) -->
+      <div class="skillsfun-page2__ambient-layer is-active" id="skillsfun-ambient-a"></div>
+      <div class="skillsfun-page2__ambient-layer" id="skillsfun-ambient-b"></div>
+    </div>
+
+    <div class="skillsfun-page2__topbar skillsfun-page2__entry-top">
+      <div class="skillsfun-page2__brand">
+        <div class="skillsfun-page2__brand-row">
+          <img src="./nav-logo-mark.png" alt="" class="skillsfun-page2__brand-mark" />
+          <span class="skillsfun-page2__brand-name">Manik Rana</span>
+        </div>
+        <p class="skillsfun-page2__brand-tagline">Creative Developer</p>
+      </div>
+      <span class="skillsfun-page2__address">Himachal Pradesh, India.</span>
+      <div class="skillsfun-page2__actions">
+        <p class="skillsfun-page2__actions-tagline">Open For Work</p>
+        <div class="skillsfun-page2__actions-row">
+          <div class="skillsfun-page2__menu">
+            <button class="skillsfun-page2__menu-btn" id="skillsfun-page2-menu-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+              <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                <line x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <line x1="3" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </button>
+            <div class="skillsfun-page2__menu-panel" id="skillsfun-page2-menu-panel" hidden>
+              <span class="skillsfun-page2__menu-item">Home</span>
+              <span class="skillsfun-page2__menu-item">About</span>
+              <span class="skillsfun-page2__menu-item">Projects</span>
+            </div>
+          </div>
+          <button class="skillsfun-page2__contact" id="skillsfun-page2-contact" type="button">Contact</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="skillsfun-page2__bigtext skillsfun-page2__entry-rise" aria-hidden="true">CREATIVE DESIGN</p>
+
+    <div class="skillsfun-page2__portrait skillsfun-page2__entry-rise" aria-hidden="true">
+      <canvas id="skillsfun-portrait-canvas" class="skillsfun-page2__portrait-canvas"></canvas>
+    </div>
+
+    <!-- One-time entrance only — separate from the ongoing per-rotation
+         blur-swap between portraits. skillsfun.ts adds .is-entering on
+         #skillsfun-page2 the instant "Move Next" is clicked (so what the
+         strip-flip actually reveals is this white-blurred state, not
+         the finished layout) and removes it the instant the flip
+         completes, which is what triggers the transitions below —
+         CREATIVE DESIGN/the portrait rising from .skillsfun-page2__entry-rise,
+         the top bar easing in from .skillsfun-page2__entry-top, and this veil
+         itself fading away. -->
+    <div class="skillsfun-page2__veil" aria-hidden="true"></div>
+
+  </div>
+
+  <!-- ===================== ABOUT (light theme) =====================
+       Below the figure section, reached by scrolling once inside this
+       view. Sits in normal document flow right after #skillsfun-page2
+       (which is position:absolute and reserves no flow height itself),
+       so it naturally starts exactly where the hero's own 100vh box
+       ends. Hidden by default; skillsfun.ts adds .is-visible the same
+       moment "Move Next" is clicked, same gating pattern as
+       #skillsfun-page2 itself — otherwise this would be reachable by
+       scrolling past the entry hero directly, without ever clicking
+       Move Next. -->
+  <section class="skillsfun-about" id="skillsfun-about" aria-label="About Manik">
+    <div class="skillsfun-about__inner">
+
+      <div class="skillsfun-about__left">
+        <div class="skillsfun-about__eyebrow">
+          <svg class="skillsfun-about__eyebrow-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 1 L11.8 8.2 L19 10 L11.8 11.8 L10 19 L8.2 11.8 L1 10 L8.2 8.2 Z" fill="currentColor" />
+          </svg>
+          <span>Who I Am</span>
+        </div>
+        <h2 class="skillsfun-about__headline">I believe using different methods to create something new isn't a bad thing. What matters isn't how you did it or what tools you used — it's that you finished it, and it works the way you wanted it to.</h2>
+        <button class="skillsfun-about__cta" id="skillsfun-about-cta" type="button">Let's Connect</button>
+      </div>
+
+      <div class="skillsfun-about__right">
+        <div class="skillsfun-about__marker-row">
+          <span class="skillsfun-about__marker" aria-hidden="true"></span>
+          <span class="skillsfun-about__marker-label">Current time in Himachal Pradesh, India</span>
+        </div>
+        <div class="skillsfun-about__connector" aria-hidden="true"></div>
+        <div class="skillsfun-about__dial-row">
+          <div class="skillsfun-about__dial">
+            <svg class="skillsfun-about__dial-ticks" id="skillsfun-about-ticks" viewBox="0 0 200 200" aria-hidden="true"></svg>
+            <div class="skillsfun-about__dial-face">
+              <span class="skillsfun-about__clock" id="skillsfun-about-clock">--:--</span>
+              <span class="skillsfun-about__clock-meridiem" id="skillsfun-about-meridiem">--</span>
+            </div>
+          </div>
+          <div class="skillsfun-about__photo-card">
+            <img src="./skillsfun-portrait.png" alt="Manik Rana" class="skillsfun-about__photo" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right-to-left continuous skills marquee — icon-only, each <li>
+         populated by skillsfun-about.ts's buildMarquee() from
+         skillsfun-skill-icons.ts's full "Technical Skills" list. -->
+    <div class="skillsfun-about__marquee" aria-label="Technical skills">
+      <div class="skillsfun-about__marquee-track">
+        <ul class="skillsfun-about__marquee-list" aria-hidden="false"></ul>
+        <ul class="skillsfun-about__marquee-list" aria-hidden="true"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER =====================
+       Same visual pattern as the main site's own Projects/Contact-view
+       footer (.lv7-footer in /projects.css: logo left, link columns,
+       thin divider, bottom bar), rebuilt here under its own
+       skillsfun-footer classes/palette. Real links this time (lv9's own
+       copy left these inert since it was an isolated route with nowhere
+       to send them) — Home/Projects/About/Contact all go to the same
+       places the rest of the site's nav does. Gated the same way as
+       #skillsfun-about (skillsfun.ts adds .is-visible the moment "Move
+       Next" is clicked). -->
+  <footer class="skillsfun-footer" id="skillsfun-footer">
+    <div class="skillsfun-footer__cols">
+      <div class="skillsfun-footer__col skillsfun-footer__col--brand">
+        <img src="./nav-logo-mark.png" alt="Manik Rana" class="skillsfun-footer__logo" />
+      </div>
+
+      <div class="skillsfun-footer__col">
+        <p class="skillsfun-footer__label">Navigation</p>
+        <ul class="skillsfun-footer__list">
+          <li><a href="/">Home</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="#" id="skillsfun-footer-contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="skillsfun-footer__col">
+        <p class="skillsfun-footer__label">Social</p>
+        <ul class="skillsfun-footer__list">
+          <li><a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="mailto:manikrana831@gmail.com">Gmail</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="skillsfun-footer__bottom">
+      <p class="skillsfun-footer__copy">&copy; 2026 | Manik Rana</p>
+      <div class="skillsfun-footer__legal">
+        <span>Privacy Policy</span>
+        <span>Terms of Use</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+</div>
+<!-- ===================== /#skillsfun-root ===================== -->
+
 
 <!-- ===================== "About" entry transition =====================
      Clicking any real "About" link (href="/about") is intercepted

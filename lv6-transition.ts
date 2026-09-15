@@ -1,15 +1,16 @@
 // / (the main site) — the column-wipe transition, generalised from two
-// destinations (Home/About) to four: Home (this document's own default
+// destinations (Home/About) to five: Home (this document's own default
 // content, now wrapped in #home-root so it can be hidden/shown as a
 // whole), Projects + Contact (ported from /lab/lv7/ as two more inline
-// views under #proj-root — lv7 itself is untouched), and About (unchanged
+// views under #proj-root — lv7 itself is untouched), About (unchanged
 // — still a hidden iframe, preloaded the whole time so there's nothing
-// left to finish loading once the cover peels away). (Filenames/element
-// IDs keep the "lv6-" prefix from where this mechanism was first built
-// and verified — /lab/lv6/.)
+// left to finish loading once the cover peels away), and Skills (ported
+// from /lab/lv9/ under #skillsfun-root — see chat reply; lv9 itself is
+// also untouched). (Filenames/element IDs keep the "lv6-" prefix from
+// where this mechanism was first built and verified — /lab/lv6/.)
 //
 // Colour rule (restated for this integration, and now applied uniformly
-// across all four destinations rather than just the two Projects/Contact
+// across all five destinations rather than just the two Projects/Contact
 // ones it was written for at lab/lv7/): the overlay always takes the
 // colour of the page being LEFT, not the destination. This is a genuine
 // behaviour change for the pre-existing Home<->About crossing — it used
@@ -21,7 +22,7 @@
 // more likely to read as a bug than the alternative.
 import { setScrollLock } from './scroll-lock';
 
-type ViewId = 'home' | 'projects' | 'contact' | 'about';
+type ViewId = 'home' | 'projects' | 'contact' | 'about' | 'skills';
 
 interface Profile {
   overlay: HTMLElement;
@@ -53,16 +54,19 @@ const desktopProfile = buildProfile(document.getElementById('lv6-transition'), '
 const mobileProfile = buildProfile(document.getElementById('lv6-transition-mobile'), '.lv6-transition-mobile__bar', STAGGER, DURATION);
 const mobileMQ = window.matchMedia('(max-width: 720px)');
 
-// "Colour of the page being left" for each of the four views — the exact
-// same map/values lv7 itself already established (Home's own navy
-// "iceberg" gradient, About's own dark warm background, Projects/Contact's
-// shared light background nudged a few percent so the wipe stays visible
-// even between two same-family crossings).
+// "Colour of the page being left" for each view — the four original
+// values are lv7's own (Home's navy "iceberg" gradient, About's dark
+// warm background, Projects/Contact's shared light background nudged a
+// few percent so the wipe stays visible even between two same-family
+// crossings). Skills' own value is its section's darkest cool-teal tone
+// (see skillsfun.css's --skillsfun-darkest), not borrowed from any of
+// the other four.
 const LEAVE_COLOR: Record<ViewId, { solid?: string; gradient?: string }> = {
   home: { gradient: 'linear-gradient(180deg, #0A1E38 0%, #12335C 100%)' },
   about: { solid: '#3A3632' },
   projects: { solid: '#D7D4CC' },
   contact: { solid: '#D7D4CC' },
+  skills: { solid: '#0B1417' },
 };
 
 function applyColor(profile: Profile, view: ViewId) {
@@ -107,6 +111,7 @@ const projViewProjects = document.getElementById('proj-view-projects');
 const projViewContact = document.getElementById('proj-view-contact');
 const frameWrap = document.getElementById('lv6-about-frame-wrap');
 const frame = document.getElementById('lv6-about-frame') as HTMLIFrameElement | null;
+const skillsRoot = document.getElementById('skillsfun-root');
 
 let current: ViewId = 'home';
 let playing = false;
@@ -127,6 +132,7 @@ function showOnly(view: ViewId) {
   projViewContact?.classList.toggle('is-active', view === 'contact');
   frameWrap?.classList.toggle('is-visible', view === 'about');
   frameWrap?.setAttribute('aria-hidden', String(view !== 'about'));
+  skillsRoot?.classList.toggle('is-active', view === 'skills');
   window.scrollTo(0, 0);
 
   // Reload the About iframe the instant it's hidden behind the fully-
@@ -186,7 +192,7 @@ async function playTransition(leaving: ViewId, arriving: ViewId) {
 
 function goTo(target: ViewId) {
   if (target === current) {
-    if (target === 'home' || target === 'projects') window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (target === 'home' || target === 'projects' || target === 'skills') window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
   if (playing) {
@@ -219,6 +225,12 @@ document.addEventListener('click', e => {
     goTo('projects');
     return;
   }
+  const skills = target.closest('a[href="#skills"]');
+  if (skills) {
+    e.preventDefault();
+    goTo('skills');
+    return;
+  }
   // The brand/logo link (both the hero nav's own "Home" and the ported
   // Projects page's own logo, which now means "go to the real Home" in
   // this integration rather than lv7's standalone "return to Projects").
@@ -234,6 +246,21 @@ document.getElementById('lv7-contact-btn')?.addEventListener('click', e => {
   goTo('contact');
 });
 document.getElementById('lv7-footer-contact')?.addEventListener('click', e => {
+  e.preventDefault();
+  goTo('contact');
+});
+// Skill & Fun's three Contact-flavoured controls (see chat reply) — all
+// inert on lv9's own standalone copy (nowhere to send them there); real
+// here, same destination as every other Contact trigger on the site.
+document.getElementById('skillsfun-page2-contact')?.addEventListener('click', e => {
+  e.preventDefault();
+  goTo('contact');
+});
+document.getElementById('skillsfun-footer-contact')?.addEventListener('click', e => {
+  e.preventDefault();
+  goTo('contact');
+});
+document.getElementById('skillsfun-about-cta')?.addEventListener('click', e => {
   e.preventDefault();
   goTo('contact');
 });
@@ -288,4 +315,7 @@ if (frame) {
 if (location.hash === '#projects') {
   showOnly('projects');
   current = 'projects';
+} else if (location.hash === '#skills') {
+  showOnly('skills');
+  current = 'skills';
 }

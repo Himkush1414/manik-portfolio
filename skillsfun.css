@@ -1,0 +1,1105 @@
+/* ============================================================
+   / (the main site) — "Skill & Fun" section (see chat reply): a full
+   copy of /lab/lv9's own hero -> "Move Next" flip transition -> figure
+   section -> About -> footer, embedded here as a fifth toggled view
+   (#skillsfun-root) alongside Home/Projects/Contact/About — see
+   lv6-transition.ts for the view-switching itself. lv9 is untouched;
+   this is its own copy, scoped to #skillsfun-root instead of body.lv9
+   (same pattern #proj-root already uses for its own lv7 copy), with its
+   own cool-teal palette below instead of lv9's warm ember one.
+   ============================================================ */
+
+#skillsfun-root {
+  /* the full 5-stop cool-teal ramp this entire section draws from —
+     darkest (resting) through to the brightest cyan-teal (lit/hover)
+     state. A cooler variant of lv9's own warm-ember ramp (see chat
+     reply): same dark-base -> lit-accent structure and the same radial
+     dust/scrim treatment throughout this file, just hue-shifted away
+     from lv9's orange-red so this section doesn't read as a duplicate
+     of lv8/lv9 — see skillsfun-strip-field.ts for where the two
+     extremes get used as the literal dark/lit faces of the hover-bend
+     background. */
+  --skillsfun-darkest: #0B1417;
+  --skillsfun-dark: #122A30;
+  --skillsfun-mid: #16414A;
+  --skillsfun-red: #1B6472;
+  --skillsfun-lit: #2DE0D1;
+  --skillsfun-bg: var(--skillsfun-darkest);
+  --skillsfun-bg-raised: #12262B;
+  --skillsfun-text: #E7F6F5;
+  --skillsfun-text-dim: rgba(231, 246, 245, 0.6);
+  --skillsfun-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --skillsfun-font-body: 'Sora', Helvetica, Arial, sans-serif;
+  --skillsfun-font-mono: 'Space Mono', 'Courier New', monospace;
+  /* page 2 only — a clean geometric sans, closest available match to
+     Inter/Helvetica Neue/SF Pro */
+  --skillsfun-font-page2: 'Inter', 'Helvetica Neue', 'SF Pro Display', Helvetica, Arial, sans-serif;
+  /* page 2 top row only (see chat reply, three reference screenshots —
+     each names the exact paid font used; these are the closest free
+     Google Fonts matches for each):
+     - wordmark: reference names "Astonilla" (bold brush-script, tall
+       swash ascenders) -> Alex Brush is the closest free brush script
+       with real thick/thin pen contrast.
+     - left tagline: reference is "Across Creation" by 177 Studio (a
+       bold flared-serif display face, editorial/fashion energy) ->
+       Bodoni Moda italic is the closest free high-contrast didone.
+     - right tagline: reference is "Across Others" by 177 Studio (a
+       bold angular geometric display face) -> Unbounded is the closest
+       free bold geometric display with that futuristic edge. */
+  --skillsfun-font-script: 'Alex Brush', cursive;
+  --skillsfun-font-editorial: 'Bodoni Moda', 'Playfair Display', Georgia, serif;
+  --skillsfun-font-angular: 'Unbounded', 'Arial Narrow', sans-serif;
+  --skillsfun-gutter: clamp(20px, 4vw, 64px);
+  --skillsfun-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* hidden by default like #proj-root — lv6-transition.ts toggles
+     .is-active the same way it does for Projects/Contact (see chat
+     reply: this is a fifth toggled view, not an appended home-page
+     section) */
+  display: none;
+  margin: 0;
+  min-height: 100vh;
+  background: var(--skillsfun-bg);
+  color: var(--skillsfun-text);
+  font-family: var(--skillsfun-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+#skillsfun-root.is-active { display: block; }
+#skillsfun-root * { box-sizing: border-box; }
+/* no ambient "a { color: inherit }" convenience rule here (unlike
+   #proj-root) — every link this section uses already sets its own
+   colour explicitly (ported straight from lv9, which never relied on
+   inheritance for this), and an ID-selector rule would out-specificity
+   those class-based colours rather than just filling a gap */
+#skillsfun-root img { max-width: 100%; display: block; }
+#skillsfun-root button { font: inherit; }
+
+/* a very faint cool-teal dust wash behind everything (was warm-ember on
+   lv9 — recoloured to match, see chat reply), cheap (no canvas/webgl) —
+   keeps flat sections of the background from reading inert */
+#skillsfun-root {
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(231, 246, 245, 0.35), transparent),
+    radial-gradient(1px 1px at 78% 14%, rgba(231, 246, 245, 0.22), transparent),
+    radial-gradient(1.5px 1.5px at 55% 68%, rgba(45, 224, 209, 0.55), transparent),
+    radial-gradient(1px 1px at 32% 82%, rgba(231, 246, 245, 0.2), transparent),
+    radial-gradient(1px 1px at 90% 55%, rgba(27, 100, 114, 0.5), transparent),
+    radial-gradient(1px 1px at 65% 35%, rgba(231, 246, 245, 0.15), transparent);
+  background-repeat: no-repeat;
+}
+
+/* ============================================================
+   NAV — this section's own entry nav (logo + Home), shown until Move
+   Next is clicked (see .skillsfun-nav.is-hidden below). Same minimal
+   floating pattern as lv7/lv9's own nav; "Home" is a real
+   lv6-transition.ts-intercepted link back to the main Home view.
+   ============================================================ */
+/* hidden once page 2 is up — it has its own logo+wordmark/menu/contact
+   top bar (see .skillsfun-page2__topbar) and having both at once just
+   overlapped/cluttered (caught during visual verification) */
+.skillsfun-nav.is-hidden { display: none; }
+.skillsfun-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px var(--skillsfun-gutter);
+}
+.skillsfun-nav__logo {
+  display: flex;
+  align-items: center;
+  width: 106px;
+  height: 106px;
+}
+.skillsfun-nav__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(45, 224, 209, 0.4));
+}
+.skillsfun-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.skillsfun-nav__link {
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  font-family: var(--skillsfun-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--skillsfun-text-dim);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+.skillsfun-nav__link:hover { color: var(--skillsfun-lit); }
+
+/* ============================================================
+   HUB — wraps the hero + page 2 (positioned relative so page 2's
+   position:absolute anchors to this, not the viewport).
+   ============================================================ */
+.skillsfun-hub {
+  position: relative;
+}
+
+/* ============================================================
+   HERO — full-viewport strip-field background (WebGL, see
+   skillsfun-strip-field.ts) behind a two-line headline and a breathing brand
+   watermark. The canvas drives its own render loop; everything else
+   here is layout/typography only.
+   ============================================================ */
+.skillsfun-hero {
+  position: relative;
+  z-index: 2; /* stacks above .skillsfun-page2 (z-index 1, same .skillsfun-hub) so the
+                 strip canvas visually covers page 2 until the flip
+                 reveals it through the gaps — see skillsfun-strip-field.ts */
+  min-height: 100svh;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(110px, 16vh, 170px) var(--skillsfun-gutter) clamp(60px, 10vh, 100px);
+  background: var(--skillsfun-darkest);
+  transition: opacity 0.25s ease;
+}
+/* applied the instant "Move Next" is clicked — fades the headline/kicker/
+   watermark/move-next bar out of the way quickly so only the strip
+   canvas is left doing the (much slower) flip reveal underneath them */
+.skillsfun-hero.is-transitioning .skillsfun-hero__kicker,
+.skillsfun-hero.is-transitioning .skillsfun-hero__headline,
+.skillsfun-hero.is-transitioning .skillsfun-hero__watermark,
+.skillsfun-hero.is-transitioning .skillsfun-move-next,
+.skillsfun-hero.is-transitioning .skillsfun-hero__scrim,
+.skillsfun-hero.is-transitioning .skillsfun-hero__fade {
+  opacity: 0;
+  pointer-events: none;
+}
+/* the watermark's own infinite keyframe animation keeps writing to
+   opacity every frame, which otherwise fights (and wins over) the plain
+   opacity:0 above — caught visually, it was still breathing through the
+   flip. Killing the animation outright lets the static value stick. */
+.skillsfun-hero.is-transitioning .skillsfun-hero__watermark {
+  animation: none;
+}
+/* end state once the flip has fully completed — main.ts adds this after
+   triggerFlipReveal's callback fires, per the hidden-not-removed note in
+   index.html (keeps a future reverse transition possible).
+   visibility, NOT display: this needs to reserve its own 100vh of
+   normal-flow space, since #skillsfun-page2 is position:absolute (never
+   contributes flow height on its own) — display:none here would
+   collapse that space entirely, pulling the new About section (see
+   chat reply) up underneath page 2 instead of after it. This bug was
+   already caught and fixed once on lv8; ported the fix straight
+   through rather than re-introducing it. */
+.skillsfun-hero.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.skillsfun-strip-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* darkens the lower-middle band so the headline stays legible over the
+   busy strip field without hiding it outright */
+.skillsfun-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(120% 70% at 18% 45%, rgba(11, 20, 23, 0.75) 0%, rgba(11, 20, 23, 0.3) 45%, rgba(11, 20, 23, 0) 75%);
+  pointer-events: none;
+}
+
+/* bottom fade — ported verbatim from lv8's hero (there it blends into
+   the games section sitting right below; skillsfun's own section below is the
+   About section, added afterward — this still isn't tuned to match its
+   colour specifically, just softens the hero's own bottom edge, kept
+   unchanged per "faithful copy, no redesign" on the original port). */
+.skillsfun-hero__fade {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 1;
+  height: clamp(120px, 22vh, 260px);
+  background: linear-gradient(180deg, rgba(11, 20, 23, 0) 0%, rgba(11, 20, 23, 0.9) 80%, #0B1417 100%);
+  pointer-events: none;
+}
+
+.skillsfun-hero__kicker,
+.skillsfun-hero__headline,
+.skillsfun-hero__watermark {
+  position: relative;
+  z-index: 2;
+}
+.skillsfun-hero__kicker {
+  margin: 0 0 18px;
+  font-family: var(--skillsfun-font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--skillsfun-lit);
+  opacity: 0.9;
+}
+.skillsfun-hero__headline {
+  margin: 0;
+  /* generous, not a tight ch-cap — each span is meant to read as ONE
+     line; a narrow max-width here just forces an unwanted internal wrap
+     on top of the deliberate one from the two <span>s */
+  max-width: min(90vw, 900px);
+  font-family: var(--skillsfun-font-display);
+  font-weight: 400;
+  font-size: clamp(64px, 13vw, 190px);
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  color: var(--skillsfun-text);
+  text-shadow:
+    0 2px 10px rgba(11, 20, 23, 0.85),
+    0 0 22px rgba(45, 224, 209, 0.35);
+}
+.skillsfun-hero__headline span {
+  display: block;
+  white-space: nowrap;
+}
+
+.skillsfun-hero__watermark {
+  position: absolute;
+  right: clamp(12px, 2.6vw, 40px);
+  bottom: clamp(8px, 2vh, 28px);
+  z-index: 1;
+  margin: 0;
+  font-family: var(--skillsfun-font-display);
+  font-weight: 400;
+  font-size: clamp(90px, 16vw, 240px);
+  line-height: 1;
+  color: var(--skillsfun-lit);
+  text-shadow: 0 0 40px rgba(45, 224, 209, 0.45);
+  animation: skillsfun-watermark-breathe 7s ease-in-out infinite;
+  user-select: none;
+}
+@keyframes skillsfun-watermark-breathe {
+  0%, 100% { opacity: 0.16; }
+  50% { opacity: 0.8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skillsfun-hero__watermark { animation: none; opacity: 0.45; }
+  .skillsfun-gameover__mascot { animation: none; }
+}
+
+@media (max-width: 720px) {
+  .skillsfun-hero { padding-bottom: clamp(140px, 30vh, 220px); }
+  .skillsfun-hero__headline { max-width: 94vw; font-size: clamp(24px, 8vw, 44px); }
+  .skillsfun-hero__watermark {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: clamp(24px, 6vh, 56px);
+    font-size: clamp(64px, 30vw, 120px);
+  }
+}
+
+/* ============================================================
+   MOVE NEXT — right-edge rail tab, hero only. Vertical label read top to
+   bottom (rotate the whole button rather than rely on writing-mode, which
+   varies subtly by engine for Latin text).
+   ============================================================ */
+.skillsfun-move-next {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 3;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 10px;
+  border: none;
+  border-left: 1px solid rgba(45, 224, 209, 0.3);
+  background: rgba(11, 20, 23, 0.35);
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+}
+.skillsfun-move-next:hover {
+  background: rgba(45, 224, 209, 0.16);
+  border-color: rgba(45, 224, 209, 0.6);
+}
+.skillsfun-move-next span {
+  display: block;
+  transform: rotate(90deg);
+  white-space: nowrap;
+  font-family: var(--skillsfun-font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--skillsfun-text);
+}
+@media (max-width: 720px) {
+  /* Kept visible and tappable here (see chat reply — phone
+     responsiveness), unlike lv8's own copy of this rule: Move Next is
+     the ONLY way to reach page 2/the figure/About/footer on skillsfun, so
+     hiding it on touch would make all of that permanently unreachable
+     on a phone — there's no other trigger anywhere on the hero. The
+     rotated vertical rail-tab is still a large, easy tap target as-is;
+     just nudged slightly narrower for a thumb-width edge strip. */
+  .skillsfun-move-next { padding: 22px 8px; }
+}
+
+/* ============================================================
+   PAGE 2 — revealed by the strip-flip; sits directly behind the hero
+   (see .skillsfun-hero's z-index above). Structure from the Utomic reference,
+   content is Manik's own (see chat reply / index.html's comment).
+   ============================================================ */
+.skillsfun-page2 {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 1;
+  height: 100svh;
+  height: 100vh;
+  overflow: hidden;
+  display: none; /* main.ts sets .is-visible the moment the flip starts */
+}
+.skillsfun-page2.is-visible { display: block; }
+
+/* ---- one-time entrance sequence (see chat reply) -----------------
+   Separate from the ongoing per-rotation blur-swap between portraits
+   (that's driven in JS, on the canvas itself — see page2.ts). This is
+   pure CSS, driven entirely by main.ts toggling .is-entering on
+   #skillsfun-page2: present from the moment "Move Next" is clicked (so the
+   strip-flip reveals THIS white-blurred state, not the finished page),
+   removed the instant the flip completes, which is what fires every
+   transition below at once. Slow/eased on purpose — this is a one-time
+   flourish, not something that needs to feel snappy. */
+.skillsfun-page2__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#skillsfun-page2.is-entering .skillsfun-page2__veil {
+  opacity: 1;
+}
+
+.skillsfun-page2__entry-rise {
+  transition: transform 1.6s var(--skillsfun-ease), filter 1.4s ease, opacity 1.2s ease;
+}
+#skillsfun-page2.is-entering .skillsfun-page2__entry-rise {
+  transform: translateY(9%);
+  filter: blur(22px);
+  opacity: 0.5;
+}
+
+.skillsfun-page2__entry-top {
+  transition: transform 1.2s var(--skillsfun-ease), opacity 1.1s ease;
+}
+#skillsfun-page2.is-entering .skillsfun-page2__entry-top {
+  transform: translateY(26px);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skillsfun-page2__veil,
+  .skillsfun-page2__entry-rise,
+  .skillsfun-page2__entry-top {
+    transition: none;
+  }
+  #skillsfun-page2.is-entering .skillsfun-page2__veil { opacity: 0; }
+  #skillsfun-page2.is-entering .skillsfun-page2__entry-rise,
+  #skillsfun-page2.is-entering .skillsfun-page2__entry-top {
+    transform: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+
+.skillsfun-page2__ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #030201; /* base while the extracted gradient is still loading in */
+}
+/* Corrected structure (see chat reply): a strict 6-band VERTICAL gradient
+   — near-white at the very top through near-black at the very bottom,
+   saturation peaking around the middle bands — built from 7 stops
+   (0/15/30/50/70/90/100%) whose actual colours are read per-image (see
+   PORTRAIT_GRADIENTS in page2.ts), not a fixed palette. Two layers still
+   crossfade on an image change (main.ts calls setAmbientForIndex the
+   INSTANT a transition starts, not after it finishes, so the colour
+   cross-fade runs concurrently with the portrait's own blur transition
+   rather than only starting once that's already done — that sequential feel
+   was the "turn the light off and on" complaint). The slow scale/drift
+   on the layer itself is what keeps this "live" without touching the
+   band structure — the gradient stops themselves never move. */
+.skillsfun-page2__ambient-layer {
+  position: absolute;
+  inset: -10%;
+  opacity: 0;
+  /* kept roughly matched to page2.ts's TRANSITION_TOTAL_MS (currently
+     3400ms) so the background stays in sync with the slower, blur-
+     hidden portrait swap — see that file's comment on the constant */
+  transition: opacity 3.2s ease;
+  background: linear-gradient(
+    180deg,
+    var(--g0, #e8e8e8) 0%,
+    var(--g1, #bfbfbf) 15%,
+    var(--g2, #7a7a7a) 30%,
+    var(--g3, #3a3a3a) 50%,
+    var(--g4, #202020) 70%,
+    var(--g5, #0c0c0c) 90%,
+    var(--g6, #030201) 100%
+  );
+  animation: skillsfun-ambient-breathe 22s ease-in-out infinite;
+}
+.skillsfun-page2__ambient-layer.is-active { opacity: 1; }
+.skillsfun-page2__ambient-layer--b { animation-delay: -11s; }
+@keyframes skillsfun-ambient-breathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.08) translateY(-1.5%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skillsfun-page2__ambient-layer { animation: none; }
+}
+
+.skillsfun-page2__topbar {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 22px var(--skillsfun-gutter) 0;
+}
+.skillsfun-page2__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  justify-self: start;
+}
+.skillsfun-page2__brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.skillsfun-page2__brand-tagline {
+  margin: 0 0 0 2px;
+  font-family: var(--skillsfun-font-editorial);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  color: var(--skillsfun-text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.skillsfun-page2__brand-mark {
+  /* modest increase (see chat reply) — same standard used elsewhere on
+     the site: noticeable, not dramatic */
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(45, 224, 209, 0.4));
+}
+.skillsfun-page2__brand-name {
+  /* signature/script treatment (see chat reply) — distinct from the
+     clean sans used everywhere else on the site, a personal "signed"
+     feel. Sized and tracked up from the old sans value: script faces
+     read visually smaller and tighter tracking closes up their loops. */
+  font-family: var(--skillsfun-font-script);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--skillsfun-text);
+  /* the corrected ambient gradient's top band is deliberately near-white
+     (see chat reply's band table) — light nav text on it was reading as
+     low-contrast, caught visually. A shadow keeps it legible regardless
+     of which image's gradient is behind it, since the top band's
+     lightness is the same ~92% for every image. */
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.skillsfun-page2__address {
+  justify-self: center;
+  font-family: var(--skillsfun-font-page2);
+  font-size: 15px;
+  line-height: 19px;
+  font-weight: 400;
+  letter-spacing: 0;
+  /* black (see chat reply) — legible on its own against the ambient
+     gradient's consistently near-white top band, so the light-text
+     shadow tuned for the opposite (light-on-dark) case is dropped too */
+  color: #000000;
+  text-align: center;
+  white-space: nowrap;
+}
+.skillsfun-page2__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  justify-self: end;
+}
+.skillsfun-page2__actions-tagline {
+  margin: 0 2px 0 0;
+  font-family: var(--skillsfun-font-angular);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--skillsfun-text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.skillsfun-page2__actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.skillsfun-page2__menu { position: relative; }
+.skillsfun-page2__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(231, 246, 245, 0.25);
+  /* solid black fill (see chat reply), was a translucent dark wash — the
+     two lines inside stay var(--skillsfun-text) via currentColor, still
+     legible against a fully opaque black circle */
+  background: #000000;
+  color: var(--skillsfun-text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.skillsfun-page2__menu-btn:hover,
+.skillsfun-page2__menu-btn[aria-expanded='true'] {
+  border-color: var(--skillsfun-lit);
+  color: var(--skillsfun-lit);
+}
+/* [hidden] alone loses to this class's own `display` in the cascade
+   (equal specificity, author rule applied after the UA sheet) — spell it
+   out explicitly, same fix as .skillsfun-games__play's, or toggling `hidden`
+   silently does nothing. */
+.skillsfun-page2__menu-panel[hidden] { display: none; }
+.skillsfun-page2__menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(231, 246, 245, 0.14);
+  background: rgba(11, 20, 23, 0.95);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
+}
+.skillsfun-page2__menu-item {
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-family: var(--skillsfun-font-page2);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--skillsfun-text-dim);
+  /* inert by design (see chat reply) — no href, no click handler; the
+     hover state is purely visual so it doesn't read as broken */
+  cursor: default;
+}
+.skillsfun-page2__menu-item:hover { background: rgba(45, 224, 209, 0.12); color: var(--skillsfun-text); }
+/* `#skillsfun-page2 ` prefix, not just `.skillsfun-page2__contact` — plain `#skillsfun-root
+   button { font: inherit; }` up top is actually (0,1,2) (body+button are
+   BOTH type selectors), which beats a single class (0,1,0) regardless of
+   source order, silently resetting this button's font back to whatever
+   it inherits (verified on lv8, where this was first caught: it was
+   rendering at the browser-default 16px/400, not the 14px/600 below —
+   a plain `button.` prefix, (0,1,1), still wasn't enough). The ID
+   prefix is a cheap, certain way past it. */
+#skillsfun-page2 .skillsfun-page2__contact {
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: none;
+  /* solid black fill (see chat reply), was a transparent/outlined pill */
+  background: #000000;
+  color: #FFFFFF;
+  font-family: var(--skillsfun-font-page2);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0;
+  cursor: pointer; /* real here (see chat reply) — wired to the site's Contact view, unlike lv9's own inert copy */
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.skillsfun-page2__contact:hover {
+  background: var(--skillsfun-lit);
+  color: #FFFFFF;
+}
+
+.skillsfun-page2__bigtext {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  z-index: 1;
+  transform: translateX(-50%);
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  font-family: var(--skillsfun-font-page2);
+  font-weight: 400; /* corrected from bold — see chat reply */
+  font-size: clamp(48px, 11vw, 200px);
+  /* -4px at the spec's ~200px base is a -0.02em ratio — kept as em so it
+     scales with font-size instead of overlapping glyphs at small sizes */
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  color: #fff;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* genuinely centered now (was right:6%, off-axis from the section's true
+   centre — caught visually) — also now shares the same centre line as
+   .skillsfun-page2__bigtext above, so the two actually overlap/occlude as
+   intended rather than sitting side by side. */
+.skillsfun-page2__portrait {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 2;
+  transform: translateX(-50%);
+  width: min(50vw, 740px);
+  height: 84%;
+  pointer-events: none;
+}
+.skillsfun-page2__portrait-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  will-change: filter; /* the blur-transition filter animates every rotation, see page2.ts */
+}
+
+@media (max-width: 860px) {
+  .skillsfun-page2__topbar { grid-template-columns: 1fr; row-gap: 10px; padding-top: 18px; }
+  .skillsfun-page2__brand,
+  .skillsfun-page2__address,
+  .skillsfun-page2__actions { justify-self: center; }
+  /* the two new taglines (see chat reply) stay left-/right-aligned under
+     their own flex-start/flex-end columns above — on the stacked mobile
+     layout both columns centre under the address instead */
+  .skillsfun-page2__brand,
+  .skillsfun-page2__actions { align-items: center; }
+  .skillsfun-page2__bigtext { font-size: clamp(40px, 18vw, 90px); bottom: 2%; }
+  .skillsfun-page2__portrait { width: 86vw; height: 58%; }
+}
+
+/* phone ratio (see chat reply): the tablet tier above stacks the top row
+   into three centred lines (brand / address / actions) — on an actual
+   phone that's still a lot of top-row content competing with the
+   portrait below it. Cut it down to exactly three things, back in a
+   single row: the logo, the Contact button, and the "two-line circle"
+   (the menu button) — wordmark, both new taglines, and the address text
+   all drop out rather than wrapping into extra stacked lines. Narrower
+   than every other breakpoint in this file on purpose, so it wins last.
+   Two comma-separated conditions, not one — a narrow *width* alone
+   would miss a phone turned sideways (landscape phone widths run
+   667-930px, well past the 599px portrait cutoff below), so this also
+   fires on a short, wide, landscape-oriented viewport, same "phone"
+   either way. */
+@media (max-width: 599px), (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+  .skillsfun-page2__brand-name,
+  .skillsfun-page2__brand-tagline,
+  .skillsfun-page2__address,
+  .skillsfun-page2__actions-tagline {
+    display: none;
+  }
+  .skillsfun-page2__topbar {
+    grid-template-columns: auto auto; /* just the brand block + actions block now */
+    justify-content: space-between;
+    padding-top: 16px;
+  }
+  .skillsfun-page2__brand,
+  .skillsfun-page2__actions {
+    justify-self: auto; /* the 2-column grid above places these; the tablet tier's centring no longer applies */
+  }
+  .skillsfun-page2__brand { justify-content: flex-start; }
+  .skillsfun-page2__actions { justify-content: flex-end; }
+  .skillsfun-page2__brand-mark { width: 38px; height: 38px; }
+  .skillsfun-page2__menu-btn { width: 34px; height: 34px; }
+  #skillsfun-page2 .skillsfun-page2__contact { padding: 9px 18px; font-size: 13px; }
+
+  /* the figure itself — sized to actually fit a phone viewport's width
+     without the ~50vw/740px desktop box (which would blow far past the
+     screen edge) or clipping against the shorter available height once
+     the (now single-row) top bar and CREATIVE DESIGN text are accounted
+     for */
+  .skillsfun-page2__portrait { width: 92vw; height: 52%; bottom: 0; }
+  .skillsfun-page2__bigtext { font-size: clamp(32px, 15vw, 64px); bottom: 1.5%; }
+}
+
+/* short/landscape phones — the 52% portrait height above assumes a tall
+   portrait-orientation viewport; in landscape the same percentage of a
+   much shorter 100vh would crush the figure and can push it up under the
+   top bar instead of sitting clear of it (see chat reply — "no error
+   when the picture changes", checked in this orientation specifically). */
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+  .skillsfun-hero { padding-top: 84px; padding-bottom: 36px; }
+  .skillsfun-hero__headline { font-size: clamp(22px, 7vh, 40px); }
+  .skillsfun-hero__watermark { font-size: clamp(48px, 18vh, 100px); bottom: 10px; }
+  .skillsfun-page2__topbar { padding-top: 10px; }
+  .skillsfun-page2__portrait { height: 62%; width: 44vh; }
+  .skillsfun-page2__bigtext { font-size: clamp(24px, 9vh, 48px); bottom: 1%; }
+}
+
+/* ============================================================
+   ABOUT (light theme) — new section below page 2, skillsfun only (see chat
+   reply — lv8 keeps its own separate dark-theme version, untouched).
+   Deliberately its own flat palette (#F5F5F5/#FFFFFF/near-black text),
+   not the warm --skillsfun-* ramp used by the hero/page-2 above it.
+   ============================================================ */
+.skillsfun-about {
+  display: none; /* main.ts sets .is-visible the same moment page 2 is shown */
+  background: #F5F5F5;
+  padding: clamp(56px, 9vh, 110px) 0 0;
+  overflow: hidden;
+}
+.skillsfun-about.is-visible {
+  display: block;
+}
+
+.skillsfun-about__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 clamp(64px, 14vw, 220px);
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: clamp(32px, 6vw, 80px);
+  align-items: center;
+  padding-bottom: clamp(64px, 10vh, 120px);
+}
+
+.skillsfun-about__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+}
+.skillsfun-about__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--skillsfun-font-page2);
+  font-size: 15px;
+  font-weight: 400;
+  color: #444444;
+}
+.skillsfun-about__eyebrow-icon {
+  width: 15px;
+  height: 15px;
+  color: #444444;
+}
+.skillsfun-about__headline {
+  margin: 0;
+  font-family: var(--skillsfun-font-page2);
+  font-weight: 400;
+  font-size: clamp(28px, 3.2vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  color: #111111;
+  max-width: 640px;
+}
+.skillsfun-about__cta {
+  margin-top: 6px;
+  width: 158px;
+  height: 50px;
+  border-radius: 25px;
+  border: none;
+  background: #171717;
+  color: #FFFFFF;
+  font-family: var(--skillsfun-font-page2);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer; /* real here (see chat reply) — wired to the site's Contact view, unlike lv9's own inert copy */
+  transition: background 0.2s ease;
+}
+.skillsfun-about__cta:hover {
+  background: #000000;
+}
+
+.skillsfun-about__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.skillsfun-about__marker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.skillsfun-about__marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #444444;
+  flex: none;
+}
+.skillsfun-about__marker-label {
+  font-family: var(--skillsfun-font-page2);
+  font-size: 14px;
+  font-weight: 400;
+  color: #444444;
+}
+.skillsfun-about__connector {
+  width: 1px;
+  height: 46px;
+  margin-left: 8px; /* centres under the 16px marker */
+  background: #CFCFCF;
+}
+.skillsfun-about__dial-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+}
+
+/* ---- clock dial — ring of ticks, live IST clock centred inside ---- */
+.skillsfun-about__dial {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex: none;
+}
+.skillsfun-about__dial-ticks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.skillsfun-about__dial-ticks line {
+  stroke: #CFCFCF;
+  stroke-width: 1.5;
+}
+.skillsfun-about__dial-face {
+  position: absolute;
+  inset: 50%;
+  transform: translate(-50%, -50%);
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid #555555;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.skillsfun-about__clock {
+  font-family: var(--skillsfun-font-page2);
+  font-weight: 400;
+  font-size: clamp(24px, 2.6vw, 34px);
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.skillsfun-about__clock-meridiem {
+  font-family: var(--skillsfun-font-page2);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: #666666;
+}
+
+/* ---- photo card — B&W portrait, white card, minimal styling ---- */
+.skillsfun-about__photo-card {
+  width: 168px;
+  height: 200px;
+  flex: none;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.skillsfun-about__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 10%;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .skillsfun-about__inner { grid-template-columns: 1fr; text-align: center; }
+  .skillsfun-about__left { align-items: center; }
+  .skillsfun-about__right { align-items: center; }
+  .skillsfun-about__marker-row,
+  .skillsfun-about__connector { display: none; } /* the connector line only makes sense pointing at a fixed left edge */
+  .skillsfun-about__dial-row { justify-content: center; }
+}
+
+/* phone ratio (see chat reply): .skillsfun-about__inner's desktop side padding
+   (clamp(64px, 14vw, 220px) — tuned so the eyebrow sits ~16-18% in from
+   a wide desktop section) is a fixed ~64px floor per side. Left
+   unchanged, that alone is already wider than a phone's own content box
+   (2x64=128px eats a huge share of a 320-375px screen), on top of which
+   the 200px dial + gap + 168px photo card can't fit side by side at all
+   below the general 900px stack above — caught while verifying this
+   ratio specifically, not just eyeballed. */
+@media (max-width: 599px) {
+  .skillsfun-about__inner { padding: 0 clamp(16px, 6vw, 32px); }
+  .skillsfun-about__dial-row { flex-direction: column; gap: 24px; }
+  .skillsfun-about__headline { max-width: 100%; }
+}
+
+/* ---- skills marquee — each skill its own white pill card ---- */
+.skillsfun-about__marquee {
+  position: relative;
+  padding: clamp(28px, 5vh, 48px) 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+.skillsfun-about__marquee-track {
+  display: flex;
+  width: max-content;
+  /* slowed from 34s (see chat reply) — the icon cards below are also
+     much narrower than the old text pills, which on its own would have
+     made the loop read faster than before at the same duration */
+  animation: skillsfun-about-marquee 85s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skillsfun-about__marquee-track { animation: none; }
+}
+@keyframes skillsfun-about-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.skillsfun-about__marquee-list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 16px;
+  padding-right: 16px;
+}
+/* icon-only cards (see chat reply) — was a text/name pill per skill;
+   populated by skillsfun-about.ts's buildMarquee() from skillsfun-skill-icons.ts */
+.skillsfun-about__marquee-list li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 16px;
+  background: #FFFFFF;
+  color: #8C8C8C; /* muted, but a shade darker than the old text colour (#B3B3B3) — a filled glyph needs more contrast to read clearly at this size than loose letterforms did */
+}
+.skillsfun-about__marquee-list li svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* ============================================================
+   FOOTER (light theme, skillsfun only) — same visual pattern as the main
+   site's own Projects/Contact-view footer (.lv7-footer in /index.html +
+   /projects.css: logo left, link columns, thin divider, bottom bar),
+   rebuilt here under its own classes/palette rather than editing that
+   shared component (see chat reply). Continues the About section's flat
+   #F5F5F5/near-black palette rather than lv7's own dark one. Gated the
+   same way as .skillsfun-about — main.ts adds .is-visible the same moment
+   "Move Next" is clicked.
+   ============================================================ */
+.skillsfun-footer {
+  display: none;
+  background: #F5F5F5;
+  color: #111111;
+}
+.skillsfun-footer.is-visible {
+  display: block;
+}
+.skillsfun-footer__cols {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 32px clamp(24px, 6vw, 110px) 28px;
+  border-top: 1px solid #CFCFCF;
+}
+.skillsfun-footer__col--brand { flex: 0 0 auto; }
+.skillsfun-footer__logo { width: 56px; height: 56px; object-fit: contain; display: block; }
+.skillsfun-footer__col { flex: 0 0 auto; min-width: 120px; }
+.skillsfun-footer__label {
+  margin: 0 0 10px;
+  font-family: var(--skillsfun-font-page2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999999;
+}
+.skillsfun-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.skillsfun-footer__list a,
+.skillsfun-footer__list span {
+  font-family: var(--skillsfun-font-page2);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #444444;
+  text-decoration: none;
+}
+.skillsfun-footer__list span { cursor: default; } /* inert — see chat reply, same pattern as page 2's menu items */
+.skillsfun-footer__list a:hover { color: #111111; }
+.skillsfun-footer__bottom {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px clamp(24px, 6vw, 110px);
+  border-top: 1px solid #CFCFCF;
+  font-family: var(--skillsfun-font-page2);
+  font-size: 11px;
+}
+.skillsfun-footer__copy { margin: 0; color: #666666; }
+.skillsfun-footer__legal { display: flex; gap: 18px; }
+.skillsfun-footer__legal span { color: #666666; cursor: default; } /* inert — see chat reply */
+
+@media (max-width: 640px) {
+  .skillsfun-footer__logo { width: 44px; height: 44px; }
+}
+@media (max-width: 560px) {
+  .skillsfun-footer__cols { gap: 24px; }
+}
+/* phone ratio (see chat reply): the three columns' flex-wrap was already
+   there, but with all three columns' min-width still in play (logo's
+   intrinsic width + the two 120px-min link columns) they wrap into an
+   uneven 2-then-1 layout rather than a clean stack on a narrow phone. */
+@media (max-width: 480px) {
+  .skillsfun-footer__cols { flex-direction: column; align-items: flex-start; gap: 22px; }
+  .skillsfun-footer__col { min-width: 0; }
+  .skillsfun-footer__bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
