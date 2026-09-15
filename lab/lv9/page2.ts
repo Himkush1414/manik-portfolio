@@ -9,10 +9,13 @@
 //  1. a continuously-drifting ambient gradient behind everything — a
 //     strict 6-band vertical light-to-dark structure (see
 //     PORTRAIT_GRADIENTS below), never cursor-reactive, always live.
-//  2. the portraits themselves (images 1-2 only, matching lv8's current
-//     2-image rotation), rotating every ~7-10s via a blur-swap (no
+//  2. the portraits themselves, rotating every ~7-10s via a blur-swap (no
 //     sliding/wiping motion — see runBlurTransition) rendered on a
-//     <canvas> (see startPortraitCycle).
+//     <canvas> (see startPortraitCycle). Three active now (see chat
+//     reply): portrait-1, portrait-2, and portrait-4 ("the third
+//     figure") — 3 and 5 stay on disk on lv8 but were never copied
+//     here, matching lv8's own "some images in, some out of rotation"
+//     pattern (see its page2.ts comment).
 //
 // Plus the inert menu dropdown + Contact button (no navigation — lv9 is
 // a standalone route, same as lv8).
@@ -21,20 +24,26 @@
 // — no reason to pay for portrait PNGs on a visit that never reaches
 // "Move Next".
 
-const PORTRAIT_COUNT = 2;
-const PORTRAIT_URLS = Array.from(
-  { length: PORTRAIT_COUNT },
-  (_, i) => new URL(`./portraits/portrait-${i + 1}.png`, import.meta.url).href
+// File name (not a plain index+1) since the active set skips portrait-3
+// (see chat reply — portrait-4 was added as the third figure, portrait-3
+// wasn't).
+const PORTRAIT_FILES = ['portrait-1.png', 'portrait-2.png', 'portrait-4.png'];
+const PORTRAIT_COUNT = PORTRAIT_FILES.length;
+const PORTRAIT_URLS = PORTRAIT_FILES.map(
+  file => new URL(`./portraits/${file}`, import.meta.url).href
 );
 
 // 7-stop vertical gradient per portrait (0/15/30/50/70/90/100%), each
 // stop's colour read directly from that PNG's own pixels on lv8 — not a
-// fixed palette, and not re-derived here since these are the same two
-// image files, byte-for-byte. Order matches portrait-1/2.png.
+// fixed palette, and not re-derived here since these are the same image
+// files, byte-for-byte (lv8's page2.ts keeps the full 1-5 set, including
+// this exact portrait-4 entry, commented out rather than deleted — see
+// its own comment). Order matches PORTRAIT_FILES above.
 const GRADIENT_STOP_KEYS = ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6'] as const;
 const PORTRAIT_GRADIENTS: string[][] = [
-  ['#e8eaed', '#bcc6dc', '#7495dc', '#1552d5', '#1b3774', '#111622', '#060709'], // 1 — blue
-  ['#ede8e8', '#dcbcc0', '#dc7482', '#d5152e', '#741b27', '#221113', '#090607'], // 2 — red
+  ['#e8eaed', '#bcc6dc', '#7495dc', '#1552d5', '#1b3774', '#111622', '#060709'], // portrait-1 — blue
+  ['#ede8e8', '#dcbcc0', '#dc7482', '#d5152e', '#741b27', '#221113', '#090607'], // portrait-2 — red
+  ['#edeae8', '#dcc8bc', '#dc9b74', '#d55c15', '#743c1b', '#221711', '#090706'], // portrait-4 — orange
 ];
 
 const ROTATE_MIN_MS = 7000;
