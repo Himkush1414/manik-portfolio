@@ -514,7 +514,7 @@ if (smMount) {
     // cover/reveal transition the desktop pills/hero card/footer link do.
     { label: 'About', ariaLabel: 'Jump to About', link: '/about' },
     { label: 'Projects', ariaLabel: 'Jump to Projects', link: '#projects' },
-    { label: 'Games', ariaLabel: 'Jump to Games', link: '#games' },
+    { label: 'Skills', ariaLabel: 'Jump to Skills', link: '#skills' },
   ];
   const smSocials = [
     { label: 'GitHub', link: 'https://github.com/Himkush1414' },
