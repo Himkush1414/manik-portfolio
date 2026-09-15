@@ -330,10 +330,14 @@ body.lv9 {
   color: var(--lv9-text);
 }
 @media (max-width: 720px) {
-  /* after the base rule above, not before — an equal-specificity rule
-     earlier in the file loses to one later regardless of media query
-     (caught visually: the bar was still showing on a phone viewport) */
-  .lv9-move-next { display: none; } /* no cursor-driven flip metaphor on touch */
+  /* Kept visible and tappable here (see chat reply — phone
+     responsiveness), unlike lv8's own copy of this rule: Move Next is
+     the ONLY way to reach page 2/the figure/About/footer on lv9, so
+     hiding it on touch would make all of that permanently unreachable
+     on a phone — there's no other trigger anywhere on the hero. The
+     rotated vertical rail-tab is still a large, easy tap target as-is;
+     just nudged slightly narrower for a thumb-width edge strip. */
+  .lv9-move-next { padding: 22px 8px; }
 }
 
 /* ============================================================
@@ -683,6 +687,64 @@ body.lv9 {
   .lv9-page2__portrait { width: 86vw; height: 58%; }
 }
 
+/* phone ratio (see chat reply): the tablet tier above stacks the top row
+   into three centred lines (brand / address / actions) — on an actual
+   phone that's still a lot of top-row content competing with the
+   portrait below it. Cut it down to exactly three things, back in a
+   single row: the logo, the Contact button, and the "two-line circle"
+   (the menu button) — wordmark, both new taglines, and the address text
+   all drop out rather than wrapping into extra stacked lines. Narrower
+   than every other breakpoint in this file on purpose, so it wins last.
+   Two comma-separated conditions, not one — a narrow *width* alone
+   would miss a phone turned sideways (landscape phone widths run
+   667-930px, well past the 599px portrait cutoff below), so this also
+   fires on a short, wide, landscape-oriented viewport, same "phone"
+   either way. */
+@media (max-width: 599px), (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+  .lv9-page2__brand-name,
+  .lv9-page2__brand-tagline,
+  .lv9-page2__address,
+  .lv9-page2__actions-tagline {
+    display: none;
+  }
+  .lv9-page2__topbar {
+    grid-template-columns: auto auto; /* just the brand block + actions block now */
+    justify-content: space-between;
+    padding-top: 16px;
+  }
+  .lv9-page2__brand,
+  .lv9-page2__actions {
+    justify-self: auto; /* the 2-column grid above places these; the tablet tier's centring no longer applies */
+  }
+  .lv9-page2__brand { justify-content: flex-start; }
+  .lv9-page2__actions { justify-content: flex-end; }
+  .lv9-page2__brand-mark { width: 38px; height: 38px; }
+  .lv9-page2__menu-btn { width: 34px; height: 34px; }
+  #lv9-page2 .lv9-page2__contact { padding: 9px 18px; font-size: 13px; }
+
+  /* the figure itself — sized to actually fit a phone viewport's width
+     without the ~50vw/740px desktop box (which would blow far past the
+     screen edge) or clipping against the shorter available height once
+     the (now single-row) top bar and CREATIVE DESIGN text are accounted
+     for */
+  .lv9-page2__portrait { width: 92vw; height: 52%; bottom: 0; }
+  .lv9-page2__bigtext { font-size: clamp(32px, 15vw, 64px); bottom: 1.5%; }
+}
+
+/* short/landscape phones — the 52% portrait height above assumes a tall
+   portrait-orientation viewport; in landscape the same percentage of a
+   much shorter 100vh would crush the figure and can push it up under the
+   top bar instead of sitting clear of it (see chat reply — "no error
+   when the picture changes", checked in this orientation specifically). */
+@media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
+  .lv9-hero { padding-top: 84px; padding-bottom: 36px; }
+  .lv9-hero__headline { font-size: clamp(22px, 7vh, 40px); }
+  .lv9-hero__watermark { font-size: clamp(48px, 18vh, 100px); bottom: 10px; }
+  .lv9-page2__topbar { padding-top: 10px; }
+  .lv9-page2__portrait { height: 62%; width: 44vh; }
+  .lv9-page2__bigtext { font-size: clamp(24px, 9vh, 48px); bottom: 1%; }
+}
+
 /* ============================================================
    ABOUT (light theme) — new section below page 2, lv9 only (see chat
    reply — lv8 keeps its own separate dark-theme version, untouched).
@@ -868,6 +930,20 @@ body.lv9 {
   .lv9-about__dial-row { justify-content: center; }
 }
 
+/* phone ratio (see chat reply): .lv9-about__inner's desktop side padding
+   (clamp(64px, 14vw, 220px) — tuned so the eyebrow sits ~16-18% in from
+   a wide desktop section) is a fixed ~64px floor per side. Left
+   unchanged, that alone is already wider than a phone's own content box
+   (2x64=128px eats a huge share of a 320-375px screen), on top of which
+   the 200px dial + gap + 168px photo card can't fit side by side at all
+   below the general 900px stack above — caught while verifying this
+   ratio specifically, not just eyeballed. */
+@media (max-width: 599px) {
+  .lv9-about__inner { padding: 0 clamp(16px, 6vw, 32px); }
+  .lv9-about__dial-row { flex-direction: column; gap: 24px; }
+  .lv9-about__headline { max-width: 100%; }
+}
+
 /* ---- skills marquee — each skill its own white pill card ---- */
 .lv9-about__marquee {
   position: relative;
@@ -998,4 +1074,13 @@ body.lv9 {
 }
 @media (max-width: 560px) {
   .lv9-footer__cols { gap: 24px; }
+}
+/* phone ratio (see chat reply): the three columns' flex-wrap was already
+   there, but with all three columns' min-width still in play (logo's
+   intrinsic width + the two 120px-min link columns) they wrap into an
+   uneven 2-then-1 layout rather than a clean stack on a narrow phone. */
+@media (max-width: 480px) {
+  .lv9-footer__cols { flex-direction: column; align-items: flex-start; gap: 22px; }
+  .lv9-footer__col { min-width: 0; }
+  .lv9-footer__bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
