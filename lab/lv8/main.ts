@@ -34,9 +34,16 @@ backBtn?.addEventListener('click', () => {
 // triggerFlipReveal in lv8-strip-field.ts) to reveal page 2, whose own
 // behaviour (ambient background + portrait rotation + inert menu) lives
 // in page2.ts, dynamically imported here for the same reason game.ts is:
-// six portrait PNGs (~5MB) shouldn't load for a visit that never clicks
-// this. No reverse transition back to the hero exists yet — flagged in
-// the chat reply — so this is a one-way trip once clicked.
+// portrait PNGs shouldn't load for a visit that never clicks this. No
+// reverse transition back to the hero exists yet — flagged in the chat
+// reply — so this is a one-way trip once clicked.
+//
+// .is-entering (see chat reply + lv8.css) is added in the SAME tick as
+// .is-visible, before the flip even starts — so what the strip-flip
+// actually reveals is page 2's white-blurred entering state, not the
+// finished layout. Removing it (once the flip's onDone fires) is what
+// triggers the veil fading + the portrait/text/topbar easing into place;
+// that's a separate, slower CSS transition from the flip itself.
 // ---------------------------------------------------------------
 const heroEl = document.getElementById('lv8-hero');
 const page2El = document.getElementById('lv8-page2');
@@ -49,7 +56,7 @@ moveNextBtn?.addEventListener('click', () => {
   moveNextFired = true;
 
   heroEl?.classList.add('is-transitioning');
-  page2El?.classList.add('is-visible');
+  page2El?.classList.add('is-visible', 'is-entering');
   page2El?.setAttribute('aria-hidden', 'false');
   // page 2 has its own logo/wordmark + menu + contact top bar — the
   // site-wide nav would otherwise sit on top of it (caught visually)
@@ -59,6 +66,7 @@ moveNextBtn?.addEventListener('click', () => {
 
   triggerFlipReveal(() => {
     heroEl?.classList.add('is-hidden');
+    page2El?.classList.remove('is-entering');
     setHeroActive(false); // stop the (now invisible) strip canvas's own rAF loop
   });
 });

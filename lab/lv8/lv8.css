@@ -342,6 +342,60 @@ body.lv8 {
 }
 .lv8-page2.is-visible { display: block; }
 
+/* ---- one-time entrance sequence (see chat reply) -----------------
+   Separate from the ongoing per-rotation blur-swap between portraits
+   (that's driven in JS, on the canvas itself — see page2.ts). This is
+   pure CSS, driven entirely by main.ts toggling .is-entering on
+   #lv8-page2: present from the moment "Move Next" is clicked (so the
+   strip-flip reveals THIS white-blurred state, not the finished page),
+   removed the instant the flip completes, which is what fires every
+   transition below at once. Slow/eased on purpose — this is a one-time
+   flourish, not something that needs to feel snappy. */
+.lv8-page2__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#lv8-page2.is-entering .lv8-page2__veil {
+  opacity: 1;
+}
+
+.lv8-page2__entry-rise {
+  transition: transform 1.6s var(--lv8-ease), filter 1.4s ease, opacity 1.2s ease;
+}
+#lv8-page2.is-entering .lv8-page2__entry-rise {
+  transform: translateY(9%);
+  filter: blur(22px);
+  opacity: 0.5;
+}
+
+.lv8-page2__entry-top {
+  transition: transform 1.2s var(--lv8-ease), opacity 1.1s ease;
+}
+#lv8-page2.is-entering .lv8-page2__entry-top {
+  transform: translateY(26px);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv8-page2__veil,
+  .lv8-page2__entry-rise,
+  .lv8-page2__entry-top {
+    transition: none;
+  }
+  #lv8-page2.is-entering .lv8-page2__veil { opacity: 0; }
+  #lv8-page2.is-entering .lv8-page2__entry-rise,
+  #lv8-page2.is-entering .lv8-page2__entry-top {
+    transform: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+
 .lv8-page2__ambient {
   position: absolute;
   inset: 0;

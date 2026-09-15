@@ -84,7 +84,7 @@
       <div class="lv8-page2__ambient-layer" id="lv8-ambient-b"></div>
     </div>
 
-    <div class="lv8-page2__topbar">
+    <div class="lv8-page2__topbar lv8-page2__entry-top">
       <div class="lv8-page2__brand">
         <img src="./nav-logo-mark.png" alt="" class="lv8-page2__brand-mark" />
         <span class="lv8-page2__brand-name">MANIK RANA</span>
@@ -108,11 +108,22 @@
       </div>
     </div>
 
-    <p class="lv8-page2__bigtext" aria-hidden="true">CREATIVE DESIGN</p>
+    <p class="lv8-page2__bigtext lv8-page2__entry-rise" aria-hidden="true">CREATIVE DESIGN</p>
 
-    <div class="lv8-page2__portrait" aria-hidden="true">
+    <div class="lv8-page2__portrait lv8-page2__entry-rise" aria-hidden="true">
       <canvas id="lv8-portrait-canvas" class="lv8-page2__portrait-canvas"></canvas>
     </div>
+
+    <!-- One-time entrance only (see chat reply) — separate from the
+         ongoing per-rotation blur-swap between portraits. main.ts adds
+         .is-entering on #lv8-page2 the instant "Move Next" is clicked
+         (so what the strip-flip actually reveals is this white-blurred
+         state, not the finished layout) and removes it the instant the
+         flip completes, which is what triggers the transitions below —
+         CREATIVE DESIGN/the portrait rising from .lv8-page2__entry-rise,
+         the top bar easing in from .lv8-page2__entry-top, and this veil
+         itself fading away. -->
+    <div class="lv8-page2__veil" aria-hidden="true"></div>
 
   </div>
 

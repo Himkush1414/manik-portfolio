@@ -1,7 +1,7 @@
 // /lab/lv8 — "page 2", revealed by the hero's strip-flip (see main.ts's
-// Move Next handler + lv8-strip-field.ts's triggerFlipReveal). Three
-// independent pieces live here, all driven off the same five portrait
-// images:
+// Move Next handler + lv8-strip-field.ts's triggerFlipReveal + its own
+// white-blur entrance, wired in index.html/lv8.css). Three independent
+// pieces live here:
 //
 //  1. a continuously-drifting ambient gradient behind everything — a
 //     strict 6-band vertical light-to-dark structure (see
@@ -14,15 +14,17 @@
 //
 // Only imported (dynamically, from main.ts) once the flip-reveal starts,
 // same spirit as game.ts's own dynamic import — no reason to pay for
-// five portrait PNGs (~4MB) on a visit that never reaches "Move Next".
+// portrait PNGs on a visit that never reaches "Move Next".
 //
-// "man image 7.png" (the green one that briefly replaced the old image 5)
-// is removed from the rotation entirely per the chat reply, not swapped
-// for anything — the 5 remaining files were renumbered so portrait-5.png
-// is now what used to be portrait-6.png ("man image 6.png"), keeping the
-// filenames sequential (portrait-1..5.png) rather than leaving a gap.
+// Active rotation is cut down to images 1-2 only for now (see chat
+// reply) — 3/4/5 stay on disk and PORTRAIT_GRADIENTS still has their
+// data below, just commented out, rather than deleting either: this has
+// swung back and forth a few times already (6 images -> swap one ->
+// drop it entirely -> now down to 2), so keeping the computed data one
+// uncomment away beats re-running the extraction script if it swings
+// back again.
 
-const PORTRAIT_COUNT = 5;
+const PORTRAIT_COUNT = 2;
 const PORTRAIT_URLS = Array.from(
   { length: PORTRAIT_COUNT },
   (_, i) => new URL(`./portraits/portrait-${i + 1}.png`, import.meta.url).href
@@ -38,14 +40,15 @@ const PORTRAIT_URLS = Array.from(
 // lightness the brief's band table calls for (e.g. 0% stop ~92% light
 // "extremely light", 100% stop ~3% light "near-black"), with saturation
 // peaking at the 50% stop per "strongest colour in the middle band, not
-// a flat fade". Order matches portrait-1..5.png.
+// a flat fade". Order matches portrait-1..5.png (only 1-2 active — see
+// above).
 const GRADIENT_STOP_KEYS = ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6'] as const;
 const PORTRAIT_GRADIENTS: string[][] = [
   ['#e8eaed', '#bcc6dc', '#7495dc', '#1552d5', '#1b3774', '#111622', '#060709'], // 1 — blue
   ['#ede8e8', '#dcbcc0', '#dc7482', '#d5152e', '#741b27', '#221113', '#090607'], // 2 — red
-  ['#ebe8ed', '#ccbcdc', '#a974dc', '#7615d5', '#481b74', '#1a1122', '#080609'], // 3 — violet
-  ['#edeae8', '#dcc8bc', '#dc9b74', '#d55c15', '#743c1b', '#221711', '#090706'], // 4 — orange
-  ['#e8e9ed', '#bcc4dc', '#748fdc', '#1546d5', '#1b3274', '#111522', '#060709'], // 5 — blue/violet (was "6")
+  // ['#ebe8ed', '#ccbcdc', '#a974dc', '#7615d5', '#481b74', '#1a1122', '#080609'], // 3 — violet (out of rotation)
+  // ['#edeae8', '#dcc8bc', '#dc9b74', '#d55c15', '#743c1b', '#221711', '#090706'], // 4 — orange (out of rotation)
+  // ['#e8e9ed', '#bcc4dc', '#748fdc', '#1546d5', '#1b3274', '#111522', '#060709'], // 5 — blue/violet (out of rotation)
 ];
 
 const ROTATE_MIN_MS = 7000;
