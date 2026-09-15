@@ -419,7 +419,10 @@ body.lv8 {
   position: absolute;
   inset: -10%;
   opacity: 0;
-  transition: opacity 2.2s ease;
+  /* kept roughly matched to page2.ts's TRANSITION_TOTAL_MS (currently
+     3400ms) so the background stays in sync with the slower, blur-
+     hidden portrait swap — see that file's comment on the constant */
+  transition: opacity 3.2s ease;
   background: linear-gradient(
     180deg,
     var(--g0, #e8e8e8) 0%,

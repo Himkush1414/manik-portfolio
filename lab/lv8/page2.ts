@@ -53,13 +53,23 @@ const PORTRAIT_GRADIENTS: string[][] = [
 
 const ROTATE_MIN_MS = 7000;
 const ROTATE_MAX_MS = 10000;
-// Corrected transition (see chat reply): no sliding/wiping motion at
-// all. Blur-in timing/intensity kept exactly as previously confirmed
-// correct; the swap now happens as a single instant cut at peak blur
-// (see runBlurTransition), not a reveal spread across a middle phase.
-const TRANSITION_TOTAL_MS = 2600;
-const BLUR_IN_FRAC = 0.28; // the swap fires the instant this fraction is crossed — peak blur
-const TRANSITION_BLUR_MAX_PX = 18;
+// Corrected again (see chat reply): the previous version swapped content
+// in a single instant frame at peak blur, which still read as a visible
+// snap/cut rather than hiding inside the blur. Now three phases: blur
+// ramps up (outgoing only), THEN a genuine cross-fade window while blur
+// STAYS at its (now much stronger) peak — outgoing alpha 1->0, incoming
+// alpha 0->1, redrawn every frame, so there is no single frame where the
+// change happens — then blur ramps back down (incoming only). Slower
+// overall too, to give the cross-fade room to actually read as gradual.
+// NOTE: .lv8-page2__ambient-layer's opacity transition (lv8.css) is a
+// separate CSS duration tuned to roughly match TRANSITION_TOTAL_MS so
+// the background stays in sync with this — if this changes materially,
+// that should move with it.
+const TRANSITION_TOTAL_MS = 3400;
+const BLUR_IN_FRAC = 0.3; // 0 -> here: blur ramps up, outgoing image only
+const CROSSFADE_FRAC = 0.22; // here -> +this: blur held at peak, images cross-fade
+// remaining fraction (1 - BLUR_IN_FRAC - CROSSFADE_FRAC): blur ramps back down, incoming only
+const TRANSITION_BLUR_MAX_PX = 30;
 
 let started = false;
 let rafId: number | null = null;
@@ -180,17 +190,30 @@ async function startPortraitCycle() {
     return c * c * (3 - 2 * c);
   }
 
-  // No sliding/wiping motion (see chat reply — corrects the previous
-  // right-to-left wipe): the outgoing image blurs up, then AT peak blur
-  // the canvas content is swapped to the incoming image in one instant
-  // cut (not a reveal spread over time), then blur eases back down to
-  // crisp. The blur is a plain CSS filter on the canvas element, so the
-  // swap itself — hidden inside the blur — is the only content change;
-  // nothing ever moves left or right.
+  // No sliding/wiping motion, and — corrected again — no instant swap
+  // either (see chat reply: the single-frame cut at peak blur was still
+  // reading as a visible snap). Three phases: the outgoing image blurs
+  // up; then, with blur HELD at its (stronger) peak the whole time, the
+  // two images genuinely cross-fade (outgoing alpha 1->0, incoming alpha
+  // 0->1, redrawn every frame of this window — never a single frame
+  // where the picture just changes); then blur eases back down to crisp
+  // on the now-fully-incoming image. The blur is a plain CSS filter on
+  // the canvas element; nothing ever moves left or right.
   function runBlurTransition(fromIndex: number, toIndex: number): Promise<void> {
     return new Promise(resolve => {
       const start = performance.now();
-      let swapped = false;
+      const crossfadeEnd = BLUR_IN_FRAC + CROSSFADE_FRAC;
+
+      function drawCrossfade(mix: number) {
+        // mix: 0 = fully outgoing, 1 = fully incoming
+        const { width: w, height: h } = canvas!;
+        ctx!.clearRect(0, 0, w, h);
+        ctx!.globalAlpha = 1;
+        drawImageCover(images[fromIndex]);
+        ctx!.globalAlpha = mix;
+        drawImageCover(images[toIndex]);
+        ctx!.globalAlpha = 1;
+      }
 
       function step(time: number) {
         const t = Math.min((time - start) / TRANSITION_TOTAL_MS, 1);
@@ -198,26 +221,26 @@ async function startPortraitCycle() {
         let blurPx: number;
         if (t < BLUR_IN_FRAC) {
           blurPx = TRANSITION_BLUR_MAX_PX * smoothstep(t / BLUR_IN_FRAC);
+          drawCrossfade(0);
+        } else if (t < crossfadeEnd) {
+          blurPx = TRANSITION_BLUR_MAX_PX; // held at peak for the whole cross-fade
+          drawCrossfade(smoothstep((t - BLUR_IN_FRAC) / CROSSFADE_FRAC));
         } else {
-          const tOut = (t - BLUR_IN_FRAC) / (1 - BLUR_IN_FRAC);
+          const tOut = (t - crossfadeEnd) / (1 - crossfadeEnd);
           blurPx = TRANSITION_BLUR_MAX_PX * (1 - smoothstep(tOut));
+          drawCrossfade(1);
         }
         canvas!.style.filter = blurPx > 0.4 ? `blur(${blurPx.toFixed(1)}px)` : 'none';
-
-        if (!swapped && t >= BLUR_IN_FRAC) {
-          swapped = true;
-          renderStaticFor(toIndex); // the cut — happens once, at peak blur
-        }
 
         if (t < 1) {
           rafId = requestAnimationFrame(step);
         } else {
           canvas!.style.filter = 'none';
+          renderStaticFor(toIndex);
           resolve();
         }
       }
 
-      renderStaticFor(fromIndex); // drawn once up front — nothing else changes the pixels during blur-in
       rafId = requestAnimationFrame(step);
     });
   }
