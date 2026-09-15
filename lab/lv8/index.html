@@ -169,7 +169,65 @@
 
     </div>
 
-    <!-- skills marquee lands in the next checkpoint -->
+    <!-- Right-to-left continuous skills marquee — vanilla CSS
+         equivalent of lv7's LogoLoop pattern (duplicate the sequence
+         once, animate a translateX loop), rendered as text labels
+         rather than logos since lv8 has no React/Tailwind dependency to
+         bring in just for this — see chat reply. Full "Technical
+         Skills" list from the resume (Languages, Frontend, Backend &
+         Database, Integrations, Tools), not a trimmed subset. -->
+    <div class="lv8-about__marquee" aria-label="Technical skills">
+      <div class="lv8-about__marquee-track">
+        <ul class="lv8-about__marquee-list" aria-hidden="false">
+          <li>JavaScript</li>
+          <li>TypeScript</li>
+          <li>PHP</li>
+          <li>HTML</li>
+          <li>CSS</li>
+          <li>React.js</li>
+          <li>Next.js</li>
+          <li>Tailwind CSS</li>
+          <li>Framer Motion</li>
+          <li>Node.js</li>
+          <li>REST APIs</li>
+          <li>PostgreSQL</li>
+          <li>Supabase</li>
+          <li>Razorpay</li>
+          <li>WhatsApp API</li>
+          <li>Google Maps API</li>
+          <li>Groq AI</li>
+          <li>Git</li>
+          <li>GitHub</li>
+          <li>Vercel</li>
+          <li>Vite</li>
+          <li>Recharts</li>
+        </ul>
+        <ul class="lv8-about__marquee-list" aria-hidden="true">
+          <li>JavaScript</li>
+          <li>TypeScript</li>
+          <li>PHP</li>
+          <li>HTML</li>
+          <li>CSS</li>
+          <li>React.js</li>
+          <li>Next.js</li>
+          <li>Tailwind CSS</li>
+          <li>Framer Motion</li>
+          <li>Node.js</li>
+          <li>REST APIs</li>
+          <li>PostgreSQL</li>
+          <li>Supabase</li>
+          <li>Razorpay</li>
+          <li>WhatsApp API</li>
+          <li>Google Maps API</li>
+          <li>Groq AI</li>
+          <li>Git</li>
+          <li>GitHub</li>
+          <li>Vercel</li>
+          <li>Vite</li>
+          <li>Recharts</li>
+        </ul>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== GAMES SECTION =====================

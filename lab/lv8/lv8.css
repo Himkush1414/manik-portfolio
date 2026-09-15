@@ -794,7 +794,56 @@ body.lv8 {
   .lv8-about__left { align-items: center; }
 }
 
-/* skills marquee lands in the next checkpoint (see chat reply) */
+/* ---- skills marquee — vanilla CSS equivalent of lv7's LogoLoop
+   (duplicate the sequence once, loop a translateX transform); see the
+   HTML comment for why this isn't the literal React component ---- */
+.lv8-about__marquee {
+  position: relative;
+  border-top: 1px solid rgba(242, 231, 218, 0.1);
+  padding: 22px 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+.lv8-about__marquee-track {
+  display: flex;
+  width: max-content;
+  animation: lv8-about-marquee 34s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv8-about__marquee-track { animation: none; }
+}
+@keyframes lv8-about-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.lv8-about__marquee-list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lv8-about__marquee-list li {
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(18px, 2.4vw, 30px);
+  font-family: var(--lv8-font-page2);
+  font-weight: 500;
+  font-size: clamp(14px, 1.4vw, 18px);
+  letter-spacing: 0.01em;
+  color: var(--lv8-text-dim);
+  white-space: nowrap;
+}
+.lv8-about__marquee-list li::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-left: clamp(18px, 2.4vw, 30px);
+  border-radius: 50%;
+  background: var(--lv8-lit);
+  opacity: 0.6;
+}
 
 /* ============================================================
    GAMES SECTION — the actual games hub content (list-based selection),
