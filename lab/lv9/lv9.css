@@ -161,11 +161,13 @@ body.lv9 {
 /* end state once the flip has fully completed — main.ts adds this after
    triggerFlipReveal's callback fires, per the hidden-not-removed note in
    index.html (keeps a future reverse transition possible).
-   visibility, NOT display: ported as-is from lv8, where this mattered
-   because display:none here collapsed the hero's reserved 100vh of
-   flow space, pulling content below it up underneath page 2 (lv9 has
-   nothing below the hero, so it's moot here, but visibility:hidden is
-   still the correct/harmless choice). */
+   visibility, NOT display: this needs to reserve its own 100vh of
+   normal-flow space, since #lv9-page2 is position:absolute (never
+   contributes flow height on its own) — display:none here would
+   collapse that space entirely, pulling the new About section (see
+   chat reply) up underneath page 2 instead of after it. This bug was
+   already caught and fixed once on lv8; ported the fix straight
+   through rather than re-introducing it. */
 .lv9-hero.is-hidden {
   visibility: hidden;
   pointer-events: none;
@@ -191,9 +193,10 @@ body.lv9 {
 }
 
 /* bottom fade — ported verbatim from lv8's hero (there it blends into
-   the games section sitting right below; lv9 has no section below the
-   hero, so this mostly just softens the hero's own bottom edge now, but
-   it's kept unchanged per "faithful copy, no redesign"). */
+   the games section sitting right below; lv9's own section below is the
+   About section, added afterward — this still isn't tuned to match its
+   colour specifically, just softens the hero's own bottom edge, kept
+   unchanged per "faithful copy, no redesign" on the original port). */
 .lv9-hero__fade {
   position: absolute;
   inset: auto 0 0 0;
@@ -614,4 +617,231 @@ body.lv9 {
   .lv9-page2__actions { justify-self: center; }
   .lv9-page2__bigtext { font-size: clamp(40px, 18vw, 90px); bottom: 2%; }
   .lv9-page2__portrait { width: 86vw; height: 58%; }
+}
+
+/* ============================================================
+   ABOUT (light theme) — new section below page 2, lv9 only (see chat
+   reply — lv8 keeps its own separate dark-theme version, untouched).
+   Deliberately its own flat palette (#F5F5F5/#FFFFFF/near-black text),
+   not the warm --lv9-* ramp used by the hero/page-2 above it.
+   ============================================================ */
+.lv9-about {
+  display: none; /* main.ts sets .is-visible the same moment page 2 is shown */
+  background: #F5F5F5;
+  padding: clamp(56px, 9vh, 110px) 0 0;
+  overflow: hidden;
+}
+.lv9-about.is-visible {
+  display: block;
+}
+
+.lv9-about__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 clamp(64px, 14vw, 220px);
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: clamp(32px, 6vw, 80px);
+  align-items: center;
+  padding-bottom: clamp(64px, 10vh, 120px);
+}
+
+.lv9-about__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+}
+.lv9-about__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lv9-font-page2);
+  font-size: 15px;
+  font-weight: 400;
+  color: #444444;
+}
+.lv9-about__eyebrow-icon {
+  width: 15px;
+  height: 15px;
+  color: #444444;
+}
+.lv9-about__headline {
+  margin: 0;
+  font-family: var(--lv9-font-page2);
+  font-weight: 400;
+  font-size: clamp(28px, 3.2vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  color: #111111;
+  max-width: 640px;
+}
+.lv9-about__cta {
+  margin-top: 6px;
+  width: 158px;
+  height: 50px;
+  border-radius: 25px;
+  border: none;
+  background: #171717;
+  color: #FFFFFF;
+  font-family: var(--lv9-font-page2);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: default; /* inert — no wired navigation on lv9, same as page 2 */
+  transition: background 0.2s ease;
+}
+.lv9-about__cta:hover {
+  background: #000000;
+}
+
+.lv9-about__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.lv9-about__marker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lv9-about__marker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #444444;
+  flex: none;
+}
+.lv9-about__marker-label {
+  font-family: var(--lv9-font-page2);
+  font-size: 14px;
+  font-weight: 400;
+  color: #444444;
+}
+.lv9-about__connector {
+  width: 1px;
+  height: 46px;
+  margin-left: 8px; /* centres under the 16px marker */
+  background: #CFCFCF;
+}
+.lv9-about__dial-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+}
+
+/* ---- clock dial — ring of ticks, live IST clock centred inside ---- */
+.lv9-about__dial {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex: none;
+}
+.lv9-about__dial-ticks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lv9-about__dial-ticks line {
+  stroke: #CFCFCF;
+  stroke-width: 1.5;
+}
+.lv9-about__dial-face {
+  position: absolute;
+  inset: 50%;
+  transform: translate(-50%, -50%);
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid #555555;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.lv9-about__clock {
+  font-family: var(--lv9-font-page2);
+  font-weight: 400;
+  font-size: clamp(24px, 2.6vw, 34px);
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.lv9-about__clock-meridiem {
+  font-family: var(--lv9-font-page2);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: #666666;
+}
+
+/* ---- photo card — B&W portrait, white card, minimal styling ---- */
+.lv9-about__photo-card {
+  width: 168px;
+  height: 200px;
+  flex: none;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.lv9-about__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 10%;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .lv9-about__inner { grid-template-columns: 1fr; text-align: center; }
+  .lv9-about__left { align-items: center; }
+  .lv9-about__right { align-items: center; }
+  .lv9-about__marker-row,
+  .lv9-about__connector { display: none; } /* the connector line only makes sense pointing at a fixed left edge */
+  .lv9-about__dial-row { justify-content: center; }
+}
+
+/* ---- skills marquee — each skill its own white pill card ---- */
+.lv9-about__marquee {
+  position: relative;
+  padding: clamp(28px, 5vh, 48px) 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+.lv9-about__marquee-track {
+  display: flex;
+  width: max-content;
+  animation: lv9-about-marquee 34s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv9-about__marquee-track { animation: none; }
+}
+@keyframes lv9-about-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.lv9-about__marquee-list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 14px;
+  padding-right: 14px;
+}
+.lv9-about__marquee-list li {
+  display: flex;
+  align-items: center;
+  padding: 12px 22px;
+  border-radius: 11px;
+  background: #FFFFFF;
+  font-family: var(--lv9-font-page2);
+  font-weight: 500;
+  font-size: 14px;
+  color: #B3B3B3;
+  white-space: nowrap;
 }

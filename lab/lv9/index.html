@@ -121,6 +121,112 @@
 
   </div>
 
+  <!-- ===================== ABOUT (light theme) =====================
+       New section below page 2, reached by scrolling — lv9 only, per
+       Manik's explicit correction (lv8 keeps its own dark-theme version,
+       untouched). Sits in normal document flow right after #lv9-page2
+       (which is position:absolute and reserves no flow height itself),
+       so it naturally starts exactly where the hero's own 100vh box
+       ends. Hidden by default; main.ts adds .is-visible the same moment
+       "Move Next" is clicked, same gating pattern as #lv9-page2 itself
+       — otherwise this would be reachable by scrolling past the
+       original hero directly, without ever clicking Move Next. -->
+  <section class="lv9-about" id="lv9-about" aria-label="About Manik">
+    <div class="lv9-about__inner">
+
+      <div class="lv9-about__left">
+        <div class="lv9-about__eyebrow">
+          <svg class="lv9-about__eyebrow-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 1 L11.8 8.2 L19 10 L11.8 11.8 L10 19 L8.2 11.8 L1 10 L8.2 8.2 Z" fill="currentColor" />
+          </svg>
+          <span>Who I Am</span>
+        </div>
+        <h2 class="lv9-about__headline">I believe that using different methods to create something new isn't a bad thing. In the end, it doesn't matter how you did it, or what tools you used — what matters is that you completed it, and it works the way you wanted it to.</h2>
+        <button class="lv9-about__cta" type="button">Let's Connect</button>
+      </div>
+
+      <div class="lv9-about__right">
+        <div class="lv9-about__marker-row">
+          <span class="lv9-about__marker" aria-hidden="true"></span>
+          <span class="lv9-about__marker-label">Current time in Himachal Pradesh, India</span>
+        </div>
+        <div class="lv9-about__connector" aria-hidden="true"></div>
+        <div class="lv9-about__dial-row">
+          <div class="lv9-about__dial">
+            <svg class="lv9-about__dial-ticks" id="lv9-about-ticks" viewBox="0 0 200 200" aria-hidden="true"></svg>
+            <div class="lv9-about__dial-face">
+              <span class="lv9-about__clock" id="lv9-about-clock">--:--</span>
+              <span class="lv9-about__clock-meridiem" id="lv9-about-meridiem">--</span>
+            </div>
+          </div>
+          <div class="lv9-about__photo-card">
+            <img src="./portrait.png" alt="Manik Rana" class="lv9-about__photo" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right-to-left continuous skills marquee — vanilla CSS equivalent
+         of lv7's LogoLoop pattern (duplicate the sequence once, loop a
+         translateX transform), rendered as individual pill cards per
+         the light-theme spec. Full "Technical Skills" list from the
+         resume (Languages, Frontend, Backend & Database, Integrations,
+         Tools), not a trimmed subset. -->
+    <div class="lv9-about__marquee" aria-label="Technical skills">
+      <div class="lv9-about__marquee-track">
+        <ul class="lv9-about__marquee-list" aria-hidden="false">
+          <li>JavaScript</li>
+          <li>TypeScript</li>
+          <li>PHP</li>
+          <li>HTML</li>
+          <li>CSS</li>
+          <li>React.js</li>
+          <li>Next.js</li>
+          <li>Tailwind CSS</li>
+          <li>Framer Motion</li>
+          <li>Node.js</li>
+          <li>REST APIs</li>
+          <li>PostgreSQL</li>
+          <li>Supabase</li>
+          <li>Razorpay</li>
+          <li>WhatsApp API</li>
+          <li>Google Maps API</li>
+          <li>Groq AI</li>
+          <li>Git</li>
+          <li>GitHub</li>
+          <li>Vercel</li>
+          <li>Vite</li>
+          <li>Recharts</li>
+        </ul>
+        <ul class="lv9-about__marquee-list" aria-hidden="true">
+          <li>JavaScript</li>
+          <li>TypeScript</li>
+          <li>PHP</li>
+          <li>HTML</li>
+          <li>CSS</li>
+          <li>React.js</li>
+          <li>Next.js</li>
+          <li>Tailwind CSS</li>
+          <li>Framer Motion</li>
+          <li>Node.js</li>
+          <li>REST APIs</li>
+          <li>PostgreSQL</li>
+          <li>Supabase</li>
+          <li>Razorpay</li>
+          <li>WhatsApp API</li>
+          <li>Google Maps API</li>
+          <li>Groq AI</li>
+          <li>Git</li>
+          <li>GitHub</li>
+          <li>Vercel</li>
+          <li>Vite</li>
+          <li>Recharts</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <script type="module" src="./main.ts"></script>

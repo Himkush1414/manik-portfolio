@@ -1,9 +1,9 @@
-// /lab/lv9 — bootstrap for this isolated route, a faithful copy of lv8's
-// hero -> "Move Next" flip transition -> page 2 figure section, as those
-// currently exist on lv8 (see chat reply). Deliberately does NOT include
-// lv8's game, its pre-game flow, its games-list section, or its About/
-// philosophy section — none of that exists here, so this file is just
-// the subset of lv8's main.ts that those two pieces actually need.
+// /lab/lv9 — bootstrap for this isolated route: a faithful copy of lv8's
+// hero -> "Move Next" flip transition -> page 2 figure section, plus its
+// own light-theme About section below page 2 (see chat reply — lv8's own
+// About section is dark-themed and stays on lv8, untouched; this is a
+// separate, lv9-only build). Deliberately does NOT include lv8's game or
+// its pre-game flow — none of that exists here.
 import { setHeroActive, triggerFlipReveal } from './lv9-strip-field';
 
 // Freshness beacon, matching the convention every other route on this site uses.
@@ -32,6 +32,7 @@ backBtn?.addEventListener('click', () => {
 // ---------------------------------------------------------------
 const heroEl = document.getElementById('lv9-hero');
 const page2El = document.getElementById('lv9-page2');
+const aboutEl = document.getElementById('lv9-about');
 const moveNextBtn = document.getElementById('lv9-move-next');
 const siteNavEl = document.querySelector('.lv9-nav');
 let moveNextFired = false;
@@ -43,11 +44,17 @@ moveNextBtn?.addEventListener('click', () => {
   heroEl?.classList.add('is-transitioning');
   page2El?.classList.add('is-visible', 'is-entering');
   page2El?.setAttribute('aria-hidden', 'false');
+  // the light-theme section below page 2 (see chat reply) — only
+  // reachable once "Move Next" has actually been clicked, not by
+  // scrolling past the original hero directly (see .lv9-about's comment
+  // in lv9.css)
+  aboutEl?.classList.add('is-visible');
   // page 2 has its own logo/wordmark + menu + contact top bar — the
   // site-wide nav would otherwise sit on top of it
   siteNavEl?.classList.add('is-hidden');
 
   void import('./page2').then(({ startPage2 }) => startPage2());
+  void import('./lv9-about').then(({ startAbout }) => startAbout());
 
   triggerFlipReveal(() => {
     heroEl?.classList.add('is-hidden');
