@@ -3,17 +3,22 @@
 // independent pieces live here, all driven off the same six portrait
 // images:
 //
-//  1. a continuously-drifting ambient gradient behind everything, whose
-//     colour scheme is tied to whichever portrait is currently showing —
-//     never cursor-reactive, always live (see startAmbient/setAmbient).
-//  2. the portraits themselves, rotating every ~7-10s via a pixelated
-//     right-to-left wipe rendered on a <canvas> (see startPortraitCycle).
+//  1. a continuously-drifting ambient gradient behind everything — a
+//     strict 6-band vertical light-to-dark structure (see
+//     PORTRAIT_GRADIENTS below), never cursor-reactive, always live.
+//  2. the portraits themselves, rotating every ~7-10s via a blur-then-
+//     pixelated-wipe right-to-left, rendered on a <canvas> (see
+//     startPortraitCycle).
 //  3. the inert menu dropdown + Contact button (no navigation — lv8 is a
 //     standalone route, see the chat reply and index.html's comment).
 //
 // Only imported (dynamically, from main.ts) once the flip-reveal starts,
 // same spirit as game.ts's own dynamic import — no reason to pay for six
 // portrait PNGs (~5MB) on a visit that never reaches "Move Next".
+//
+// portrait-5.png's SOURCE was swapped ("man image 5.png" -> "man image
+// 7.png", per the chat reply) but it keeps the same project filename —
+// simplest fix, no rename/re-plumbing needed elsewhere.
 
 const PORTRAIT_COUNT = 6;
 const PORTRAIT_URLS = Array.from(
@@ -21,26 +26,38 @@ const PORTRAIT_URLS = Array.from(
   (_, i) => new URL(`./portraits/portrait-${i + 1}.png`, import.meta.url).href
 );
 
-// Colours below were read directly from each PNG's own pixels (not
-// guessed): a small Node script decoded every file, ignored the mostly-
-// transparent/near-black fill and the near-white highlight core (both
-// low-saturation, so they'd otherwise wash any average toward grey), and
-// took a saturation-weighted average of the remaining "coloured glow"
-// pixels — that's c1. c2/c3 are darker tones at the same hue, generated
-// for the ambient background so it stays dark-dominant rather than
-// pastel. Order matches portrait-1..6.png (the filename numbering).
-const PORTRAIT_PALETTE: { c1: string; c2: string; c3: string }[] = [
-  { c1: '#27478c', c2: '#101c38', c3: '#091020' }, // 1 — blue
-  { c1: '#b12a3c', c2: '#3a0e13', c3: '#21080b' }, // 2 — red
-  { c1: '#7538b1', c2: '#241136', c3: '#150a1f' }, // 3 — violet
-  { c1: '#98400c', c2: '#3d1d0b', c3: '#211108' }, // 4 — orange
-  { c1: '#0e5f4e', c2: '#0b3d32', c3: '#08211c' }, // 5 — green
-  { c1: '#3c549a', c2: '#141c33', c3: '#0b101d' }, // 6 — blue/violet
+// 7-stop vertical gradient per portrait (0/15/30/50/70/90/100%), each
+// stop's colour read directly from that PNG's own pixels — not a fixed
+// palette. Method: a small Node script decoded every file, took a
+// saturation-weighted average of the "coloured glow" pixels (skipping
+// the mostly-transparent fill and the near-white highlight core, both
+// low-saturation and otherwise washing any average toward grey) to get
+// that image's hue, then generated 7 HSL shades of that one hue at the
+// lightness the brief's band table calls for (e.g. 0% stop ~92% light
+// "extremely light", 100% stop ~3% light "near-black"), with saturation
+// peaking at the 50% stop per "strongest colour in the middle band, not
+// a flat fade". Order matches portrait-1..6.png.
+const GRADIENT_STOP_KEYS = ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6'] as const;
+const PORTRAIT_GRADIENTS: string[][] = [
+  ['#e8eaed', '#bcc6dc', '#7495dc', '#1552d5', '#1b3774', '#111622', '#060709'], // 1 — blue
+  ['#ede8e8', '#dcbcc0', '#dc7482', '#d5152e', '#741b27', '#221113', '#090607'], // 2 — red
+  ['#ebe8ed', '#ccbcdc', '#a974dc', '#7615d5', '#481b74', '#1a1122', '#080609'], // 3 — violet
+  ['#edeae8', '#dcc8bc', '#dc9b74', '#d55c15', '#743c1b', '#221711', '#090706'], // 4 — orange
+  ['#e8edec', '#bcdcd2', '#74dcbc', '#15d599', '#1b7458', '#11221d', '#060908'], // 5 — green (man image 7.png)
+  ['#e8e9ed', '#bcc4dc', '#748fdc', '#1546d5', '#1b3274', '#111522', '#060709'], // 6 — blue/violet
 ];
 
 const ROTATE_MIN_MS = 7000;
 const ROTATE_MAX_MS = 10000;
-const WIPE_DURATION_MS = 850;
+// Corrected transition (see chat reply): slower overall, and the reveal
+// now happens WHILE the canvas is blurred rather than snapping instantly
+// — three phases inside this one duration: blur in, wipe (under blur),
+// blur out. See runWipe.
+const WIPE_TOTAL_MS = 2600;
+const WIPE_PHASE1_FRAC = 0.28; // blur in — outgoing image only, no content change yet
+const WIPE_PHASE2_FRAC = 0.42; // the right-to-left reveal itself, still blurred
+// phase 3 (blur out) is whatever's left: 1 - PHASE1 - PHASE2
+const WIPE_BLUR_MAX_PX = 18;
 const WIPE_BAND_PX = 46; // width of the pixelated leading edge, in canvas px
 const WIPE_BLOCK = 10; // pixelation block size within that band
 
@@ -68,33 +85,35 @@ export function stopPage2() {
 
 // ---------------------------------------------------------------
 // Ambient gradient — two stacked layers (see lv8.css's
-// .lv8-page2__ambient-layer), each running its own continuous drift
-// animation forever; only their CSS colour custom-properties and
-// which one is .is-active ever change, so the drift motion itself never
-// restarts or jumps when the palette swaps.
+// .lv8-page2__ambient-layer), each running its own continuous "breathe"
+// animation forever; only their CSS gradient-stop custom-properties and
+// which one is .is-active ever change, so the motion itself never
+// restarts or jumps when the palette swaps. setAmbientForIndex is called
+// the INSTANT a portrait transition starts (see scheduleNext below), not
+// after it finishes, so this 2.2s crossfade runs concurrently with the
+// portrait's own (slower, 2.6s) blur/wipe — reading as one continuous
+// shift instead of the image changing and then the colour catching up.
 // ---------------------------------------------------------------
 const ambientA = document.getElementById('lv8-ambient-a');
 const ambientB = document.getElementById('lv8-ambient-b');
 let ambientShowingA = true;
 
-function applyPalette(el: HTMLElement, p: { c1: string; c2: string; c3: string }) {
-  el.style.setProperty('--amb-c1', p.c1);
-  el.style.setProperty('--amb-c2', p.c2);
-  el.style.setProperty('--amb-c3', p.c3);
+function applyGradient(el: HTMLElement, stops: string[]) {
+  GRADIENT_STOP_KEYS.forEach((key, i) => el.style.setProperty(`--${key}`, stops[i]));
 }
 
 function startAmbient() {
   if (!ambientA || !ambientB) return;
-  applyPalette(ambientA, PORTRAIT_PALETTE[0]);
-  applyPalette(ambientB, PORTRAIT_PALETTE[0]);
+  applyGradient(ambientA, PORTRAIT_GRADIENTS[0]);
+  applyGradient(ambientB, PORTRAIT_GRADIENTS[0]);
 }
 
 function setAmbientForIndex(index: number) {
   if (!ambientA || !ambientB) return;
-  const palette = PORTRAIT_PALETTE[index] ?? PORTRAIT_PALETTE[0];
+  const stops = PORTRAIT_GRADIENTS[index] ?? PORTRAIT_GRADIENTS[0];
   const incoming = ambientShowingA ? ambientB : ambientA;
   const outgoing = ambientShowingA ? ambientA : ambientB;
-  applyPalette(incoming, palette);
+  applyGradient(incoming, stops);
   incoming.classList.add('is-active');
   outgoing.classList.remove('is-active');
   ambientShowingA = !ambientShowingA;
@@ -196,23 +215,56 @@ async function startPortraitCycle() {
   }
   renderStatic();
 
+  function smoothstep(t: number) {
+    const c = Math.min(Math.max(t, 0), 1);
+    return c * c * (3 - 2 * c);
+  }
+
+  // Three phases inside one duration (see chat reply — corrects the old
+  // instant snap): the outgoing image blurs up first (no content change
+  // yet), THEN the right-to-left reveal happens while still blurred (so
+  // the swap itself reads as "the colours are changing" rather than "a
+  // new picture snapped in"), then the now-fully-incoming image blurs
+  // back down to crisp. The blur is a plain CSS filter on the canvas
+  // element — cheap, and it naturally also softens the pixelated band's
+  // hard block edges during phase 2 instead of fighting them.
   function runWipe(fromIndex: number, toIndex: number): Promise<void> {
     return new Promise(resolve => {
       const start = performance.now();
-      function step(time: number) {
-        const t = Math.min((time - start) / WIPE_DURATION_MS, 1);
-        const eased = t * t * (3 - 2 * t); // smoothstep
-        const { width: w, height: h } = canvas!;
-        const revealX = w * (1 - eased); // grows the revealed region from the right edge leftward
+      const phase3Frac = 1 - WIPE_PHASE1_FRAC - WIPE_PHASE2_FRAC;
 
+      function step(time: number) {
+        const t = Math.min((time - start) / WIPE_TOTAL_MS, 1);
+        const { width: w, height: h } = canvas!;
+
+        let blurPx: number;
+        let revealFrac: number;
+        if (t < WIPE_PHASE1_FRAC) {
+          blurPx = WIPE_BLUR_MAX_PX * smoothstep(t / WIPE_PHASE1_FRAC);
+          revealFrac = 0;
+        } else if (t < WIPE_PHASE1_FRAC + WIPE_PHASE2_FRAC) {
+          blurPx = WIPE_BLUR_MAX_PX;
+          revealFrac = smoothstep((t - WIPE_PHASE1_FRAC) / WIPE_PHASE2_FRAC);
+        } else {
+          const t3 = (t - WIPE_PHASE1_FRAC - WIPE_PHASE2_FRAC) / phase3Frac;
+          blurPx = WIPE_BLUR_MAX_PX * (1 - smoothstep(t3));
+          revealFrac = 1;
+        }
+
+        canvas!.style.filter = blurPx > 0.4 ? `blur(${blurPx.toFixed(1)}px)` : 'none';
+
+        const revealX = w * (1 - revealFrac); // grows the revealed region from the right edge leftward
         ctx!.clearRect(0, 0, w, h);
-        drawImageCover(images[fromIndex]); // untouched (not-yet-reached) portion stays crisp underneath
-        drawImageCover(images[toIndex], revealX, w - revealX); // crisp, already-revealed portion
-        drawPixelatedBand(images[toIndex], revealX - WIPE_BAND_PX / 2, WIPE_BAND_PX); // the sweeping blocky seam
+        drawImageCover(images[fromIndex]); // untouched (not-yet-reached) portion underneath
+        drawImageCover(images[toIndex], revealX, w - revealX); // already-revealed portion
+        if (revealFrac > 0 && revealFrac < 1) {
+          drawPixelatedBand(images[toIndex], revealX - WIPE_BAND_PX / 2, WIPE_BAND_PX); // the sweeping blocky seam
+        }
 
         if (t < 1) {
           rafId = requestAnimationFrame(step);
         } else {
+          canvas!.style.filter = 'none';
           renderStaticFor(toIndex);
           resolve();
         }
@@ -232,9 +284,11 @@ async function startPortraitCycle() {
     rotateTimer = window.setTimeout(async () => {
       if (!started) return;
       const nextIndex = (activeIndex + 1) % PORTRAIT_COUNT;
+      // fired now, concurrently with the blur/wipe below, not after it
+      // resolves — see the ambient section's comment for why
+      setAmbientForIndex(nextIndex);
       await runWipe(activeIndex, nextIndex);
       activeIndex = nextIndex;
-      setAmbientForIndex(activeIndex);
       if (started) scheduleNext();
     }, delay);
   }

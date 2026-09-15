@@ -25,6 +25,9 @@ body.lv8 {
   --lv8-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
   --lv8-font-body: 'Sora', Helvetica, Arial, sans-serif;
   --lv8-font-mono: 'Space Mono', 'Courier New', monospace;
+  /* page 2 only (see chat reply) — a clean geometric sans, closest
+     available match to Inter/Helvetica Neue/SF Pro */
+  --lv8-font-page2: 'Inter', 'Helvetica Neue', 'SF Pro Display', Helvetica, Arial, sans-serif;
   --lv8-gutter: clamp(20px, 4vw, 64px);
   --lv8-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -344,31 +347,42 @@ body.lv8 {
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #0a0705; /* base while the extracted palette is still loading in */
+  background: #030201; /* base while the extracted gradient is still loading in */
 }
-/* two full-bleed, oversized radial-gradient layers, each quietly
-   drifting on its own (continuous, never cursor-reactive — see the
-   brief) — main.ts crossfades opacity between them whenever the active
-   portrait's extracted colours change, so the drift never has to
-   restart or jump. */
+/* Corrected structure (see chat reply): a strict 6-band VERTICAL gradient
+   — near-white at the very top through near-black at the very bottom,
+   saturation peaking around the middle bands — built from 7 stops
+   (0/15/30/50/70/90/100%) whose actual colours are read per-image (see
+   PORTRAIT_GRADIENTS in page2.ts), not a fixed palette. Two layers still
+   crossfade on an image change (main.ts calls setAmbientForIndex the
+   INSTANT a transition starts, not after it finishes, so the colour
+   cross-fade runs concurrently with the portrait's own blur/wipe rather
+   than only starting once that's already done — that sequential feel
+   was the "turn the light off and on" complaint). The slow scale/drift
+   on the layer itself is what keeps this "live" without touching the
+   band structure — the gradient stops themselves never move. */
 .lv8-page2__ambient-layer {
   position: absolute;
-  inset: -15%;
+  inset: -10%;
   opacity: 0;
-  transition: opacity 1.4s ease;
-  background:
-    radial-gradient(48% 40% at var(--amb-x1, 25%) var(--amb-y1, 30%), var(--amb-c1, #1a1410) 0%, transparent 70%),
-    radial-gradient(55% 45% at var(--amb-x2, 75%) var(--amb-y2, 70%), var(--amb-c2, #120e0b) 0%, transparent 70%),
-    radial-gradient(60% 50% at var(--amb-x3, 50%) var(--amb-y3, 95%), var(--amb-c3, #0a0705) 0%, transparent 75%),
-    #0a0705;
-  animation: lv8-ambient-drift 26s ease-in-out infinite;
+  transition: opacity 2.2s ease;
+  background: linear-gradient(
+    180deg,
+    var(--g0, #e8e8e8) 0%,
+    var(--g1, #bfbfbf) 15%,
+    var(--g2, #7a7a7a) 30%,
+    var(--g3, #3a3a3a) 50%,
+    var(--g4, #202020) 70%,
+    var(--g5, #0c0c0c) 90%,
+    var(--g6, #030201) 100%
+  );
+  animation: lv8-ambient-breathe 22s ease-in-out infinite;
 }
 .lv8-page2__ambient-layer.is-active { opacity: 1; }
-.lv8-page2__ambient-layer--b { animation-delay: -9s; }
-@keyframes lv8-ambient-drift {
-  0%, 100% { --amb-x1: 22%; --amb-y1: 28%; --amb-x2: 78%; --amb-y2: 68%; --amb-x3: 46%; --amb-y3: 96%; }
-  33% { --amb-x1: 30%; --amb-y1: 40%; --amb-x2: 68%; --amb-y2: 76%; --amb-x3: 58%; --amb-y3: 90%; }
-  66% { --amb-x1: 16%; --amb-y1: 34%; --amb-x2: 74%; --amb-y2: 58%; --amb-x3: 40%; --amb-y3: 98%; }
+.lv8-page2__ambient-layer--b { animation-delay: -11s; }
+@keyframes lv8-ambient-breathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.08) translateY(-1.5%); }
 }
 @media (prefers-reduced-motion: reduce) {
   .lv8-page2__ambient-layer { animation: none; }
@@ -396,20 +410,29 @@ body.lv8 {
   filter: drop-shadow(0 0 6px rgba(168, 52, 33, 0.4));
 }
 .lv8-page2__brand-name {
-  font-family: var(--lv8-font-body);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-family: var(--lv8-font-page2);
+  font-size: 27px; /* wordmark — "slightly larger" than the surrounding nav text */
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--lv8-text);
+  /* the corrected ambient gradient's top band is deliberately near-white
+     (see chat reply's band table) — light nav text on it was reading as
+     low-contrast, caught visually. A shadow keeps it legible regardless
+     of which image's gradient is behind it, since the top band's
+     lightness is the same ~92% for every image. */
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 .lv8-page2__address {
   justify-self: center;
-  font-family: var(--lv8-font-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  font-family: var(--lv8-font-page2);
+  font-size: 15px;
+  line-height: 19px;
+  font-weight: 400;
+  letter-spacing: 0;
   color: var(--lv8-text-dim);
   text-align: center;
   white-space: nowrap;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 .lv8-page2__actions {
   display: flex;
@@ -457,24 +480,35 @@ body.lv8 {
 .lv8-page2__menu-item {
   padding: 9px 12px;
   border-radius: 6px;
-  font-family: var(--lv8-font-body);
-  font-size: 13px;
+  font-family: var(--lv8-font-page2);
+  font-size: 14px;
+  font-weight: 500;
   color: var(--lv8-text-dim);
   /* inert by design (see chat reply) — no href, no click handler; the
      hover state is purely visual so it doesn't read as broken */
   cursor: default;
 }
 .lv8-page2__menu-item:hover { background: rgba(168, 52, 33, 0.12); color: var(--lv8-text); }
-.lv8-page2__contact {
+/* `#lv8-page2 ` prefix, not just `.lv8-page2__contact` — plain `body.lv8
+   button { font: inherit; }` up top is actually (0,1,2) (body+button are
+   BOTH type selectors), which beats a single class (0,1,0) regardless of
+   source order, silently resetting this button's font back to whatever
+   it inherits (verified: it was rendering at the browser-default
+   16px/400, not the 14px/600 below — a plain `button.` prefix, (0,1,1),
+   still wasn't enough). The ID prefix is a cheap, certain way past it.
+   This same bug affects other buttons across the page too (Play, the
+   setup/pause CTAs, ...) but those are out of this task's page-2-only
+   scope — flagged in the chat reply rather than fixed here. */
+#lv8-page2 .lv8-page2__contact {
   padding: 10px 22px;
   border-radius: 999px;
   border: 1px solid var(--lv8-lit);
   background: transparent;
   color: var(--lv8-lit);
-  font-family: var(--lv8-font-body);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-family: var(--lv8-font-page2);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0;
   cursor: default; /* inert — see chat reply */
   transition: background 0.25s ease, color 0.25s ease;
 }
@@ -492,30 +526,38 @@ body.lv8 {
   margin: 0;
   width: 100%;
   text-align: center;
-  font-family: var(--lv8-font-body);
-  font-weight: 800;
-  font-size: clamp(40px, 9.4vw, 148px);
-  letter-spacing: 0.04em;
-  line-height: 1;
-  color: rgba(242, 231, 218, 0.92);
+  font-family: var(--lv8-font-page2);
+  font-weight: 400; /* corrected from bold — see chat reply */
+  font-size: clamp(48px, 11vw, 200px);
+  /* -4px at the spec's ~200px base is a -0.02em ratio — kept as em so it
+     scales with font-size instead of overlapping glyphs at small sizes */
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  color: #fff;
   white-space: nowrap;
   user-select: none;
   pointer-events: none;
 }
 
+/* genuinely centered now (was right:6%, off-axis from the section's true
+   centre — caught visually) — also now shares the same centre line as
+   .lv8-page2__bigtext above, so the two actually overlap/occlude as
+   intended rather than sitting side by side. */
 .lv8-page2__portrait {
   position: absolute;
-  right: 6%;
+  left: 50%;
   bottom: 0;
   z-index: 2;
-  width: min(48vw, 720px);
-  height: 82%;
+  transform: translateX(-50%);
+  width: min(50vw, 740px);
+  height: 84%;
   pointer-events: none;
 }
 .lv8-page2__portrait-canvas {
   width: 100%;
   height: 100%;
   display: block;
+  will-change: filter; /* the blur-transition filter animates every rotation, see page2.ts */
 }
 
 @media (max-width: 860px) {
@@ -523,8 +565,8 @@ body.lv8 {
   .lv8-page2__brand,
   .lv8-page2__address,
   .lv8-page2__actions { justify-self: center; }
-  .lv8-page2__bigtext { font-size: clamp(40px, 16vw, 90px); bottom: 2%; }
-  .lv8-page2__portrait { width: 86vw; right: 50%; transform: translateX(50%); height: 58%; }
+  .lv8-page2__bigtext { font-size: clamp(40px, 18vw, 90px); bottom: 2%; }
+  .lv8-page2__portrait { width: 86vw; height: 58%; }
 }
 
 /* ============================================================
