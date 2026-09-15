@@ -74,6 +74,7 @@ const TRANSITION_BLUR_MAX_PX = 30;
 let started = false;
 let rafId: number | null = null;
 let rotateTimer: number | undefined;
+let clockTimer: number | undefined;
 
 export function startPage2() {
   if (started) return;
@@ -81,6 +82,7 @@ export function startPage2() {
   startAmbient();
   void startPortraitCycle();
   wireMenu();
+  startClockDial();
 }
 
 // stops the portrait rAF loop + rotation timer — not currently called
@@ -91,6 +93,7 @@ export function stopPage2() {
   started = false;
   if (rafId !== null) cancelAnimationFrame(rafId);
   window.clearTimeout(rotateTimer);
+  window.clearInterval(clockTimer);
 }
 
 // ---------------------------------------------------------------
@@ -294,4 +297,68 @@ function wireMenu() {
   document.addEventListener('click', e => {
     if (!panel!.hidden && !panel!.contains(e.target as Node) && e.target !== btn) close();
   });
+}
+
+// ---------------------------------------------------------------
+// Clock dial — the About section's circular dial (see chat reply):
+// keeps the reference's ring-of-ticks visual, but the center now shows
+// a real, continuously-updating clock for India/Kolkata (matching the
+// "Himachal Pradesh, India" address already on page 2) instead of a
+// static "12+". 12-hour with AM/PM per the brief's default.
+// ---------------------------------------------------------------
+const DIAL_TICK_COUNT = 60; // one per second-mark, like a real clock face
+const DIAL_MAJOR_EVERY = 5; // every 5th tick (12 of them) drawn bolder/longer
+
+function buildDialTicks() {
+  const svg = document.getElementById('lv8-about-ticks');
+  if (!svg) return;
+  const cx = 110;
+  const cy = 110;
+  const outerR = 104;
+
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < DIAL_TICK_COUNT; i++) {
+    const isMajor = i % DIAL_MAJOR_EVERY === 0;
+    const innerR = isMajor ? 88 : 96;
+    const angle = (i / DIAL_TICK_COUNT) * Math.PI * 2 - Math.PI / 2; // 12 o'clock = start
+    const x1 = cx + innerR * Math.cos(angle);
+    const y1 = cy + innerR * Math.sin(angle);
+    const x2 = cx + outerR * Math.cos(angle);
+    const y2 = cy + outerR * Math.sin(angle);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1.toFixed(2));
+    line.setAttribute('y1', y1.toFixed(2));
+    line.setAttribute('x2', x2.toFixed(2));
+    line.setAttribute('y2', y2.toFixed(2));
+    if (isMajor) line.classList.add('is-major');
+    frag.appendChild(line);
+  }
+  svg.appendChild(frag);
+}
+
+function updateClock() {
+  const timeEl = document.getElementById('lv8-about-clock');
+  const meridiemEl = document.getElementById('lv8-about-meridiem');
+  if (!timeEl || !meridiemEl) return;
+
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  }).formatToParts(now);
+
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+  timeEl.textContent = `${get('hour')}:${get('minute')}:${get('second')}`;
+  meridiemEl.textContent = get('dayPeriod').toUpperCase();
+}
+
+function startClockDial() {
+  if (!document.getElementById('lv8-about-ticks')) return; // section not built yet (staged checkpoints)
+  buildDialTicks();
+  updateClock();
+  clockTimer = window.setInterval(updateClock, 1000);
 }

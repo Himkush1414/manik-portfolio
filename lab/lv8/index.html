@@ -146,11 +146,30 @@
         <button class="lv8-about__cta" type="button">Let's Connect</button>
       </div>
 
-      <!-- right column (live clock + photo) lands in the next checkpoint -->
+      <!-- Right column: the reference's circular dial keeps its ring-of-
+           ticks visual but now shows a real, continuously-updating IST
+           clock instead of a static "12+"; its stat card becomes
+           Manik's own photo (reusing contact-photo.jpeg, already used
+           elsewhere on this site) instead of an invented stat — see
+           chat reply for both. -->
+      <div class="lv8-about__right">
+        <div class="lv8-about__dial">
+          <svg class="lv8-about__dial-ticks" id="lv8-about-ticks" viewBox="0 0 220 220" aria-hidden="true"></svg>
+          <div class="lv8-about__dial-face">
+            <span class="lv8-about__clock" id="lv8-about-clock">--:--:--</span>
+            <span class="lv8-about__clock-meridiem" id="lv8-about-meridiem">--</span>
+          </div>
+        </div>
+        <p class="lv8-about__dial-label">Current time in Himachal Pradesh, India</p>
+
+        <div class="lv8-about__photo-card">
+          <img src="../../contact-photo.jpeg" alt="Manik Rana" class="lv8-about__photo" />
+        </div>
+      </div>
 
     </div>
 
-    <!-- skills marquee lands in the checkpoint after that -->
+    <!-- skills marquee lands in the next checkpoint -->
   </section>
 
   <!-- ===================== GAMES SECTION =====================

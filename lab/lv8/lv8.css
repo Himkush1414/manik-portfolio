@@ -707,13 +707,94 @@ body.lv8 {
   box-shadow: 0 0 24px rgba(168, 52, 33, 0.4);
 }
 
+.lv8-about__right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ---- clock dial — ring of ticks kept from the reference, content
+   replaced with a live IST clock (see startClock in page2.ts) ---- */
+.lv8-about__dial {
+  position: relative;
+  width: clamp(160px, 15vw, 220px);
+  height: clamp(160px, 15vw, 220px);
+}
+.lv8-about__dial-ticks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lv8-about__dial-ticks line {
+  stroke: rgba(242, 231, 218, 0.22);
+  stroke-width: 2;
+}
+.lv8-about__dial-ticks line.is-major {
+  stroke: var(--lv8-lit);
+  opacity: 0.8;
+}
+.lv8-about__dial-face {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: var(--lv8-bg-raised);
+  border: 1px solid rgba(168, 52, 33, 0.25);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 0 40px -12px rgba(168, 52, 33, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.lv8-about__clock {
+  font-family: var(--lv8-font-page2);
+  font-weight: 600;
+  font-size: clamp(16px, 1.7vw, 22px);
+  letter-spacing: 0.01em;
+  color: var(--lv8-text);
+  font-variant-numeric: tabular-nums;
+}
+.lv8-about__clock-meridiem {
+  font-family: var(--lv8-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--lv8-lit);
+}
+.lv8-about__dial-label {
+  margin: 0;
+  font-family: var(--lv8-font-page2);
+  font-size: 13px;
+  color: var(--lv8-text-dim);
+  text-align: center;
+}
+
+/* ---- photo card (was the reference's numeric stat card — no invented
+   stat/caption here, see chat reply) ---- */
+.lv8-about__photo-card {
+  margin-top: 8px;
+  width: min(100%, 300px);
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(242, 231, 218, 0.14);
+  background: var(--lv8-bg-raised);
+}
+.lv8-about__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 20%;
+  display: block;
+}
+
 @media (max-width: 900px) {
   .lv8-about__inner { grid-template-columns: 1fr; text-align: center; }
   .lv8-about__left { align-items: center; }
 }
 
-/* right column (dial/clock/photo) + skills marquee land in the next
-   two checkpoints (see chat reply) */
+/* skills marquee lands in the next checkpoint (see chat reply) */
 
 /* ============================================================
    GAMES SECTION — the actual games hub content (list-based selection),
