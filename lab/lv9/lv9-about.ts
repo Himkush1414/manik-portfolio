@@ -1,13 +1,16 @@
 // /lab/lv9 — the light-theme About section below page 2 (see chat
-// reply). Only behaviour it needs beyond plain CSS: the circular dial's
-// ring of tick marks (generated once) and a real, continuously-updating
-// clock for India/Kolkata (matching the "Himachal Pradesh, India" label
-// beside the marker above it) — 12-hour with AM/PM, same default as
-// lv8's own (dark-theme) version of this clock. The skills marquee is
-// pure CSS (see lv9.css), nothing to wire here.
+// reply). Behaviour it needs beyond plain CSS: the circular dial's ring of
+// tick marks (generated once), a real, continuously-updating clock for
+// India/Kolkata (matching the "Himachal Pradesh, India" label beside the
+// marker above it) — 12-hour with AM/PM, same default as lv8's own
+// (dark-theme) version of this clock — and the icon-only skills marquee
+// (see lv9-skill-icons.ts and the "icons only, no text labels" note in the
+// chat reply), built here rather than hand-duplicated as raw SVG markup in
+// index.html.
 //
 // Dynamically imported from main.ts's Move Next handler, alongside
 // page2.ts — no reason to run this before the section is even visible.
+import { skillOrder, skillIconPaths, skillIconViewBox, customSkillIconMarkup } from './lv9-skill-icons';
 
 let clockTimer: number | undefined;
 let started = false;
@@ -18,6 +21,7 @@ export function startAbout() {
   buildDialTicks();
   updateClock();
   clockTimer = window.setInterval(updateClock, 1000);
+  buildMarquee();
 }
 
 export function stopAbout() {
@@ -69,4 +73,21 @@ function updateClock() {
   const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
   timeEl.textContent = `${get('hour')}:${get('minute')}`;
   meridiemEl.textContent = get('dayPeriod').toUpperCase();
+}
+
+function iconMarkup(name: string): string {
+  const custom = customSkillIconMarkup[name];
+  if (custom) return custom;
+  return `<path fill="currentColor" d="${skillIconPaths[name]}"/>`;
+}
+
+function buildMarquee() {
+  const lists = document.querySelectorAll('.lv9-about__marquee-list');
+  if (!lists.length) return;
+
+  const itemsHtml = skillOrder
+    .map(name => `<li title="${name}"><svg viewBox="${skillIconViewBox}" aria-hidden="true">${iconMarkup(name)}</svg></li>`)
+    .join('');
+
+  lists.forEach(list => { list.innerHTML = itemsHtml; });
 }

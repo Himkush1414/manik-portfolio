@@ -11,8 +11,11 @@
 <!-- Same font set as lv8, which this route is ported from — Bebas Neue/
      Sora for the hero, Inter for page 2's nav/wordmark/"CREATIVE DESIGN"
      text (see lv9.css). Space Mono isn't needed here (it was lv8's
-     in-game HUD font only, and the game isn't part of this copy). -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+     in-game HUD font only, and the game isn't part of this copy). Dancing
+     Script is new, lv9-only (see chat reply): a signature-style treatment
+     for the "Manik Rana" wordmark in page 2's top bar, distinct from the
+     clean sans used everywhere else on the site. -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="./lv9.css" />
 </head>
 <body class="lv9">
@@ -32,8 +35,10 @@
 <!-- ===================== HUB =====================
      lv9 is deliberately just hero + "Move Next" flip transition + page
      2's figure section, ported from lv8 as it currently exists (see
-     chat reply) — no game, no pre-game flow, no games-list section, no
-     About/philosophy section, no footer. -->
+     chat reply) — no game, no pre-game flow, no games-list section. It
+     does have its own light-theme About section and footer below page 2
+     (lv9-only, added afterward — see chat reply), neither of which
+     exists on lv8. -->
 <div id="lv9-hub" class="lv9-hub">
 
   <!-- ===================== ANIMATED HERO =====================
@@ -81,7 +86,7 @@
     <div class="lv9-page2__topbar lv9-page2__entry-top">
       <div class="lv9-page2__brand">
         <img src="./nav-logo-mark.png" alt="" class="lv9-page2__brand-mark" />
-        <span class="lv9-page2__brand-name">MANIK RANA</span>
+        <span class="lv9-page2__brand-name">Manik Rana</span>
       </div>
       <span class="lv9-page2__address">Himachal Pradesh, India.</span>
       <div class="lv9-page2__actions">
@@ -141,7 +146,7 @@
           </svg>
           <span>Who I Am</span>
         </div>
-        <h2 class="lv9-about__headline">I believe that using different methods to create something new isn't a bad thing. In the end, it doesn't matter how you did it, or what tools you used — what matters is that you completed it, and it works the way you wanted it to.</h2>
+        <h2 class="lv9-about__headline">I believe using different methods to create something new isn't a bad thing. What matters isn't how you did it or what tools you used — it's that you finished it, and it works the way you wanted it to.</h2>
         <button class="lv9-about__cta" type="button">Let's Connect</button>
       </div>
 
@@ -169,63 +174,62 @@
 
     <!-- Right-to-left continuous skills marquee — vanilla CSS equivalent
          of lv7's LogoLoop pattern (duplicate the sequence once, loop a
-         translateX transform), rendered as individual pill cards per
-         the light-theme spec. Full "Technical Skills" list from the
-         resume (Languages, Frontend, Backend & Database, Integrations,
-         Tools), not a trimmed subset. -->
+         translateX transform). Icon-only (see chat reply): each <li> is
+         populated with one skill's logo glyph by lv9-about.ts's
+         buildMarquee(), from lv9-skill-icons.ts's full "Technical Skills"
+         list (Languages, Frontend, Backend & Database, Integrations,
+         Tools) — not a trimmed subset, just no more text labels. -->
     <div class="lv9-about__marquee" aria-label="Technical skills">
       <div class="lv9-about__marquee-track">
-        <ul class="lv9-about__marquee-list" aria-hidden="false">
-          <li>JavaScript</li>
-          <li>TypeScript</li>
-          <li>PHP</li>
-          <li>HTML</li>
-          <li>CSS</li>
-          <li>React.js</li>
-          <li>Next.js</li>
-          <li>Tailwind CSS</li>
-          <li>Framer Motion</li>
-          <li>Node.js</li>
-          <li>REST APIs</li>
-          <li>PostgreSQL</li>
-          <li>Supabase</li>
-          <li>Razorpay</li>
-          <li>WhatsApp API</li>
-          <li>Google Maps API</li>
-          <li>Groq AI</li>
-          <li>Git</li>
-          <li>GitHub</li>
-          <li>Vercel</li>
-          <li>Vite</li>
-          <li>Recharts</li>
-        </ul>
-        <ul class="lv9-about__marquee-list" aria-hidden="true">
-          <li>JavaScript</li>
-          <li>TypeScript</li>
-          <li>PHP</li>
-          <li>HTML</li>
-          <li>CSS</li>
-          <li>React.js</li>
-          <li>Next.js</li>
-          <li>Tailwind CSS</li>
-          <li>Framer Motion</li>
-          <li>Node.js</li>
-          <li>REST APIs</li>
-          <li>PostgreSQL</li>
-          <li>Supabase</li>
-          <li>Razorpay</li>
-          <li>WhatsApp API</li>
-          <li>Google Maps API</li>
-          <li>Groq AI</li>
-          <li>Git</li>
-          <li>GitHub</li>
-          <li>Vercel</li>
-          <li>Vite</li>
-          <li>Recharts</li>
-        </ul>
+        <ul class="lv9-about__marquee-list" aria-hidden="false"></ul>
+        <ul class="lv9-about__marquee-list" aria-hidden="true"></ul>
       </div>
     </div>
   </section>
+
+  <!-- ===================== FOOTER =====================
+       New, lv9-local footer below the About section (see chat reply) —
+       same visual pattern as the main site's own Projects/Contact-view
+       footer (.lv7-footer in /index.html + /projects.css: logo left, link
+       columns, thin divider, bottom bar), rebuilt here under its own
+       lv9-footer classes/palette rather than editing that shared
+       component. Gated the same way as #lv9-about (main.ts adds
+       .is-visible the moment "Move Next" is clicked) so it isn't
+       reachable by scrolling past the original hero directly. -->
+  <footer class="lv9-footer" id="lv9-footer">
+    <div class="lv9-footer__cols">
+      <div class="lv9-footer__col lv9-footer__col--brand">
+        <img src="./nav-logo-mark.png" alt="Manik Rana" class="lv9-footer__logo" />
+      </div>
+
+      <div class="lv9-footer__col">
+        <p class="lv9-footer__label">Navigation</p>
+        <ul class="lv9-footer__list">
+          <li><a href="/">Home</a></li>
+          <li><span>Projects</span></li>
+          <li><span>About</span></li>
+          <li><span>Contact</span></li>
+        </ul>
+      </div>
+
+      <div class="lv9-footer__col">
+        <p class="lv9-footer__label">Social</p>
+        <ul class="lv9-footer__list">
+          <li><a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="mailto:manikrana831@gmail.com">Gmail</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="lv9-footer__bottom">
+      <p class="lv9-footer__copy">&copy; 2026 | Manik Rana</p>
+      <div class="lv9-footer__legal">
+        <span>Privacy Policy</span>
+        <span>Terms of Use</span>
+      </div>
+    </div>
+  </footer>
 
 </div>
 

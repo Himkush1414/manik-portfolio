@@ -29,6 +29,9 @@ body.lv9 {
   /* page 2 only — a clean geometric sans, closest available match to
      Inter/Helvetica Neue/SF Pro */
   --lv9-font-page2: 'Inter', 'Helvetica Neue', 'SF Pro Display', Helvetica, Arial, sans-serif;
+  /* page 2's "Manik Rana" wordmark only (see chat reply) — a signature-
+     style script, deliberately distinct from --lv9-font-page2 above */
+  --lv9-font-script: 'Dancing Script', cursive;
   --lv9-gutter: clamp(20px, 4vw, 64px);
   --lv9-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -456,16 +459,22 @@ body.lv9 {
   justify-self: start;
 }
 .lv9-page2__brand-mark {
-  width: 34px;
-  height: 34px;
+  /* modest increase (see chat reply) — same standard used elsewhere on
+     the site: noticeable, not dramatic */
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   filter: drop-shadow(0 0 6px rgba(168, 52, 33, 0.4));
 }
 .lv9-page2__brand-name {
-  font-family: var(--lv9-font-page2);
-  font-size: 27px; /* wordmark — "slightly larger" than the surrounding nav text */
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  /* signature/script treatment (see chat reply) — distinct from the
+     clean sans used everywhere else on the site, a personal "signed"
+     feel. Sized and tracked up from the old sans value: script faces
+     read visually smaller and tighter tracking closes up their loops. */
+  font-family: var(--lv9-font-script);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0;
   color: var(--lv9-text);
   /* the corrected ambient gradient's top band is deliberately near-white
      (see chat reply's band table) — light nav text on it was reading as
@@ -481,10 +490,12 @@ body.lv9 {
   line-height: 19px;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--lv9-text-dim);
+  /* black (see chat reply) — legible on its own against the ambient
+     gradient's consistently near-white top band, so the light-text
+     shadow tuned for the opposite (light-on-dark) case is dropped too */
+  color: #000000;
   text-align: center;
   white-space: nowrap;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 .lv9-page2__actions {
   display: flex;
@@ -501,7 +512,10 @@ body.lv9 {
   height: 36px;
   border-radius: 50%;
   border: 1px solid rgba(242, 231, 218, 0.25);
-  background: rgba(21, 16, 13, 0.4);
+  /* solid black fill (see chat reply), was a translucent dark wash — the
+     two lines inside stay var(--lv9-text) via currentColor, still
+     legible against a fully opaque black circle */
+  background: #000000;
   color: var(--lv9-text);
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease;
@@ -552,9 +566,10 @@ body.lv9 {
 #lv9-page2 .lv9-page2__contact {
   padding: 10px 22px;
   border-radius: 999px;
-  border: 1px solid var(--lv9-lit);
-  background: transparent;
-  color: var(--lv9-lit);
+  border: none;
+  /* solid black fill (see chat reply), was a transparent/outlined pill */
+  background: #000000;
+  color: #FFFFFF;
   font-family: var(--lv9-font-page2);
   font-weight: 600;
   font-size: 14px;
@@ -564,7 +579,7 @@ body.lv9 {
 }
 .lv9-page2__contact:hover {
   background: var(--lv9-lit);
-  color: var(--lv9-darkest);
+  color: #FFFFFF;
 }
 
 .lv9-page2__bigtext {
@@ -815,7 +830,10 @@ body.lv9 {
 .lv9-about__marquee-track {
   display: flex;
   width: max-content;
-  animation: lv9-about-marquee 34s linear infinite;
+  /* slowed from 34s (see chat reply) — the icon cards below are also
+     much narrower than the old text pills, which on its own would have
+     made the loop read faster than before at the same duration */
+  animation: lv9-about-marquee 85s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .lv9-about__marquee-track { animation: none; }
@@ -830,18 +848,105 @@ body.lv9 {
   list-style: none;
   margin: 0;
   padding: 0;
-  gap: 14px;
-  padding-right: 14px;
+  gap: 16px;
+  padding-right: 16px;
 }
+/* icon-only cards (see chat reply) — was a text/name pill per skill;
+   populated by lv9-about.ts's buildMarquee() from lv9-skill-icons.ts */
 .lv9-about__marquee-list li {
   display: flex;
   align-items: center;
-  padding: 12px 22px;
-  border-radius: 11px;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 16px;
   background: #FFFFFF;
+  color: #8C8C8C; /* muted, but a shade darker than the old text colour (#B3B3B3) — a filled glyph needs more contrast to read clearly at this size than loose letterforms did */
+}
+.lv9-about__marquee-list li svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* ============================================================
+   FOOTER (light theme, lv9 only) — same visual pattern as the main
+   site's own Projects/Contact-view footer (.lv7-footer in /index.html +
+   /projects.css: logo left, link columns, thin divider, bottom bar),
+   rebuilt here under its own classes/palette rather than editing that
+   shared component (see chat reply). Continues the About section's flat
+   #F5F5F5/near-black palette rather than lv7's own dark one. Gated the
+   same way as .lv9-about — main.ts adds .is-visible the same moment
+   "Move Next" is clicked.
+   ============================================================ */
+.lv9-footer {
+  display: none;
+  background: #F5F5F5;
+  color: #111111;
+}
+.lv9-footer.is-visible {
+  display: block;
+}
+.lv9-footer__cols {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 32px clamp(24px, 6vw, 110px) 28px;
+  border-top: 1px solid #CFCFCF;
+}
+.lv9-footer__col--brand { flex: 0 0 auto; }
+.lv9-footer__logo { width: 56px; height: 56px; object-fit: contain; display: block; }
+.lv9-footer__col { flex: 0 0 auto; min-width: 120px; }
+.lv9-footer__label {
+  margin: 0 0 10px;
   font-family: var(--lv9-font-page2);
-  font-weight: 500;
-  font-size: 14px;
-  color: #B3B3B3;
-  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999999;
+}
+.lv9-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lv9-footer__list a,
+.lv9-footer__list span {
+  font-family: var(--lv9-font-page2);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #444444;
+  text-decoration: none;
+}
+.lv9-footer__list span { cursor: default; } /* inert — see chat reply, same pattern as page 2's menu items */
+.lv9-footer__list a:hover { color: #111111; }
+.lv9-footer__bottom {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px clamp(24px, 6vw, 110px);
+  border-top: 1px solid #CFCFCF;
+  font-family: var(--lv9-font-page2);
+  font-size: 11px;
+}
+.lv9-footer__copy { margin: 0; color: #666666; }
+.lv9-footer__legal { display: flex; gap: 18px; }
+.lv9-footer__legal span { color: #666666; cursor: default; } /* inert — see chat reply */
+
+@media (max-width: 640px) {
+  .lv9-footer__logo { width: 44px; height: 44px; }
+}
+@media (max-width: 560px) {
+  .lv9-footer__cols { gap: 24px; }
 }
