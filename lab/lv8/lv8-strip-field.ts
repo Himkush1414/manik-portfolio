@@ -59,8 +59,9 @@ if (canvas && container) {
   // sampled from the gradient — multiplying by it can only darken. The
   // extra DARKEN_BOOST pushes the revealed face further still (strips at
   // the brightest end no longer just bottom out at DARK, they go past
-  // it) — made the whole effect read as too subtle at the old 1:1 ratio.
-  const DARKEN_BOOST = 0.55;
+  // it, toward near-black) — pushed hard a second time (0.55 -> 0.18)
+  // after the first bump still read as too subtle.
+  const DARKEN_BOOST = 0.18;
   const REVEAL_RATIO = new THREE.Color(
     (DARK.r / LIT.r) * DARKEN_BOOST,
     (DARK.g / LIT.g) * DARKEN_BOOST,
@@ -80,11 +81,15 @@ if (canvas && container) {
   const STRIP_DEPTH = 7;
   const DEPTH_JITTER = 14; // px of random Z offset per strip — the "folded panel" cue
   const MAX_INSTANCES = 900; // comfortably covers even a 4500px-wide screen
-  const MAX_ROTATION = THREE.MathUtils.degToRad(74);
-  // Widened from 130 so more strips are actually within reach of the
-  // cursor at once — the effect was reading as a narrow, isolated column
-  // rather than a broader field response.
-  const PROXIMITY_RADIUS = 180; // px — how far a strip's reach extends from the cursor
+  // Pushed close to the practical ceiling (90deg would edge-on the box
+  // into an invisible sliver) so a fully-proximate strip reads as almost
+  // entirely its dark side face, not a blended sliver of it.
+  const MAX_ROTATION = THREE.MathUtils.degToRad(88);
+  // Widened substantially again (130 -> 180 last pass, now -> 540) so a
+  // strong majority of the field is within the cursor's reach at once —
+  // this is meant to read as a dramatic, whole-field reaction now, not a
+  // narrow spotlight around the cursor.
+  const PROXIMITY_RADIUS = 540; // px — how far a strip's reach extends from the cursor
   // Tuned back up from an earlier pass that over-corrected into sluggish/
   // laggy territory — this is a middle ground between that and the
   // original too-sharp snap (tracks the cursor closely, still has a
