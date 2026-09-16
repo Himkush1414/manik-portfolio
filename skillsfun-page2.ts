@@ -73,6 +73,7 @@ export function startPage2() {
   startAmbient();
   void startPortraitCycle();
   wireMenu();
+  wireBigtextParallax();
 }
 
 // stops the portrait rAF loop + rotation timer — not currently called
@@ -293,4 +294,89 @@ function wireMenu() {
   document.addEventListener('click', e => {
     if (!panel!.hidden && !panel!.contains(e.target as Node) && e.target !== btn) close();
   });
+}
+
+// ---------------------------------------------------------------
+// "CREATIVE DESIGN" background text — basic scroll-linked parallax (see
+// chat reply): translates downward as the page scrolls down, at a
+// fraction of the page's own scroll speed, so it reads as sitting
+// further back than the figure in front of it rather than moving in
+// lockstep with everything else. Same ticking-flag + rAF batching
+// pattern main.tsx already uses for its own scroll-driven effects.
+//
+// Guarded against #skillsfun-page2.is-entering: that class drives this
+// same element's one-time CSS entrance transform (.entry-rise, see
+// skillsfun.css) via `transform: translateY(9%)`, and an inline style
+// set from JS always wins over a stylesheet rule regardless of
+// specificity — touching bigtext.style.transform while still entering
+// would silently cancel that entrance animation outright.
+//
+// .entry-rise also carries a 1.6s `transition: transform ...` that isn't
+// scoped to .is-entering — it stays on the element permanently, since
+// it's what makes transform smoothly settle back to normal the instant
+// .is-entering is removed. Left in place, every later scroll-driven
+// update below would ALSO ease over 1.6s instead of tracking the scroll
+// position live, reading as laggy rather than a real parallax. The first
+// 'transitionend' for "transform" is that one-time entrance settling —
+// switch the transition off right after it, once, so every update from
+// here on applies instantly.
+// ---------------------------------------------------------------
+// Kept modest on purpose: .skillsfun-page2__bigtext sits at `bottom: 4%`
+// inside .skillsfun-page2's own `overflow: hidden` 100vh box (skillsfun.css)
+// — only 4% of viewport height of clearance exists below the text before
+// a downward translate starts clipping it against that box's own bottom
+// edge. A higher rate hits that clip within the first ~100px of scroll,
+// which reads as the text vanishing abruptly rather than parallaxing.
+const BIGTEXT_PARALLAX_RATE = 0.15;
+function wireBigtextParallax() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const section = document.getElementById('skillsfun-page2');
+  const bigtext = document.querySelector<HTMLElement>('.skillsfun-page2__bigtext');
+  if (!section || !bigtext) return;
+
+  if (section.classList.contains('is-entering')) {
+    // NOT { once: true } — .entry-rise's transition covers three
+    // properties (transform/filter/opacity) that finish at three
+    // different times (1.6s/1.4s/1.2s respectively), each firing its own
+    // 'transitionend'; opacity's fires soonest, so `once` would remove
+    // this listener on THAT event and miss transform's entirely. Remove
+    // it manually, only once the property we actually care about fires.
+    const onEntranceTransitionEnd = (e: TransitionEvent) => {
+      if (e.propertyName !== 'transform') return;
+      bigtext!.style.transitionProperty = 'none';
+      bigtext!.removeEventListener('transitionend', onEntranceTransitionEnd);
+    };
+    bigtext.addEventListener('transitionend', onEntranceTransitionEnd);
+  } else {
+    // startPage2() runs after an async dynamic import (see skillsfun.ts),
+    // so it's possible for this to run AFTER the flip — and therefore
+    // the entrance transition — has already finished, in which case its
+    // 'transitionend' already fired and this function would never see
+    // it. Nothing left to preserve at that point, so disable it now
+    // rather than risk every future scroll update staying stuck easing
+    // over 1.6s forever.
+    bigtext.style.transitionProperty = 'none';
+  }
+
+  let ticking = false;
+  function update() {
+    ticking = false;
+    if (section!.classList.contains('is-entering')) return;
+    const rect = section!.getBoundingClientRect();
+    // skip while off-screen in either direction (including the
+    // #skillsfun-root-hidden case, where a display:none ancestor makes
+    // every rect value 0) — nothing to keep recomputing
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return;
+    const offset = Math.max(0, -rect.top) * BIGTEXT_PARALLAX_RATE;
+    bigtext!.style.transform = `translateX(-50%) translateY(${offset}px)`;
+  }
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  update();
 }
