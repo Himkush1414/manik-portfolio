@@ -6,19 +6,22 @@
    lv6-transition.ts for the view-switching itself. lv9 is untouched;
    this is its own copy, scoped to #skillsfun-root instead of body.lv9
    (same pattern #proj-root already uses for its own lv7 copy), with its
-   own cool-teal palette below instead of lv9's warm ember one.
+   own cool-teal palette below instead of lv9's warm ember one — EXCEPT
+   the HERO and MOVE NEXT blocks further down, which hardcode lv9's own
+   warm values directly (a past pass drifted those to this teal ramp,
+   which broke the hero's visual match to lv9; see their own comments).
    ============================================================ */
 
 #skillsfun-root {
-  /* the full 5-stop cool-teal ramp this entire section draws from —
-     darkest (resting) through to the brightest cyan-teal (lit/hover)
-     state. A cooler variant of lv9's own warm-ember ramp (see chat
-     reply): same dark-base -> lit-accent structure and the same radial
-     dust/scrim treatment throughout this file, just hue-shifted away
-     from lv9's orange-red so this section doesn't read as a duplicate
-     of lv8/lv9 — see skillsfun-strip-field.ts for where the two
-     extremes get used as the literal dark/lit faces of the hover-bend
-     background. */
+  /* the full 5-stop cool-teal ramp this section's nav/page 2/about/
+     footer draw from — darkest (resting) through to the brightest
+     cyan-teal (lit/hover) state. A cooler variant of lv9's own
+     warm-ember ramp (see chat reply): same dark-base -> lit-accent
+     structure and the same radial dust/scrim treatment throughout this
+     file, just hue-shifted away from lv9's orange-red so this section
+     doesn't read as a duplicate of lv8/lv9. Not used by the hero/move-
+     next (see the note above) — those hardcode lv9's actual ramp
+     instead, see skillsfun-strip-field.ts for the canvas half of it. */
   --skillsfun-darkest: #0B1417;
   --skillsfun-dark: #122A30;
   --skillsfun-mid: #16414A;
@@ -170,7 +173,10 @@
   flex-direction: column;
   justify-content: center;
   padding: clamp(110px, 16vh, 170px) var(--skillsfun-gutter) clamp(60px, 10vh, 100px);
-  background: var(--skillsfun-darkest);
+  /* hardcoded, not var(--skillsfun-darkest): the hero (and .skillsfun-move-next
+     below) intentionally stays on lv9's own warm ramp rather than this
+     file's cool-teal one — see skillsfun-strip-field.ts's header comment */
+  background: #15100D;
   transition: opacity 0.25s ease;
 }
 /* applied the instant "Move Next" is clicked — fades the headline/kicker/
@@ -222,7 +228,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: radial-gradient(120% 70% at 18% 45%, rgba(11, 20, 23, 0.75) 0%, rgba(11, 20, 23, 0.3) 45%, rgba(11, 20, 23, 0) 75%);
+  background: radial-gradient(120% 70% at 18% 45%, rgba(21, 16, 13, 0.75) 0%, rgba(21, 16, 13, 0.3) 45%, rgba(21, 16, 13, 0) 75%);
   pointer-events: none;
 }
 
@@ -236,7 +242,7 @@
   inset: auto 0 0 0;
   z-index: 1;
   height: clamp(120px, 22vh, 260px);
-  background: linear-gradient(180deg, rgba(11, 20, 23, 0) 0%, rgba(11, 20, 23, 0.9) 80%, #0B1417 100%);
+  background: linear-gradient(180deg, rgba(6, 6, 12, 0) 0%, rgba(6, 6, 12, 0.9) 80%, #06060C 100%);
   pointer-events: none;
 }
 
@@ -253,7 +259,7 @@
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--skillsfun-lit);
+  color: #A83421;
   opacity: 0.9;
 }
 .skillsfun-hero__headline {
@@ -267,10 +273,10 @@
   font-size: clamp(64px, 13vw, 190px);
   line-height: 1.08;
   letter-spacing: 0.01em;
-  color: var(--skillsfun-text);
+  color: #F2E7DA;
   text-shadow:
-    0 2px 10px rgba(11, 20, 23, 0.85),
-    0 0 22px rgba(45, 224, 209, 0.35);
+    0 2px 10px rgba(21, 16, 13, 0.85),
+    0 0 22px rgba(168, 52, 33, 0.35);
 }
 .skillsfun-hero__headline span {
   display: block;
@@ -287,8 +293,8 @@
   font-weight: 400;
   font-size: clamp(90px, 16vw, 240px);
   line-height: 1;
-  color: var(--skillsfun-lit);
-  text-shadow: 0 0 40px rgba(45, 224, 209, 0.45);
+  color: #A83421;
+  text-shadow: 0 0 40px rgba(168, 52, 33, 0.45);
   animation: skillsfun-watermark-breathe 7s ease-in-out infinite;
   user-select: none;
 }
@@ -328,14 +334,14 @@
   justify-content: center;
   padding: 28px 10px;
   border: none;
-  border-left: 1px solid rgba(45, 224, 209, 0.3);
-  background: rgba(11, 20, 23, 0.35);
+  border-left: 1px solid rgba(168, 52, 33, 0.3);
+  background: rgba(21, 16, 13, 0.35);
   cursor: pointer;
   transition: background 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
 }
 .skillsfun-move-next:hover {
-  background: rgba(45, 224, 209, 0.16);
-  border-color: rgba(45, 224, 209, 0.6);
+  background: rgba(168, 52, 33, 0.16);
+  border-color: rgba(168, 52, 33, 0.6);
 }
 .skillsfun-move-next span {
   display: block;
@@ -346,7 +352,7 @@
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--skillsfun-text);
+  color: #F2E7DA;
 }
 @media (max-width: 720px) {
   /* Kept visible and tappable here (see chat reply — phone

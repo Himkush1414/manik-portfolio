@@ -11,9 +11,10 @@
 //  - width: random in [STRIP_WIDTH_MIN, STRIP_WIDTH_MAX], strips still
 //    tile with zero gaps (only occasional slight overlap, never a gap).
 //  - resting tone: each strip independently samples a point along the
-//    5-stop cool-teal gradient (see GRADIENT_STOPS) via THREE's
-//    InstancedMesh.instanceColor, so neighbours sit at visibly different
-//    points on the palette instead of all glowing the same red.
+//    5-stop warm gradient (see GRADIENT_STOPS, matched to lv9's own
+//    current ramp) via THREE's InstancedMesh.instanceColor, so
+//    neighbours sit at visibly different points on the palette instead
+//    of all glowing the same red.
 //  - depth: a small random Z offset plus a few px of X overlap with the
 //    previous strip gives genuine layered depth (some strips sit slightly
 //    in front of/behind their neighbour, like folded panels) rather than
@@ -66,12 +67,14 @@ export function triggerFlipReveal(onDone: () => void) {
 }
 
 if (canvas && container) {
-  // Cool teal palette (see chat reply — a cooler variant of lv9's own
-  // warm ember ramp, same 5-stop dark->lit structure, hue shifted away
-  // from lv9's orange-red so this section doesn't read as a duplicate of
-  // lv8/lv9), darkest to brightest — each strip samples a random point
-  // along this at rest instead of every strip using the same stop.
-  const GRADIENT_STOPS = ['#0B1417', '#122A30', '#16414A', '#1B6472', '#2DE0D1'].map(
+  // Matched exactly to lv9's own current ramp (lv9-strip-field.ts) — an
+  // earlier pass here used a cooler teal variant instead, which drifted
+  // from lv9's hero as lv9 went through its own colour/effect passes;
+  // this section's hero is meant to look identical to lv9's, not a
+  // hue-shifted twin, so it now tracks lv9's literal values. Darkest to
+  // brightest — each strip samples a random point along this at rest
+  // instead of every strip using the same stop.
+  const GRADIENT_STOPS = ['#15100D', '#3A1912', '#4B1D15', '#6F2417', '#A83421'].map(
     h => new THREE.Color(h)
   );
   const DARK = GRADIENT_STOPS[0];
