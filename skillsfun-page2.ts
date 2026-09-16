@@ -155,14 +155,43 @@ async function startPortraitCycle() {
   let activeIndex = 0;
   setAmbientForIndex(activeIndex);
 
+  // Bug fix (see chat reply — portrait vanishing on mobile scroll):
+  // assigning canvas.width/height ALWAYS clears the canvas bitmap, even
+  // to the same numeric value it already had — that's the HTML canvas
+  // spec's behaviour, not a mistake in the values computed below. Mobile
+  // browsers fire 'resize' mid-scroll as their address bar
+  // collapses/expands (window.innerHeight changes without the user ever
+  // touching a real window edge), so every such scroll was silently
+  // blanking the portrait, left that way until the next scheduled
+  // rotation (up to ROTATE_MAX_MS later) happened to redraw it — the
+  // real bug was simply that nothing here ever re-painted after a
+  // resize. renderStatic() (defined below, hoisted) always draws
+  // whatever the CURRENTLY active portrait is, so calling it here keeps
+  // the canvas correct after every resize regardless of cause.
+  // rAF-batched, same ticking-flag pattern used elsewhere in this file,
+  // since mobile can fire several of these in quick succession while the
+  // address bar animates.
+  let resizeTicking = false;
   function resizeCanvas() {
     const rect = canvas!.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas!.width = Math.max(1, Math.round(rect.width * dpr));
     canvas!.height = Math.max(1, Math.round(rect.height * dpr));
+    renderStatic();
   }
   resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener(
+    'resize',
+    () => {
+      if (resizeTicking) return;
+      resizeTicking = true;
+      requestAnimationFrame(() => {
+        resizeTicking = false;
+        resizeCanvas();
+      });
+    },
+    { passive: true }
+  );
 
   function drawImageCover(image: HTMLImageElement) {
     const { width: w, height: h } = canvas!;
@@ -175,7 +204,8 @@ async function startPortraitCycle() {
     ctx!.clearRect(0, 0, w, h);
     drawImageCover(images[activeIndex]);
   }
-  renderStatic();
+  // no separate initial renderStatic() call needed — resizeCanvas()
+  // above already calls it once it sets the canvas's starting dimensions
 
   function smoothstep(t: number) {
     const c = Math.min(Math.max(t, 0), 1);
