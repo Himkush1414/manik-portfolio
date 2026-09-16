@@ -33,6 +33,7 @@ console.log('%c/ skillsfun build 2026-09-15 (Skill & Fun section, ported from la
 const heroEl = document.getElementById('skillsfun-hero');
 const page2El = document.getElementById('skillsfun-page2');
 const aboutEl = document.getElementById('skillsfun-about');
+const navgridEl = document.getElementById('skillsfun-navgrid');
 const footerEl = document.getElementById('skillsfun-footer');
 const moveNextBtn = document.getElementById('skillsfun-move-next');
 const entryNavEl = document.querySelector('.skillsfun-nav');
@@ -45,11 +46,12 @@ moveNextBtn?.addEventListener('click', () => {
   heroEl?.classList.add('is-transitioning');
   page2El?.classList.add('is-visible', 'is-entering');
   page2El?.setAttribute('aria-hidden', 'false');
-  // the light-theme section below the figure, and its own footer — only
-  // reachable once "Move Next" has actually been clicked, not by
-  // scrolling past the entry hero directly (see .skillsfun-about's
-  // comment in skillsfun.css)
+  // the light-theme sections below the figure (About, the nav-tile
+  // grid), and its own footer — only reachable once "Move Next" has
+  // actually been clicked, not by scrolling past the entry hero
+  // directly (see .skillsfun-about's comment in skillsfun.css)
   aboutEl?.classList.add('is-visible');
+  navgridEl?.classList.add('is-visible');
   footerEl?.classList.add('is-visible');
   // the figure section has its own logo/wordmark + menu + contact top
   // bar — the entry hero's own floating nav would otherwise sit on top

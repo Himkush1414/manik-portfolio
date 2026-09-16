@@ -249,7 +249,7 @@ document.getElementById('lv7-footer-contact')?.addEventListener('click', e => {
   e.preventDefault();
   goTo('contact');
 });
-// Skill & Fun's three Contact-flavoured controls (see chat reply) — all
+// Skill & Fun's four Contact-flavoured controls (see chat reply) — all
 // inert on lv9's own standalone copy (nowhere to send them there); real
 // here, same destination as every other Contact trigger on the site.
 document.getElementById('skillsfun-page2-contact')?.addEventListener('click', e => {
@@ -261,6 +261,10 @@ document.getElementById('skillsfun-footer-contact')?.addEventListener('click', e
   goTo('contact');
 });
 document.getElementById('skillsfun-about-cta')?.addEventListener('click', e => {
+  e.preventDefault();
+  goTo('contact');
+});
+document.getElementById('skillsfun-navgrid-connect')?.addEventListener('click', e => {
   e.preventDefault();
   goTo('contact');
 });

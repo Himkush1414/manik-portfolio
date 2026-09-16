@@ -785,6 +785,80 @@
     </div>
   </section>
 
+  <!-- ===================== NAV GRID =====================
+       Ported from /lab/lv9's own nav-tile grid (see chat reply): four
+       large tiles below "Who I Am" echoing the site's own nav
+       destinations, at editorial scale. Top row: a double-width tile
+       next to a smaller square-ish one; bottom row: two equal tiles.
+       Home/About Me/Projects are real <a> tags to this site's actual
+       live routes, same as lv9's own copy (Projects has no standalone
+       route; "/#projects" is what lv6-transition.ts's own hash check
+       on load already routes to). Games stays a plain, non-interactive
+       <div> — no game exists behind it yet, same as lv9. "Connect with
+       Me" is real here (unlike lv9's inert copy) — wired to the same
+       Contact view every other Contact trigger in this section uses
+       (see lv6-transition.ts).
+       Gated the same way as .skillsfun-about/.skillsfun-footer: only
+       reachable once "Move Next" has been clicked (skillsfun.ts adds
+       .is-visible), not by scrolling past the hero directly. -->
+  <section class="skillsfun-navgrid" id="skillsfun-navgrid" aria-label="Explore">
+    <div class="skillsfun-navgrid__inner">
+      <div class="skillsfun-navgrid__row skillsfun-navgrid__row--top">
+        <div class="skillsfun-navgrid__box skillsfun-navgrid__box--games">
+          <span class="skillsfun-navgrid__bg skillsfun-navgrid__bg--games" aria-hidden="true"></span>
+          <span class="skillsfun-navgrid__label">Games</span>
+          <span class="skillsfun-navgrid__hover" aria-hidden="true">
+            <span class="skillsfun-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </div>
+        <a class="skillsfun-navgrid__box skillsfun-navgrid__box--home" href="/" aria-label="Home">
+          <span class="skillsfun-navgrid__bg skillsfun-navgrid__bg--home" aria-hidden="true"></span>
+          <span class="skillsfun-navgrid__label">Home</span>
+          <span class="skillsfun-navgrid__hover" aria-hidden="true">
+            <span class="skillsfun-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </a>
+      </div>
+      <div class="skillsfun-navgrid__row skillsfun-navgrid__row--bottom">
+        <a class="skillsfun-navgrid__box skillsfun-navgrid__box--about" href="/about" aria-label="About Me">
+          <span class="skillsfun-navgrid__bg skillsfun-navgrid__bg--about" aria-hidden="true"></span>
+          <span class="skillsfun-navgrid__label">About Me</span>
+          <span class="skillsfun-navgrid__hover" aria-hidden="true">
+            <span class="skillsfun-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </a>
+        <a class="skillsfun-navgrid__box skillsfun-navgrid__box--projects" href="/#projects" aria-label="Projects">
+          <span class="skillsfun-navgrid__bg skillsfun-navgrid__bg--projects" aria-hidden="true"></span>
+          <span class="skillsfun-navgrid__label">Projects</span>
+          <span class="skillsfun-navgrid__hover" aria-hidden="true">
+            <span class="skillsfun-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <div class="skillsfun-navgrid__connect">
+      <p class="skillsfun-navgrid__connect-label">Got a project in mind?</p>
+      <button class="skillsfun-navgrid__connect-btn" id="skillsfun-navgrid-connect" type="button">Connect with Me</button>
+    </div>
+  </section>
+
   <!-- ===================== FOOTER =====================
        Same visual pattern as the main site's own Projects/Contact-view
        footer (.lv7-footer in /projects.css: logo left, link columns,
