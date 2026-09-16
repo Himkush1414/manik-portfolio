@@ -1,8 +1,9 @@
 // / (the main site) — bootstrap for the "Skill & Fun" section (see chat
 // reply): a full copy of /lab/lv9's own hero -> "Move Next" flip
-// transition -> figure section -> About -> footer, embedded here as a
-// fifth toggled view (#skillsfun-root) alongside Home/Projects/Contact/
-// About, wired into lv6-transition.ts the same way Projects/Contact are.
+// transition -> figure section -> About -> 4-box nav grid + Connect ->
+// footer, embedded here as a fifth toggled view (#skillsfun-root)
+// alongside Home/Projects/Contact/About, wired into lv6-transition.ts
+// the same way Projects/Contact are.
 // lv9 itself is untouched — this is its own copy, scoped to #skillsfun-root
 // instead of body.lv9, with its own cool-teal palette (see skillsfun.css)
 // instead of lv9's warm ember one, and no standalone nav/back button

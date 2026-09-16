@@ -1,7 +1,8 @@
 /* ============================================================
    / (the main site) — "Skill & Fun" section (see chat reply): a full
    copy of /lab/lv9's own hero -> "Move Next" flip transition -> figure
-   section -> About -> footer, embedded here as a fifth toggled view
+   section -> About -> 4-box nav grid + Connect -> footer, embedded
+   here as a fifth toggled view
    (#skillsfun-root) alongside Home/Projects/Contact/About — see
    lv6-transition.ts for the view-switching itself. lv9 is untouched;
    this is its own copy, scoped to #skillsfun-root instead of body.lv9
