@@ -135,6 +135,23 @@ function showOnly(view: ViewId) {
   skillsRoot?.classList.toggle('is-active', view === 'skills');
   window.scrollTo(0, 0);
 
+  // Bug fix (see chat reply — "ghost nav on return to Home"): #home-root's
+  // own scroll-driven effects (main.tsx's #lv3-returnnav slide-down among
+  // them) only ever recompute inside a 'scroll' listener. scrollTo(0, 0)
+  // above fires no 'scroll' event when the page was already at the top of
+  // ITS OWN scroll container (true whenever the view being left scrolls
+  // independently, or was itself already at 0) — so #lv3-returnnav's
+  // .is-in class was left exactly as the LAST real scroll on Home set it,
+  // which is "true" (slid down) if Home had been scrolled near its footer
+  // before navigating away. Landing back on Home then showed that stale
+  // slid-down nav simultaneously with the real hero nav underneath it —
+  // the reported "ghost second nav bar" — until the next actual scroll
+  // (any direction) fired the listener for real and corrected it.
+  // Dispatching a synthetic scroll event here forces every one of
+  // #home-root's scroll listeners to resync against the just-reset (0, 0)
+  // position, exactly as if the user had scrolled there themselves.
+  if (view === 'home') window.dispatchEvent(new Event('scroll'));
+
   // Reload the About iframe the instant it's hidden behind the fully-
   // covered overlay, exactly as before — resets its own in-page nav state
   // so it's fresh well before it's ever shown again.
@@ -203,13 +220,14 @@ function goTo(target: ViewId) {
 }
 
 // ---- wiring ----
-// Every real "Home"/"About"/"Projects" link already on the page — the
-// hero/return nav pills, the hero card, the footer link, the mobile
-// hamburger menu's own items, and the ones now living on the ported
-// Projects/Contact views — is a plain <a href="/">, <a href="/about"> or
-// <a href="#projects">. Delegated on `document` (not attached per-element)
-// since several of these are only rendered once React mounts them, well
-// after this script's first run.
+// Every real "Home"/"About"/"Projects"/"Skills" link already on the page
+// — the hero/return nav pills, the hero card, the footer link, the
+// mobile hamburger menu's own items, and the ones now living on the
+// ported Projects/Contact/Skill & Fun views — is a plain <a href="/">,
+// <a href="/about">, <a href="#projects"> or <a href="#skills">.
+// Delegated on `document` (not attached per-element) since several of
+// these are only rendered once React mounts them, well after this
+// script's first run.
 document.addEventListener('click', e => {
   const target = e.target as HTMLElement;
 
@@ -249,6 +267,14 @@ document.getElementById('lv7-footer-contact')?.addEventListener('click', e => {
   e.preventDefault();
   goTo('contact');
 });
+// Home's own footer "Contact" link (see chat reply — nav cross-check):
+// was a bare href="#contact" with no matching id anywhere on the page and
+// no click handler, so it silently did nothing. Same fix/pattern as every
+// other real Contact trigger on the site.
+document.getElementById('lv2-footer-contact')?.addEventListener('click', e => {
+  e.preventDefault();
+  goTo('contact');
+});
 // Skill & Fun's four Contact-flavoured controls (see chat reply) — all
 // inert on lv9's own standalone copy (nowhere to send them there); real
 // here, same destination as every other Contact trigger on the site.
@@ -269,20 +295,23 @@ document.getElementById('skillsfun-navgrid-connect')?.addEventListener('click', 
   goTo('contact');
 });
 
-// Wire up the About iframe's own internal "Home" and "Projects" links
-// (delegated on the iframe's OWN document, a separate browsing context —
-// this never collides with the outer document's own click listener
-// above). Both are genuine <a href="/"> / <a href="/#projects"> inside
-// About's own markup (about/menu.tsx) — left unintercepted THERE on
-// purpose, as a real fallback for visiting /about/ standalone (outside
-// this iframe). But inside the iframe, letting either navigate for real
-// would navigate the IFRAME itself to that URL — reloading the entire
-// main site nested inside the small About frame instead of swapping the
+// Wire up the About iframe's own internal "Home", "Projects" and
+// "Skills" links (delegated on the iframe's OWN document, a separate
+// browsing context — this never collides with the outer document's own
+// click listener above). All three are genuine <a href="/">, <a
+// href="/#projects"> / <a href="/#skills"> inside About's own markup
+// (about/menu.tsx) — left unintercepted THERE on purpose, as a real
+// fallback for visiting /about/ standalone (outside this iframe). But
+// inside the iframe, letting any of them navigate for real would
+// navigate the IFRAME itself to that URL — reloading the entire main
+// site nested inside the small About frame instead of swapping the
 // OUTER page's own view, and doing so as a full page load explains the
 // "laggy" click too: it was actually a full navigate-and-reload, not a
-// slow JS transition. Bug was that only "/" got this treatment before —
-// "/#projects" was added to about/menu.tsx later but never wired here,
-// so it fell through to the native (broken) navigation.
+// slow JS transition. Bug was that only "/" got this treatment at
+// first — "/#projects" was added to about/menu.tsx later but never
+// wired here, so it fell through to the native (broken) navigation;
+// "/#skills" is new (see chat reply) and gets the same treatment from
+// the start this time.
 let wiredDoc: Document | null = null;
 function wireAboutFrameLinks() {
   const doc = frame?.contentDocument;
@@ -294,6 +323,12 @@ function wireAboutFrameLinks() {
     if (projects) {
       e.preventDefault();
       goTo('projects');
+      return;
+    }
+    const skills = target.closest('a[href="/#skills"]');
+    if (skills) {
+      e.preventDefault();
+      goTo('skills');
       return;
     }
     const home = target.closest('a[href="/"]');

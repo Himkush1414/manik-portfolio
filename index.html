@@ -298,7 +298,7 @@
       <div class="col col--links">
         <p class="col__label col__label--ghost">More</p>
         <ul class="linklist">
-          <li><a href="#contact">Contact</a></li>
+          <li><a href="#" id="lv2-footer-contact">Contact</a></li>
         </ul>
       </div>
 
@@ -403,6 +403,7 @@
   <nav class="lv7-nav__links" id="lv7-nav-links" aria-label="Primary">
     <a class="lv7-nav__link" href="/">Home</a>
     <a class="lv7-nav__link" href="/about">About</a>
+    <a class="lv7-nav__link" href="#skills">Skills</a>
   </nav>
 
   <button class="lv7-nav__contact" id="lv7-contact-btn" type="button" aria-label="Contact">
@@ -542,6 +543,7 @@
             <li><a href="/">Home</a></li>
             <li><a href="#projects">Projects</a></li>
             <li><a href="/about">About</a></li>
+            <li><a href="#skills">Skills</a></li>
             <li><a href="#" id="lv7-footer-contact">Contact</a></li>
           </ul>
         </div>
@@ -703,6 +705,7 @@
               <span class="skillsfun-page2__menu-item">Home</span>
               <span class="skillsfun-page2__menu-item">About</span>
               <span class="skillsfun-page2__menu-item">Projects</span>
+              <span class="skillsfun-page2__menu-item">Skills</span>
             </div>
           </div>
           <button class="skillsfun-page2__contact" id="skillsfun-page2-contact" type="button">Contact</button>
@@ -792,10 +795,15 @@
        destinations, at editorial scale. Top row: a double-width tile
        next to a smaller square-ish one; bottom row: two equal tiles.
        Home/About Me/Projects are real <a> tags to this site's actual
-       live routes, same as lv9's own copy (Projects has no standalone
-       route; "/#projects" is what lv6-transition.ts's own hash check
-       on load already routes to). Games stays a plain, non-interactive
-       <div> — no game exists behind it yet, same as lv9. "Connect with
+       live routes (Projects has no standalone route; "#projects" — no
+       leading slash, this is a same-page click since we're already at
+       "/" — is what lv6-transition.ts's own delegated click handler for
+       a[href="#projects"] intercepts; a "/#projects" href here was a bug
+       fixed after ship, see chat reply — the leading slash made the
+       browser treat it as a same-page hash-only navigation with no
+       matching click handler and no reload, so it silently did nothing).
+       Games stays a plain, non-interactive <div> — no game exists behind
+       it yet, same as lv9. "Connect with
        Me" is real here (unlike lv9's inert copy) — wired to the same
        Contact view every other Contact trigger in this section uses
        (see lv6-transition.ts).
@@ -840,7 +848,7 @@
             </span>
           </span>
         </a>
-        <a class="skillsfun-navgrid__box skillsfun-navgrid__box--projects" href="/#projects" aria-label="Projects">
+        <a class="skillsfun-navgrid__box skillsfun-navgrid__box--projects" href="#projects" aria-label="Projects">
           <span class="skillsfun-navgrid__bg skillsfun-navgrid__bg--projects" aria-hidden="true"></span>
           <span class="skillsfun-navgrid__label">Projects</span>
           <span class="skillsfun-navgrid__hover" aria-hidden="true">
@@ -882,6 +890,7 @@
           <li><a href="/">Home</a></li>
           <li><a href="#projects">Projects</a></li>
           <li><a href="/about">About</a></li>
+          <li><a href="#skills">Skills</a></li>
           <li><a href="#" id="skillsfun-footer-contact">Contact</a></li>
         </ul>
       </div>
