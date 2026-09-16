@@ -562,9 +562,10 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--skillsfun-text-dim);
-  /* inert by design (see chat reply) — no href, no click handler; the
-     hover state is purely visual so it doesn't read as broken */
-  cursor: default;
+  /* real links now (see chat reply — was inert, no href, same as lv9's
+     own copy); text-decoration reset since these are now <a> tags */
+  text-decoration: none;
+  cursor: pointer;
 }
 .skillsfun-page2__menu-item:hover { background: rgba(45, 224, 209, 0.12); color: var(--skillsfun-text); }
 /* `#skillsfun-page2 ` prefix, not just `.skillsfun-page2__contact` — plain `#skillsfun-root

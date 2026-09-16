@@ -258,10 +258,15 @@ async function startPortraitCycle() {
 }
 
 // ---------------------------------------------------------------
-// Inert top-bar menu — purely visual toggle, no navigation. Home/About/
-// Projects in here are decorative, not real links, same as lv9/lv8 — the
-// real ones live in this section's own entry nav (see index.html), which
-// lv6-transition.ts already intercepts.
+// Top-bar menu — open/close toggle only. Home/About/Projects/Skills
+// inside the panel are real <a> links now (see chat reply — was inert,
+// same as lv9's own copy), intercepted the same way as every other real
+// nav link on the site by lv6-transition.ts's document-level click
+// delegation, so no navigation wiring belongs here. This function only
+// owns opening/closing the panel itself, including closing it the
+// instant an item is clicked — otherwise a same-page destination (e.g.
+// "Skills", clicked while already on this section) leaves the panel
+// sitting open on screen after its own click completes.
 // ---------------------------------------------------------------
 function wireMenu() {
   const btn = document.getElementById('skillsfun-page2-menu-btn');
@@ -281,6 +286,9 @@ function wireMenu() {
   btn.addEventListener('click', e => {
     e.stopPropagation();
     toggle();
+  });
+  panel.addEventListener('click', e => {
+    if ((e.target as HTMLElement).closest('.skillsfun-page2__menu-item')) close();
   });
   document.addEventListener('click', e => {
     if (!panel!.hidden && !panel!.contains(e.target as Node) && e.target !== btn) close();
