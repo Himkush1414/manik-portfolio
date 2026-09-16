@@ -986,36 +986,20 @@ a.lv9-navgrid__box {
   cursor: pointer;
 }
 
+/* each tile's own background photo (see chat reply — Home/About Me/
+   Projects/Games each got a real supplied image, replacing this
+   section's original placeholder dot-grid texture) — cover + centered,
+   no distortion */
 .lv9-navgrid__bg {
   position: absolute;
   inset: 0;
   z-index: 0;
   display: block;
-  transition: filter 0.35s ease, transform 0.35s ease;
-}
-/* pattern tiles (everything but the photo) — a repeating dot grid over
-   a flat pastel tint, tinted per tile for variety; needs real texture
-   to visibly blur on hover, which a flat colour alone wouldn't show */
-.lv9-navgrid__bg--games {
-  background-color: #EFE9DD;
-  background-image: radial-gradient(rgba(94, 74, 52, 0.16) 2px, transparent 2px);
-  background-size: 24px 24px;
-}
-.lv9-navgrid__bg--home {
-  background-color: #E7E2E8;
-  background-image: radial-gradient(rgba(74, 62, 94, 0.16) 2px, transparent 2px);
-  background-size: 24px 24px;
-}
-.lv9-navgrid__bg--projects {
-  background-color: #EDE4E0;
-  background-image: radial-gradient(rgba(94, 66, 52, 0.16) 2px, transparent 2px);
-  background-size: 24px 24px;
-}
-.lv9-navgrid__bg--photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 12%;
+  object-position: 50% 50%;
+  transition: filter 0.35s ease, transform 0.35s ease;
 }
 .lv9-navgrid__box:hover .lv9-navgrid__bg,
 .lv9-navgrid__box:focus-visible .lv9-navgrid__bg {
