@@ -671,12 +671,16 @@ body.lv9 {
 }
 
 .lv9-about__inner {
-  max-width: 1360px;
+  max-width: 1520px;
   margin: 0 auto;
-  padding: 0 clamp(64px, 14vw, 220px);
+  /* asymmetric on purpose (was one clamp() for both sides): the text
+     column shifts slightly toward the viewport edge, and the reclaimed
+     width goes to the photo/dial column below rather than sitting
+     unused as extra right-hand padding */
+  padding: 0 clamp(64px, 12vw, 190px) 0 clamp(40px, 8vw, 130px);
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: clamp(32px, 6vw, 80px);
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: clamp(24px, 5vw, 64px);
   align-items: center;
   padding-bottom: clamp(64px, 10vh, 120px);
 }
@@ -709,7 +713,12 @@ body.lv9 {
   line-height: 1.06;
   letter-spacing: -0.01em;
   color: #111111;
-  max-width: 640px;
+  max-width: 720px;
+  /* the text column got wider room to shift into above (.lv9-about__inner's
+     asymmetric padding) — justify reads cleanly now that lines run
+     longer, rather than ragging hard on a narrow 640px box */
+  text-align: justify;
+  text-align-last: left; /* the final short line stays left-set, not stretched */
 }
 .lv9-about__cta {
   margin-top: 6px;
@@ -761,7 +770,12 @@ body.lv9 {
 .lv9-about__dial-row {
   display: flex;
   align-items: center;
-  gap: clamp(20px, 3vw, 40px);
+  gap: clamp(28px, 4vw, 56px);
+  /* .lv9-about__right's own align-items:flex-start (below) otherwise
+     shrinks this row to its children's intrinsic width, which leaves
+     the enlarged photo-card nothing to flex-grow into — stretch this
+     one row to the full column width instead */
+  align-self: stretch;
 }
 
 /* ---- clock dial — ring of ticks, live IST clock centred inside ---- */
@@ -812,11 +826,16 @@ body.lv9 {
   color: #666666;
 }
 
-/* ---- photo card — B&W portrait, white card, minimal styling ---- */
+/* ---- photo card — B&W portrait, white card, minimal styling ----
+   Grows to fill whatever width .lv9-about__dial-row has left after the
+   (unresized, still 200px) dial, rather than a fixed box — significantly
+   bigger than the old 168x200 while keeping the same portrait
+   proportions via aspect-ratio, so it now reads as the dominant element
+   on the right instead of a small card squeezed next to the dial. */
 .lv9-about__photo-card {
-  width: 168px;
-  height: 200px;
-  flex: none;
+  flex: 1 1 auto;
+  max-width: 460px;
+  aspect-ratio: 168 / 200;
   border-radius: 3px;
   overflow: hidden;
   background: #FFFFFF;
@@ -840,17 +859,24 @@ body.lv9 {
 }
 
 /* phone ratio (see chat reply): .lv9-about__inner's desktop side padding
-   (clamp(64px, 14vw, 220px) — tuned so the eyebrow sits ~16-18% in from
-   a wide desktop section) is a fixed ~64px floor per side. Left
-   unchanged, that alone is already wider than a phone's own content box
-   (2x64=128px eats a huge share of a 320-375px screen), on top of which
-   the 200px dial + gap + 168px photo card can't fit side by side at all
-   below the general 900px stack above — caught while verifying this
-   ratio specifically, not just eyeballed. */
+   (clamp(40px, 8vw, 130px) left / clamp(64px, 12vw, 190px) right — tuned
+   so the eyebrow sits well in from a wide desktop section) has a fixed
+   ~40-64px floor per side. Left unchanged, that alone is already wider
+   than a phone's own content box (eats a huge share of a 320-375px
+   screen), on top of which the 200px dial + gap + the now much larger
+   photo card can't fit side by side at all below the general 900px
+   stack above — caught while verifying this ratio specifically, not
+   just eyeballed. */
 @media (max-width: 599px) {
   .lv9-about__inner { padding: 0 clamp(16px, 6vw, 32px); }
   .lv9-about__dial-row { flex-direction: column; gap: 24px; }
-  .lv9-about__headline { max-width: 100%; }
+  .lv9-about__headline { max-width: 100%; text-align: left; }
+  /* the desktop photo-card's flex:1 1 auto (see lv9-about__photo-card)
+     grows against dial-row's horizontal main axis — that axis becomes
+     vertical once dial-row switches to a column stack right above, where
+     flex-grow has nothing to grow into and the card would otherwise
+     collapse toward 0 width. A concrete width sidesteps that. */
+  .lv9-about__photo-card { flex: none; width: min(260px, 70vw); }
 }
 
 /* ---- skills marquee — each skill its own white pill card ---- */
