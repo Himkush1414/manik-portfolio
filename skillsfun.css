@@ -487,33 +487,15 @@
 .skillsfun-page2__topbar {
   position: relative;
   z-index: 3;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   padding: 22px var(--skillsfun-gutter) 0;
 }
 .skillsfun-page2__brand {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  justify-self: start;
-}
-.skillsfun-page2__brand-row {
-  display: flex;
   align-items: center;
-  gap: 12px;
-}
-.skillsfun-page2__brand-tagline {
-  margin: 0 0 0 2px;
-  font-family: var(--skillsfun-font-editorial);
-  font-style: italic;
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0.01em;
-  color: var(--skillsfun-text);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 .skillsfun-page2__brand-mark {
   /* modest increase (see chat reply) — same standard used elsewhere on
@@ -523,53 +505,9 @@
   object-fit: contain;
   filter: drop-shadow(0 0 6px rgba(45, 224, 209, 0.4));
 }
-.skillsfun-page2__brand-name {
-  /* signature/script treatment (see chat reply) — distinct from the
-     clean sans used everywhere else on the site, a personal "signed"
-     feel. Sized and tracked up from the old sans value: script faces
-     read visually smaller and tighter tracking closes up their loops. */
-  font-family: var(--skillsfun-font-script);
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: var(--skillsfun-text);
-  /* the corrected ambient gradient's top band is deliberately near-white
-     (see chat reply's band table) — light nav text on it was reading as
-     low-contrast, caught visually. A shadow keeps it legible regardless
-     of which image's gradient is behind it, since the top band's
-     lightness is the same ~92% for every image. */
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-.skillsfun-page2__address {
-  justify-self: center;
-  font-family: var(--skillsfun-font-page2);
-  font-size: 15px;
-  line-height: 19px;
-  font-weight: 400;
-  letter-spacing: 0;
-  /* black (see chat reply) — legible on its own against the ambient
-     gradient's consistently near-white top band, so the light-text
-     shadow tuned for the opposite (light-on-dark) case is dropped too */
-  color: #000000;
-  text-align: center;
-  white-space: nowrap;
-}
 .skillsfun-page2__actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  justify-self: end;
-}
-.skillsfun-page2__actions-tagline {
-  margin: 0 2px 0 0;
-  font-family: var(--skillsfun-font-angular);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--skillsfun-text);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  align-items: center;
 }
 .skillsfun-page2__actions-row {
   display: flex;
@@ -699,50 +637,21 @@
 }
 
 @media (max-width: 860px) {
-  .skillsfun-page2__topbar { grid-template-columns: 1fr; row-gap: 10px; padding-top: 18px; }
-  .skillsfun-page2__brand,
-  .skillsfun-page2__address,
-  .skillsfun-page2__actions { justify-self: center; }
-  /* the two new taglines (see chat reply) stay left-/right-aligned under
-     their own flex-start/flex-end columns above — on the stacked mobile
-     layout both columns centre under the address instead */
-  .skillsfun-page2__brand,
-  .skillsfun-page2__actions { align-items: center; }
   .skillsfun-page2__bigtext { font-size: clamp(40px, 18vw, 90px); bottom: 2%; }
   .skillsfun-page2__portrait { width: 86vw; height: 58%; }
 }
 
-/* phone ratio (see chat reply): the tablet tier above stacks the top row
-   into three centred lines (brand / address / actions) — on an actual
-   phone that's still a lot of top-row content competing with the
-   portrait below it. Cut it down to exactly three things, back in a
-   single row: the logo, the Contact button, and the "two-line circle"
-   (the menu button) — wordmark, both new taglines, and the address text
-   all drop out rather than wrapping into extra stacked lines. Narrower
-   than every other breakpoint in this file on purpose, so it wins last.
-   Two comma-separated conditions, not one — a narrow *width* alone
-   would miss a phone turned sideways (landscape phone widths run
-   667-930px, well past the 599px portrait cutoff below), so this also
-   fires on a short, wide, landscape-oriented viewport, same "phone"
-   either way. */
+/* phone ratio (see chat reply): shrink the logo/menu/Contact a bit
+   further on an actual phone. Narrower than every other breakpoint in
+   this file on purpose, so it wins last. Two comma-separated
+   conditions, not one — a narrow *width* alone would miss a phone
+   turned sideways (landscape phone widths run 667-930px, well past the
+   599px portrait cutoff below), so this also fires on a short, wide,
+   landscape-oriented viewport, same "phone" either way. */
 @media (max-width: 599px), (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
-  .skillsfun-page2__brand-name,
-  .skillsfun-page2__brand-tagline,
-  .skillsfun-page2__address,
-  .skillsfun-page2__actions-tagline {
-    display: none;
-  }
   .skillsfun-page2__topbar {
-    grid-template-columns: auto auto; /* just the brand block + actions block now */
-    justify-content: space-between;
     padding-top: 16px;
   }
-  .skillsfun-page2__brand,
-  .skillsfun-page2__actions {
-    justify-self: auto; /* the 2-column grid above places these; the tablet tier's centring no longer applies */
-  }
-  .skillsfun-page2__brand { justify-content: flex-start; }
-  .skillsfun-page2__actions { justify-content: flex-end; }
   .skillsfun-page2__brand-mark { width: 38px; height: 38px; }
   .skillsfun-page2__menu-btn { width: 34px; height: 34px; }
   #skillsfun-page2 .skillsfun-page2__contact { padding: 9px 18px; font-size: 13px; }
@@ -787,12 +696,16 @@
 }
 
 .skillsfun-about__inner {
-  max-width: 1360px;
+  max-width: 1520px;
   margin: 0 auto;
-  padding: 0 clamp(64px, 14vw, 220px);
+  /* asymmetric on purpose (was one clamp() for both sides): the text
+     column shifts slightly toward the viewport edge, and the reclaimed
+     width goes to the photo/dial column below rather than sitting
+     unused as extra right-hand padding */
+  padding: 0 clamp(64px, 12vw, 190px) 0 clamp(40px, 8vw, 130px);
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: clamp(32px, 6vw, 80px);
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: clamp(24px, 5vw, 64px);
   align-items: center;
   padding-bottom: clamp(64px, 10vh, 120px);
 }
@@ -825,7 +738,12 @@
   line-height: 1.06;
   letter-spacing: -0.01em;
   color: #111111;
-  max-width: 640px;
+  max-width: 720px;
+  /* the text column got wider room to shift into above (.skillsfun-about__inner's
+     asymmetric padding) — justify reads cleanly now that lines run
+     longer, rather than ragging hard on a narrow 640px box */
+  text-align: justify;
+  text-align-last: left; /* the final short line stays left-set, not stretched */
 }
 .skillsfun-about__cta {
   margin-top: 6px;
@@ -877,7 +795,12 @@
 .skillsfun-about__dial-row {
   display: flex;
   align-items: center;
-  gap: clamp(20px, 3vw, 40px);
+  gap: clamp(28px, 4vw, 56px);
+  /* .skillsfun-about__right's own align-items:flex-start (below)
+     otherwise shrinks this row to its children's intrinsic width, which
+     leaves the enlarged photo-card nothing to flex-grow into — stretch
+     this one row to the full column width instead */
+  align-self: stretch;
 }
 
 /* ---- clock dial — ring of ticks, live IST clock centred inside ---- */
@@ -928,11 +851,17 @@
   color: #666666;
 }
 
-/* ---- photo card — B&W portrait, white card, minimal styling ---- */
+/* ---- photo card — B&W portrait, white card, minimal styling ----
+   Grows to fill whatever width .skillsfun-about__dial-row has left
+   after the (unresized, still 200px) dial, rather than a fixed box —
+   significantly bigger than the old 168x200 while keeping the same
+   portrait proportions via aspect-ratio, so it now reads as the
+   dominant element on the right instead of a small card squeezed next
+   to the dial. */
 .skillsfun-about__photo-card {
-  width: 168px;
-  height: 200px;
-  flex: none;
+  flex: 1 1 auto;
+  max-width: 460px;
+  aspect-ratio: 168 / 200;
   border-radius: 3px;
   overflow: hidden;
   background: #FFFFFF;
@@ -956,17 +885,24 @@
 }
 
 /* phone ratio (see chat reply): .skillsfun-about__inner's desktop side padding
-   (clamp(64px, 14vw, 220px) — tuned so the eyebrow sits ~16-18% in from
-   a wide desktop section) is a fixed ~64px floor per side. Left
-   unchanged, that alone is already wider than a phone's own content box
-   (2x64=128px eats a huge share of a 320-375px screen), on top of which
-   the 200px dial + gap + 168px photo card can't fit side by side at all
-   below the general 900px stack above — caught while verifying this
-   ratio specifically, not just eyeballed. */
+   (clamp(40px, 8vw, 130px) left / clamp(64px, 12vw, 190px) right — tuned
+   so the eyebrow sits well in from a wide desktop section) has a fixed
+   ~40-64px floor per side. Left unchanged, that alone is already wider
+   than a phone's own content box (eats a huge share of a 320-375px
+   screen), on top of which the 200px dial + gap + the now much larger
+   photo card can't fit side by side at all below the general 900px
+   stack above — caught while verifying this ratio specifically, not
+   just eyeballed. */
 @media (max-width: 599px) {
   .skillsfun-about__inner { padding: 0 clamp(16px, 6vw, 32px); }
   .skillsfun-about__dial-row { flex-direction: column; gap: 24px; }
-  .skillsfun-about__headline { max-width: 100%; }
+  .skillsfun-about__headline { max-width: 100%; text-align: left; }
+  /* the desktop photo-card's flex:1 1 auto (see skillsfun-about__photo-card)
+     grows against dial-row's horizontal main axis — that axis becomes
+     vertical once dial-row switches to a column stack right above, where
+     flex-grow has nothing to grow into and the card would otherwise
+     collapse toward 0 width. A concrete width sidesteps that. */
+  .skillsfun-about__photo-card { flex: none; width: min(260px, 70vw); }
 }
 
 /* ---- skills marquee — each skill its own white pill card ---- */

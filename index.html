@@ -621,8 +621,10 @@
      -> "Move Next" flip transition -> figure section -> About -> footer
      (see chat reply), as a fifth toggled view alongside Home/Projects/
      Contact/About. lv9 itself is untouched. Own entry nav (logo/Home),
-     own figure-section topbar (logo/wordmark/tagline/menu/Contact), own
-     About block and own footer — all scoped under #skillsfun-root so
+     own figure-section topbar (logo/menu/Contact — simplified down from
+     logo/wordmark/tagline/menu/Contact, see chat reply), own About
+     block, own 4-box nav-tile grid + Connect section, and own footer —
+     all scoped under #skillsfun-root so
      none of it leaks into Home's styling, same pattern #proj-root
      already uses for its own lv7 copy. Hidden by default; shown by
      lv6-transition.ts, same mechanism as Projects/Contact/About. -->
@@ -685,15 +687,9 @@
 
     <div class="skillsfun-page2__topbar skillsfun-page2__entry-top">
       <div class="skillsfun-page2__brand">
-        <div class="skillsfun-page2__brand-row">
-          <img src="./nav-logo-mark.png" alt="" class="skillsfun-page2__brand-mark" />
-          <span class="skillsfun-page2__brand-name">Manik Rana</span>
-        </div>
-        <p class="skillsfun-page2__brand-tagline">Creative Developer</p>
+        <img src="./nav-logo-mark.png" alt="Manik Rana" class="skillsfun-page2__brand-mark" />
       </div>
-      <span class="skillsfun-page2__address">Himachal Pradesh, India.</span>
       <div class="skillsfun-page2__actions">
-        <p class="skillsfun-page2__actions-tagline">Open For Work</p>
         <div class="skillsfun-page2__actions-row">
           <div class="skillsfun-page2__menu">
             <button class="skillsfun-page2__menu-btn" id="skillsfun-page2-menu-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
