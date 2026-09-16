@@ -195,6 +195,80 @@
     </div>
   </section>
 
+  <!-- ===================== NAV GRID =====================
+       New section below "Who I Am" (see chat reply — no reference
+       screenshot was available this round, built from a written
+       description instead): four large tiles echoing the site's own
+       nav destinations, at editorial scale. Top row: a double-width
+       tile next to a smaller square-ish one; bottom row: two equal
+       tiles. Home/About Me/Projects are real <a> tags to this site's
+       actual live routes — clicking genuinely navigates there, same as
+       a normal nav tab, just bigger (Projects has no standalone route;
+       "/#projects" is the real destination other nav triggers on this
+       site already use — see lv6-transition.ts's own hash check). Games
+       is deliberately a plain, non-interactive <div> — no lv8 game is
+       wired up behind it yet.
+       Gated the same way as .lv9-about/.lv9-footer: only reachable once
+       "Move Next" has been clicked (main.ts adds .is-visible), not by
+       scrolling past the hero directly. -->
+  <section class="lv9-navgrid" id="lv9-navgrid" aria-label="Explore">
+    <div class="lv9-navgrid__inner">
+      <div class="lv9-navgrid__row lv9-navgrid__row--top">
+        <div class="lv9-navgrid__box lv9-navgrid__box--games">
+          <span class="lv9-navgrid__bg lv9-navgrid__bg--games" aria-hidden="true"></span>
+          <span class="lv9-navgrid__label">Games</span>
+          <span class="lv9-navgrid__hover" aria-hidden="true">
+            <span class="lv9-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </div>
+        <a class="lv9-navgrid__box lv9-navgrid__box--home" href="/" aria-label="Home">
+          <span class="lv9-navgrid__bg lv9-navgrid__bg--home" aria-hidden="true"></span>
+          <span class="lv9-navgrid__label">Home</span>
+          <span class="lv9-navgrid__hover" aria-hidden="true">
+            <span class="lv9-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </a>
+      </div>
+      <div class="lv9-navgrid__row lv9-navgrid__row--bottom">
+        <a class="lv9-navgrid__box lv9-navgrid__box--about" href="/about" aria-label="About Me">
+          <img class="lv9-navgrid__bg lv9-navgrid__bg--photo" src="./portrait.png" alt="" aria-hidden="true" />
+          <span class="lv9-navgrid__label">About Me</span>
+          <span class="lv9-navgrid__hover" aria-hidden="true">
+            <span class="lv9-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </a>
+        <a class="lv9-navgrid__box lv9-navgrid__box--projects" href="/#projects" aria-label="Projects">
+          <span class="lv9-navgrid__bg lv9-navgrid__bg--projects" aria-hidden="true"></span>
+          <span class="lv9-navgrid__label">Projects</span>
+          <span class="lv9-navgrid__hover" aria-hidden="true">
+            <span class="lv9-navgrid__hover-circle">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 18 L18 6 M9 6 H18 V15" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <div class="lv9-navgrid__connect">
+      <p class="lv9-navgrid__connect-label">Got a project in mind?</p>
+      <button class="lv9-navgrid__connect-btn" type="button">Connect with Me</button>
+    </div>
+  </section>
+
   <!-- ===================== FOOTER =====================
        New, lv9-local footer below the About section (see chat reply) —
        same visual pattern as the main site's own Projects/Contact-view

@@ -930,6 +930,203 @@ body.lv9 {
 }
 
 /* ============================================================
+   NAV GRID (light theme, lv9 only) — four large tiles below "Who I
+   Am": Games/Home/About Me/Projects, echoing the site's own nav
+   destinations at editorial scale. No reference screenshot was
+   available (see chat reply), so the exact proportions/spacing below
+   are a hand-built "bento" layout rather than a pixel match: a
+   double-width top-left tile, a smaller square-ish top-right tile, and
+   two equal tiles underneath — all four sharing one fixed height so
+   only their widths differ. Continues the About section's flat
+   #F5F5F5 palette. Gated the same way as .lv9-about/.lv9-footer —
+   main.ts adds .is-visible the same moment "Move Next" is clicked.
+   ============================================================ */
+.lv9-navgrid {
+  display: none;
+  background: #F5F5F5;
+  padding: 0 0 clamp(72px, 11vh, 130px);
+}
+.lv9-navgrid.is-visible {
+  display: block;
+}
+
+.lv9-navgrid__inner {
+  max-width: 1520px;
+  margin: 0 auto;
+  padding: 0 clamp(40px, 8vw, 160px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.lv9-navgrid__row {
+  display: grid;
+  gap: clamp(16px, 2vw, 24px);
+}
+/* the double-width/smaller-square split (top) vs. the equal split
+   (bottom) is the whole "bento" effect — everything else about the two
+   rows (tile height, radius, hover behaviour) is identical */
+.lv9-navgrid__row--top { grid-template-columns: 2fr 1fr; }
+.lv9-navgrid__row--bottom { grid-template-columns: 1fr 1fr; }
+
+.lv9-navgrid__box {
+  position: relative;
+  display: block;
+  height: clamp(220px, 24vw, 320px);
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  cursor: default;
+}
+/* only the three real <a> tiles get a pointer — .lv9-navgrid__box--games
+   is a plain <div>, deliberately left at the default cursor so it never
+   visually implies it's clickable (see chat reply — no game wired up
+   behind it yet) */
+a.lv9-navgrid__box {
+  cursor: pointer;
+}
+
+.lv9-navgrid__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  transition: filter 0.35s ease, transform 0.35s ease;
+}
+/* pattern tiles (everything but the photo) — a repeating dot grid over
+   a flat pastel tint, tinted per tile for variety; needs real texture
+   to visibly blur on hover, which a flat colour alone wouldn't show */
+.lv9-navgrid__bg--games {
+  background-color: #EFE9DD;
+  background-image: radial-gradient(rgba(94, 74, 52, 0.16) 2px, transparent 2px);
+  background-size: 24px 24px;
+}
+.lv9-navgrid__bg--home {
+  background-color: #E7E2E8;
+  background-image: radial-gradient(rgba(74, 62, 94, 0.16) 2px, transparent 2px);
+  background-size: 24px 24px;
+}
+.lv9-navgrid__bg--projects {
+  background-color: #EDE4E0;
+  background-image: radial-gradient(rgba(94, 66, 52, 0.16) 2px, transparent 2px);
+  background-size: 24px 24px;
+}
+.lv9-navgrid__bg--photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 12%;
+}
+.lv9-navgrid__box:hover .lv9-navgrid__bg,
+.lv9-navgrid__box:focus-visible .lv9-navgrid__bg {
+  filter: blur(6px);
+  transform: scale(1.06);
+}
+
+/* dark scrim, hover-only — otherwise the white label/orange button
+   below can lose contrast against the lighter pattern tiles */
+.lv9-navgrid__box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.35s ease;
+  pointer-events: none;
+}
+.lv9-navgrid__box:hover::after,
+.lv9-navgrid__box:focus-visible::after {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.lv9-navgrid__label {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  z-index: 2;
+  font-family: var(--lv9-font-page2);
+  font-weight: 600;
+  font-size: clamp(18px, 1.6vw, 24px);
+  color: #FFFFFF;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* orange circular reveal button — same hover pattern reused on all four
+   tiles (see chat reply), Games included, even though it goes nowhere */
+.lv9-navgrid__hover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.lv9-navgrid__box:hover .lv9-navgrid__hover,
+.lv9-navgrid__box:focus-visible .lv9-navgrid__hover {
+  opacity: 1;
+  transform: scale(1);
+}
+.lv9-navgrid__hover-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #FF7A33;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 900px) {
+  .lv9-navgrid__row--top,
+  .lv9-navgrid__row--bottom { grid-template-columns: 1fr; }
+  .lv9-navgrid__box { height: clamp(180px, 40vw, 260px); }
+}
+@media (max-width: 599px) {
+  .lv9-navgrid__inner { padding: 0 clamp(16px, 6vw, 32px); }
+}
+
+/* ---- "Connect with Me" — further scroll below the grid, same inert
+   dark-pill CTA pattern as .lv9-about__cta ---- */
+.lv9-navgrid__connect {
+  max-width: 1520px;
+  margin: clamp(56px, 9vh, 110px) auto 0;
+  padding: 0 clamp(40px, 8vw, 160px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+.lv9-navgrid__connect-label {
+  margin: 0;
+  font-family: var(--lv9-font-page2);
+  font-weight: 400;
+  font-size: clamp(20px, 2.2vw, 28px);
+  color: #111111;
+}
+.lv9-navgrid__connect-btn {
+  width: 200px;
+  height: 54px;
+  border-radius: 27px;
+  border: none;
+  background: #171717;
+  color: #FFFFFF;
+  font-family: var(--lv9-font-page2);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: default; /* inert — no wired navigation on lv9, same as page 2/About's own CTAs */
+  transition: background 0.2s ease;
+}
+.lv9-navgrid__connect-btn:hover {
+  background: #000000;
+}
+
+/* ============================================================
    FOOTER (light theme, lv9 only) — same visual pattern as the main
    site's own Projects/Contact-view footer (.lv7-footer in /index.html +
    /projects.css: logo left, link columns, thin divider, bottom bar),

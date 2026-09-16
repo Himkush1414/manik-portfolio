@@ -33,6 +33,7 @@ backBtn?.addEventListener('click', () => {
 const heroEl = document.getElementById('lv9-hero');
 const page2El = document.getElementById('lv9-page2');
 const aboutEl = document.getElementById('lv9-about');
+const navgridEl = document.getElementById('lv9-navgrid');
 const footerEl = document.getElementById('lv9-footer');
 const moveNextBtn = document.getElementById('lv9-move-next');
 const siteNavEl = document.querySelector('.lv9-nav');
@@ -45,11 +46,12 @@ moveNextBtn?.addEventListener('click', () => {
   heroEl?.classList.add('is-transitioning');
   page2El?.classList.add('is-visible', 'is-entering');
   page2El?.setAttribute('aria-hidden', 'false');
-  // the light-theme section below page 2, and its own footer (see chat
-  // reply) — only reachable once "Move Next" has actually been clicked,
-  // not by scrolling past the original hero directly (see .lv9-about's
-  // comment in lv9.css)
+  // the light-theme sections below page 2 (About, the nav-tile grid)
+  // and its own footer (see chat reply) — only reachable once "Move
+  // Next" has actually been clicked, not by scrolling past the original
+  // hero directly (see .lv9-about's comment in lv9.css)
   aboutEl?.classList.add('is-visible');
+  navgridEl?.classList.add('is-visible');
   footerEl?.classList.add('is-visible');
   // page 2 has its own logo/wordmark + menu + contact top bar — the
   // site-wide nav would otherwise sit on top of it
