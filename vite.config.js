@@ -50,6 +50,15 @@ import { resolve } from "path";
 //                        on lv8. Deliberately excludes lv8's game, pre-game
 //                        flow, games-list section, About section, and footer
 //                        — none of that exists here. lv8 itself is untouched.
+//  - "/lab/lv10/"     -> new standalone route, fully isolated: an intro
+//                        loader sequence (pulsing logo -> black flash ->
+//                        four matte stacked panels + a glass "Welcome" ->
+//                        scroll-scrubbed panel peel-away) that reveals the
+//                        real homepage, loaded in its own background
+//                        iframe rather than any copied markup/JS. Colours
+//                        are sourced from the live site (home bg, footer,
+//                        About/Projects interaction colours, Skills hero
+//                        red); no other route is touched.
 
 // Dev-only helpers:
 //  - redirect slash-less URLs for /lab/* and /about (Vite's SPA fallback
@@ -57,7 +66,7 @@ import { resolve } from "path";
 //  - force no-store on /lab/* HTML so a browser/proxy cache can't pin a stale
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
-const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/lv9/", "/lab/home-v0/"];
+const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/lv9/", "/lab/lv10/", "/lab/home-v0/"];
 const SITE_ROUTES = ["/about/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
@@ -97,6 +106,7 @@ export default defineConfig({
         labLv7: resolve(__dirname, "lab/lv7/index.html"),
         labLv8: resolve(__dirname, "lab/lv8/index.html"),
         labLv9: resolve(__dirname, "lab/lv9/index.html"),
+        labLv10: resolve(__dirname, "lab/lv10/index.html"),
         about: resolve(__dirname, "about/index.html"),
         homeV0: resolve(__dirname, "lab/home-v0/index.html"),
       },

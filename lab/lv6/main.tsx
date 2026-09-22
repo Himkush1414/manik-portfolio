@@ -4,9 +4,13 @@ import InfiniteSpiral from './InfiniteSpiral';
 import StaggeredMenu from './StaggeredMenu';
 import { logos } from './logos';
 import navLogo from '../../assets/logo.png';
-// §4 reuses /lab/lv1's footer verbatim — the actual component, asset and
-// extra stylesheet, imported (not copied/forked) so it stays identical.
-import RippleDistortion from '../lv1/RippleDistortion';
+// §4 reuses /lab/lv1's footer verbatim — the asset and extra stylesheet
+// imported (not copied), so they stay identical. RippleDistortion itself
+// is the one exception: a local fork (./RippleDistortion, not
+// ../lv1/RippleDistortion) with a fix scoped to lv6 only — the hover
+// effect now fades out smoothly past the mount's own edge instead of
+// cutting off hard right at its boundary. See that file for the diff.
+import RippleDistortion from './RippleDistortion';
 import watermarkSource from '../lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import './lv2.css';

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — LV10</title>
+<meta name="description" content="Manik Rana — LV10: a loading word cascade and Shuffle phrase sequence played zoomed into the real homepage hero box, then scroll-scrubbed zoom-out to the normal page." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Sora — the site-wide typeface (styles.css body font-family), loaded here
+     so the loading text matches it exactly. -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<!-- The Shuffle component (react-bits) ships styled with Tailwind utility
+     classes and this project has no Tailwind build step of its own — the
+     Play CDN compiles those classes at runtime. Same approach the root
+     index.html already uses for its own react-bits component (LogoLoop). -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Shared, unmodified base styles (CSS variables, nav/pill base rules) —
+     read-only reference, same pattern /lab/lv6/'s own index.html uses. -->
+<link rel="stylesheet" href="../../styles.css" />
+<!-- Local-only stylesheets, both scoped to this route. -->
+<link rel="stylesheet" href="./lv10-hero.css" />
+<link rel="stylesheet" href="./lv10.css" />
+</head>
+<body class="lv10 lv2">
+
+<!-- ===================== the real hero, rendered from the start in its
+     normal final layout — never repositioned or resized after the fact.
+     #lv10-zoom-section reserves the scroll distance for the zoom-out
+     (like the site's own .lv2-stack/.lv2-stack__pin pin pattern);
+     #lv10-camera is the pinned "viewport" clip GSAP ScrollTrigger takes
+     over once Stage 2 finishes; #lv10-camera-content is what actually
+     gets the zoom transform (scale+translate), starting zoomed all the
+     way into the hero box and animating back to transform:none — the
+     same element, never separately positioned, so it lines up by
+     construction. Markup copied verbatim from "/" 's own SECTION 1
+     (index.html); CSS is the local, unmodified copy in ./lv10-hero.css.
+     The live "/" route itself is untouched. ===================== -->
+<div class="lv10-zoom-section" id="lv10-zoom-section">
+  <div class="lv10-camera" id="lv10-camera">
+    <div class="lv10-camera__content" id="lv10-camera-content">
+      <div class="lv2-hero">
+        <div class="lv2-tint" aria-hidden="true"></div>
+
+        <div class="lv2-shell">
+          <div class="lv2-grid" aria-hidden="true">
+            <span style="left:0%"></span>
+            <span style="left:33.33%"></span>
+            <span style="left:66.66%"></span>
+            <span style="left:100%"></span>
+            <i class="lv2-grid__h"></i>
+          </div>
+
+          <nav class="nav lv2-nav">
+            <a class="nav__brand" href="/" aria-label="Manik Rana — home">
+              <img src="../../assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
+              <span class="nav__wordmark">Manik Rana</span>
+            </a>
+            <button class="nav__toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="lv10-heronav-menu">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            </button>
+            <div class="nav__menu" id="lv10-heronav-menu">
+              <a class="pill" href="/about">About</a>
+              <a class="pill" href="/#projects">Projects</a>
+              <a class="pill" href="/#skills">Skills</a>
+              <a class="pill pill--icon" href="/about" aria-label="Enter">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+              </a>
+            </div>
+          </nav>
+
+          <div class="lv2-cols">
+            <section class="lv2-col lv2-col--left">
+              <span class="lv2-marker" aria-hidden="true"></span>
+              <h1 class="lv2-headline">Code for<br />Fun</h1>
+              <p class="lv2-lead">
+                I have been building things on the web since I was a teenager, mostly
+                because it is fun. Games, tools, small experiments, the odd
+                over-engineered side project. The craft is the point &mdash; getting
+                the motion right, making something feel good to use. This is where I
+                keep the work I make for myself.
+              </p>
+            </section>
+
+            <section class="lv2-col lv2-col--mid">
+              <div class="lv2-effect">
+                <div class="lv2-effect__mount" id="lv10-shapeblur-mount"></div>
+                <div class="lv2-effect__logo" id="lv10-effect-logo-slot" aria-hidden="true"></div>
+              </div>
+            </section>
+
+            <section class="lv2-col lv2-col--right">
+              <a class="lv2-item" href="/about">
+                <span class="lv2-item__no"><i></i>01</span>
+                <h2 class="lv2-item__title">About</h2>
+                <p class="lv2-item__sub">Engineer and tinkerer, based in India.</p>
+                <svg class="lv2-item__deco" viewBox="0 0 120 150" aria-hidden="true">
+                  <polygon points="60,8 108,58 60,142 12,58" />
+                  <polyline points="12,58 60,78 108,58" />
+                  <polyline points="60,78 60,142" />
+                </svg>
+              </a>
+
+              <a class="lv2-item" href="/#projects">
+                <span class="lv2-item__no"><i></i>02</span>
+                <h2 class="lv2-item__title">Projects</h2>
+                <p class="lv2-item__sub">Selected work &mdash; shipped, live, in use.</p>
+                <svg class="lv2-item__deco" viewBox="0 0 120 150" aria-hidden="true">
+                  <circle cx="60" cy="75" r="44" />
+                  <ellipse cx="60" cy="75" rx="44" ry="16" />
+                  <ellipse cx="60" cy="75" rx="16" ry="44" />
+                  <circle cx="60" cy="75" r="6" />
+                </svg>
+              </a>
+
+              <a class="lv2-item" href="/#skills">
+                <span class="lv2-item__no"><i></i>03</span>
+                <h2 class="lv2-item__title">Skill &amp; Fun</h2>
+                <p class="lv2-item__sub">Interactive builds &mdash; made to play with.</p>
+                <svg class="lv2-item__deco" viewBox="0 0 120 150" aria-hidden="true">
+                  <polygon points="60,40 96,60 60,80 24,60" />
+                  <polyline points="24,60 24,92 60,112 96,92 96,60" />
+                  <polyline points="60,80 60,112" />
+                  <polygon points="60,14 84,28 60,42 36,28" />
+                </svg>
+              </a>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== overlay — always position:fixed, never
+     transformed. Stage 1's loading word cascade is fully opaque and
+     covers everything; once it's removed, Stage 2's Shuffle phrases play
+     directly over the real (already zoomed-in) hero box showing through
+     underneath. ===================== -->
+<div id="lv10-loader" class="lv10-loader">
+  <div id="lv10-word" class="lv10-word" aria-hidden="true"></div>
+</div>
+<div id="lv10-phrase-overlay" class="lv10-phrase-overlay" aria-hidden="true">
+  <div id="lv10-phrase" class="lv10-phrase"></div>
+</div>
+
+<script type="module" src="./main.tsx"></script>
+</body>
+</html>

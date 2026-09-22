@@ -22,6 +22,8 @@
 // type-checker level only; the actual bundles are already independent) with
 // /lab/lv5/main.ts, the only other vanilla-script (no-import) file in the
 // project.
+import { slowScroll } from '../scroll-speed';
+
 export {};
 
 const IS_MOBILE_LAYOUT = window.matchMedia('(max-width: 720px)').matches;
@@ -58,6 +60,14 @@ window.addEventListener('resize', updateWorkBoxCenter);
 const WORK_RANGE = 2600;
 const EASE = 0.16;
 const SETTLE_EPSILON = 0.04;
+// Slows this page's own wheel-driven scroll-jack. Lower than the
+// homepage's own speed (see ../scroll-speed.ts and its call in
+// main.tsx, `slowScroll(0.55, 0.16)`) — this page ends up slower than
+// the homepage, not just slower than its own previous speed. EASE above
+// already matches that same "smooth, no sudden jumps" glide (it's the
+// same lerp-toward-target mechanism scroll-speed.ts uses for the
+// mobile layout below), so only the speed differs, not the smoothness.
+const WHEEL_SPEED = 0.35;
 
 let target = 0;
 let current = 0;
@@ -239,6 +249,15 @@ function loop() {
 // .about is display:none there and un-rendered elements never receive
 // wheel/touch events, but gating them too keeps this file's behaviour
 // honest about which layout it belongs to.
+// Mobile layout scrolls the page natively (mobile.ts drives its progress
+// off that, no scroll-jacking of its own) — give it the real, JS-driven
+// smooth scroll (scroll-speed.ts) at the same speed/ease as the desktop
+// track just above, via the same shared helper the homepage also uses
+// (with its own, higher speed).
+if (IS_MOBILE_LAYOUT) {
+  slowScroll(WHEEL_SPEED, EASE);
+}
+
 if (!IS_MOBILE_LAYOUT) {
   startLoop();
 
@@ -248,7 +267,7 @@ if (!IS_MOBILE_LAYOUT) {
       e.preventDefault();
       const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       const scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
-      target += dx * scale;
+      target += dx * scale * WHEEL_SPEED;
       clampTarget();
       startLoop();
     },

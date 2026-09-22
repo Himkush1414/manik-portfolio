@@ -1,0 +1,138 @@
+/* ============================================================
+   /lab/lv10/ — loader + Shuffle phrase sequence, played "zoomed all the
+   way into" the real homepage hero box, then scroll-scrubbed back out to
+   the normal page. Sourced values, not invented:
+     font   "Sora" — the site-wide typeface (styles.css
+            `html,body { font-family: "Sora", ... }`).
+   The real hero section's own CSS (.lv2-hero and friends, including the
+   box's own exact gradient) lives in the local ./lv10-hero.css, an
+   unmodified copy of the relevant lv2.css rules.
+
+   MECHANISM — replaces a previous, broken approach that tried to fake
+   the hero box with a separate fixed decoy element sized/positioned to
+   match it after the fact (never fit correctly, and broke normal
+   scrolling of the section beneath it). Now the real hero markup is in
+   the DOM from the very start, in its normal final layout — #lv10-camera
+   is pinned over it (same reserved-scroll-space pin pattern the site's
+   own .lv2-stack/.lv2-stack__pin already uses) and #lv10-camera-content
+   gets a CSS transform (scale+translate) that starts "zoomed into" the
+   hero box and eases back to none as the user scrolls. Since it's the
+   same element the whole time, it lines up by construction — there is
+   nothing left to "fit."
+   ============================================================ */
+
+html.lv10-lock, body.lv10.lv10-lock {
+  overflow: hidden;
+  height: 100%;
+}
+
+body.lv10 {
+  margin: 0;
+  font-family: "Sora", "Inter", "Helvetica Neue", Arial, system-ui, sans-serif;
+}
+
+/* ============================================================
+   the real hero, pinned + zoomed
+   ============================================================ */
+.lv10-zoom-section {
+  position: relative;
+  /* reserved scroll distance for the zoom-out scrub — extra room beyond
+     the camera's own 100vh, consumed entirely by the scrub before the
+     section unpins into normal flow. */
+  height: 300vh;
+}
+.lv10-camera {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+.lv10-camera__content {
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* ============================================================
+   overlay — always fixed, never transformed by the zoom. Stage 1's
+   loader is fully opaque; Stage 2's phrase layer is transparent (a
+   faint scrim only, for legibility) so the real, live hero box —
+   already zoomed to fill the screen — shows through underneath.
+   ============================================================ */
+.lv10-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /* mirror of the hero box's own sourced gradient, dark bottom -> light
+     top, purely as a thematic echo for this fully-opaque loading stage. */
+  background: linear-gradient(0deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
+}
+/* matte finish: flattens the gradient's natural sheen with a fine grain
+   layer + gentle vignette, so it reads as a textured surface rather than
+   a glossy flat fill. No image asset — cheap layered radial dots. */
+.lv10-loader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    radial-gradient(rgba(0, 0, 0, 0.18) 1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 2px 2px;
+}
+.lv10-loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(120% 90% at 50% 50%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+.lv10-word {
+  position: relative;
+  z-index: 2;
+  height: 1.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Sora", "Inter", "Helvetica Neue", Arial, system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(38px, 7vw, 70px);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #F0F4F8;
+  text-shadow: 0 4px 30px rgba(4, 10, 20, 0.55);
+}
+.lv10-word__layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lv10-word__letter {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.lv10-phrase-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6vw;
+  pointer-events: none;
+  /* faint scrim so white phrase text stays legible over the live
+     ShapeBlur effect showing through from the zoomed-in real box */
+  background: radial-gradient(120% 90% at 50% 50%, rgba(2, 6, 14, 0.15) 0%, rgba(2, 6, 14, 0.4) 100%);
+}
+.lv10-phrase {
+  text-align: center;
+}

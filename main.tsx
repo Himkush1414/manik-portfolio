@@ -9,6 +9,7 @@ import navLogo from './assets/logo.png';
 import RippleDistortion from './lab/lv1/RippleDistortion';
 import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
+import { slowScroll } from './scroll-speed';
 import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
 import LogoLoop, { type LogoItem } from './LogoLoop';
 import './lv2.css';
@@ -28,6 +29,13 @@ import './skillsfun';
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
 console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
+
+// Homepage scroll speed: a real, JS-driven smooth scroll (see
+// scroll-speed.ts — native scroll can't be meaningfully slowed just by
+// tweaking wheel deltas). Same easing (0.16, matching about/main.ts's
+// own EASE) as the other live pages — only `speed` differs, so the
+// homepage stays the fastest of the two but is equally smooth.
+slowScroll(0.55, 0.16);
 
 // Clear any stray service worker / caches on localhost:5173 that could pin a
 // stale page at the bare URL (the "?query works, plain doesn't" symptom).
