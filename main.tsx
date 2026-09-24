@@ -453,6 +453,11 @@ if (returnNav && returnNavFooter) {
     const show = rect.top < window.innerHeight * 0.6;
     returnNav.classList.toggle('is-in', show);
     returnNav.setAttribute('aria-hidden', show ? 'false' : 'true');
+    // aria-hidden alone doesn't remove the nav's links/button from the tab
+    // order — a keyboard user could still Tab into a nav that's both
+    // aria-hidden and (while !show) parked off-screen, landing on focus
+    // they can neither see nor have announced. `inert` fixes both at once.
+    returnNav.toggleAttribute('inert', !show);
   };
   const onReturnNavScroll = () => {
     if (!navTicking) {

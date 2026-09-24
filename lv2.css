@@ -654,6 +654,7 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
   letter-spacing: -0.03em;
   text-transform: uppercase;
   background-image: url('./creative-bg.jpg');
+  background-image: image-set(url('./creative-bg.webp') type('image/webp'), url('./creative-bg.jpg') type('image/jpeg'));
   background-size: cover;
   background-position: center;
   -webkit-background-clip: text;

@@ -12,6 +12,7 @@
 // animation stays untouched.
 import { createRoot } from 'react-dom/client';
 import StaggeredMenu from './StaggeredMenu';
+import navLogo from '../assets/logo.png';
 
 const smMount = document.getElementById('sm-root');
 const contactLinks = document.getElementById('contact-links');
@@ -35,6 +36,7 @@ if (smMount) {
     <StaggeredMenu
       position="left"
       isFixed
+      logoUrl={navLogo}
       items={smItems}
       displaySocials={false}
       displayItemNumbering={false}

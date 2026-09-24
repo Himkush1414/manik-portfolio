@@ -113,6 +113,30 @@ const frameWrap = document.getElementById('lv6-about-frame-wrap');
 const frame = document.getElementById('lv6-about-frame') as HTMLIFrameElement | null;
 const skillsRoot = document.getElementById('skillsfun-root');
 
+// The About iframe used to carry a literal src="/about/" in the markup, so
+// its entire document — HTML, CSS, JS, images — loaded eagerly as part of
+// THIS page's own initial page load, competing with Home's own critical
+// path for bandwidth/main-thread time (this was most of the gap between
+// this page's lab and real-world load metrics). It now starts as an empty
+// frame (src left unset, data-src holds the real URL) and this kicks off
+// the real load once, either shortly after Home's own 'load' event (so
+// About is still fully preloaded well before any realistic click) or
+// immediately if the user reaches "About" before that fires.
+function ensureAboutFrameLoaded() {
+  if (frame && !frame.getAttribute('src') && frame.dataset.src) {
+    frame.src = frame.dataset.src;
+  }
+}
+if (document.readyState === 'complete') {
+  ensureAboutFrameLoaded();
+} else {
+  window.addEventListener('load', () => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(ensureAboutFrameLoaded, { timeout: 1500 });
+    else setTimeout(ensureAboutFrameLoaded, 300);
+  });
+}
+
 let current: ViewId = 'home';
 let playing = false;
 let pending: (() => void) | null = null;
@@ -208,6 +232,7 @@ async function playTransition(leaving: ViewId, arriving: ViewId) {
 }
 
 function goTo(target: ViewId) {
+  if (target === 'about') ensureAboutFrameLoaded();
   if (target === current) {
     if (target === 'home' || target === 'projects' || target === 'skills') window.scrollTo({ top: 0, behavior: 'smooth' });
     return;

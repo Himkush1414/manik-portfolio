@@ -6,14 +6,17 @@
 <title>Manik Rana</title>
 <meta name="description" content="Manik Rana — portfolio." />
 <link rel="icon" type="image/png" href="assets/logo.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Alex+Brush&family=Bodoni+Moda:ital,wght@1,500&family=Unbounded:wght@700;800&display=swap" rel="stylesheet" />
+<!-- Self-hosted (see fonts.css / assets/fonts/) — was Google Fonts, but the
+     stylesheet + font-file hop through fonts.googleapis.com/fonts.gstatic.com
+     added ~1.7s of sequential request-chain latency before First Contentful
+     Paint. Same families/weights, generated from the exact CSS Google Fonts
+     served, just fetched same-origin now. -->
+<link rel="stylesheet" href="./fonts.css" />
 <!-- LogoLoop (react-bits), used by the ported Projects section below,
      ships styled with Tailwind utility classes and this project has no
      Tailwind build step of its own — the play CDN compiles those classes
      at runtime. Same approach /lab/lv7/ itself already uses. -->
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com" defer></script>
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="./lv2.css" />
 <link rel="stylesheet" href="./lv6-transition.css" />
@@ -41,7 +44,7 @@
 <!-- ===================== HOME — the site's original content, now wrapped
      so it can be hidden as a whole while Projects/Contact/About are shown
      (see lv6-transition.ts). Nothing inside this wrapper was changed. ===================== -->
-<div id="home-root">
+<main id="home-root">
 
 <!-- StaggeredMenu (react-bits) mount — the mobile menu. main.tsx only mounts it
      at <=860px; #sm-root is display:none above that, so desktop/tablet keep the
@@ -51,7 +54,7 @@
 <!-- Site nav — hidden off the top of the viewport; slides down once the footer
      (bottom of the page) is reached. Replaces the fixed nav that used to live
      inside the footer. Toggled by main.tsx (.is-in). -->
-<nav class="nav lv3-returnnav" id="lv3-returnnav" aria-hidden="true">
+<nav class="nav lv3-returnnav" id="lv3-returnnav" aria-hidden="true" inert>
   <a class="nav__brand" href="#lv2-footer" aria-label="Manik Rana — home">
     <img src="assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
     <span class="nav__wordmark">Manik Rana</span>
@@ -385,7 +388,7 @@
   <div id="ripple-fade" aria-hidden="true"></div>
 </header>
 
-</div>
+</main>
 <!-- ===================== /#home-root ===================== -->
 
 <!-- ===================== PROJECTS + CONTACT — ported from /lab/lv7/'s
@@ -397,7 +400,10 @@
 <div id="proj-root">
 
   <a class="lv7-nav__logo" id="lv7-logo" href="#projects" aria-label="Manik Rana — Projects">
-    <img src="./nav-logo-mark.png" alt="" />
+    <picture>
+      <source srcset="./nav-logo-mark.webp" type="image/webp" />
+      <img src="./nav-logo-mark.png" alt="" width="220" height="147" />
+    </picture>
   </a>
 
   <nav class="lv7-nav__links" id="lv7-nav-links" aria-label="Primary">
@@ -407,7 +413,10 @@
   </nav>
 
   <button class="lv7-nav__contact" id="lv7-contact-btn" type="button" aria-label="Contact">
-    <img class="lv7-nav__avatar" src="./contact-photo.jpeg" alt="" />
+    <picture>
+      <source srcset="./contact-photo.webp" type="image/webp" />
+      <img class="lv7-nav__avatar" src="./contact-photo.jpg" alt="" width="160" height="160" />
+    </picture>
     <span>Contact</span>
   </button>
 
@@ -424,11 +433,11 @@
             <span>VIEW LIVE WEBSITE</span>
           </div>
           <p class="lv7-row__meta">2025, Cafe, Restaurant</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/blossom-cafe.png" alt="Blossom Cafe" loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/blossom-cafe.webp" type="image/webp" /><img src="./projects-img/blossom-cafe.jpg" alt="Blossom Cafe" loading="lazy" width="940" height="465" /></picture></div>
           <h2 class="lv7-row__name">Blossom Cafe</h2>
           <a class="lv7-row__link" href="https://theblossomcafe.in" target="_blank" rel="noopener" aria-label="Open Blossom Cafe live site"></a>
           <span class="lv7-row__arrow" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
 
@@ -438,11 +447,11 @@
             <span>VIEW LIVE WEBSITE</span>
           </div>
           <p class="lv7-row__meta">2026, Industries</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/nr-industries.png" alt="NR Industries" loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/nr-industries.webp" type="image/webp" /><img src="./projects-img/nr-industries.jpg" alt="NR Industries" loading="lazy" width="940" height="519" /></picture></div>
           <h2 class="lv7-row__name">NR Industries</h2>
           <a class="lv7-row__link" href="https://nrpower.in" target="_blank" rel="noopener" aria-label="Open NR Industries live site"></a>
           <span class="lv7-row__arrow" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
 
@@ -452,11 +461,11 @@
             <span>VIEW LIVE WEBSITE</span>
           </div>
           <p class="lv7-row__meta">2025, Edu. Platform</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/lyu.png" alt="LYU" loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/lyu.webp" type="image/webp" /><img src="./projects-img/lyu.jpg" alt="LYU" loading="lazy" width="940" height="506" /></picture></div>
           <h2 class="lv7-row__name">LYU</h2>
           <a class="lv7-row__link" href="https://lyu-local-youth-upliftment.vercel.app" target="_blank" rel="noopener" aria-label="Open LYU live site"></a>
           <span class="lv7-row__arrow" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
 
@@ -466,11 +475,11 @@
             <span>VIEW LIVE WEBSITE</span>
           </div>
           <p class="lv7-row__meta">2025, Travel Agency</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/ridexplorer.png" alt="RideXplorer" loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/ridexplorer.webp" type="image/webp" /><img src="./projects-img/ridexplorer.jpg" alt="RideXplorer" loading="lazy" width="940" height="488" /></picture></div>
           <h2 class="lv7-row__name">RideXplorer</h2>
           <a class="lv7-row__link" href="https://ridexplorer-p4hw.vercel.app" target="_blank" rel="noopener" aria-label="Open RideXplorer live site"></a>
           <span class="lv7-row__arrow" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
 
@@ -480,11 +489,11 @@
             <span>VIEW LIVE WEBSITE</span>
           </div>
           <p class="lv7-row__meta">2026, Industries</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/industrial-solutions.png" alt="Industrial Solutions Co." loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/industrial-solutions.webp" type="image/webp" /><img src="./projects-img/industrial-solutions.jpg" alt="Industrial Solutions Co." loading="lazy" width="940" height="496" /></picture></div>
           <h2 class="lv7-row__name">Industrial Solutions Co.</h2>
           <a class="lv7-row__link" href="https://nr-industries-website.vercel.app" target="_blank" rel="noopener" aria-label="Open Industrial Solutions Co. live site"></a>
           <span class="lv7-row__arrow" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
 
@@ -494,11 +503,11 @@
             <span>NO LIVE LINK YET</span>
           </div>
           <p class="lv7-row__meta">2026, Product Company</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/super-management.png" alt="Super Management System" loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/super-management.webp" type="image/webp" /><img src="./projects-img/super-management.jpg" alt="Super Management System" loading="lazy" width="940" height="525" /></picture></div>
           <h2 class="lv7-row__name">Super Management System</h2>
           <span class="lv7-row__link" aria-disabled="true"></span>
           <span class="lv7-row__arrow lv7-row__arrow--disabled" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
 
@@ -508,11 +517,11 @@
             <span>VIEW LIVE WEBSITE</span>
           </div>
           <p class="lv7-row__meta">2026, Hotel</p>
-          <div class="lv7-row__thumb"><img src="./projects-img/hotelos.png" alt="HotelOS" loading="lazy" /></div>
+          <div class="lv7-row__thumb"><picture><source srcset="./projects-img/hotelos.webp" type="image/webp" /><img src="./projects-img/hotelos.jpg" alt="HotelOS" loading="lazy" width="940" height="503" /></picture></div>
           <h2 class="lv7-row__name">HotelOS</h2>
           <a class="lv7-row__link" href="https://hotel-management-project-eta.vercel.app" target="_blank" rel="noopener" aria-label="Open HotelOS live site"></a>
           <span class="lv7-row__arrow" aria-hidden="true">
-            <img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" />
+            <picture><source srcset="./row-link-icon.webp" type="image/webp" /><img class="lv7-row__arrow-icon" src="./row-link-icon.png" alt="" width="80" height="53" /></picture>
           </span>
         </li>
       </ul>
@@ -523,7 +532,10 @@
         <p class="lv7-cta__kicker">Let&rsquo;s talk!</p>
         <h2 class="lv7-cta__headline">READY FOR YOUR<br />NEW WEBSITE?</h2>
         <a class="lv7-cta__btn lv7-cta__btn--avatar" id="lv7-book-call" href="mailto:manikrana831@gmail.com">
-          <img class="lv7-cta__avatar" src="./contact-photo.jpeg" alt="" />
+          <picture>
+            <source srcset="./contact-photo.webp" type="image/webp" />
+            <img class="lv7-cta__avatar" src="./contact-photo.jpg" alt="" width="160" height="160" />
+          </picture>
           <span>Contact Me</span>
         </a>
       </section>
@@ -534,7 +546,10 @@
     <footer class="lv7-footer">
       <div class="lv7-footer__cols">
         <div class="lv7-footer__col lv7-footer__col--brand">
-          <img src="./nav-logo-mark.png" alt="Manik Rana" class="lv7-footer__logo" />
+          <picture>
+            <source srcset="./nav-logo-mark.webp" type="image/webp" />
+            <img src="./nav-logo-mark.png" alt="Manik Rana" class="lv7-footer__logo" width="220" height="147" />
+          </picture>
         </div>
 
         <div class="lv7-footer__col">
@@ -569,7 +584,7 @@
   </main>
 
   <!-- ===================== VIEW 2 — CONTACT ===================== -->
-  <section class="lv7-view" id="proj-view-contact" aria-hidden="true">
+  <section class="lv7-view" id="proj-view-contact">
     <div class="lv7-contact">
       <div class="lv7-contact__top">
         <h1 class="lv7-contact__heading">CONTACT</h1>
@@ -635,7 +650,10 @@
 
 <nav class="skillsfun-nav" aria-label="Primary">
   <a class="skillsfun-nav__logo" href="/" aria-label="Manik Rana — home">
-    <img src="./nav-logo-mark.png" alt="" />
+    <picture>
+      <source srcset="./nav-logo-mark.webp" type="image/webp" />
+      <img src="./nav-logo-mark.png" alt="" width="220" height="147" />
+    </picture>
   </a>
   <div class="skillsfun-nav__links">
     <a class="skillsfun-nav__link" href="/">Home</a>
@@ -690,7 +708,10 @@
 
     <div class="skillsfun-page2__topbar skillsfun-page2__entry-top">
       <div class="skillsfun-page2__brand">
-        <img src="./nav-logo-mark.png" alt="Manik Rana" class="skillsfun-page2__brand-mark" />
+        <picture>
+          <source srcset="./nav-logo-mark.webp" type="image/webp" />
+          <img src="./nav-logo-mark.png" alt="Manik Rana" class="skillsfun-page2__brand-mark" width="220" height="147" />
+        </picture>
       </div>
       <div class="skillsfun-page2__actions">
         <div class="skillsfun-page2__actions-row">
@@ -771,7 +792,10 @@
             </div>
           </div>
           <div class="skillsfun-about__photo-card">
-            <img src="./skillsfun-portrait.png" alt="Manik Rana" class="skillsfun-about__photo" />
+            <picture>
+              <source srcset="./skillsfun-portrait.webp" type="image/webp" />
+              <img src="./skillsfun-portrait.png" alt="Manik Rana" class="skillsfun-about__photo" width="920" height="920" loading="lazy" />
+            </picture>
           </div>
         </div>
       </div>
@@ -881,7 +905,10 @@
   <footer class="skillsfun-footer" id="skillsfun-footer">
     <div class="skillsfun-footer__cols">
       <div class="skillsfun-footer__col skillsfun-footer__col--brand">
-        <img src="./nav-logo-mark.png" alt="Manik Rana" class="skillsfun-footer__logo" />
+        <picture>
+          <source srcset="./nav-logo-mark.webp" type="image/webp" />
+          <img src="./nav-logo-mark.png" alt="Manik Rana" class="skillsfun-footer__logo" width="220" height="147" />
+        </picture>
       </div>
 
       <div class="skillsfun-footer__col">
@@ -935,7 +962,7 @@
      bars instead, sliding in/out left-to-right, sized to actually read as
      bars rather than slivers on a narrow screen. -->
 <div id="lv6-about-frame-wrap" class="lv6-about-frame-wrap" aria-hidden="true">
-  <iframe id="lv6-about-frame" class="lv6-about-frame" src="/about/" title="About" tabindex="-1"></iframe>
+  <iframe id="lv6-about-frame" class="lv6-about-frame" data-src="/about/" title="About" tabindex="-1"></iframe>
 </div>
 <div id="lv6-transition" class="lv6-transition" aria-hidden="true">
   <span class="lv6-transition__col"></span>

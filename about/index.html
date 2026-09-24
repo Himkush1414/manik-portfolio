@@ -6,9 +6,7 @@
 <title>Manik Rana — About</title>
 <meta name="description" content="Manik Rana — About." />
 <link rel="icon" type="image/png" href="../assets/logo.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./fonts.css" />
 <link rel="stylesheet" href="./lv5.css" />
 </head>
 <body class="lv5">
@@ -91,7 +89,10 @@
         </p>
 
         <figure class="panel__portrait">
-          <img src="./portrait.png" alt="Portrait of Manik Rana" width="1254" height="1254" />
+          <picture>
+            <source srcset="./portrait.webp" type="image/webp" />
+            <img src="./portrait.png" alt="Portrait of Manik Rana" width="920" height="920" />
+          </picture>
         </figure>
       </div>
 
@@ -132,9 +133,9 @@
       <div class="ch2__preview-wrap">
         <div class="ch2__preview-stack">
           <div class="preview-empty" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="0" y1="0" x2="100" y2="100" /></svg></div>
-          <div class="preview-ph" data-key="websites" data-tone="a"><img class="preview-ph__img" src="./ch2-web-page.png" alt="" /><span>Web Pages</span></div>
+          <div class="preview-ph" data-key="websites" data-tone="a"><picture><source srcset="./ch2-web-page.webp" type="image/webp" /><img class="preview-ph__img" src="./ch2-web-page.jpg" alt="" /></picture><span>Web Pages</span></div>
           <div class="preview-ph" data-key="os" data-tone="b"><img class="preview-ph__img" src="./ch2-os-system.png" alt="" /><span>OS Systems</span></div>
-          <div class="preview-ph" data-key="frontend" data-tone="c"><img class="preview-ph__img" src="./ch2-frontend-design.png" alt="" /><span>Front-End Design</span></div>
+          <div class="preview-ph" data-key="frontend" data-tone="c"><picture><source srcset="./ch2-frontend-design.webp" type="image/webp" /><img class="preview-ph__img" src="./ch2-frontend-design.jpg" alt="" /></picture><span>Front-End Design</span></div>
           <div class="preview-ph" data-key="games" data-tone="d"><img class="preview-ph__img" src="./ch2-games.png" alt="" /><span>Games</span></div>
         </div>
         <p class="ch2__caption">Work spanning products, interfaces, and systems.</p>
@@ -173,7 +174,7 @@
           </div>
         </div>
         <div class="ch3__col">
-          <div class="ch3__col-bg" data-tone="c"><img class="ch3__col-bg__img" src="./ch3-visual-design.png" alt="" /></div>
+          <div class="ch3__col-bg" data-tone="c"><picture><source srcset="./ch3-visual-design.webp" type="image/webp" /><img class="ch3__col-bg__img" src="./ch3-visual-design.jpg" alt="" /></picture></div>
           <div class="ch3__col-cover"></div>
           <div class="ch3__col-content">
             <span class="ch3__num">03</span>
@@ -208,8 +209,8 @@
       <div class="ch4__preview-wrap">
         <div class="ch4__preview-stack">
           <div class="preview-empty" aria-hidden="true"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="0" y1="0" x2="100" y2="100" /></svg></div>
-          <div class="preview-ph" data-key="one" data-tone="a"><img class="preview-ph__img" src="./ch2-web-page.png" alt="" /><span>Project One</span></div>
-          <div class="preview-ph" data-key="two" data-tone="b"><img class="preview-ph__img" src="./ch2-frontend-design.png" alt="" /><span>Project Two</span></div>
+          <div class="preview-ph" data-key="one" data-tone="a"><picture><source srcset="./ch2-web-page.webp" type="image/webp" /><img class="preview-ph__img" src="./ch2-web-page.jpg" alt="" /></picture><span>Project One</span></div>
+          <div class="preview-ph" data-key="two" data-tone="b"><picture><source srcset="./ch2-frontend-design.webp" type="image/webp" /><img class="preview-ph__img" src="./ch2-frontend-design.jpg" alt="" /></picture><span>Project Two</span></div>
           <div class="preview-ph" data-key="three" data-tone="c"><img class="preview-ph__img" src="./ch4-project-three.png" alt="" /><span>Project Three</span></div>
           <div class="preview-ph" data-key="more" data-tone="d"><span>And More</span></div>
         </div>
@@ -297,7 +298,10 @@
     </div>
 
     <figure class="m-ch1__photo m-reveal m-reveal--wipe">
-      <img class="m-wipe-target" src="./portrait.png" alt="Portrait of Manik Rana" width="1254" height="1254" />
+      <picture>
+        <source srcset="./portrait.webp" type="image/webp" />
+        <img class="m-wipe-target" src="./portrait.png" alt="Portrait of Manik Rana" width="920" height="920" />
+      </picture>
     </figure>
   </section>
 
@@ -317,7 +321,7 @@
     <span class="m-label m-reveal">Selected Work</span>
     <ul class="m-list">
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="a">
-        <img class="m-list__item-img m-wipe-target" src="./ch2-web-page.png" alt="" />
+        <picture><source srcset="./ch2-web-page.webp" type="image/webp" /><img class="m-list__item-img m-wipe-target" src="./ch2-web-page.jpg" alt="" /></picture>
         <span class="m-list__item-label">Web Pages</span>
       </li>
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="b">
@@ -325,7 +329,7 @@
         <span class="m-list__item-label">OS Systems</span>
       </li>
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="c">
-        <img class="m-list__item-img m-wipe-target" src="./ch2-frontend-design.png" alt="" />
+        <picture><source srcset="./ch2-frontend-design.webp" type="image/webp" /><img class="m-list__item-img m-wipe-target" src="./ch2-frontend-design.jpg" alt="" /></picture>
         <span class="m-list__item-label">Front-End Design</span>
       </li>
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="d">
@@ -370,7 +374,7 @@
   </section>
 
   <section class="m-panel m-panel--ch3">
-    <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="c"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-visual-design.png" alt="" /></div>
+    <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="c"><picture><source srcset="./ch3-visual-design.webp" type="image/webp" /><img class="m-ch3__bg__img m-wipe-target" src="./ch3-visual-design.jpg" alt="" /></picture></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">03</span>
       <h3 class="m-ch3__title">Visual Design</h3>
@@ -393,11 +397,11 @@
     <span class="m-label m-reveal">Selected Experiences</span>
     <ul class="m-list">
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="a">
-        <img class="m-list__item-img m-wipe-target" src="./ch2-web-page.png" alt="" />
+        <picture><source srcset="./ch2-web-page.webp" type="image/webp" /><img class="m-list__item-img m-wipe-target" src="./ch2-web-page.jpg" alt="" /></picture>
         <span class="m-list__item-label">Project One</span>
       </li>
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="b">
-        <img class="m-list__item-img m-wipe-target" src="./ch2-frontend-design.png" alt="" />
+        <picture><source srcset="./ch2-frontend-design.webp" type="image/webp" /><img class="m-list__item-img m-wipe-target" src="./ch2-frontend-design.jpg" alt="" /></picture>
         <span class="m-list__item-label">Project Two</span>
       </li>
       <li class="m-list__item m-reveal m-reveal--wipe" data-tone="c">
