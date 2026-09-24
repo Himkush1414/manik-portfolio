@@ -31,8 +31,11 @@
 
   <!-- mount point for the react-bits StaggeredMenu (menu.tsx), reused from
        /lab/lv3/ — full-screen here, sliding in from the left, triggered only
-       by the sidebar hamburger above -->
-  <div id="sm-root" aria-hidden="true"></div>
+       by the sidebar hamburger above. No aria-hidden here — the panel
+       itself (StaggeredMenu.tsx) already manages aria-hidden + inert against
+       its own open/closed state; hardcoding it on this wrapper as well
+       overrode that and force-hid the panel's links even while open. -->
+  <div id="sm-root"></div>
 
   <!-- revealed in place of navigating when "Contact" is clicked in the menu
        above (menu.tsx) -->

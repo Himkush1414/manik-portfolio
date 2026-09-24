@@ -300,6 +300,15 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     }
   }, [changeMenuColorOnOpen, menuButtonColor, openMenuButtonColor]);
 
+  // aria-hidden (set via the JSX prop above) doesn't by itself remove this
+  // panel's links from the tab order while closed — inert does both at
+  // once. Set imperatively (rather than as a JSX prop) since the installed
+  // @types/react here doesn't type `inert` on HTMLAttributes yet, even
+  // though every current browser supports the attribute.
+  React.useEffect(() => {
+    panelRef.current?.toggleAttribute('inert', !open);
+  }, [open]);
+
   const animateText = useCallback((opening: boolean) => {
     const inner = textInnerRef.current;
     if (!inner) return;
