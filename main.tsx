@@ -1,12 +1,20 @@
 import { createRoot } from 'react-dom/client';
-import ShapeBlur from './ShapeBlur';
+// ShapeBlur (three.js) and RippleDistortion (ogl) are both dynamically
+// imported below instead of statically here — together they pulled ~530KB
+// of WebGL library weight into this page's main bundle, parsed/executed
+// eagerly on every load even though both are purely decorative (a blurred
+// background shape; a footer hover effect nobody sees before scrolling all
+// the way down). Deferring them cut a large chunk of main-thread work from
+// the critical path without changing what either one looks like once it
+// mounts — the containers they mount into are already sized by CSS
+// (position:absolute; inset:0 for ShapeBlur's; the watermark SVG's own
+// layout for RippleDistortion's), so neither mounting late shifts layout.
 import InfiniteSpiral from './InfiniteSpiral';
 import StaggeredMenu from './StaggeredMenu';
 import { logos } from './logos';
 import navLogo from './assets/logo.png';
 // §4 reuses /lab/lv1's footer verbatim — the actual component, asset and
 // extra stylesheet, imported (not copied/forked) so it stays identical.
-import RippleDistortion from './lab/lv1/RippleDistortion';
 import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import { slowScroll } from './scroll-speed';
@@ -25,7 +33,19 @@ import './lv6-about-mobile-nav';
 import './projects-rows';
 import './projects-cursor-trail';
 import './projects-nav';
-import './skillsfun';
+// './skillsfun' (the hidden-until-navigated-to Skill & Fun view) pulls in
+// three.js via skillsfun-strip-field.ts — ~530KB that was previously
+// parsed/executed on every load of this page even though #skillsfun-root
+// stays display:none until the user actually clicks through to it.
+// Deferred the same way as ShapeBlur/RippleDistortion above: it's still
+// preloaded well before any realistic click, just off the critical path.
+{
+  const loadSkillsFun = () => void import('./skillsfun');
+  const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+  const runIdleSkillsFun = () => (idle ? idle(loadSkillsFun, { timeout: 1500 }) : setTimeout(loadSkillsFun, 0));
+  if (document.readyState === 'complete') runIdleSkillsFun();
+  else window.addEventListener('load', runIdleSkillsFun);
+}
 
 // Freshness beacon — if this line isn't in the console you're on a cached bundle.
 console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
@@ -53,31 +73,39 @@ const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
 const mount = document.getElementById('shapeblur-mount');
 if (mount) {
-  try {
-    createRoot(mount).render(
-      <ShapeBlur
-        variation={0}
-        pixelRatioProp={dpr}
-        shapeSize={1}
-        roundness={0.5}
-        borderSize={0.11}
-        circleSize={0.3}
-        circleEdge={1.6}
-      />
-    );
-  } catch (err) {
-    console.error('[lab/lv2] ShapeBlur failed to mount:', err);
-  }
-
-  // If WebGL is blocked, no <canvas> appears — say so instead of a silent blank.
-  setTimeout(() => {
-    if (!mount.querySelector('canvas')) {
-      console.warn(
-        '[lab/lv2] ShapeBlur did not mount a <canvas> — WebGL is likely disabled ' +
-          'or blocked in this browser (enable hardware acceleration / WebGL).'
-      );
-    }
-  }, 2500);
+  const mountShapeBlur = () => {
+    import('./ShapeBlur')
+      .then(({ default: ShapeBlur }) => {
+        createRoot(mount).render(
+          <ShapeBlur
+            variation={0}
+            pixelRatioProp={dpr}
+            shapeSize={1}
+            roundness={0.5}
+            borderSize={0.11}
+            circleSize={0.3}
+            circleEdge={1.6}
+          />
+        );
+        // If WebGL is blocked, no <canvas> appears — say so instead of a silent blank.
+        setTimeout(() => {
+          if (!mount.querySelector('canvas')) {
+            console.warn(
+              '[lab/lv2] ShapeBlur did not mount a <canvas> — WebGL is likely disabled ' +
+                'or blocked in this browser (enable hardware acceleration / WebGL).'
+            );
+          }
+        }, 2500);
+      })
+      .catch(err => console.error('[lab/lv2] ShapeBlur failed to mount:', err));
+  };
+  const runIdle = () => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(mountShapeBlur, { timeout: 1500 });
+    else setTimeout(mountShapeBlur, 0);
+  };
+  if (document.readyState === 'complete') runIdle();
+  else window.addEventListener('load', runIdle);
 }
 
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
@@ -389,42 +417,52 @@ const rippleFade = document.getElementById('ripple-fade');
 const rippleMount = coarsePointer ? null : document.getElementById('ripple-root');
 if (coarsePointer && rippleFade) rippleFade.style.display = 'none';
 if (rippleMount) {
-  try {
-    createRoot(rippleMount).render(
-      <RippleDistortion
-        src={watermarkSource}
-        trigger="hover"
-        grayscale
-        enabled
-        quality="high"
-        brushSize={185}
-        strength={0.115}
-        swirl={0.7}
-        rings={3}
-        spread={5}
-        fade={2.6}
-        spacing={13}
-        dispersion={0.022}
-        glint={0.08}
-        tint="#8fb8ea"
-        tintAmount={0.06}
-        highlightColor="#e2efff"
-        style={{ pointerEvents: 'none' }}
-      />
-    );
-  } catch (err) {
-    console.error('[lab/lv2] RippleDistortion failed to mount:', err);
-    rippleMount.style.display = 'none';
-  }
-
-  setTimeout(() => {
-    if (!rippleMount.querySelector('canvas')) {
-      console.warn(
-        '[lab/lv2] RippleDistortion did not mount a <canvas> — WebGL is ' +
-          'likely disabled or blocked in this browser.'
-      );
-    }
-  }, 2500);
+  const mountRipple = () => {
+    import('./lab/lv1/RippleDistortion')
+      .then(({ default: RippleDistortion }) => {
+        createRoot(rippleMount).render(
+          <RippleDistortion
+            src={watermarkSource}
+            trigger="hover"
+            grayscale
+            enabled
+            quality="high"
+            brushSize={185}
+            strength={0.115}
+            swirl={0.7}
+            rings={3}
+            spread={5}
+            fade={2.6}
+            spacing={13}
+            dispersion={0.022}
+            glint={0.08}
+            tint="#8fb8ea"
+            tintAmount={0.06}
+            highlightColor="#e2efff"
+            style={{ pointerEvents: 'none' }}
+          />
+        );
+        setTimeout(() => {
+          if (!rippleMount.querySelector('canvas')) {
+            console.warn(
+              '[lab/lv2] RippleDistortion did not mount a <canvas> — WebGL is ' +
+                'likely disabled or blocked in this browser.'
+            );
+          }
+        }, 2500);
+      })
+      .catch(err => {
+        console.error('[lab/lv2] RippleDistortion failed to mount:', err);
+        rippleMount.style.display = 'none';
+      });
+  };
+  const runIdleRipple = () => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(mountRipple, { timeout: 1500 });
+    else setTimeout(mountRipple, 0);
+  };
+  if (document.readyState === 'complete') runIdleRipple();
+  else window.addEventListener('load', runIdleRipple);
 }
 
 // footer "Back to top" — scroll to the very top of the page (href="#" so the
