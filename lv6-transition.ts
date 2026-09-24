@@ -21,89 +21,12 @@
 // Home<->About, another for everything touching Projects/Contact) seemed
 // more likely to read as a bug than the alternative.
 import { setScrollLock } from './scroll-lock';
+import { buildStripProfile, playStripCoverReveal } from './strip-transition';
+import { LEAVE_COLOR, type ViewId } from './view-colors';
 
-type ViewId = 'home' | 'projects' | 'contact' | 'about' | 'skills';
-
-interface Profile {
-  overlay: HTMLElement;
-  els: HTMLElement[];
-  coverDelays: number[];
-  revealDelays: number[];
-  totalPlayTime: number;
-}
-
-function buildProfile(overlay: HTMLElement | null, elClass: string, stagger: number, duration: number): Profile | null {
-  if (!overlay) return null;
-  const els = Array.from(overlay.querySelectorAll<HTMLElement>(elClass));
-  if (!els.length) return null;
-  const n = els.length;
-  return {
-    overlay,
-    els,
-    coverDelays: els.map((_, i) => i * stagger),
-    revealDelays: els.map((_, i) => (n - 1 - i) * stagger),
-    totalPlayTime: (n - 1) * stagger + duration,
-  };
-}
-
-const STAGGER = 70;
-const DURATION = 420;
-const HOLD = 120;
-
-const desktopProfile = buildProfile(document.getElementById('lv6-transition'), '.lv6-transition__col', STAGGER, DURATION);
-const mobileProfile = buildProfile(document.getElementById('lv6-transition-mobile'), '.lv6-transition-mobile__bar', STAGGER, DURATION);
+const desktopProfile = buildStripProfile(document.getElementById('lv6-transition'), '.lv6-transition__col');
+const mobileProfile = buildStripProfile(document.getElementById('lv6-transition-mobile'), '.lv6-transition-mobile__bar');
 const mobileMQ = window.matchMedia('(max-width: 720px)');
-
-// "Colour of the page being left" for each view — the four original
-// values are lv7's own (Home's navy "iceberg" gradient, About's dark
-// warm background, Projects/Contact's shared light background nudged a
-// few percent so the wipe stays visible even between two same-family
-// crossings). Skills' own value is its section's darkest cool-teal tone
-// (see skillsfun.css's --skillsfun-darkest), not borrowed from any of
-// the other four.
-const LEAVE_COLOR: Record<ViewId, { solid?: string; gradient?: string }> = {
-  home: { gradient: 'linear-gradient(180deg, #0A1E38 0%, #12335C 100%)' },
-  about: { solid: '#3A3632' },
-  projects: { solid: '#D7D4CC' },
-  contact: { solid: '#D7D4CC' },
-  skills: { solid: '#0B1417' },
-};
-
-function applyColor(profile: Profile, view: ViewId) {
-  const c = LEAVE_COLOR[view];
-  profile.overlay.classList.toggle('theme-gradient', !!c.gradient);
-  if (c.gradient) {
-    profile.overlay.style.setProperty('--tgrad', c.gradient);
-  } else if (c.solid) {
-    profile.overlay.style.setProperty('--tcolor', c.solid);
-  }
-}
-
-function setDelays(profile: Profile, delays: number[]) {
-  profile.els.forEach((el, i) => {
-    el.style.transitionDelay = `${delays[i]}ms`;
-    el.style.transitionDuration = `${DURATION}ms`;
-  });
-}
-
-function waitForEl(el: HTMLElement, fallback: number): Promise<void> {
-  return new Promise(resolve => {
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      el.removeEventListener('transitionend', onEnd);
-      resolve();
-    };
-    const onEnd = (e: TransitionEvent) => {
-      if (e.target === el && e.propertyName === 'transform') finish();
-    };
-    el.addEventListener('transitionend', onEnd);
-    setTimeout(finish, fallback + 200);
-  });
-}
-
-const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 const homeRoot = document.getElementById('home-root');
 const projRoot = document.getElementById('proj-root');
@@ -193,34 +116,14 @@ async function playTransition(leaving: ViewId, arriving: ViewId) {
   playing = true;
   lockRootScroll(arriving === 'about' || leaving === 'about');
 
-  const { overlay, els, coverDelays, revealDelays, totalPlayTime } = profile;
-  applyColor(profile, leaving);
-  overlay.setAttribute('aria-hidden', 'false');
-  overlay.classList.add('is-active');
-
-  setDelays(profile, coverDelays);
-  void overlay.offsetWidth;
-  overlay.classList.add('is-covering');
-  await waitForEl(els[els.length - 1], totalPlayTime);
-
-  showOnly(arriving);
-  current = arriving;
-  await wait(HOLD);
-
-  setDelays(profile, revealDelays);
-  void overlay.offsetWidth;
-  overlay.classList.remove('is-covering');
-  overlay.classList.add('is-revealing');
-  await waitForEl(els[0], totalPlayTime);
-
-  els.forEach(el => {
-    el.style.transitionDelay = '0ms';
-    el.style.transitionDuration = '0ms';
+  await playStripCoverReveal(profile, {
+    color: LEAVE_COLOR[leaving],
+    onCovered: () => {
+      showOnly(arriving);
+      current = arriving;
+    },
   });
-  void overlay.offsetWidth;
-  overlay.classList.remove('is-active', 'is-revealing');
-  void overlay.offsetWidth;
-  overlay.setAttribute('aria-hidden', 'true');
+
   if (arriving !== 'about') lockRootScroll(false);
   playing = false;
 

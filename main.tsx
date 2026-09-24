@@ -22,6 +22,7 @@ import type { LogoItem } from './LogoLoop';
 import './lv2.css';
 import './lab/lv1/lab.css';
 import './lv6-transition';
+import './home-loader';
 import './lv6-about-mobile-nav';
 // Ported from /lab/lv7/ along with the Projects/Contact markup itself
 // (lv7's own copies are untouched) — row hover/cursor-follow-pill
