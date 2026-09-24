@@ -9,7 +9,6 @@ import { createRoot } from 'react-dom/client';
 // mounts — the containers they mount into are already sized by CSS
 // (position:absolute; inset:0 for ShapeBlur's; the watermark SVG's own
 // layout for RippleDistortion's), so neither mounting late shifts layout.
-import InfiniteSpiral from './InfiniteSpiral';
 import StaggeredMenu from './StaggeredMenu';
 import { logos } from './logos';
 import navLogo from './assets/logo.png';
@@ -19,7 +18,7 @@ import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import { slowScroll } from './scroll-speed';
 import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
-import LogoLoop, { type LogoItem } from './LogoLoop';
+import type { LogoItem } from './LogoLoop';
 import './lv2.css';
 import './lab/lv1/lab.css';
 import './lv6-transition';
@@ -109,6 +108,9 @@ if (mount) {
 }
 
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
+// Dynamically imported and deferred like ShapeBlur just above — purely
+// decorative, and #spiral-mount (position:absolute; inset:0, same as
+// #shapeblur-mount) is sized by its parent regardless of when this mounts.
 const spiralMount = document.getElementById('spiral-mount');
 if (spiralMount) {
   // scale the spiral geometry down on narrow screens (the component already
@@ -120,34 +122,43 @@ if (spiralMount) {
       : vw <= 900
         ? { card: 108, radius: 126, spacing: 60, per: 7 }
         : { card: 132, radius: 150, spacing: 72, per: 7 };
-  try {
-    createRoot(spiralMount).render(
-      <InfiniteSpiral
-        className="lv2-spiral"
-        items={logos}
-        animationMode="scroll"
-        speed={0.8}
-        direction="up"
-        radius={sp.radius}
-        cardWidth={sp.card}
-        cardHeight={sp.card}
-        verticalSpacing={sp.spacing}
-        perspective={1150}
-        cardsPerTurn={sp.per}
-        rotation={0}
-        cardTilt={0}
-        cardRadius={16}
-        centerScale={1.22}
-        edgeFade={0.32}
-        edgeBlur={5}
-        pauseOnHover={false}
-        imageFit="contain"
-        grayscale={0}
-      />
-    );
-  } catch (err) {
-    console.error('[lab/lv2] InfiniteSpiral failed to mount:', err);
-  }
+  const mountSpiral = () => {
+    import('./InfiniteSpiral')
+      .then(({ default: InfiniteSpiral }) => {
+        createRoot(spiralMount).render(
+          <InfiniteSpiral
+            className="lv2-spiral"
+            items={logos}
+            animationMode="scroll"
+            speed={0.8}
+            direction="up"
+            radius={sp.radius}
+            cardWidth={sp.card}
+            cardHeight={sp.card}
+            verticalSpacing={sp.spacing}
+            perspective={1150}
+            cardsPerTurn={sp.per}
+            rotation={0}
+            cardTilt={0}
+            cardRadius={16}
+            centerScale={1.22}
+            edgeFade={0.32}
+            edgeBlur={5}
+            pauseOnHover={false}
+            imageFit="contain"
+            grayscale={0}
+          />
+        );
+      })
+      .catch(err => console.error('[lab/lv2] InfiniteSpiral failed to mount:', err));
+  };
+  const runIdleSpiral = () => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(mountSpiral, { timeout: 1500 });
+    else setTimeout(mountSpiral, 0);
+  };
+  if (document.readyState === 'complete') runIdleSpiral();
+  else window.addEventListener('load', runIdleSpiral);
 }
 
 // ---- §2 scroll-pinned stack: fade each row pale -> dark as it comes into
@@ -686,22 +697,37 @@ const projTechLogos: LogoItem[] = [
   { node: <SiVite color={PROJ_ICON_COLOR} />, title: 'Vite', ariaLabel: 'Vite' },
   { node: <SiVercel color={PROJ_ICON_COLOR} />, title: 'Vercel', ariaLabel: 'Vercel' },
 ];
+// Deferred like the other decorative mounts above — #lv7-logoloop-mount
+// lives inside #proj-root, which stays display:none until the user
+// navigates to Projects, so there's no reason to pay for this on Home's
+// own initial load.
 const projLogoLoopMount = document.getElementById('lv7-logoloop-mount');
 if (projLogoLoopMount) {
-  createRoot(projLogoLoopMount).render(
-    <LogoLoop
-      logos={projTechLogos}
-      speed={55}
-      direction="left"
-      logoHeight={72}
-      gap={64}
-      pauseOnHover={false}
-      scaleOnHover
-      fadeOut
-      fadeOutColor="#E3E1DC"
-      ariaLabel="Tech stack"
-    />
-  );
+  const mountLogoLoop = () => {
+    import('./LogoLoop').then(({ default: LogoLoop }) => {
+      createRoot(projLogoLoopMount).render(
+        <LogoLoop
+          logos={projTechLogos}
+          speed={55}
+          direction="left"
+          logoHeight={72}
+          gap={64}
+          pauseOnHover={false}
+          scaleOnHover
+          fadeOut
+          fadeOutColor="#E3E1DC"
+          ariaLabel="Tech stack"
+        />
+      );
+    });
+  };
+  const runIdleLogoLoop = () => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(mountLogoLoop, { timeout: 1500 });
+    else setTimeout(mountLogoLoop, 0);
+  };
+  if (document.readyState === 'complete') runIdleLogoLoop();
+  else window.addEventListener('load', runIdleLogoLoop);
 }
 
 // ==========================================================================
