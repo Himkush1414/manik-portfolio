@@ -4,8 +4,7 @@
 // lowest profile. Reads "fast and fragile".
 import type { ShipSpec, ZoneFn } from '../types';
 
-const hull: ZoneFn = ({ x, y, z }) => {
-  if (y > 0.28 && Math.abs(x) < 0.07 && z > -6 && z < 0.4) return 2; // accent pinstripe
+const hull: ZoneFn = ({ y, z }) => {
   if (y < -0.1) return 1;
   if (z > 6.4) return 3; // nose cone
   return 0;
@@ -37,8 +36,8 @@ export const VESPER: ShipSpec = {
     zone: hull,
   },
   wings: [
-    { root: [0.52, -0.06, -0.6], tip: [4.7, -0.14, -5.7], rootChord: 4.8, tipChord: 0.95, thickness: 0.04, stations: 12, mirror: true, cutout: { from: 0.32, to: 0.62, depth: 0.32 }, flapLine: 0.82, zone: wing },
-    { root: [0.46, 0.34, -4.7], tip: [0.98, 1.55, -6.5], rootChord: 1.9, tipChord: 0.6, thickness: 0.05, stations: 6, mirror: true, vertical: true, zone: wing },
+    { root: [0.52, -0.06, -0.6], tip: [4.7, -0.14, -5.7], rootChord: 4.8, tipChord: 0.95, thickness: 0.04, stations: 12, mirror: true, cutout: { from: 0.32, to: 0.62, depth: 0.32 }, flapLine: 0.82, zoneBreaks: { u: [0.05], v: [0.8] }, zone: wing },
+    { root: [0.46, 0.34, -4.7], tip: [0.98, 1.55, -6.5], rootChord: 1.9, tipChord: 0.6, thickness: 0.05, stations: 6, mirror: true, vertical: true, zoneBreaks: { u: [0.05], v: [0.8] }, zone: wing },
   ],
   engines: [{ pos: [0, 0.03, -7.95], radius: 0.8, length: 3.2, core: 'annular' }],
   pods: [
@@ -65,5 +64,6 @@ export const VESPER: ShipSpec = {
     { id: 'rcs', kind: 'thruster', pos: [0.4, 0.2, 4.0] },
     { id: 'hull', kind: 'hull', pos: [0, 0.5, -2.0] },
   ],
+  stripe: { halfWidth: 0.07, z: [-6, 0.4], yMin: 0.28 }, // accent pinstripe
   hoverHeight: 1.9,
 };

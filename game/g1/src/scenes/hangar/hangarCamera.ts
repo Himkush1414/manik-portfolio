@@ -18,7 +18,8 @@ function orbitPos(dist: number, elev: number, out: Vector3): Vector3 {
 }
 
 export const hangarCam = {
-  /** QA/debug views own the director while true */
+  /** QA/debug views own the director while true (and hide the bay: the QA
+   *  angles sit outside its walls) */
   manual: false,
   /** 1 = at rest distance; > 1 = pulled back (push-in tween) */
   push: 1,

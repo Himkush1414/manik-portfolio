@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { Group } from 'three';
 import { Bay } from './bay/Bay';
+import { BayLife } from './bay/BayLife';
+import { ParkedFighters } from './bay/ParkedFighters';
+import { ContactShadow } from './ContactShadow';
 import { markContentReady } from '../sceneBridge';
 import { Floor } from './bay/Floor';
 import { SpaceVista } from './bay/SpaceVista';
@@ -18,13 +21,14 @@ import { unlockState } from '../../data/unlocks';
 import type { ShipId } from '../../data/ships';
 import type { EffectiveQuality } from '../../render/perf';
 
-const STAGES = 4;
+const STAGES = 6;
 
-export function Hangar({ shipId, q, reduceMotion }: { shipId: ShipId; q: EffectiveQuality; reduceMotion: boolean }) {
+export function Hangar({ shipId, q, reduceMotion, reduceFlashing }: { shipId: ShipId; q: EffectiveQuality; reduceMotion: boolean; reduceFlashing: boolean }) {
   const gl = useThree(s => s.gl);
   const flowState = useFlow(s => s.state);
   const inHangar = flowState.startsWith('hangar.');
   const spin = useRef<Group>(null);
+  const bay = useRef<Group>(null);
   const [step, setStep] = useState(0);
   useEffect(() => {
     if (step >= STAGES) {
@@ -81,6 +85,7 @@ export function Hangar({ shipId, q, reduceMotion }: { shipId: ShipId; q: Effecti
   useFrame((state, dt) => {
     updateTurntable(dt);
     if (spin.current) spin.current.rotation.y = turntable.yaw;
+    if (bay.current) bay.current.visible = !hangarCam.manual;
     if (inHangar && !hangarCam.manual) updateHangarCamera(state.clock.elapsedTime, dt, reduceMotion);
   });
 
@@ -88,10 +93,15 @@ export function Hangar({ shipId, q, reduceMotion }: { shipId: ShipId; q: Effecti
     <>
       {/* staged mount: one part per frame so no single commit blocks a boot beat */}
       {step >= 0 && <Floor reflections={q.reflections} />}
-      {step >= 1 && <Bay />}
+      <group ref={bay}>
+        {step >= 1 && <Bay />}
+        {step >= 3 && <SpaceVista reduceMotion={reduceMotion} />}
+        {step >= 4 && <BayLife particles={q.particles} reduceMotion={reduceMotion} reduceFlashing={reduceFlashing} />}
+        {step >= 5 && <ParkedFighters />}
+      </group>
       {step >= 2 && <Pad reduceMotion={reduceMotion} />}
-      {step >= 3 && <SpaceVista reduceMotion={reduceMotion} />}
-      <group ref={spin}>{step >= 4 && <ShipDisplay shipId={shipId} />}</group>
+      <group ref={spin}>{step >= 6 && <ShipDisplay shipId={shipId} />}</group>
+      {step >= 6 && <ContactShadow />}
     </>
   );
 }

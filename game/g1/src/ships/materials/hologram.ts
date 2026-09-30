@@ -63,7 +63,8 @@ export function createHologram(zRange: [number, number]): HologramMaterial {
         float fres = pow(1.0 - clamp(abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 2.2);
         float scan = smoothstep(0.82, 1.0, sin((vObjPos.y * 16.0 - uTime * 1.6) * 3.14159) * 0.5 + 0.5);
         float s = (vObjPos.z - uZRange.x) / max(uZRange.y - uZRange.x, 0.001);
-        float sweep = exp(-pow((fract(uTime * 0.18) * 1.4 - 0.2 - s) * 9.0, 2.0));
+        float sd = (fract(uTime * 0.18) * 1.4 - 0.2 - s) * 9.0;
+        float sweep = exp(-sd * sd);
         float flicker = 0.92 + 0.08 * step(0.93, fract(sin(floor(uTime * 14.0)) * 43758.5));
         float a = (0.015 + fres * 0.7 + scan * 0.22 + sweep * 0.3) * flicker;
         gl_FragColor = vec4(uCol * a + uCol * dEdge * 2.5, 1.0);

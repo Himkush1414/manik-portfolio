@@ -10,6 +10,8 @@ export const padFx = {
   scanA: 0,
   /** pylon lens boost while scanning */
   pylon: 0,
+  /** contact-shadow strength: 1 - dissolve, 0 for holograms (ShipDisplay) */
+  shadow: 1,
 };
 
 let tl: gsap.core.Timeline | null = null;

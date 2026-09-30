@@ -61,7 +61,7 @@ function ringMaterial(kind: 'segments' | 'ticks'): ShaderMaterial {
         float seg = fract(a * ${RING.segs}.0);
         if (seg < 0.14) discard;                      // segment gaps
         float idx = floor(a * ${RING.segs}.0);
-        float chase = 0.55 + 0.45 * pow(0.5 + 0.5 * sin(idx * 0.52 - uTime * 2.4), 6.0);
+        float chase = 0.55 + 0.45 * pow(clamp(0.5 + 0.5 * sin(idx * 0.52 - uTime * 2.4), 0.0, 1.0), 6.0);
         float r = (length(vP) - uR.x) / (uR.y - uR.x);
         float edge = smoothstep(0.0, 0.18, r) * smoothstep(1.0, 0.82, r);
         float flash = (1.0 - uPulse) * 1.6;
@@ -127,7 +127,8 @@ export function Pad({ reduceMotion = false }: { reduceMotion?: boolean }) {
         void main(){
           float r = length(vP);
           float front = 10.4 + uP * 8.0;
-          float band = exp(-pow((r - front) * 2.2, 2.0)) * (1.0 - uP);
+          float d = (r - front) * 2.2;
+          float band = exp(-d * d) * (1.0 - uP);
           if (band < 0.004) discard;
           gl_FragColor = vec4(uCol * band, 1.0);
         }`,

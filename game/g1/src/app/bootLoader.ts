@@ -55,7 +55,8 @@ export function registerBootTasks(): void {
       // idle slot, so their main-thread upload never lands in the door beat
       // (measured: 260 + 170 ms long tasks at 9.2 s when run after warm-up)
       const selected = useProfile.getState().selectedShip;
-      await Promise.all([preloadShipGeometry(selected, 0), preloadShipGeometry(selected, 1)]);
+      // + HALCYON LOD1: the parked background fighters
+      await Promise.all([preloadShipGeometry(selected, 0), preloadShipGeometry(selected, 1), preloadShipGeometry('halcyon', 1)]);
       void whenHangar().then(async () => {
         for (const id of SHIP_IDS) {
           if (id === selected || !hasSpec(id)) continue;

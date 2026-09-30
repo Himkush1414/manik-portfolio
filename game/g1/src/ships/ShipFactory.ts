@@ -12,15 +12,19 @@ import { hdr } from '../render/palette';
 import gsap from 'gsap';
 import type { Hardpoint } from './types';
 import { buildShipGeometry, deserializeShipGeometry, disposeShipGeometry, type ShipGeometry, type Lod } from './geometry';
-import { createHullPaint, liveryColors, finishId, type HullPaint } from './materials/hullPaint';
+import { createHullPaint, createHullDepth, liveryColors, finishId, type HullPaint } from './materials/hullPaint';
 import { createShipMaterials, createEngineGlow, type ShipMaterials, type EngineGlow } from './materials/shipMaterials';
 import { createHologram } from './materials/hologram';
 import { SPECS } from './specs';
 import { liveriesFor, clampLivery } from '../data/liveries';
 import type { ShipId } from '../data/ships';
 import { bakeClient } from '../workers/bakeClient';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type { Lod } from './geometry';
+
+/** Extra render layer every display-ship object is on (contact shadow capture). */
+export const SHIP_LAYER = 2;
 
 const cache = new Map<string, ShipGeometry>();
 const key = (id: ShipId, lod: Lod) => `${id}:${lod}`;
@@ -67,7 +71,7 @@ export const ShipFactory = {
     const geo = geometryFor(shipId, lod);
     const liveries = liveriesFor(shipId);
     const zRange: [number, number] = [spec.hull.rings[0].z, spec.hull.rings[spec.hull.rings.length - 1].z];
-    const paintMat = createHullPaint(liveries[clampLivery(shipId, opts.livery ?? 0)], zRange);
+    const paintMat = createHullPaint(liveries[clampLivery(shipId, opts.livery ?? 0)], zRange, spec.stripe);
     const mats: ShipMaterials = createShipMaterials();
     const glow: EngineGlow = createEngineGlow(spec.engines[0]?.core ?? 'annular', spec.emissiveTrim === 'nebula-edges' ? 'nebula' : 'ignition');
     let engineLevel = 0.25;
@@ -84,6 +88,8 @@ export const ShipFactory = {
       return mesh;
     };
     const paintMesh = add(geo.paint, paintMat, { shadow: true })!;
+    const paintDepth = createHullDepth(paintMat);
+    paintMesh.customDepthMaterial = paintDepth;
     add(geo.nozzle, mats.nozzle, { shadow: true });
     add(geo.guns, mats.gun, { shadow: true });
     add(geo.ring, mats.heatRing, { shadow: true });
@@ -142,6 +148,8 @@ export const ShipFactory = {
       paintMat.uniforms.uDissolve.value = dissolve;
     };
 
+    group.traverse(o => void ((o as Mesh).isMesh && o.layers.enable(SHIP_LAYER))); // contact-shadow capture
+
     let tween: gsap.core.Tween | null = null;
     const built: BuiltShip = {
       group,
@@ -196,6 +204,7 @@ export const ShipFactory = {
       dispose() {
         tween?.kill();
         paintMat.dispose();
+        paintDepth.dispose();
         holo.dispose();
         glow.core.dispose();
         glow.plume.dispose();
@@ -213,6 +222,32 @@ export const ShipFactory = {
     return built;
   },
 };
+
+/**
+ * One ship's geometry merged into two plain geometries (position + normal):
+ * everything solid, and everything that glows (engine cores, nav lights).
+ * Background ships (parked fighters, Phase 2 wingmen far away) draw a whole
+ * craft in 2 calls. New geometries; the cache is untouched.
+ */
+export function mergedShipGeometry(id: ShipId, lod: Lod): { solid: BufferGeometry; glow: BufferGeometry | null } {
+  const g = geometryFor(id, lod);
+  const plain = (list: (BufferGeometry | null)[]) => {
+    const parts = list.filter((x): x is BufferGeometry => !!x).map(x => {
+      const q = x.index ? x.toNonIndexed() : x.clone();
+      for (const k of Object.keys(q.attributes)) if (k !== 'position' && k !== 'normal') q.deleteAttribute(k);
+      return q;
+    });
+    if (!parts.length) return null;
+    const m = mergeGeometries(parts, false);
+    parts.forEach(p => p.dispose());
+    return m;
+  };
+  const greebles: BufferGeometry[] = [];
+  for (let i = 0; i < g.greebles.length / 16; i++) greebles.push(greebleBox.clone().applyMatrix4(tmpM.fromArray(g.greebles, i * 16)));
+  const solid = plain([g.paint, g.nozzle, g.guns, g.ring, g.frame, g.glass, g.repulsor, g.shards, ...greebles])!;
+  greebles.forEach(x => x.dispose());
+  return { solid, glow: plain([g.core, g.navRed, g.navGreen, g.navWhite, g.trim]) };
+}
 
 export function disposeShipCache(): void {
   for (const g of cache.values()) disposeShipGeometry(g);

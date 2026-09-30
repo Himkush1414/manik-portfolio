@@ -33,11 +33,11 @@ export const OBSIDIAN: ShipSpec = {
   },
   wings: [
     // crown spikes 1+2: long swept wing spikes
-    { root: [0.7, 0.0, 1.2], tip: [7.4, 0.55, -6.2], rootChord: 3.8, tipChord: 0.22, thickness: 0.05, stations: 10, mirror: true, zone: spike },
+    { root: [0.7, 0.0, 1.2], tip: [7.4, 0.55, -6.2], rootChord: 3.8, tipChord: 0.22, thickness: 0.05, stations: 10, mirror: true, zoneBreaks: { u: [0.04], v: [0.9] }, zone: spike },
     // spikes 3+4: canted tail spikes
-    { root: [0.5, 0.42, -2.8], tip: [3.6, 4.3, -7.6], rootChord: 3.0, tipChord: 0.2, thickness: 0.05, stations: 8, mirror: true, vertical: true, zone: spike },
+    { root: [0.5, 0.42, -2.8], tip: [3.6, 4.3, -7.6], rootChord: 3.0, tipChord: 0.2, thickness: 0.05, stations: 8, mirror: true, vertical: true, zoneBreaks: { u: [0.04], v: [0.9] }, zone: spike },
     // spike 5: dorsal crown spike
-    { root: [0.0, 0.7, -1.2], tip: [0.0, 5.0, -6.9], rootChord: 3.2, tipChord: 0.2, thickness: 0.05, stations: 8, vertical: true, zone: spike },
+    { root: [0.0, 0.7, -1.2], tip: [0.0, 5.0, -6.9], rootChord: 3.2, tipChord: 0.2, thickness: 0.05, stations: 8, vertical: true, zoneBreaks: { u: [0.04], v: [0.9] }, zone: spike },
   ],
   engines: [
     { pos: [0, 0.02, -8.05], radius: 0.6, length: 2.4, core: 'ion' },

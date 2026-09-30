@@ -14,7 +14,7 @@ import type { ShipId } from '../../data/ships';
 import { unlockState } from '../../data/unlocks';
 import { SPECS } from '../../ships/specs';
 import { registerDebug } from '../../debug/debugApi';
-import { padMaterialise } from './padFx';
+import { padFx, padMaterialise } from './padFx';
 
 // brief §10: ~0.5 s out, ~0.7 s in, with the pad pulse + scan plane
 const OUT = 0.5;
@@ -115,6 +115,7 @@ export function ShipDisplay({ shipId }: { shipId: ShipId }) {
     }
     ship.setEngineLevel(ctaHover ? 1 : 0.25);
     ship.update(t);
+    padFx.shadow = ship.hologram ? 0 : 1 - dis.current.v;
   });
 
   return (

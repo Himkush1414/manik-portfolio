@@ -74,7 +74,8 @@ export function SpaceVista({ reduceMotion = false }: { reduceMotion?: boolean })
         void main() {
           float f = fbm(vD * 3.2 + vec3(0.0, 0.0, 4.0));
           float g = fbm(vD * 7.0 + f * 1.8);
-          float band = exp(-pow((vD.y + 0.25 * vD.x + 0.1) * 3.2, 2.0));
+          float bd = (vD.y + 0.25 * vD.x + 0.1) * 3.2;
+          float band = exp(-bd * bd);
           float m = smoothstep(0.35, 0.95, f * 0.7 + g * 0.5) * band;
           vec3 c = mix(uB * 0.25, uA * 0.55, m) + uC * pow(m, 3.0) * 0.35;
           float dust = smoothstep(0.55, 0.8, g) * band * 0.6;
@@ -116,7 +117,7 @@ export function SpaceVista({ reduceMotion = false }: { reduceMotion?: boolean })
           float city = smoothstep(0.6, 0.75, fbm(vP * 9.0)) * smoothstep(0.66, 0.8, vn(vP * 140.0)) * land * (1.0 - cloud * 0.8);
           c += uCity * city * (1.0 - day) * 0.9;
           // atmosphere fresnel, brighter toward the terminator/day side
-          float fr = pow(1.0 - max(dot(normalize(vN), vV), 0.0), 3.2);
+          float fr = pow(clamp(1.0 - dot(normalize(vN), vV), 0.0, 1.0), 3.2);
           c += uAtm * fr * (0.15 + 1.4 * smoothstep(-0.3, 0.6, ndl));
           gl_FragColor = vec4(c, 1.0);
         }`,
@@ -128,7 +129,7 @@ export function SpaceVista({ reduceMotion = false }: { reduceMotion?: boolean })
       fragmentShader: /* glsl */ `
         uniform vec3 uSun, uAtm; varying vec3 vN; varying vec3 vV;
         void main(){
-          float rim = pow(1.0 - abs(dot(normalize(vN), vV)), 5.0);
+          float rim = pow(clamp(1.0 - abs(dot(normalize(vN), vV)), 0.0, 1.0), 5.0);
           float lit = smoothstep(-0.4, 0.5, dot(normalize(vN), uSun));
           gl_FragColor = vec4(uAtm * rim * lit * 1.4, 1.0);
         }`,

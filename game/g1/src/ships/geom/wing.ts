@@ -26,14 +26,27 @@ const smoothBox = (x: number, a: number, b: number, e = 0.04) => {
   return Math.min(up, dn);
 };
 
+/** Insert a profile point at chord fraction f, on the existing segment (shape unchanged). */
+function insertSample(prof: P2[], f: number): void {
+  if (f <= 0 || f >= 1 || prof.some(([x]) => Math.abs(x - f) < 1e-4)) return;
+  const i = prof.findIndex(([x]) => x > f);
+  const [f0, h0] = prof[i - 1], [f1, h1] = prof[i];
+  prof.splice(i, 0, [f, h0 + ((h1 - h0) * (f - f0)) / (f1 - f0)]);
+}
+
 export function buildWing(spec: WingSpec): BufferGeometry {
   const prof = profile(spec.flapLine ?? 0);
+  // paired samples (+-EPS) at each chordwise zone break: the paint edge then
+  // lands on an edge loop instead of smearing across a wide triangle
+  const EPS = 0.002;
+  for (const b of spec.zoneBreaks?.u ?? []) for (const f of [b - EPS, b + EPS]) insertSample(prof, f);
   const lowerScale = 0.78;
   const S = spec.stations ?? 10;
   // span stations, with a groove triplet around each fold line
   const ss = new Set<number>();
   for (let i = 0; i <= S; i++) ss.add(i / S);
   for (const f of spec.foldLines ?? []) [f - 0.012, f, f + 0.012].forEach(v => v > 0 && v < 1 && ss.add(v));
+  for (const b of spec.zoneBreaks?.v ?? []) [b - 0.002, b + 0.002].forEach(v => v > 0 && v < 1 && ss.add(v));
   const spans = Array.from(ss).sort((a, b) => a - b);
   const folds = new Set(spec.foldLines ?? []);
 

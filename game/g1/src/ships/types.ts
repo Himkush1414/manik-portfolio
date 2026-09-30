@@ -44,6 +44,8 @@ export type WingSpec = {
   foldLines?: number[]; // span fractions with a chordwise groove ("petal" panels)
   flapLine?: number; // chord fraction of the control-surface split (0 = none)
   cutout?: { from: number; to: number; depth: number }; // span-range notch in the trailing edge
+  /** chord (u) / span (v) fractions where `zone` changes: paired samples there keep paint edges crisp */
+  zoneBreaks?: { u?: number[]; v?: number[] };
   zone: ZoneFn;
 };
 
@@ -94,6 +96,8 @@ export type ShipSpec = {
   /** OBSIDIAN CROWN: shard fragments orbiting the hull */
   shards?: { count: number; radius: number; seed: number; y: number };
   hoverHeight: number;
+  /** dorsal accent stripe, painted per fragment (crisp on any mesh density) */
+  stripe?: { halfWidth: number; z: [number, number]; yMin: number };
   /** edge-wear scale (1 = default; stealth skins keep it low) */
   wear?: number;
 };

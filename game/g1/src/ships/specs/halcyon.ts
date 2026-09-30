@@ -5,8 +5,7 @@
 // ~13 u span.
 import type { ShipSpec, ZoneFn } from '../types';
 
-const hullZone: ZoneFn = ({ x, y, z }) => {
-  if (Math.abs(x) < 0.075 && y > 0.95 && z < 1.6 && z > -6.0) return 2; // Ignition spine stripe (crest of the ridge)
+const hullZone: ZoneFn = ({ y }) => {
   if (y < -0.12) return 1; // underside
   if (Math.abs(y - 0.02) < 0.05) return 3; // chine trim line
   return 0;
@@ -46,11 +45,11 @@ export const HALCYON: ShipSpec = {
   },
   wings: [
     // main arrowhead delta (starboard, mirrored)
-    { root: [1.35, -0.02, 3.4], tip: [6.5, -0.1, -4.1], rootChord: 9.0, tipChord: 1.5, thickness: 0.045, stations: 14, mirror: true, foldLines: [0.3, 0.58], flapLine: 0.8, zone: wingZone },
+    { root: [1.35, -0.02, 3.4], tip: [6.5, -0.1, -4.1], rootChord: 9.0, tipChord: 1.5, thickness: 0.045, stations: 14, mirror: true, foldLines: [0.3, 0.58], flapLine: 0.8, zoneBreaks: { u: [0.045, 0.35], v: [0.84] }, zone: wingZone },
     // forward-swept canards
-    { root: [0.7, 0.22, 4.55], tip: [3.05, 0.3, 5.15], rootChord: 2.0, tipChord: 0.8, thickness: 0.06, stations: 6, mirror: true, zone: wingZone },
+    { root: [0.7, 0.22, 4.55], tip: [3.05, 0.3, 5.15], rootChord: 2.0, tipChord: 0.8, thickness: 0.06, stations: 6, mirror: true, zoneBreaks: { u: [0.045, 0.35], v: [0.84] }, zone: wingZone },
     // twin canted rudders
-    { root: [1.05, 0.62, -3.1], tip: [2.25, 3.25, -5.6], rootChord: 3.2, tipChord: 1.2, thickness: 0.055, stations: 8, mirror: true, vertical: true, flapLine: 0.74, zone: finZone },
+    { root: [1.05, 0.62, -3.1], tip: [2.25, 3.25, -5.6], rootChord: 3.2, tipChord: 1.2, thickness: 0.055, stations: 8, mirror: true, vertical: true, flapLine: 0.74, zoneBreaks: { u: [0.05], v: [0.82] }, zone: finZone },
   ],
   engines: [
     { pos: [0.74, 0.1, -7.55], radius: 0.6, length: 2.6, core: 'annular' },
@@ -91,5 +90,6 @@ export const HALCYON: ShipSpec = {
     { id: 'rcs', kind: 'thruster', pos: [0.8, 0.3, 4.2] },
     { id: 'hull', kind: 'hull', pos: [0, 1.2, -2.0] },
   ],
+  stripe: { halfWidth: 0.075, z: [-6.0, 1.6], yMin: 0.95 }, // Ignition spine stripe on the ridge crest
   hoverHeight: 2.1,
 };

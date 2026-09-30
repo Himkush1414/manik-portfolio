@@ -38,8 +38,8 @@ export const BASILISK: ShipSpec = {
     zone: hull,
   },
   wings: [
-    { root: [2.35, -0.05, 1.3], tip: [5.7, -0.1, 0.55], rootChord: 4.5, tipChord: 3.5, thickness: 0.085, stations: 6, mirror: true, flapLine: 0.8, zone: wing },
-    { root: [1.55, 0.95, -4.4], tip: [1.95, 2.2, -5.5], rootChord: 2.0, tipChord: 0.95, thickness: 0.07, stations: 4, mirror: true, vertical: true, zone: wing },
+    { root: [2.35, -0.05, 1.3], tip: [5.7, -0.1, 0.55], rootChord: 4.5, tipChord: 3.5, thickness: 0.085, stations: 6, mirror: true, flapLine: 0.8, zoneBreaks: { u: [0.06], v: [0.86] }, zone: wing },
+    { root: [1.55, 0.95, -4.4], tip: [1.95, 2.2, -5.5], rootChord: 2.0, tipChord: 0.95, thickness: 0.07, stations: 4, mirror: true, vertical: true, zoneBreaks: { u: [0.06], v: [0.86] }, zone: wing },
   ],
   engines: [
     { pos: [0.72, 0.42, -6.8], radius: 0.46, length: 2.1, core: 'annular' },

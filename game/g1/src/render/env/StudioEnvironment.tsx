@@ -23,7 +23,7 @@ export function StudioEnvironment({ intensity = 0.65 }: { intensity?: number }) 
       <Lightformer form="rect" intensity={3} color={HEX.nebula} position={[-12, 4, -16]} target={[0, 0, 0]} scale={[8, 12, 1]} />
       <Lightformer form="rect" intensity={2.4} color={HEX.ice} position={[13, 3, -15]} target={[0, 0, 0]} scale={[6, 10, 1]} />
       {/* Ignition floor bounce */}
-      <Lightformer form="ring" intensity={1.4} color={HEX.ignition} position={[0, -6, 0]} rotation-x={-Math.PI / 2} scale={10} />
+      <Lightformer form="ring" intensity={0.6} color={HEX.ignition} position={[0, -6, 0]} rotation-x={-Math.PI / 2} scale={10} />
     </Environment>
   );
 }

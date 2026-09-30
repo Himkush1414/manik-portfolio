@@ -47,6 +47,7 @@ export function applyStartParams(): void {
       turntable.frozen = false;
     },
     turntable: (patch: Partial<typeof turntable>) => Object.assign(turntable, patch),
+    turntableState: () => ({ yaw: turntable.yaw, pitch: turntable.pitch, zoom: turntable.zoom, zoomTarget: turntable.zoomTarget, vel: turntable.vel, enabled: turntable.enabled }),
   });
   registerDebug('flowState', { get: () => flow.state });
   registerDebug('thumbs', {

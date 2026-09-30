@@ -51,13 +51,13 @@ export const TEMPEST: ShipSpec = {
   bodies: [{ hull: boom, offset: [2.35, 0.05, -0.4], mirror: true }],
   wings: [
     // strakes: pod -> booms
-    { root: [0.72, -0.08, 1.2], tip: [2.3, -0.02, 0.9], rootChord: 2.6, tipChord: 2.3, thickness: 0.05, stations: 4, mirror: true, zone: wing },
+    { root: [0.72, -0.08, 1.2], tip: [2.3, -0.02, 0.9], rootChord: 2.6, tipChord: 2.3, thickness: 0.05, stations: 4, mirror: true, zoneBreaks: { u: [0.05], v: [0.82] }, zone: wing },
     // short forward-swept wings on the booms
-    { root: [2.6, -0.02, -2.0], tip: [5.0, 0.12, -0.9], rootChord: 2.6, tipChord: 1.1, thickness: 0.05, stations: 6, mirror: true, flapLine: 0.8, zone: wing },
+    { root: [2.6, -0.02, -2.0], tip: [5.0, 0.12, -0.9], rootChord: 2.6, tipChord: 1.1, thickness: 0.05, stations: 6, mirror: true, flapLine: 0.8, zoneBreaks: { u: [0.05], v: [0.82] }, zone: wing },
     // yoke carrying the ion drive between the booms
-    { root: [0.0, 0.1, -6.3], tip: [2.25, 0.1, -6.3], rootChord: 1.7, tipChord: 1.7, thickness: 0.09, stations: 3, mirror: true, zone: wing },
+    { root: [0.0, 0.1, -6.3], tip: [2.25, 0.1, -6.3], rootChord: 1.7, tipChord: 1.7, thickness: 0.09, stations: 3, mirror: true, zoneBreaks: { u: [0.05], v: [0.82] }, zone: wing },
     // boom tail fins
-    { root: [2.35, 0.45, -5.9], tip: [2.55, 1.7, -7.1], rootChord: 1.6, tipChord: 0.6, thickness: 0.05, stations: 3, mirror: true, vertical: true, zone: wing },
+    { root: [2.35, 0.45, -5.9], tip: [2.55, 1.7, -7.1], rootChord: 1.6, tipChord: 0.6, thickness: 0.05, stations: 3, mirror: true, vertical: true, zoneBreaks: { u: [0.05], v: [0.82] }, zone: wing },
   ],
   engines: [{ pos: [0, 0.12, -8.1], radius: 1.35, length: 2.8, core: 'ion' }],
   pods: [

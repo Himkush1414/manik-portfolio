@@ -13,7 +13,7 @@ this file alone. Updated after every slice.
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
-| 1D Hangar scene | IN PROGRESS | deck (reflector), bay shell, space vista + force field, pad (rings, pylons, pulse, scan plane), turntable + hangar camera DONE; next: bay details (cranes, beacons, holo displays, steam, sparks, shafts, dust), parked fighters, contact shadow + dissolve shadow, perf |
+| 1D Hangar scene | IN PROGRESS | deck (reflector), bay shell, space vista + force field, pad (rings, pylons, pulse, scan plane), turntable + hangar camera, bay life (cranes, beacons, holo displays, shafts + dust, steam, welding), 4 parked fighters, contact shadow, dissolving key shadow DONE; next: final 1D pass (six-ship check in the hangar, polish, URLs) |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
 | 1G Cockpit + camera select | — | |
@@ -373,6 +373,33 @@ HDRIs / kit parts if ever needed (none used so far).
   (5) Directional rim lights graze the whole bay (lilac deck/walls): rims are
   steep narrow spots now. QA: `tools/qa-hangar.mjs`, `qa-bootlag.mjs`
   (timeline vs wall clock), `prof-boot.mjs` (CDP per-long-task profile).
+- **Bay life + grounding (1D):** `bay/BayLife.tsx` (2 gantry cranes on the
+  ceiling rails, 6 rotating beacon beams (instanced cards; hidden with
+  reduce-flashing), 4 holo displays (canvas data + shader scroll/flicker),
+  4 additive light-shaft cones + 420 dust motes, 3 steam vents, welding
+  sparks every 3-8 s at the parked fighters), `bay/ParkedFighters.tsx`
+  (`mergedShipGeometry('halcyon', 1)` instanced x4: 3 draw calls),
+  `ContactShadow.tsx` (ship-only capture via `SHIP_LAYER` from below +
+  separable blur, every other frame; strength = `padFx.shadow`), and
+  `createHullDepth` (MeshDepthMaterial + injected dissolve discard as the
+  paint mesh's customDepthMaterial — a CSM depth material did NOT write
+  packed depth and the hull shadowed itself in blocks). Budget at the hangar
+  rest view: 126 draw calls, 252k tris (brief: <=220 / <=700k).
+- **Paint edge fixes (1D, visible at hangar distance):** zone weights are
+  one-hot + argmax (interpolating the zone number put a band of zone 1
+  between zones 0 and 2); wings take `zoneBreaks` (paired samples at the
+  zone boundaries); the dorsal stripe is per-fragment (`ShipSpec.stripe`);
+  bare-metal wear roughness 0.42 (mirror-sharp patches read as orange paint).
+- **Lighting note:** HALCYON's canted fins face slightly DOWN, so they
+  reflect the env's lower hemisphere — the Ignition floor-bounce card made
+  them maroon once the rims became steep spots. Floor card 1.4 → 0.6, rims
+  lower + more side-on (still spill onto the pad, not the deck).
+- **NaN rule, again:** every `pow()` in the hangar shaders clamps its base
+  or squares by multiplication — an unclamped pow in the beacon beam card
+  turned the whole frame black through bloom (engine notes, doors).
+- **QA:** `tools/qa-turntable.mjs` (drag/inertia, pitch spring, zoom clamps,
+  reset, keys, auto-rotate rate), `qa-holo.mjs`, `qa-hangar.mjs`. QA ship
+  views (`camera.view`) hide the bay (they sit outside its walls).
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH
@@ -380,9 +407,6 @@ HDRIs / kit parts if ever needed (none used so far).
 
 ## 9. Known issues
 
-- During a dissolve the ship's shadow stays whole (the shadow depth pass does
-  not run the CSM discard). Fix with a custom depth material in 1D when the
-  real hangar floor lands.
 
 - Temporary deck under the ship reads lilac (Nebula rim light at grazing
   angles on a plain rough plane) — replaced by the tuned reflector floor in 1D.

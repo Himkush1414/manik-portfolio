@@ -42,8 +42,8 @@ export function StudioLights({ shadowMapSize = 2048, keyIntensity = 4.2 }: Props
       {/* rims are narrow, STEEP spots on the pad (not directional): a
           directional rim grazed the whole deck + walls and tinted the bay
           lilac; steep cones spend what passes the ship on the dark pad */}
-      <spotLight position={[-9, 21, -19]} target={target.current} angle={0.27} penumbra={0.85} distance={0} decay={0} intensity={1.5} color={HEX.nebula} />
-      <spotLight position={[10, 19, -18]} target={target.current} angle={0.27} penumbra={0.85} distance={0} decay={0} intensity={1.3} color={HEX.ice} />
+      <spotLight position={[-15, 13, -15]} target={target.current} angle={0.26} penumbra={0.85} distance={0} decay={0} intensity={1.5} color={HEX.nebula} />
+      <spotLight position={[16, 12, -14]} target={target.current} angle={0.26} penumbra={0.85} distance={0} decay={0} intensity={1.3} color={HEX.ice} />
       <hemisphereLight args={['#1a2040', '#04050A', 0.12]} />
     </>
   );

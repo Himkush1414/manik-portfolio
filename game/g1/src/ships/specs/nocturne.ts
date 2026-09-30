@@ -31,8 +31,8 @@ export const NOCTURNE: ShipSpec = {
     zone: hull,
   },
   wings: [
-    { root: [0.9, -0.05, 3.9], tip: [7.6, -0.28, -4.2], rootChord: 9.3, tipChord: 1.1, thickness: 0.05, stations: 5, mirror: true, zone: wing },
-    { root: [0.95, 0.35, -3.3], tip: [2.6, 1.4, -5.2], rootChord: 1.9, tipChord: 0.7, thickness: 0.05, stations: 3, mirror: true, vertical: true, zone: wing },
+    { root: [0.9, -0.05, 3.9], tip: [7.6, -0.28, -4.2], rootChord: 9.3, tipChord: 1.1, thickness: 0.05, stations: 5, mirror: true, zoneBreaks: { u: [0.04] }, zone: wing },
+    { root: [0.95, 0.35, -3.3], tip: [2.6, 1.4, -5.2], rootChord: 1.9, tipChord: 0.7, thickness: 0.05, stations: 3, mirror: true, vertical: true, zoneBreaks: { u: [0.04] }, zone: wing },
   ],
   engines: [
     { pos: [1.15, 0.08, -5.45], radius: 0.42, length: 1.6, core: 'slit', scale: [2.2, 0.32] },

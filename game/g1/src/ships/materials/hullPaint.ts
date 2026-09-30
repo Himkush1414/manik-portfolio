@@ -6,7 +6,7 @@
 // - faint procedural panel-line layer on top of the real groove geometry
 // - livery change: colour lerp + a diagonal repaint band sweeping nose -> tail
 // - dissolve: noise threshold with an HDR Ignition edge (ship swap)
-import { Color, MeshPhysicalMaterial } from 'three';
+import { Color, MeshDepthMaterial, MeshPhysicalMaterial, RGBADepthPacking, Vector4 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import type { Livery, Finish } from '../../data/liveries';
 import { hdr } from '../../render/palette';
@@ -17,13 +17,15 @@ const vertex = /* glsl */ `
   attribute float paintZone;
   attribute float aWear;
   attribute float aSoot;
-  varying float vZone;
+  varying vec4 vZoneW;
   varying float vWear;
   varying float vSoot;
   varying vec3 vObjPos;
   varying vec3 vObjNormal;
   void main() {
-    vZone = paintZone;
+    // one-hot zone weights: interpolating the zone NUMBER made a 0|2 boundary
+    // pass through 1 (a fringe of the wrong colour); argmax of one-hots cannot
+    vZoneW = vec4(lessThan(abs(vec4(paintZone) - vec4(0.0, 1.0, 2.0, 3.0)), vec4(0.5)));
     vWear = aWear;
     vSoot = aSoot;
     vObjPos = position;
@@ -38,10 +40,11 @@ const fragment = /* glsl */ `
   uniform float uRepaint;   // 0..1 band progress (1 = done)
   uniform float uDissolve;  // 0 visible .. 1 gone
   uniform vec2 uZRange;     // hull z extent (tail, nose)
+  uniform vec4 uStripe;     // dorsal accent stripe: half-width, z0, z1, min y (half-width 0 = none)
   uniform vec3 uEdge;       // HDR Ignition
   uniform float uFissure;   // OBSIDIAN CROWN molten fissures (0 = off)
   uniform float uTime;
-  varying float vZone;
+  varying vec4 vZoneW;
   varying float vWear;
   varying float vSoot;
   varying vec3 vObjPos;
@@ -82,6 +85,12 @@ const fragment = /* glsl */ `
     float t = 1.0 - s + vObjPos.y * 0.06;              // diagonal
     float isNew = step(t, uRepaint * 1.25);
     float band = (1.0 - smoothstep(0.0, 0.035, abs(t - uRepaint * 1.25))) * step(uRepaint, 0.999);
+    float vZone = vZoneW.x >= max(vZoneW.y, max(vZoneW.z, vZoneW.w)) ? 0.0
+                : vZoneW.y >= max(vZoneW.z, vZoneW.w) ? 1.0
+                : vZoneW.z >= vZoneW.w ? 2.0 : 3.0;
+    // the dorsal stripe is decided per FRAGMENT: a 15 cm stripe painted per
+    // vertex broke into blotches on the loft's long thin triangles
+    if (uStripe.x > 0.0 && abs(vObjPos.x) < uStripe.x && vObjPos.z > uStripe.y && vObjPos.z < uStripe.z && vObjPos.y > uStripe.w && vObjNormal.y > 0.25) vZone = 2.0;
     vec3 col = mix(pick(uPrev, vZone), pick(uCol, vZone), isNew);
     float finish = mix(uPrevFinish, uFinish, isNew);
 
@@ -114,7 +123,7 @@ const fragment = /* glsl */ `
     float wear = smoothstep(0.55, 0.8, vWear + (wn - 0.5) * 0.4);
     col = mix(col, vec3(0.34, 0.35, 0.38), wear);
     metal = mix(metal, 1.0, wear);
-    rough = mix(rough, 0.3, wear);
+    rough = mix(rough, 0.42, wear); // not mirror-sharp: bare patches read as paint when they mirror the floor glow
     coat *= 1.0 - wear;
 
     // engine soot
@@ -160,6 +169,7 @@ export type HullPaint = CustomShaderMaterial & {
     uRepaint: { value: number };
     uDissolve: { value: number };
     uZRange: { value: [number, number] };
+    uStripe: { value: Vector4 };
     uEdge: { value: Color };
     uFissure: { value: number };
     uTime: { value: number };
@@ -170,7 +180,7 @@ export function liveryColors(l: Livery): Color[] {
   return [new Color(l.primary), new Color(l.secondary), new Color(l.accent), new Color(l.trim)];
 }
 
-export function createHullPaint(livery: Livery, zRange: [number, number]): HullPaint {
+export function createHullPaint(livery: Livery, zRange: [number, number], stripe?: { halfWidth: number; z: [number, number]; yMin: number }): HullPaint {
   const cols = liveryColors(livery);
   const mat = new CustomShaderMaterial({
     baseMaterial: MeshPhysicalMaterial,
@@ -184,6 +194,7 @@ export function createHullPaint(livery: Livery, zRange: [number, number]): HullP
       uRepaint: { value: 1 },
       uDissolve: { value: 0 },
       uZRange: { value: zRange },
+      uStripe: { value: stripe ? new Vector4(stripe.halfWidth, stripe.z[0], stripe.z[1], stripe.yMin) : new Vector4() },
       uEdge: { value: hdr('ignition', 5) },
       uFissure: { value: 0 },
       uTime: { value: 0 },
@@ -201,4 +212,38 @@ export function createHullPaint(livery: Livery, zRange: [number, number]): HullP
 
 export function finishId(f: Finish): number {
   return FINISH_ID[f];
+}
+
+/**
+ * Shadow-map depth material for the paint mesh: the same dissolve threshold
+ * (shared uniform object), so the key light's shadow dissolves with the hull
+ * instead of staying whole during a ship swap. A plain MeshDepthMaterial with
+ * the discard injected — CustomShaderMaterial over MeshDepthMaterial did not
+ * write RGBA-packed depth and the hull shadowed itself in blocky patches.
+ */
+export function createHullDepth(paint: HullPaint): MeshDepthMaterial {
+  const d = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
+  d.onBeforeCompile = sh => {
+    sh.uniforms.uDissolve = paint.uniforms.uDissolve;
+    sh.vertexShader = 'varying vec3 vObjPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vObjPos = position;');
+    sh.fragmentShader =
+      /* glsl */ `
+      uniform float uDissolve;
+      varying vec3 vObjPos;
+      float h13(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
+      float vnoise(vec3 p) {
+        vec3 i = floor(p), f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float n000 = h13(i), n100 = h13(i + vec3(1,0,0)), n010 = h13(i + vec3(0,1,0)), n110 = h13(i + vec3(1,1,0));
+        float n001 = h13(i + vec3(0,0,1)), n101 = h13(i + vec3(1,0,1)), n011 = h13(i + vec3(0,1,1)), n111 = h13(i + vec3(1,1,1));
+        return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y), mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+      }
+` +
+      sh.fragmentShader.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+  if (uDissolve > 0.0 && vnoise(vObjPos * 1.6) * 0.7 + vnoise(vObjPos * 5.3) * 0.3 < uDissolve) discard;`,
+      );
+  };
+  return d;
 }

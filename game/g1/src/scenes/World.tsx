@@ -40,7 +40,7 @@ export function World() {
     <>
       <StudioEnvironment />
       <StudioLights shadowMapSize={q.shadowMap} />
-      {QUERY.get('screen') === 'lookdev' ? <LookdevContent /> : <Hangar shipId={shipId} q={q} reduceMotion={reduceMotion} />}
+      {QUERY.get('screen') === 'lookdev' ? <LookdevContent /> : <Hangar shipId={shipId} q={q} reduceMotion={reduceMotion} reduceFlashing={reduceFlashing} />}
       <BlastDoors controller={bootDoors} position={[0, 0, DOOR_Z]} particles={q.particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
       <fog attach="fog" args={['#04050A', 40, 110]} />
     </>

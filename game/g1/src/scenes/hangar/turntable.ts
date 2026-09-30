@@ -13,7 +13,7 @@ export const TURNTABLE = {
   autoSpeed: 4 * DEG,
   resumeAfter: 2.5,
   resumeRamp: 1.6,
-  dragGain: 0.0068, // rad per px
+  dragGain: 0.005, // rad per px
   pitchGain: 0.0032,
   pitchMax: 10 * DEG,
   inertiaDamp: 3.2, // 1/s
