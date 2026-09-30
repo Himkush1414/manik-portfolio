@@ -104,16 +104,23 @@ export function HangarUI() {
   }, [shown]);
 
   if (!shown) return null;
+  // DOM order = Tab order: top bar -> inventory -> ship block -> START
+  // MISSION -> pilot / briefing. Both panel layers share the parallax vars.
+  const drift = { position: 'absolute', inset: 0, pointerEvents: 'none', transform: 'translate3d(var(--px, 0px), var(--py, 0px), 0)' } as const;
   return (
     <div ref={root} className={s.root}>
       <div className={s.grain} aria-hidden />
-      <div ref={layer} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transform: 'translate3d(var(--px, 0px), var(--py, 0px), 0)' }}>
-        <Inventory />
-        <RightPanel />
-        <ShipInfo />
-      </div>
       <TopBar />
-      <StartMission />
+      <div ref={layer} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div style={drift}>
+          <Inventory />
+          <ShipInfo />
+        </div>
+        <StartMission />
+        <div style={drift}>
+          <RightPanel />
+        </div>
+      </div>
       <Toasts />
       <div className={s.small} role="alert">
         <div>

@@ -2,6 +2,7 @@
 // hover / active / focus-visible / disabled states, a correct cursor and a UI
 // sound. Styling lives in hud.module.css.
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
+import type React from 'react';
 import s from './hud.module.css';
 import { sfx, type SfxName } from '../../audio/sfx';
 import { useUi } from '../../state/ui.store';
@@ -128,6 +129,20 @@ export function RadarChart({ values, bonus, labels, size = 150 }: { values: numb
 }
 
 /* ----------------------------------------------------------------- swatch */
+/** Arrow-key navigation inside a radiogroup (roving tabindex: one Tab stop). */
+export function radioKeys(e: React.KeyboardEvent<HTMLElement>): void {
+  if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
+  const group = e.currentTarget.closest('[role="radiogroup"]');
+  if (!group) return;
+  const radios = Array.from(group.querySelectorAll<HTMLButtonElement>('[role="radio"]:not(:disabled)'));
+  const i = radios.indexOf(e.target as HTMLButtonElement);
+  if (i < 0) return;
+  e.preventDefault();
+  const next = radios[(i + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1) + radios.length) % radios.length];
+  next.focus();
+  next.click();
+}
+
 export function Swatch({ a, b, k, checked, disabled, label, onSelect }: { a: string; b: string; k: string; checked: boolean; disabled?: boolean; label: string; onSelect(): void }) {
   return (
     <Tooltip text={label} up>
@@ -137,6 +152,8 @@ export function Swatch({ a, b, k, checked, disabled, label, onSelect }: { a: str
         aria-checked={checked}
         aria-label={label}
         disabled={disabled}
+        tabIndex={checked ? 0 : -1}
+        onKeyDown={radioKeys}
         className={s.swatch}
         style={{ '--a': a, '--b': b, '--k': k } as CSSProperties}
         onPointerEnter={() => !disabled && sfx.play('hover')}

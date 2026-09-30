@@ -3,7 +3,7 @@
 // (skippable); the pilot busts render into the .bust slots (PilotViewport).
 import { useEffect, useRef, useState } from 'react';
 import s from './hangar.module.css';
-import { HudPanel, Tabs } from '../../primitives';
+import { HudPanel, Tabs, radioKeys } from '../../primitives';
 import { MISSION_01, CODEX, PILOTS } from '../../../data/lore';
 import { useProfile } from '../../../state/profile.store';
 import { useSettings } from '../../../state/settings.store';
@@ -25,6 +25,8 @@ function PilotCard() {
               type="button"
               role="radio"
               aria-checked={pilot === id}
+              tabIndex={pilot === id ? 0 : -1}
+              onKeyDown={radioKeys}
               className={s.pilot}
               onPointerEnter={() => sfx.play('hover')}
               onClick={() => {

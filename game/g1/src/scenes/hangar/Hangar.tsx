@@ -15,6 +15,9 @@ import { ShipDisplay } from './ShipDisplay';
 import { turntable, updateTurntable, bindTurntable, stepShip } from './turntable';
 import { hangarCam, updateHangarCamera, pushIn } from './hangarCamera';
 import { useFlow } from '../../app/flow';
+import { AudioBus } from '../../audio/AudioBus';
+import { startHangarAmbience, stopHangarAmbience } from '../../audio/synth/ambience';
+import { bus } from '../../core/bus';
 import { useUi } from '../../state/ui.store';
 import { useProfile } from '../../state/profile.store';
 import { unlockState } from '../../data/unlocks';
@@ -45,6 +48,17 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
   useEffect(() => {
     turntable.enabled = flowState === 'hangar.idle';
   }, [flowState]);
+
+  // hangar ambience bed while in the hangar (starts once audio unlocks)
+  useEffect(() => {
+    if (!inHangar) return;
+    if (AudioBus.running) startHangarAmbience();
+    const off = bus.on('audio:unlocked', () => startHangarAmbience());
+    return () => {
+      off();
+      stopHangarAmbience();
+    };
+  }, [inHangar]);
 
   // direct hangar entry (no boot dolly) gets the 1.5 s push-in
   const entered = useRef(false);

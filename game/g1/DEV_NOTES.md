@@ -14,7 +14,7 @@ this file alone. Updated after every slice.
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
-| 1E Hangar UI + pilots + story | IN PROGRESS | lore.ts, UI primitives, full hangar overlay (top bar, inventory + thumbnails, ship block, pilot + briefing/codex, START MISSION, purchase), UI sounds, 3D pilot busts (OffscreenCanvas worker) DONE; next: 1E polish/keyboard QA, then 1F |
+| 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | — | |
 | 1G Cockpit + camera select | — | |
 | 1H QA / polish / perf | — | |
@@ -434,6 +434,12 @@ HDRIs / kit parts if ever needed (none used so far).
   worker (`bakeClient.png`, OffscreenCanvas.convertToBlob). Remaining: one
   ~120-210 ms task per session from the first thumbnail readback + a one-off
   program link — candidate for 1H: render thumbnails fully in a worker.
+- **Keyboard / a11y (1E):** DOM order = Tab order (top bar -> inventory ->
+  ship block -> START MISSION -> pilot -> briefing); radio groups (liveries,
+  pilots) are one Tab stop with arrow keys (`radioKeys`); inventory arrows
+  move the pad selection; Enter with nothing focused = START MISSION. Hangar
+  ambience bed (`audio/synth/ambience.ts`) runs while in the hangar once
+  audio is unlocked. QA: `tools/qa-keys.mjs`.
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH
