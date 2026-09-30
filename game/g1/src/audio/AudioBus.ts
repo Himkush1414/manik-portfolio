@@ -17,10 +17,34 @@ class AudioBusImpl {
   private noise: AudioBuffer | null = null;
   private started = false;
 
-  /** Idempotent. Creates the graph (suspended until a gesture if needed). */
+  /**
+   * Idempotent. The AudioContext is created on the first user gesture (or
+   * immediately when the browser reports audio autoplay as allowed): creating
+   * it earlier makes Chrome log an autoplay warning, and the brief allows zero
+   * console warnings. Until then ui.store.audioLocked shows the corner hint.
+   */
   init(): void {
     if (this.started) return;
     this.started = true;
+    useUi.getState().setAudioLocked(true);
+    const policy = (navigator as Navigator & { getAutoplayPolicy?: (t: string) => string }).getAutoplayPolicy?.('audiocontext');
+    if (policy === 'allowed') {
+      this.createContext();
+      return;
+    }
+    const unlock = () => {
+      if (!this.ctx) this.createContext();
+      void this.tryResume().then(ok => {
+        if (!ok) return;
+        window.removeEventListener('pointerdown', unlock, true);
+        window.removeEventListener('keydown', unlock, true);
+      });
+    };
+    window.addEventListener('pointerdown', unlock, true);
+    window.addEventListener('keydown', unlock, true);
+  }
+
+  private createContext(): void {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
     const ctx = new Ctor({ latencyHint: 'interactive' });
@@ -40,23 +64,12 @@ class AudioBusImpl {
     useSettings.subscribe((s, prev) => {
       if (s.audio !== prev.audio) this.applyGains();
     });
-
     document.addEventListener('visibilitychange', () => {
       const t = ctx.currentTime;
       this.duck.gain.cancelScheduledValues(t);
       this.duck.gain.setTargetAtTime(document.hidden ? 0 : 1, t, 0.12);
     });
-
     void this.tryResume();
-    const unlock = () => {
-      void this.tryResume().then(ok => {
-        if (!ok) return;
-        window.removeEventListener('pointerdown', unlock, true);
-        window.removeEventListener('keydown', unlock, true);
-      });
-    };
-    window.addEventListener('pointerdown', unlock, true);
-    window.addEventListener('keydown', unlock, true);
   }
 
   private async tryResume(): Promise<boolean> {

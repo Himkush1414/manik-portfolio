@@ -1,25 +1,23 @@
 // Direct lights for the studio rig: ONE shadow-casting key (warm, slightly
 // Ignition-tinted, top-front-left), two unshadowed rims (Nebula, Ice) and a
-// low fill. Tight shadow frustum around the pad; bias tuned against acne.
+// low fill. The key is a SPOT cone aimed at the pad (not a directional light)
+// so it never lights the bay doors' outer face. Bias tuned against acne.
 import { useLayoutEffect, useRef } from 'react';
-import type { DirectionalLight } from 'three';
+import { Object3D, type SpotLight } from 'three';
 import { HEX } from '../palette';
 
 type Props = { shadowMapSize?: number; keyIntensity?: number };
 
 export function StudioLights({ shadowMapSize = 2048, keyIntensity = 3.2 }: Props) {
-  const key = useRef<DirectionalLight>(null);
+  const key = useRef<SpotLight>(null);
+  const target = useRef(new Object3D());
   useLayoutEffect(() => {
     const l = key.current;
     if (!l) return;
-    const cam = l.shadow.camera;
-    cam.left = -13;
-    cam.right = 13;
-    cam.top = 13;
-    cam.bottom = -13;
-    cam.near = 4;
-    cam.far = 60;
-    cam.updateProjectionMatrix();
+    target.current.position.set(0, 1, 0);
+    l.target = target.current;
+    l.shadow.camera.near = 8;
+    l.shadow.camera.far = 70;
     l.shadow.bias = -0.00025;
     l.shadow.normalBias = 0.035;
     l.shadow.radius = 5;
@@ -27,15 +25,20 @@ export function StudioLights({ shadowMapSize = 2048, keyIntensity = 3.2 }: Props
   }, []);
   return (
     <>
-      <directionalLight
+      <spotLight
         ref={key}
         castShadow
         position={[-14, 22, 16]}
+        angle={0.42}
+        penumbra={0.75}
+        distance={0}
+        decay={0}
         intensity={keyIntensity}
         color="#ffe8d9"
         shadow-mapSize-width={shadowMapSize}
         shadow-mapSize-height={shadowMapSize}
       />
+      <primitive object={target.current} />
       <directionalLight position={[-10, 6, -18]} intensity={1.3} color={HEX.nebula} />
       <directionalLight position={[12, 5, -16]} intensity={1.1} color={HEX.ice} />
       <hemisphereLight args={['#1a2040', '#04050A', 0.12]} />

@@ -11,7 +11,7 @@ this file alone. Updated after every slice.
 |---|---|---|
 | Plan | DONE | this file |
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
-| 1B Boot + BlastDoors | — | |
+| 1B Boot + BlastDoors | IN PROGRESS | BlastDoors DONE (geometry, PBR bakes, motion, FX, API, ?screen=doors); boot timeline next |
 | 1C Ship pipeline | — | |
 | 1D Hangar scene | — | |
 | 1E Hangar UI + pilots + story | — | |
@@ -196,6 +196,25 @@ radiating from the centre; floating shard fragments orbiting slowly; ember motes
 - **Dev port for QA:** 5199 (5173 left free for the owner's own dev server).
 - **Perf (1A lookdev, 1920×1080, HIGH, Intel UHD 770 iGPU):** 35 draw calls,
   18.4k tris, 45–60 fps with AO + DOF + bloom.
+
+- **Blast doors (1B):** `scenes/shared/BlastDoors.tsx` (view) + `doors/DoorController.ts`
+  (motion/events, nestable tweens, `seek`) + `doors/doorAssets.ts` (built by the
+  loader's `geometry` task; canvas bakes: `render/tex/metalSet.ts`,
+  `render/tex/decalAtlas.ts`). ~44k tris. Door at z=38 (`sceneBridge.DOOR_Z`).
+  QA: `?screen=doors` + `__G1__.doors.seek(p)`.
+- **GLSL rule:** clamp every `pow()` base derived from varyings. With MSAA the
+  GPU can extrapolate varyings just outside a triangle; `pow(negative, y)` is
+  NaN on D3D and bloom spreads a single NaN pixel to a full black frame (hit
+  in 1B by the god-ray shader).
+- **Rivet mirroring:** never mirror instance matrices with negative scale (the
+  instance gets back-face culled); mirror the translation only.
+- **Spot-light targets** must be in the scene graph (`<primitive object={t}/>` +
+  `target={t}`), otherwise they silently aim at the world origin.
+- **Audio:** the AudioContext is created on the first gesture (or at load if
+  `navigator.getAutoplayPolicy('audiocontext') === 'allowed'`) — creating it
+  earlier logs a Chrome autoplay warning.
+- **Key light is a SpotLight** aimed at the pad, not directional, so it never
+  lights the bay doors' outer face (doors are lit by beacons + corridor light).
 
 ## 9. Known issues
 
