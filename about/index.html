@@ -114,7 +114,10 @@
     <section class="panel panel--work" aria-label="The Work" id="panel-work">
       <div class="work__word work__word--the" id="word-the">THE</div>
       <div class="work__box" id="work-box">
-        <span>VIDEO</span>
+        <!-- src is attached lazily by reel.ts (4K or 1080p, picked per
+             screen) so nothing downloads until the visitor starts moving
+             through the page -->
+        <video class="work__video" id="work-video" muted loop playsinline preload="none" poster="./about-reel-poster.jpg" aria-label="Portfolio motion reel"></video>
       </div>
       <div class="work__word work__word--work" id="word-work">WORK</div>
     </section>
@@ -313,7 +316,9 @@
   <div class="m-pin-wrap" id="m-work-wrap">
     <section class="m-panel m-panel--work">
       <div class="m-work__word m-work__word--the" id="m-word-the">THE</div>
-      <div class="m-work__box" id="m-work-box"><span>VIDEO</span></div>
+      <div class="m-work__box" id="m-work-box">
+        <video class="m-work__video" id="m-work-video" muted loop playsinline preload="none" poster="./about-reel-poster.jpg" aria-label="Portfolio motion reel"></video>
+      </div>
       <div class="m-work__word m-work__word--work" id="m-word-work">WORK</div>
     </section>
   </div>
@@ -350,15 +355,17 @@
   <!-- MOBILE PANEL 5 — "CHAPTER III": a lead-in panel (heading + intro
        line), then one full-screen panel per discipline, each revealed in
        turn as the user scrolls — the vertical equivalent of desktop's
-       four side-by-side columns. Each discipline's background is always
+       four side-by-side columns. Each discipline's image is always
        visible (no tap needed), just wiped in on scroll like every other
-       image slot on this mobile layout. -->
+       image slot on this mobile layout — as a card over roughly the top
+       half of its panel, with the text below it, not a full-screen
+       background. -->
   <section class="m-panel m-panel--ch3">
     <span class="m-chapter m-reveal">CHAPTER III</span>
     <p class="m-ch3__intro m-reveal">Designing digital experiences with clarity, structure, and intention.</p>
   </section>
 
-  <section class="m-panel m-panel--ch3">
+  <section class="m-panel m-panel--ch3 m-panel--ch3-item">
     <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="a"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-product-design.webp" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">01</span>
@@ -367,7 +374,7 @@
     </div>
   </section>
 
-  <section class="m-panel m-panel--ch3">
+  <section class="m-panel m-panel--ch3 m-panel--ch3-item">
     <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="b"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-digital-experiences.jpg" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">02</span>
@@ -376,7 +383,7 @@
     </div>
   </section>
 
-  <section class="m-panel m-panel--ch3">
+  <section class="m-panel m-panel--ch3 m-panel--ch3-item">
     <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="c"><picture><source srcset="./ch3-visual-design.webp" type="image/webp" /><img class="m-ch3__bg__img m-wipe-target" src="./ch3-visual-design.jpg" alt="" /></picture></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">03</span>
@@ -385,7 +392,7 @@
     </div>
   </section>
 
-  <section class="m-panel m-panel--ch3">
+  <section class="m-panel m-panel--ch3 m-panel--ch3-item">
     <div class="m-ch3__bg m-reveal m-reveal--wipe" data-tone="d"><img class="m-ch3__bg__img m-wipe-target" src="./ch3-development.png" alt="" /></div>
     <div class="m-ch3__section m-reveal">
       <span class="m-ch3__num">04</span>
@@ -442,5 +449,6 @@
 <script type="module" src="./main.ts"></script>
 <script type="module" src="./menu.tsx"></script>
 <script type="module" src="./mobile.ts"></script>
+<script type="module" src="./reel.ts"></script>
 </body>
 </html>

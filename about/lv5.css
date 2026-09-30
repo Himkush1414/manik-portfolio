@@ -516,13 +516,23 @@ body.lv5 img { max-width: 100%; display: block; }
   justify-content: center;
   opacity: 0;
   z-index: 2;
+  /* clips the reel to the box's animated rounded corners */
+  overflow: hidden;
   will-change: width, height, opacity;
 }
-.work__box span {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.28em;
+/* the motion reel (reel.ts) — always covers the box exactly, whatever
+   shape it's mid-growth; once fully grown the box IS the viewport, so
+   cover gives an edge-to-edge 16:9 frame with only a sliver trimmed on
+   non-16:9 windows */
+.work__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  background: #17140F;
 }
 
 /* ============================================================
@@ -648,6 +658,11 @@ body.lv5 img { max-width: 100%; display: block; }
      transition at some viewport ratios. The 1px overshoot is clipped by
      the stack's own overflow:hidden either way. */
   inset: -1px;
+  /* clips the card's own photo: .preview-ph__img is scaled 1.03 (for the
+     blur edge), so unclipped it overhangs this card by a few px — and as
+     the card slides fully out (translateY ±100%) that overhang is left
+     sitting inside the box as a thin stray line of photo */
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -809,6 +824,12 @@ body.lv5 img { max-width: 100%; display: block; }
      (triggered on hover/hover-leave, main.ts) ever brings it into view */
   transform: translateY(100%);
   will-change: transform;
+}
+/* same stray-line fix as .preview-ph: the scaled .ch3__col-bg__img must
+   be clipped to this sheet, or its overhang stays visible at the column's
+   top edge after the sheet exits (and at the bottom edge at rest). */
+.ch3__col-bg {
+  overflow: hidden;
 }
 /* each discipline's placeholder "image" — a tinted gradient standing in
    for a real photo, still clearly within the dark palette so the text
@@ -1351,13 +1372,21 @@ body.lv5 img { max-width: 100%; display: block; }
   justify-content: center;
   opacity: 0;
   z-index: 2;
+  overflow: hidden;
   will-change: width, height, opacity;
 }
-.m-work__box span {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.24em;
+/* mobile.ts grows this box to a full-width 16:9 frame (not the whole
+   portrait screen, which would crop the reel's text off both sides), so
+   cover fills it exactly with nothing cut off */
+.m-work__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  background: #17140F;
 }
 
 /* ============================================================
@@ -1483,6 +1512,27 @@ body.lv5 img { max-width: 100%; display: block; }
 .m-ch3__bg {
   position: absolute;
   inset: -1px;
+}
+/* the four discipline panels: the image is a card over roughly the top
+   half of the screen with the numeral/title/description below it, rather
+   than a full-screen background under the text. */
+.m-panel--ch3-item {
+  gap: 28px;
+  /* the card no longer sits under the text, so the heavier mobile
+     tint/blur (tuned for text overlaid on a photo, see the mobile
+     @media block) isn't needed — back to the desktop treatment */
+  --photo-tint: rgba(58, 54, 50, 0.14);
+  --photo-blur: 1px;
+}
+.m-panel--ch3-item .m-ch3__bg {
+  position: relative;
+  inset: auto;
+  flex: 0 0 auto;
+  width: 100%;
+  height: clamp(220px, 50vh, 460px);
+  height: clamp(220px, 50svh, 460px);
+  border-radius: 2px;
+  overflow: hidden;
 }
 .m-ch3__bg[data-tone="a"] { background: linear-gradient(180deg, #4A4038, var(--bg-dark) 75%); }
 .m-ch3__bg[data-tone="b"] { background: linear-gradient(180deg, #3A4548, var(--bg-dark) 75%); }

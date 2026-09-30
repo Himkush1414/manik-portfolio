@@ -86,8 +86,12 @@ function initMobileWork() {
 
     const boxOpacity = Math.min(progress / 0.1, 1);
     const minBox = 16;
+    // grows to a full-width 16:9 frame (the motion reel's own shape, see
+    // reel.ts) rather than the whole portrait screen — filling a tall
+    // phone screen would crop most of the landscape reel away
+    const maxH = Math.min(vh, vw * 9 / 16);
     const boxW = minBox + (vw - minBox) * e;
-    const boxH = minBox + (vh - minBox) * e;
+    const boxH = minBox + (maxH - minBox) * e;
     const radius = 14 * (1 - e);
 
     // same "stay mathematically clear of the box's own edge" approach as

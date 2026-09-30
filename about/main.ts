@@ -60,14 +60,14 @@ window.addEventListener('resize', updateWorkBoxCenter);
 const WORK_RANGE = 2600;
 const EASE = 0.16;
 const SETTLE_EPSILON = 0.04;
-// Slows this page's own wheel-driven scroll-jack. Lower than the
-// homepage's own speed (see ../scroll-speed.ts and its call in
-// main.tsx, `slowScroll(0.55, 0.16)`) — this page ends up slower than
-// the homepage, not just slower than its own previous speed. EASE above
-// already matches that same "smooth, no sudden jumps" glide (it's the
-// same lerp-toward-target mechanism scroll-speed.ts uses for the
-// mobile layout below), so only the speed differs, not the smoothness.
-const WHEEL_SPEED = 0.35;
+// Scales this page's own wheel-driven scroll-jack — 0.9, i.e. just under
+// the raw 1:1 wheel distance (was 0.35, which read as sluggish; the
+// homepage keeps its own separate speed, see ../scroll-speed.ts and its
+// call in main.tsx). EASE above still provides the same "smooth, no
+// sudden jumps" glide (the same lerp-toward-target mechanism
+// scroll-speed.ts uses for the mobile layout below), so only the speed
+// changed, not the smoothness.
+const WHEEL_SPEED = 0.9;
 
 let target = 0;
 let current = 0;
