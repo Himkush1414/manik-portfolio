@@ -1,0 +1,20 @@
+.root {
+  position: fixed;
+  inset: 0;
+  background: var(--void);
+}
+.canvas {
+  position: absolute !important;
+  inset: 0;
+  display: block;
+}
+.lost {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 5, 10, 0.86);
+  font: 500 var(--fs-mono) / 1 var(--font-mono);
+  letter-spacing: var(--track-wide);
+  color: var(--ice);
+}

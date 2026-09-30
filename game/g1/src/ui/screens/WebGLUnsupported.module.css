@@ -1,0 +1,29 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: start;
+  gap: calc(var(--u) * 18);
+  padding: calc(var(--u) * 96);
+  background: radial-gradient(120% 90% at 20% 10%, var(--navy) 0%, var(--void) 62%);
+  color: var(--frost);
+}
+.code {
+  margin: 0;
+  font: 500 var(--fs-mono) / 1 var(--font-mono);
+  letter-spacing: var(--track-wide);
+  color: var(--ice);
+}
+.title {
+  margin: 0;
+  font: 900 calc(var(--u) * 72) / 0.95 var(--font-title);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.body {
+  margin: 0;
+  max-width: 52ch;
+  font: 400 var(--fs-body) / 1.55 var(--font-body);
+  color: var(--steel);
+}

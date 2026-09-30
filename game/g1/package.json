@@ -1,0 +1,58 @@
+{
+  "name": "spacewar-dark-edition-g1",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SPACE WAR: DARK EDITION \u2014 isolated experiment served by the portfolio's Vite at /game/g1/",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "qa:phase1": "node tools/qa-phase1.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/big-shoulders-display": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/mr-dafoe": "^5.3.0",
+    "@fontsource/oxanium": "^5.3.0",
+    "@fontsource/unbounded": "^5.3.0",
+    "@react-three/drei": "9.122.0",
+    "@react-three/fiber": "8.18.0",
+    "@react-three/postprocessing": "2.19.1",
+    "detect-gpu": "^5.0.70",
+    "maath": "^0.10.8",
+    "motion": "^13.4.6",
+    "n8ao": "^2.0.1",
+    "postprocessing": "^6.39.5",
+    "three-bvh-csg": "^0.0.17",
+    "three-custom-shader-material": "^6.4.0",
+    "three-mesh-bvh": "^0.9.15",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@types/three": "^0.169.0",
+    "leva": "^0.10.1",
+    "playwright": "^1.63.0",
+    "stats-gl": "^4.2.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^5.0.2"
+  },
+  "overrides": {
+    "stats-gl": "^4.2.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  },
+  "peerDependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "0.169.0",
+    "gsap": "3.15.0",
+    "@gsap/react": "2.1.2"
+  }
+}

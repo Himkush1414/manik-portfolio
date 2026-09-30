@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#04050A">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%2304050A%22/%3E%3Cpath d=%22M16 4 L28 26 L16 20 L4 26 Z%22 fill=%22none%22 stroke=%22%23FF5A1F%22 stroke-width=%222%22 stroke-linejoin=%22miter%22/%3E%3C/svg%3E" />
+<title>SPACE WAR: DARK EDITION</title>
+<meta name="description" content="SPACE WAR: DARK EDITION — a space-combat experience by Manik Rana." />
+<!-- paints pure black before any CSS/JS arrives: no white flash -->
+<style>
+  html, body { margin: 0; height: 100%; background: #04050A; overflow: hidden; }
+  #g1-root { position: fixed; inset: 0; background: #04050A; }
+</style>
+</head>
+<body>
+<div id="g1-root" aria-label="SPACE WAR: DARK EDITION"></div>
+<noscript>
+  <p style="color:#E8ECFF;font:16px/1.5 system-ui,sans-serif;padding:48px">
+    SPACE WAR: DARK EDITION needs JavaScript and WebGL 2.
+  </p>
+</noscript>
+<script type="module" src="./src/main.tsx"></script>
+</body>
+</html>

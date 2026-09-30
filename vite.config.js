@@ -67,7 +67,7 @@ import { resolve } from "path";
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
 const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/lv9/", "/lab/lv10/", "/lab/lv12/", "/lab/lv13/", "/lab/home-v0/"];
-const SITE_ROUTES = ["/about/"];
+const SITE_ROUTES = ["/about/", "/game/g1/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
   configureServer(server) {
@@ -88,9 +88,22 @@ const labDevMiddleware = () => ({
   },
 });
 
+// /game/g1/ (SPACE WAR: DARK EDITION) is a standalone sub-app with its own
+// build graph (game/g1/vite.config.ts), built after the portfolio into
+// dist/game/g1/ so the two never share chunks. Dev needs nothing: Vite serves
+// game/g1/index.html at /game/g1/ directly.
+const gameG1Build = () => ({
+  name: "game-g1-build",
+  apply: "build",
+  async closeBundle() {
+    const { build } = await import("vite");
+    await build({ configFile: resolve(__dirname, "game/g1/vite.config.ts"), logLevel: "warn" });
+  },
+});
+
 export default defineConfig({
   root: ".",
-  plugins: [labDevMiddleware()],
+  plugins: [labDevMiddleware(), gameG1Build()],
   server: { host: true, port: 5173, open: false },
   esbuild: { jsx: "automatic" },
   build: {

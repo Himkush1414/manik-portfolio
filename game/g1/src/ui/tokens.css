@@ -1,0 +1,115 @@
+/* SPACE WAR: DARK EDITION — design tokens (art bible §3). The ONE place UI
+   colour, type, spacing and motion values live. palette.ts mirrors the
+   colours for the renderer. */
+
+:root {
+  /* ---- palette ---- */
+  --void: #04050a;
+  --abyss: #080b18;
+  --navy: #0d1330;
+  --indigo: #1a1f5c;
+  --violet: #4b2a9e;
+  --nebula: #7b5bff; /* glows only */
+  --steel: #8c9ac0; /* secondary text */
+  --frost: #e8ecff; /* primary text */
+  --ignition: #ff5a1f;
+  --hot: #ff8a3d;
+  --core: #ffe1c2;
+  /* functional only */
+  --ice: #7fd1ff;
+  --danger: #ff2d55;
+  --ok: #4dffb0;
+
+  --steel-a60: rgba(140, 154, 192, 0.6);
+  --steel-a40: rgba(140, 154, 192, 0.4);
+  --steel-a30: rgba(140, 154, 192, 0.3);
+  --steel-a12: rgba(140, 154, 192, 0.12);
+  --frost-a85: rgba(232, 236, 255, 0.85);
+  --ignition-a60: rgba(255, 90, 31, 0.6);
+  --ignition-a25: rgba(255, 90, 31, 0.25);
+  --ice-a40: rgba(127, 209, 255, 0.4);
+
+  /* panel fill: translucent gradient + noise, no backdrop-filter over canvas */
+  --panel-fill: linear-gradient(160deg, rgba(13, 19, 48, 0.82) 0%, rgba(8, 11, 24, 0.9) 58%, rgba(4, 5, 10, 0.92) 100%);
+
+  /* ---- type ---- */
+  --font-title: 'Big Shoulders Display', 'Archivo Expanded', Impact, sans-serif;
+  --font-ui: 'Oxanium', 'Chakra Petch', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'IBM Plex Sans', 'Exo 2', system-ui, sans-serif;
+  --font-script: 'Mr Dafoe', 'Yellowtail', cursive;
+
+  /* ---- scale: design at 1920x1080; every dimension = var(--u) * N ---- */
+  --ui-scale: 1;
+  --u: calc(min(100vw / 1920, 100vh / 1080) * var(--ui-scale));
+
+  --fs-display: calc(var(--u) * 190);
+  --fs-title: calc(var(--u) * 56);
+  --fs-h1: calc(var(--u) * 30);
+  --fs-h2: calc(var(--u) * 22);
+  --fs-body: calc(var(--u) * 15.5);
+  --fs-mono: calc(var(--u) * 12);
+
+  --track-label: 0.28em;
+  --track-wide: 0.5em;
+
+  /* ---- shape ---- */
+  --cut: calc(var(--u) * 14); /* 45° corner cut size */
+  --hair: 1px;
+
+  /* ---- motion ---- */
+  --dur-micro: 120ms;
+  --dur-fast: 220ms;
+  --dur-base: 420ms;
+  --dur-slow: 700ms;
+  --dur-cine: 1400ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1);
+  --stagger: 55ms;
+}
+
+/* in-game reduce-motion toggle mirrors the OS preference */
+:root[data-reduce-motion='true'] {
+  --dur-micro: 1ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 250ms;
+  --dur-cine: 250ms;
+  --stagger: 0ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--void);
+  color: var(--frost);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 1px solid var(--ignition);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--ignition-a60);
+  color: var(--frost);
+}
