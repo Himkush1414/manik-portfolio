@@ -14,6 +14,7 @@ import type { Hardpoint } from './types';
 import { buildShipGeometry, deserializeShipGeometry, disposeShipGeometry, type ShipGeometry, type Lod } from './geometry';
 import { createHullPaint, liveryColors, finishId, type HullPaint } from './materials/hullPaint';
 import { createShipMaterials, createEngineGlow, type ShipMaterials, type EngineGlow } from './materials/shipMaterials';
+import { createHologram } from './materials/hologram';
 import { SPECS } from './specs';
 import { liveriesFor, clampLivery } from '../data/liveries';
 import type { ShipId } from '../data/ships';
@@ -48,6 +49,9 @@ export type BuiltShip = {
   tris: number;
   setLivery(index: number, animate?: boolean): void;
   setDissolve(v: number): void;
+  /** locked-ship hologram (ice projection) instead of the physical ship */
+  setHologram(on: boolean): void;
+  readonly hologram: boolean;
   setEngineLevel(level: number): void;
   update(t: number): void;
   dispose(): void;
@@ -57,7 +61,7 @@ const greebleBox = new BoxGeometry(1, 1, 1);
 const tmpM = new Matrix4();
 
 export const ShipFactory = {
-  build(shipId: ShipId, opts: { livery?: number; lod?: Lod } = {}): BuiltShip {
+  build(shipId: ShipId, opts: { livery?: number; lod?: Lod; hologram?: boolean } = {}): BuiltShip {
     const spec = SPECS[shipId];
     const lod = opts.lod ?? 0;
     const geo = geometryFor(shipId, lod);
@@ -83,14 +87,12 @@ export const ShipFactory = {
     add(geo.nozzle, mats.nozzle, { shadow: true });
     add(geo.guns, mats.gun, { shadow: true });
     add(geo.ring, mats.heatRing, { shadow: true });
-    add(geo.core, glow.core);
-    add(geo.plume, glow.plume, { order: 10 });
+    const lightOnly: (Mesh | null)[] = []; // hidden while projected as a hologram
+    lightOnly.push(add(geo.core, glow.core), add(geo.plume, glow.plume, { order: 10 }));
     add(geo.frame, mats.frame, { shadow: true });
     add(geo.pilot, mats.pilot);
     add(geo.glass, mats.glass, { order: 9 });
-    add(geo.navRed, mats.navRed);
-    add(geo.navGreen, mats.navGreen);
-    add(geo.navWhite, mats.navWhite);
+    lightOnly.push(add(geo.navRed, mats.navRed), add(geo.navGreen, mats.navGreen), add(geo.navWhite, mats.navWhite));
     add(geo.repulsor, mats.repulsor);
     add(geo.trim, mats.trimEmissive);
     if (spec.emissiveTrim === 'ember-fissures') paintMat.uniforms.uFissure.value = 1;
@@ -119,8 +121,29 @@ export const ShipFactory = {
       group.add(greebleMesh);
     }
 
+    // hologram: every solid mesh swaps to one shared projection material
+    const holo = createHologram(zRange);
+    const solid = new Map<Mesh, { mat: Material; shadow: boolean }>();
+    group.traverse(o => {
+      if ((o as Mesh).isMesh && !lightOnly.includes(o as Mesh)) solid.set(o as Mesh, { mat: (o as Mesh).material as Material, shadow: o.castShadow });
+    });
+    let holoOn = false;
+    let dissolve = 0;
+    const refresh = () => {
+      for (const [m, orig] of solid) {
+        m.material = holoOn ? holo : orig.mat;
+        m.castShadow = holoOn ? false : orig.shadow;
+        // non-paint parts pop out mid-dissolve (the paint/holo shell carries the effect)
+        m.visible = m === paintMesh || dissolve < 0.5 || holoOn;
+      }
+      for (const m of lightOnly) if (m) m.visible = !holoOn && dissolve < 0.5;
+      if (motes) motes.visible = !holoOn && dissolve < 0.5;
+      holo.uniforms.uDissolve.value = dissolve;
+      paintMat.uniforms.uDissolve.value = dissolve;
+    };
+
     let tween: gsap.core.Tween | null = null;
-    return {
+    const built: BuiltShip = {
       group,
       hardpoints: spec.hardpoints,
       paint: paintMat,
@@ -142,11 +165,15 @@ export const ShipFactory = {
         tween = gsap.to(u.uRepaint, { value: 1, duration: 0.55, ease: 'power2.inOut' });
       },
       setDissolve(v) {
-        paintMat.uniforms.uDissolve.value = v;
-        for (const child of group.children) {
-          if (child === paintMesh) continue;
-          child.visible = v < 0.5; // non-paint parts pop out mid-dissolve
-        }
+        dissolve = v;
+        refresh();
+      },
+      setHologram(on) {
+        holoOn = on;
+        refresh();
+      },
+      get hologram() {
+        return holoOn;
       },
       setEngineLevel(level) {
         engineLevel = level;
@@ -154,6 +181,7 @@ export const ShipFactory = {
       update(t) {
         glow.setLevel(engineLevel, t);
         paintMat.uniforms.uTime.value = t;
+        holo.uniforms.uTime.value = t;
         if (shardGroup) {
           shardGroup.rotation.y = t * 0.12;
           shardGroup.position.y = Math.sin(t * 0.7) * 0.12;
@@ -168,6 +196,7 @@ export const ShipFactory = {
       dispose() {
         tween?.kill();
         paintMat.dispose();
+        holo.dispose();
         glow.core.dispose();
         glow.plume.dispose();
         Object.values(mats).forEach(m => m.dispose());
@@ -180,6 +209,8 @@ export const ShipFactory = {
         // geometry is cached + shared: see disposeShipCache()
       },
     };
+    if (opts.hologram) built.setHologram(true);
+    return built;
   },
 };
 

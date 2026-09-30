@@ -12,7 +12,7 @@ this file alone. Updated after every slice.
 | Plan | DONE | this file |
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
-| 1C Ship pipeline | IN PROGRESS | ShipFactory + bake worker + all six ships DONE (HALCYON 5 passes, others 3 passes / TEMPEST 1 — see §8); next: hologram (locked ships), dissolve swap, offscreen thumbnails, LOD1 check, silhouette test |
+| 1C Ship pipeline | IN PROGRESS | ShipFactory + bake worker + all six ships DONE (HALCYON 5 passes, others 3 passes / TEMPEST 1 — see §8); hologram (locked ships) + dissolve swap DONE; next: offscreen thumbnails, LOD1 check, silhouette test |
 | 1D Hangar scene | — | |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
@@ -292,6 +292,17 @@ HDRIs / kit parts if ever needed (none used so far).
   review: the boom gap + one huge ion drive read at every angle (37.3k).
   OBSIDIAN p1 fissures covered everything (lava lamp) → p2 masked too hard
   (gone) → p3 mask 0.36-0.58, pow 36: sparse cracks; shards darkened (37.8k).
+- **Hologram + dissolve swap (1C):** `ships/materials/hologram.ts` (ice:
+  fresnel + object-space scanlines + z sweep + flicker, additive). It MUST
+  write depth: DOF reads depth, and a depth-less hologram was blurred as if
+  it were the floor behind it (also hides inner surfaces — no milky
+  overdraw). `BuiltShip.setHologram(on)` swaps every solid mesh to it (engine
+  glow, nav lights, motes hidden; shadows off). Same dissolve noise as the hull
+  paint. `ShipDisplay` swap: dissolve out 0.4 s → rebuild → dissolve in
+  0.55 s; resumes from the current value on fast re-selection; instant under
+  reduced motion; the dissolve-in flag survives StrictMode effect replays.
+  Locked = `unlockState(ship, profile).unlocked === false`.
+  QA: `tools/qa-holo.mjs [origin]`.
 - **Per-ship livery order:** liveries are index-addressed per ship
   (`liveriesFor`). OBSIDIAN leads with its exclusive EMBER FORGE; NOCTURNE
   leads with VOID so the stealth ship is dark by default. Same five liveries,
@@ -319,6 +330,10 @@ HDRIs / kit parts if ever needed (none used so far).
   timeline tracks wall-clock (12.15 s), zero stall during the logo sting.
 
 ## 9. Known issues
+
+- During a dissolve the ship's shadow stays whole (the shadow depth pass does
+  not run the CSM discard). Fix with a custom depth material in 1D when the
+  real hangar floor lands.
 
 - Temporary deck under the ship reads lilac (Nebula rim light at grazing
   angles on a plain rough plane) — replaced by the tuned reflector floor in 1D.
