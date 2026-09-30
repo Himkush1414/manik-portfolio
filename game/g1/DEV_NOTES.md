@@ -12,7 +12,7 @@ this file alone. Updated after every slice.
 | Plan | DONE | this file |
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
-| 1C Ship pipeline | IN PROGRESS | ShipFactory + bake worker + all six ships DONE (HALCYON 5 passes, others 3 passes / TEMPEST 1 — see §8); hologram (locked ships) + dissolve swap DONE; next: offscreen thumbnails, LOD1 check, silhouette test |
+| 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
 | 1D Hangar scene | — | |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
@@ -303,6 +303,25 @@ HDRIs / kit parts if ever needed (none used so far).
   reduced motion; the dissolve-in flag survives StrictMode effect replays.
   Locked = `unlockState(ship, profile).unlocked === false`.
   QA: `tools/qa-holo.mjs [origin]`.
+- **Thumbnails (1C):** `render/thumbnails.ts` `shipThumbnail(id,{livery,
+  locked, silhouette})` → PNG blob URL, cached, queued one at a time. Main
+  renderer (a second context would recompile every ship program), LOD1,
+  HalfFloat MSAA target → AgX + sRGB fullscreen pass (unpremultiplies MSAA
+  edges) → 8-bit target → readPixels (row flip) → PNG. Own key/rim/hemi
+  lights + the world's PMREM environment; framing tightened from the
+  projected bounding-box corners. ~0.4 s per ship incl. first compile — the
+  hangar UI (1E) must request them from idle time, never on a click.
+  QA: `tools/qa-thumbs.mjs` (sheet, locked sheet, silhouettes).
+- **Silhouette test (brief §10) — PASS (2026-09-30):** all six from one 3/4
+  view, flat black on white (`qa/1c-silhouettes.png`): HALCYON arrowhead +
+  canards/twin fins, VESPER needle with a heavy tail, BASILISK wide block with
+  pods, NOCTURNE flat bat/diamond, TEMPEST pod + booms with the gap, OBSIDIAN
+  spike crown. Closest pair HALCYON / NOCTURNE (both deltas) still split by
+  fins, canards and thickness.
+- **LOD budgets (unit-tested, `tests/shiplod.test.ts`):** LOD0 ≤ 60k, LOD1 ≤
+  60 % of LOD0. Measured LOD0/LOD1: HALCYON 44.9k/13.3k, VESPER 35.7k/10.4k,
+  BASILISK 40.0k/13.5k, NOCTURNE 10.4k/5.8k, TEMPEST 37.3k/11.2k, OBSIDIAN
+  37.8k/11.7k.
 - **Per-ship livery order:** liveries are index-addressed per ship
   (`liveriesFor`). OBSIDIAN leads with its exclusive EMBER FORGE; NOCTURNE
   leads with VOID so the stealth ship is dark by default. Same five liveries,

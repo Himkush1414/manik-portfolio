@@ -9,6 +9,8 @@ import { bootDoors } from '../scenes/sceneBridge';
 import { stage } from '../scenes/Stage';
 import { bootFx } from '../scenes/boot/bootFxParams';
 import { registerDebug } from '../debug/debugApi';
+import { shipThumbnail, type ThumbOptions } from '../render/thumbnails';
+import type { ShipId } from '../data/ships';
 
 let applied = false;
 
@@ -33,6 +35,17 @@ export function applyStartParams(): void {
   });
   registerDebug('camera', { view: (name: keyof typeof VIEWS) => setView(VIEWS[name]) });
   registerDebug('flowState', { get: () => flow.state });
+  registerDebug('thumbs', {
+    // resolves to a data URL so the QA harness can save it
+    make: async (id: ShipId, opts: ThumbOptions = {}) => {
+      const blob = await (await fetch(await shipThumbnail(id, opts))).blob();
+      return await new Promise<string>(res => {
+        const r = new FileReader();
+        r.onload = () => res(r.result as string);
+        r.readAsDataURL(blob);
+      });
+    },
+  });
   const mode = startMode();
   if (mode === 'boot') return; // the boot timeline sets up its own initial state
   stage.world = 1;
