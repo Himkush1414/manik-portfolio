@@ -5,7 +5,7 @@
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
-import { PCFSoftShadowMap, type WebGLRenderer } from 'three';
+import { Color, PCFSoftShadowMap, type WebGLRenderer } from 'three';
 import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from './perf';
 import { CLEAR_COLOR } from '../data/render.config';
@@ -41,8 +41,15 @@ export function CanvasRoot({ children }: Props) {
         frameloop={hidden ? 'never' : 'always'}
         gl={{ antialias: false, alpha: false, stencil: false, depth: true, powerPreference: 'high-performance' }}
         camera={{ fov: 30, near: 0.1, far: 600, position: [0, 3, 34] }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, scene }) => {
           gl.setClearColor(CLEAR_COLOR, 1);
+          // The void colour MUST be scene.background, not only the clear
+          // colour: postprocessing's RenderPass clears its linear HDR buffer
+          // with a bare renderer.clear(), which reuses the GL clear value
+          // three last set for the SCREEN (already sRGB-encoded) — the final
+          // pass then encodes it again and every empty pixel reads navy.
+          // scene.background is cleared per-target in the right colour space.
+          scene.background = new Color(CLEAR_COLOR);
           installShaderErrorFilter(gl);
           registerRenderer(gl);
           const canvas = gl.domElement;

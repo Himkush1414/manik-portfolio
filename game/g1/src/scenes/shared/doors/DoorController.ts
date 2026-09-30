@@ -1,7 +1,10 @@
 // Blast-door motion + events (brief §9). progress: 0 = sealed, 1 = open
-// (may overshoot to ~1.03 before settling). Deterministic: the motion is a
-// GSAP tween over a normalised time `t`, so a master timeline can nest it
-// (boot) and QA can seek it. Emits doors:unlock / doors:move / doors:slam.
+// (may overshoot to ~1.03 before settling). Deterministic and SEEKABLE: the
+// only animated value is the normalised motion time `t` (a GSAP tween, which a
+// master timeline can nest); `progress` is derived from it, so seeking a
+// parent timeline — which suppresses callbacks — still renders the right pose.
+// Velocity + doors:move are computed per frame in tick(); doors:unlock /
+// doors:slam fire from the tween's start/complete (only during real playback).
 import gsap from 'gsap';
 import { bus } from '../../../core/bus';
 
@@ -34,70 +37,84 @@ export function closeCurve(t: number): number {
 
 export class DoorController {
   readonly id: string;
-  progress = 0;
-  velocity = 0; // progress units / second
-  state: DoorState = 'sealed';
-  /** timestamp (s, performance clock) of the last unlock — drives particle bursts */
+  /** normalised time of the current motion (the ONLY tweened value) */
+  t = 0;
+  mode: 'open' | 'close' = 'open';
+  velocity = 0; // progress units / second (updated in tick)
+  /** seconds (performance clock) of the last unlock — drives particle bursts */
   burstAt = -100;
   slamAt = -100;
-  private t = 0;
-  private mode: 'open' | 'close' = 'open';
   private tween: gsap.core.Tween | null = null;
   private lastP = 0;
-  private lastTime = 0;
+  private movingEmitted = false;
 
   constructor(id: string) {
     this.id = id;
   }
 
-  private apply() {
-    const p = this.mode === 'open' ? openCurve(this.t) : 1 - closeCurve(this.t);
-    const now = performance.now() / 1000;
-    const dt = Math.max(1 / 240, now - this.lastTime);
-    this.velocity = (p - this.lastP) / dt;
-    this.lastP = p;
-    this.lastTime = now;
-    this.progress = p;
-    bus.emit('doors:move', { id: this.id, velocity: this.velocity });
+  get progress(): number {
+    return this.mode === 'open' ? openCurve(this.t) : 1 - closeCurve(this.t);
   }
 
-  private build(mode: 'open' | 'close', duration: number): gsap.core.Tween {
+  get state(): DoorState {
+    const p = this.progress;
+    if (this.mode === 'open') return this.t <= 0 ? 'sealed' : this.t >= 1 ? 'open' : 'opening';
+    return this.t >= 1 || p <= 0.0005 ? 'sealed' : this.t <= 0 ? 'open' : 'closing';
+  }
+
+  /** Per-frame: velocity + doors:move while moving. Called by <BlastDoors/>. */
+  tick(dt: number): void {
+    const p = this.progress;
+    this.velocity = dt > 0 ? (p - this.lastP) / dt : 0;
+    this.lastP = p;
+    const moving = Math.abs(this.velocity) > 0.001;
+    if (moving || this.movingEmitted) {
+      bus.emit('doors:move', { id: this.id, velocity: moving ? this.velocity : 0 });
+      this.movingEmitted = moving;
+    }
+  }
+
+  private build(mode: 'open' | 'close', duration: number, paused: boolean): gsap.core.Tween {
     this.tween?.kill();
-    this.mode = mode;
-    this.t = 0;
-    const tw = gsap.to(this, {
-      t: 1,
-      duration,
-      ease: 'none',
-      paused: true,
-      onStart: () => {
-        this.state = mode === 'open' ? 'opening' : 'closing';
-        if (mode === 'open') this.burstAt = performance.now() / 1000;
-        bus.emit('doors:unlock', { id: this.id });
+    const tw = gsap.fromTo(
+      this,
+      { t: 0 },
+      {
+        t: 1,
+        duration,
+        ease: 'none',
+        paused,
+        immediateRender: false,
+        onStart: () => {
+          this.mode = mode;
+          if (mode === 'open') this.burstAt = performance.now() / 1000;
+          bus.emit('doors:unlock', { id: this.id });
+        },
+        onComplete: () => {
+          this.slamAt = performance.now() / 1000;
+          bus.emit('doors:slam', { id: this.id });
+        },
       },
-      onUpdate: () => this.apply(),
-      onComplete: () => {
-        this.state = mode === 'open' ? 'open' : 'sealed';
-        this.velocity = 0;
-        this.slamAt = performance.now() / 1000;
-        bus.emit('doors:slam', { id: this.id });
-      },
-    });
+    );
     this.tween = tw;
     return tw;
   }
 
-  /** Tween for nesting into a master timeline (not auto-played). */
+  /**
+   * Tween for nesting into a master timeline. NOT paused: a paused child never
+   * renders when its parent seeks. (mode is set as the tween starts.)
+   */
   openTween(duration = 1.65): gsap.core.Tween {
-    return this.build('open', duration);
+    return this.build('open', duration, false);
   }
 
   closeTween(duration = 1.0): gsap.core.Tween {
-    return this.build('close', duration);
+    return this.build('close', duration, false);
   }
 
   open(duration = 1.65): Promise<void> {
-    const tw = this.build('open', duration);
+    this.mode = 'open';
+    const tw = this.build('open', duration, true);
     return new Promise(res => {
       tw.then(() => res());
       tw.play();
@@ -105,7 +122,8 @@ export class DoorController {
   }
 
   close(duration = 1.0): Promise<void> {
-    const tw = this.build('close', duration);
+    this.mode = 'close';
+    const tw = this.build('close', duration, true);
     return new Promise(res => {
       tw.then(() => res());
       tw.play();
@@ -118,19 +136,16 @@ export class DoorController {
     this.tween = null;
     this.mode = mode;
     this.t = Math.min(1, Math.max(0, t));
-    this.progress = mode === 'open' ? openCurve(this.t) : 1 - closeCurve(this.t);
     this.lastP = this.progress;
-    this.velocity = 0;
-    this.state = this.progress <= 0.001 ? 'sealed' : this.progress >= 0.999 && this.t >= 1 ? 'open' : mode === 'open' ? 'opening' : 'closing';
   }
 
-  set(progress: number): void {
+  /** Snap to sealed (0) or open (1) instantly. */
+  set(progress: 0 | 1): void {
     this.tween?.kill();
     this.tween = null;
-    this.progress = progress;
-    this.lastP = progress;
-    this.velocity = 0;
-    this.state = progress <= 0.001 ? 'sealed' : 'open';
+    this.mode = 'open';
+    this.t = progress;
+    this.lastP = this.progress;
   }
 
   dispose(): void {

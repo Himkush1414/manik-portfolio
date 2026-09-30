@@ -4,6 +4,7 @@ import type { WebGLRenderer } from 'three';
 import { IS_DEV, DEBUG } from '../core/constants';
 
 type Api = Record<string, unknown> & {
+  gl(): WebGLRenderer | null;
   fps(): number;
   info(): { drawCalls: number; triangles: number; textures: number; geometries: number; programs: number } | null;
   register(ns: string, api: Record<string, unknown>): void;
@@ -30,6 +31,7 @@ export const debugEnabled = IS_DEV || DEBUG;
 const api: Api = {
   fps: () => Math.round(fps * 10) / 10,
   info: () => (renderer ? snapshot : null),
+  gl: () => renderer,
   register(ns, value) {
     api[ns] = { ...(api[ns] as object | undefined), ...value };
   },

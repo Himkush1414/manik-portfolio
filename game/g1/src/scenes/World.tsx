@@ -1,11 +1,9 @@
-// The one persistent 3D world: bay contents (lookdev stand-in until 1D) +
-// the bay's pressure doors at the entrance + camera director + post stack.
+// The persistent 3D world content: bay (lookdev stand-in until 1D) + the
+// bay's pressure doors at the entrance. Camera/post live in <Stage/>.
 import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { StudioEnvironment } from '../render/env/StudioEnvironment';
 import { StudioLights } from '../render/env/StudioLights';
-import { PostFX } from '../render/PostFX';
-import { CameraDirector, director } from '../render/cameraDirector';
 import { BlastDoors } from './shared/BlastDoors';
 import { LookdevContent } from './LookdevContent';
 import { bootDoors, DOOR_Z, markWorldMounted } from './sceneBridge';
@@ -28,13 +26,11 @@ export function World() {
   }, [gl, scene, camera]);
   return (
     <>
-      <CameraDirector />
       <StudioEnvironment />
       <StudioLights shadowMapSize={q.shadowMap} />
       <LookdevContent />
       <BlastDoors controller={bootDoors} position={[0, 0, DOOR_Z]} particles={q.particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
       <fog attach="fog" args={['#04050A', 30, 90]} />
-      <PostFX ao dofTarget={director.look} dofRange={12} />
     </>
   );
 }

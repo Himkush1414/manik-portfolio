@@ -1,0 +1,20 @@
+.hint {
+  position: fixed;
+  top: calc(var(--u) * 28);
+  right: calc(var(--u) * 36);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 10);
+  font: 500 calc(var(--u) * 11) / 1 var(--font-mono);
+  letter-spacing: 0.3em;
+  color: var(--steel);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity var(--dur-base) var(--ease-out-expo), transform var(--dur-base) var(--ease-out-expo);
+  pointer-events: none;
+}
+.on {
+  opacity: 0.75;
+  transform: none;
+}

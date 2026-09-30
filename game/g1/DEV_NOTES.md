@@ -11,7 +11,7 @@ this file alone. Updated after every slice.
 |---|---|---|
 | Plan | DONE | this file |
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
-| 1B Boot + BlastDoors | IN PROGRESS | BlastDoors DONE (geometry, PBR bakes, motion, FX, API, ?screen=doors); boot timeline next |
+| 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | — | |
 | 1D Hangar scene | — | |
 | 1E Hangar UI + pilots + story | — | |
@@ -183,7 +183,8 @@ radiating from the centre; floating shard fragments orbiting slowly; ember motes
   shader (X3595) that three dumps as console warnings. `debug/shaderCheck.ts`
   replaces it: checks LINK_STATUS once per new program and logs real failures.
 - **Post chain order:** RenderPass → N8AO → TransitionBlur (disabled at 0) →
-  main EffectPass [DOF, Bloom, CA, Exposure, ToneMapping(AgX), Vignette, Noise].
+  main EffectPass [CA, DOF, Bloom, Exposure, ToneMapping(AgX), Vignette, Noise].
+  Transition blur runs BEFORE the main pass (HDR, pre-tone-map).
   The main pass must stay LAST: postprocessing only sends the final pass to
   screen, and a disabled last pass = black frame (hit in 1A).
 - **Case-insensitive FS (Windows):** `postfx.ts` vs `PostFX.tsx` collided; the
@@ -215,6 +216,35 @@ radiating from the centre; floating shard fragments orbiting slowly; ember motes
   earlier logs a Chrome autoplay warning.
 - **Key light is a SpotLight** aimed at the pad, not directional, so it never
   lights the bay doors' outer face (doors are lit by beacons + corridor light).
+- **Case-insensitive FS, again:** `bootFx.ts` vs `BootFX.tsx` collided; params live in `scenes/boot/bootFxParams.ts`. Rule: never have two files differing only by case.
+- **Double-encoded clear colour (critical, fixed in 1B):** with postprocessing,
+  the RenderPass clears its linear HalfFloat buffer via `renderer.clear()`,
+  which reuses the GL clear value three last set for the SCREEN (sRGB-encoded);
+  the final pass encodes again → every empty pixel of `#04050A` rendered as
+  `#050F2B` navy (measured: grey #808080 → #BBBBBB). Fix: the void colour is
+  `scene.background` (cleared per target in the right space). Found by pixel
+  probes (`tools/_probe.mjs` pattern: sample a 4×4 clip after `boot.seek`).
+- **Tone mapping A/B (brief §2) — WINNER: AgX.** Compared by screenshot at boot
+  t=2.0 and the hangar view AFTER the clear-colour fix (the earlier A/B was
+  invalid — both were lifted by the double encode). Neutral keeps hue in
+  highlights but pushes the Nebula/violet rim + floor to saturated purple (an
+  art-bible anti-pattern); AgX gives restrained, filmic saturation and
+  white-hot Ignition cores, matching "cold vacuum, one burning colour".
+  Setting: `data/render.config.ts` POST.toneMapping.
+- **Boot sequence (1B):** DOM layers `ui/screens/boot/BootSequence.tsx` (pure
+  view) + master timeline `app/choreo/bootTimeline.ts` + WebGL FX
+  `scenes/boot/BootFX.tsx` (params in `bootFxParams.ts`, layer 1). Rule: every
+  visual state is a TWEENED property so `__G1__.boot.seek(t)` renders exactly
+  (callbacks only for FSM beats/audio). The loading beat is an `addPause`
+  resumed by the real loader (`core/loader.ts`). Nested tweens must NOT be
+  created `paused` (a paused child never renders on parent seek). `stage.world`
+  (tweened 0/1) switches the camera layer mask from boot-FX-only to the world.
+  Measured: full run 12.15 s, skip → loading → doors at 1.25x, reduced motion
+  5.7 s. QA: `tools/qa-boot.mjs` (15 seek frames), `tools/qa-bootflow.mjs`
+  (real-time full / skip / reduced).
+- **GSAP + CSS transforms:** never give an element a CSS transform that GSAP
+  will also tween (GSAP folds it into px and the yPercent tween stacks on top);
+  set the initial offset with gsap.set instead (letterbox bars).
 
 ## 9. Known issues
 

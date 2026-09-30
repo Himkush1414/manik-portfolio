@@ -67,8 +67,9 @@ export function BlastDoors({ controller, position = [0, 0, 0], particles = 1, re
     [built],
   );
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     if (!built) return;
+    controller.tick(dt);
     const x = DOOR.travel * Math.max(0, controller.progress);
     if (right.current) right.current.position.x = x;
     if (left.current) left.current.position.x = -x;

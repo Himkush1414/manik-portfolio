@@ -72,7 +72,11 @@ export function registerBootTasks(): void {
       const { gl, scene, camera } = await whenWorldMounted();
       // two frames so every lazily-created material is in the scene graph
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      // the boot beats render only the FX layer: open every layer for the compile
+      const mask = camera.layers.mask;
+      camera.layers.enableAll();
       await gl.compileAsync(scene, camera);
+      camera.layers.mask = mask;
     },
   });
 
@@ -86,9 +90,12 @@ export function registerBootTasks(): void {
       // buffer so the first visible hangar frame has no hitch
       const rt = new WebGLRenderTarget(256, 144, { type: HalfFloatType });
       const prev = gl.getRenderTarget();
+      const mask = camera.layers.mask;
+      camera.layers.enableAll();
       gl.setRenderTarget(rt);
       gl.render(scene, camera);
       gl.setRenderTarget(prev);
+      camera.layers.mask = mask;
       rt.dispose();
     },
   });

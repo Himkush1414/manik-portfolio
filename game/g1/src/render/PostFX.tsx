@@ -28,7 +28,7 @@ import { postfx } from './fxController';
 import { CameraShaker } from './CameraShaker';
 import { ExposureEffect, TransitionBlurEffect } from './effects';
 import { POST } from '../data/render.config';
-import { frameInfoBegin, frameInfoEnd } from '../debug/debugApi';
+import { frameInfoBegin, frameInfoEnd, registerDebug } from '../debug/debugApi';
 
 export type PostFXProps = {
   /** scene allows AO (hangar, cockpit) */
@@ -116,6 +116,7 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
 
     composer.setSize(size.width, size.height);
     composerRef.current = composer;
+    registerDebug('post', { composer: () => composer });
     chainRef.current = { bloom, ca, exposure, vignette, dof, blur, blurPass };
     return () => {
       composerRef.current = null;
