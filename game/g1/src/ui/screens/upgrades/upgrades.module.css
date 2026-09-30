@@ -1,0 +1,77 @@
+/* Upgrades / loadout (brief §14). Left third stays clear: the real 3D ship
+   (hangar camera shifted) with hologram callouts to its hardpoints. */
+.body {
+  position: absolute;
+  left: calc(var(--u) * 560);
+  right: calc(var(--u) * 48);
+  top: calc(var(--u) * 104);
+  bottom: calc(var(--u) * 48);
+  display: grid;
+  grid-template-columns: 1fr calc(var(--u) * 470);
+  gap: calc(var(--u) * 24);
+}
+.tracks { display: flex; flex-direction: column; gap: calc(var(--u) * 12); }
+.track {
+  --c: calc(var(--u) * 10);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: calc(var(--u) * 20);
+  row-gap: calc(var(--u) * 10);
+  padding: calc(var(--u) * 16) calc(var(--u) * 18) calc(var(--u) * 16) calc(var(--u) * 22);
+  background: linear-gradient(90deg, rgba(13, 19, 48, 0.72), rgba(8, 11, 24, 0.5));
+  border: 1px solid var(--steel-a12);
+  clip-path: polygon(0 0, calc(100% - var(--c)) 0, 100% var(--c), 100% 100%, 0 100%);
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.track:hover, .track:focus-within { border-color: var(--ice-a40); background: linear-gradient(90deg, rgba(127, 209, 255, 0.08), rgba(8, 11, 24, 0.5)); }
+.track::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--steel-a30); }
+.track[data-hot='true']::before { background: var(--ice); box-shadow: 0 0 calc(var(--u) * 10) var(--ice-a40); }
+.trackName { font: 700 calc(var(--u) * 20) / 1 var(--font-ui); letter-spacing: 0.08em; }
+.trackEffect { margin-top: calc(var(--u) * 6); font: 500 calc(var(--u) * 11.5) / 1.3 var(--font-mono); letter-spacing: 0.12em; color: var(--steel); text-transform: uppercase; }
+.tiers { grid-column: 1 / 2; display: flex; align-items: center; gap: calc(var(--u) * 6); }
+.tier {
+  width: calc(var(--u) * 58);
+  height: calc(var(--u) * 10);
+  background: var(--steel-a12);
+  clip-path: polygon(calc(var(--u) * 4) 0, 100% 0, calc(100% - var(--u) * 4) 100%, 0 100%);
+  transition: background var(--dur-base), box-shadow var(--dur-base);
+}
+.tier.on { background: var(--ignition); }
+.tier.next { background: repeating-linear-gradient(90deg, var(--ice-a40) 0 3px, transparent 3px 6px); outline: 1px solid var(--ice-a40); outline-offset: -1px; }
+.tier.lit { animation: ignite 0.9s var(--ease-out-expo); }
+@keyframes ignite { 0% { background: #fff; box-shadow: 0 0 calc(var(--u) * 20) var(--core); } 100% { background: var(--ignition); } }
+.preview { font: 500 calc(var(--u) * 12) / 1 var(--font-mono); letter-spacing: 0.12em; color: var(--steel); margin-left: calc(var(--u) * 10); white-space: nowrap; }
+.preview b { color: var(--frost); font-weight: 500; }
+.preview i { font-style: normal; color: var(--ice); }
+.buy { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: calc(var(--u) * 6); }
+.cost { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.14em; color: var(--hot); }
+.maxed { font: 600 calc(var(--u) * 12) / 1 var(--font-mono); letter-spacing: 0.24em; color: var(--ok); }
+.installed { position: absolute; right: calc(var(--u) * 200); top: 50%; translate: 0 -50%; font: 900 calc(var(--u) * 28) / 1 var(--font-title); letter-spacing: 0.24em; color: var(--core); pointer-events: none; animation: installed 1.1s var(--ease-out-expo) forwards; }
+@keyframes installed { 0% { opacity: 0; transform: scale(1.3); filter: blur(6px); } 25% { opacity: 1; transform: none; filter: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+.side { display: flex; flex-direction: column; gap: calc(var(--u) * 14); }
+.statGrid { display: grid; grid-template-columns: auto 1fr auto; gap: calc(var(--u) * 10) calc(var(--u) * 14); padding: calc(var(--u) * 16) calc(var(--u) * 20); align-items: center; }
+.statGrid span { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.18em; color: var(--steel); }
+.statGrid b { font: 500 calc(var(--u) * 12) / 1 var(--font-mono); color: var(--frost); text-align: right; }
+.statGrid b i { font-style: normal; color: var(--ice); }
+.gaugeWrap { display: grid; grid-template-columns: calc(var(--u) * 190) 1fr; gap: calc(var(--u) * 16); align-items: center; padding: calc(var(--u) * 16) calc(var(--u) * 20) calc(var(--u) * 20); }
+.gaugeText { display: flex; flex-direction: column; gap: calc(var(--u) * 10); font: 500 calc(var(--u) * 11) / 1.3 var(--font-mono); letter-spacing: 0.16em; color: var(--steel); text-transform: uppercase; }
+.gaugeText b { font: 700 calc(var(--u) * 15) / 1 var(--font-ui); letter-spacing: 0.1em; color: var(--frost); }
+.verdict { align-self: flex-start; padding: calc(var(--u) * 7) calc(var(--u) * 12); font: 600 calc(var(--u) * 12) / 1 var(--font-mono); letter-spacing: 0.22em; border: 1px solid currentColor; }
+.verdict[data-v='UNDER-POWERED'] { color: var(--danger); }
+.verdict[data-v='READY'] { color: var(--ok); }
+.verdict[data-v='OVERPOWERED'] { color: var(--ice); }
+.note { font: 400 calc(var(--u) * 12.5) / 1.5 var(--font-body); color: var(--steel); padding: 0 calc(var(--u) * 20) calc(var(--u) * 16); }
+
+/* hologram callout from the hovered track to its hardpoint(s) on the 3D ship */
+.callout { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; overflow: visible; z-index: 71; pointer-events: none; } /* replaced element: inset alone does not stretch it */
+.callout line { stroke: var(--ice); stroke-width: 1.2; stroke-dasharray: 4 3; animation: dash 1s linear infinite; }
+.callout circle { fill: none; stroke: var(--ice); stroke-width: 1.5; }
+.callout .dot { fill: var(--ice); stroke: none; }
+.callout text { fill: var(--ice); font: 500 11px var(--font-mono); letter-spacing: 0.16em; }
+@keyframes dash { to { stroke-dashoffset: -14; } }
+.shipTag { position: absolute; left: calc(var(--u) * 48); bottom: calc(var(--u) * 48); display: flex; flex-direction: column; gap: calc(var(--u) * 6); }
+.shipTag b { font: 900 calc(var(--u) * 44) / 1 var(--font-title); letter-spacing: 0.04em; }
+.shipTag span { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.24em; color: var(--hot); text-transform: uppercase; }

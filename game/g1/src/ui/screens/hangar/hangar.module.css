@@ -15,6 +15,11 @@
 .root * { box-sizing: border-box; }
 .root button, .root [role='tab'], .root [role='radio'], .root a { pointer-events: auto; }
 .capture { pointer-events: auto; }
+/* a modal owns the screen: the hangar panels step back (not unmounted: no
+   re-entrance, thumbnails and busts keep their state) */
+.root > * { transition: opacity var(--dur-base) var(--ease-out-expo), filter var(--dur-base); }
+.root[data-modal='true'] > :not([role='dialog']):not([role='status']) { opacity: 0; filter: blur(6px); pointer-events: none !important; }
+.root[data-modal='true'] > :not([role='dialog']) * { pointer-events: none !important; }
 
 /* grain + scanlines over the whole UI layer (<= 6%) */
 .grain {

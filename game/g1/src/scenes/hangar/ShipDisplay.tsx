@@ -15,6 +15,7 @@ import { unlockState } from '../../data/unlocks';
 import { SPECS } from '../../ships/specs';
 import { registerDebug } from '../../debug/debugApi';
 import { padFx, padMaterialise } from './padFx';
+import { setBridgeShip } from './shipBridge';
 import { sfx } from '../../audio/sfx';
 
 // brief §10: ~0.5 s out, ~0.7 s in, with the pad pulse + scan plane
@@ -36,7 +37,13 @@ export function ShipDisplay({ shipId, forceUnlocked = false }: { shipId: ShipId;
     return b;
   }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => () => ship.dispose(), [ship]);
+  useEffect(() => {
+    setBridgeShip({ group: ship.group, hardpoints: ship.hardpoints });
+    return () => {
+      setBridgeShip(null);
+      ship.dispose();
+    };
+  }, [ship]);
   useEffect(() => {
     ship.setLivery(livery, true);
   }, [ship, livery]);

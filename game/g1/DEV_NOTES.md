@@ -15,7 +15,7 @@ this file alone. Updated after every slice.
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
-| 1F Upgrades / Settings / Save | — | |
+| 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
 | 1G Cockpit + camera select | — | |
 | 1H QA / polish / perf | — | |
 
@@ -440,6 +440,17 @@ HDRIs / kit parts if ever needed (none used so far).
   move the pad selection; Enter with nothing focused = START MISSION. Hangar
   ambience bed (`audio/synth/ambience.ts`) runs while in the hangar once
   audio is unlocked. QA: `tools/qa-keys.mjs`.
+- **Modals (1F):** `ui/primitives` Modal (focus trap, Esc, blur-dissolve;
+  `seeThrough` keeps the left third clear), Slider, Toggle, Segmented.
+  Opening goes through the FSM (`OPEN_UPGRADES` / `OPEN_SETTINGS`;
+  `send()` returns false = double-open guard); hangar panels fade (not
+  unmount). Upgrades shifts the hangar camera (`hangarCam.shift`) so the ship
+  sits left of the tracks; hovering a track draws a hologram callout to its
+  hardpoints (`scenes/hangar/shipBridge.ts`, projected per frame; points under
+  the panel are skipped). Rebinding captures keydown/mousedown in the capture
+  phase (Esc cancels; reserved codes refused), conflicts offer SWAP/CANCEL.
+  PITFALL: an absolutely positioned <svg> with only `inset: 0` stays 300x150 —
+  give replaced elements explicit width/height. QA: `tools/qa-modals.mjs`.
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH

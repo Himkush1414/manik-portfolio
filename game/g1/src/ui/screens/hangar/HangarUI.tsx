@@ -16,6 +16,8 @@ import { useSettings } from '../../../state/settings.store';
 import { useUi } from '../../../state/ui.store';
 import { bus } from '../../../core/bus';
 import { startMission } from './hangarActions';
+import { UpgradesModal } from '../upgrades/UpgradesModal';
+import { SettingsModal } from '../settings/SettingsModal';
 
 const FROM: Record<string, gsap.TweenVars> = {
   top: { y: -36 },
@@ -108,7 +110,7 @@ export function HangarUI() {
   // MISSION -> pilot / briefing. Both panel layers share the parallax vars.
   const drift = { position: 'absolute', inset: 0, pointerEvents: 'none', transform: 'translate3d(var(--px, 0px), var(--py, 0px), 0)' } as const;
   return (
-    <div ref={root} className={s.root}>
+    <div ref={root} className={s.root} data-modal={flowState === 'hangar.upgrades' || flowState === 'hangar.settings'}>
       <div className={s.grain} aria-hidden />
       <TopBar />
       <div ref={layer} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -121,6 +123,8 @@ export function HangarUI() {
           <RightPanel />
         </div>
       </div>
+      {flowState === 'hangar.upgrades' && <UpgradesModal />}
+      {flowState === 'hangar.settings' && <SettingsModal />}
       <Toasts />
       <div className={s.small} role="alert">
         <div>

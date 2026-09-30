@@ -23,11 +23,14 @@ export const hangarCam = {
   manual: false,
   /** 1 = at rest distance; > 1 = pulled back (push-in tween) */
   push: 1,
+  /** 0..1: Upgrades layout — the ship slides into the left third */
+  shift: 0,
   mouse: { x: 0, y: 0 },
   par: { x: 0, y: 0, vx: 0, vy: 0 },
 };
 
 const tmp = new Vector3();
+const shifted = new Vector3();
 
 /** Called every frame while the hangar owns the camera. */
 export function updateHangarCamera(time: number, dt: number, reduceMotion: boolean): void {
@@ -42,13 +45,16 @@ export function updateHangarCamera(time: number, dt: number, reduceMotion: boole
   p.y += p.vy * dt;
 
   const breathe = reduceMotion ? 0 : Math.sin((time / o.breathePeriod) * Math.PI * 2) * o.breathe;
-  const dist = (o.dist * hangarCam.push) / turntable.zoom + breathe;
+  const dist = ((o.dist * hangarCam.push) / turntable.zoom) * (1 + hangarCam.shift * 0.2) + breathe;
+  shifted.copy(TARGET);
+  shifted.x += hangarCam.shift * 11;
   orbitPos(dist, o.elev + turntable.pitch, tmp);
+  tmp.x += hangarCam.shift * 11;
   const n = reduceMotion ? 0 : o.noise;
   tmp.x += p.x * o.parallax + (Math.sin(time * 1.7) * 0.6 + Math.sin(time * 2.9 + 1.1) * 0.4) * n;
   tmp.y += p.y * o.parallax * 0.6 + (Math.sin(time * 2.3 + 0.4) * 0.6 + Math.sin(time * 3.7) * 0.4) * n;
   director.pos.copy(tmp);
-  director.look.copy(TARGET);
+  director.look.copy(shifted);
   director.focus.copy(FOCUS);
   director.fov = o.fov;
 }

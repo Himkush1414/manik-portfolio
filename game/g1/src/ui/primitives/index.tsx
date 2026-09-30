@@ -3,6 +3,7 @@
 // sound. Styling lives in hud.module.css.
 import { forwardRef, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
 import type React from 'react';
+import gsap from 'gsap';
 import s from './hud.module.css';
 import { sfx, type SfxName } from '../../audio/sfx';
 import { useUi } from '../../state/ui.store';
@@ -359,4 +360,154 @@ export function useReducedMotion(): boolean {
     return () => obs.disconnect();
   }, []);
   return r;
+}
+
+/* ------------------------------------------------------------------ modal */
+/**
+ * Full-screen modal: focus trap, Esc closes, blur-dissolve in/out (GSAP; fade
+ * only under reduced motion). `seeThrough` keeps the left third clear for the
+ * 3D ship (Upgrades).
+ */
+export function Modal({ title, kicker, onClose, seeThrough, children, headExtra }: { title: string; kicker?: string; onClose(): void; seeThrough?: boolean; children: ReactNode; headExtra?: ReactNode }) {
+  const root = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const closing = useRef(false);
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    sfx.play('whoosh');
+    const el = root.current;
+    if (!el || reduce) return onClose();
+    gsap.to(el, { autoAlpha: 0, filter: 'blur(10px)', scale: 1.02, duration: 0.28, ease: 'power2.in', onComplete: onClose });
+  };
+  useEffect(() => {
+    const el = root.current!;
+    const prev = document.activeElement as HTMLElement | null;
+    if (reduce) gsap.fromTo(el, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 });
+    else gsap.fromTo(el, { autoAlpha: 0, filter: 'blur(14px)', scale: 0.985 }, { autoAlpha: 1, filter: 'blur(0px)', scale: 1, duration: 0.42, ease: 'expo.out', clearProps: 'filter,transform' });
+    const focusables = () => Array.from(el.querySelectorAll<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select, textarea, [tabindex]:not([tabindex="-1"])')).filter(x => x.offsetParent !== null);
+    window.setTimeout(() => (el.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0])?.focus(), 30);
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) {
+        e.preventDefault();
+        close();
+      } else if (e.key === 'Tab') {
+        const f = focusables();
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    el.addEventListener('keydown', key);
+    return () => {
+      el.removeEventListener('keydown', key);
+      prev?.focus?.();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div ref={root} className={s.modalRoot} role="dialog" aria-modal="true" aria-label={title} data-see-through={seeThrough ? 'true' : 'false'}>
+      <header className={s.modalHead}>
+        <span className={s.modalKicker}>{kicker}</span>
+        <h2 className={s.modalTitle}>{title}</h2>
+        <span className={s.modalSpacer} />
+        {headExtra}
+        <HudButton variant="ghost" onClick={close} clickSound={null} aria-label={`Close ${title}`}>
+          <Keycap>ESC</Keycap> CLOSE
+        </HudButton>
+      </header>
+      {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ form parts */
+export function Slider({ value, min, max, step = 0.01, onChange, label, format, numeric = true }: { value: number; min: number; max: number; step?: number; onChange(v: number): void; label: string; format?: (v: number) => string; numeric?: boolean }) {
+  const pct = ((value - min) / (max - min)) * 100;
+  const last = useRef(0);
+  return (
+    <div className={s.slider}>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-label={label}
+        aria-valuetext={format ? format(value) : String(value)}
+        style={{ '--pct': `${pct}%` } as CSSProperties}
+        onChange={e => {
+          const now = performance.now();
+          if (now - last.current > 70) sfx.play('hover'); // notch ticks, rate-limited
+          last.current = now;
+          onChange(Number(e.target.value));
+        }}
+      />
+      {numeric ? (
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={Number(value.toFixed(2))}
+          aria-label={`${label} value`}
+          onChange={e => {
+            const v = Number(e.target.value);
+            if (Number.isFinite(v)) onChange(Math.min(max, Math.max(min, v)));
+          }}
+        />
+      ) : (
+        <span className={s.numIn} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+          {format ? format(value) : value}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function Toggle({ checked, onChange, label }: { checked: boolean; onChange(v: boolean): void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      className={s.toggle}
+      onPointerEnter={() => sfx.play('hover')}
+      onClick={() => {
+        sfx.play('confirm');
+        onChange(!checked);
+      }}
+    />
+  );
+}
+
+export function Segmented<T extends string | number>({ options, value, onChange, label }: { options: { id: T; label: string }[]; value: T; onChange(v: T): void; label: string }) {
+  return (
+    <div className={s.segCtl} role="radiogroup" aria-label={label}>
+      {options.map(o => (
+        <button
+          key={String(o.id)}
+          type="button"
+          role="radio"
+          aria-checked={o.id === value}
+          tabIndex={o.id === value ? 0 : -1}
+          onKeyDown={radioKeys}
+          onPointerEnter={() => sfx.play('hover')}
+          onClick={() => {
+            if (o.id === value) return;
+            sfx.play('confirm');
+            onChange(o.id);
+          }}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
 }

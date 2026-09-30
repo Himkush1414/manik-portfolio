@@ -18,6 +18,7 @@ import { useFlow } from '../../app/flow';
 import { AudioBus } from '../../audio/AudioBus';
 import { startHangarAmbience, stopHangarAmbience } from '../../audio/synth/ambience';
 import { bus } from '../../core/bus';
+import gsap from 'gsap';
 import { useUi } from '../../state/ui.store';
 import { useProfile } from '../../state/profile.store';
 import { unlockState } from '../../data/unlocks';
@@ -46,8 +47,10 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
     turntable.reduceMotion = reduceMotion;
   }, [reduceMotion]);
   useEffect(() => {
-    turntable.enabled = flowState === 'hangar.idle';
-  }, [flowState]);
+    turntable.enabled = flowState === 'hangar.idle' || flowState === 'hangar.upgrades';
+    // Upgrades: ship slides left of the modal's track list
+    gsap.to(hangarCam, { shift: flowState === 'hangar.upgrades' ? 1 : 0, duration: reduceMotion ? 0.01 : 0.9, ease: 'expo.inOut', overwrite: 'auto' });
+  }, [flowState, reduceMotion]);
 
   // hangar ambience bed while in the hangar (starts once audio unlocks)
   useEffect(() => {

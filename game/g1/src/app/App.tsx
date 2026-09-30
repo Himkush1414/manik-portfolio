@@ -14,6 +14,7 @@ import { useFlow, isBoot } from './flow';
 import { BootController } from './BootController';
 import { AudioHint } from '../ui/screens/AudioHint';
 import { HangarUI } from '../ui/screens/hangar/HangarUI';
+import { FpsOverlay } from '../ui/screens/FpsOverlay';
 
 export function App() {
   useEffect(() => {
@@ -35,6 +36,7 @@ export function App() {
       {/* t=0 waits for fonts (brief §8): SplitText must measure the real face */}
       {bootMounted && fontsReady && isBoot(flowState) && <BootController onDone={() => setBootMounted(false)} />}
       <HangarUI />
+      <FpsOverlay />
       <AudioHint />
     </ErrorBoundary>
   );

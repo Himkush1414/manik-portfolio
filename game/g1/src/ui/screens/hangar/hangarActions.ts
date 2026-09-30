@@ -40,10 +40,19 @@ export function purchaseViewed(id: ShipId): void {
   ui.toast(`${SHIPS[id].name} unlocked — ${res.cost.toLocaleString('en-US')} CR`, 'ok');
 }
 
-/** Upgrades / Settings modals (the modals themselves land in 1F). */
+/** Upgrades / Settings modals: the FSM owns the transition (guards double opens). */
 export function openModal(id: 'upgrades' | 'settings'): void {
-  if (flow.state !== 'hangar.idle') return;
-  useUi.getState().toast(id === 'upgrades' ? 'Upgrades bay — online in the next build' : 'Settings — online in the next build', 'info');
+  const ev = id === 'upgrades' ? 'OPEN_UPGRADES' : 'OPEN_SETTINGS';
+  if (!flow.send(ev)) return;
+  const ui = useUi.getState();
+  ui.openModal(id);
+  // Upgrades act on the flown ship: bring it to the pad
+  if (id === 'upgrades') ui.setViewedShip(useProfile.getState().selectedShip);
+}
+
+export function closeModal(): void {
+  if (!flow.send('CLOSE_MODAL')) return;
+  useUi.getState().openModal(null);
 }
 
 /** START MISSION: the launch sequence (bulkhead, cockpit) lands in 1G. */
