@@ -54,6 +54,13 @@ export function applyStartParams(): void {
     turntableState: () => ({ yaw: turntable.yaw, pitch: turntable.pitch, zoom: turntable.zoom, zoomTarget: turntable.zoomTarget, vel: turntable.vel, enabled: turntable.enabled }),
   });
   registerDebug('flowState', { get: () => flow.state });
+  // DEV CHEATS (brief §14; only exist with ?debug=1)
+  registerDebug('cheats', {
+    credits: (n = 10000) => useProfile.getState().grantCredits(n),
+    level: (n: number) => useProfile.getState().setLevelCleared(n),
+    unlockAll: () => useProfile.getState().unlockAll(),
+    reset: () => useProfile.getState().reset(),
+  });
   registerDebug('thumbs', {
     // resolves to a data URL so the QA harness can save it
     make: async (id: ShipId, opts: ThumbOptions = {}) => {

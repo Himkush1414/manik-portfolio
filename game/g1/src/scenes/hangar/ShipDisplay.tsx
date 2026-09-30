@@ -15,6 +15,7 @@ import { unlockState } from '../../data/unlocks';
 import { SPECS } from '../../ships/specs';
 import { registerDebug } from '../../debug/debugApi';
 import { padFx, padMaterialise } from './padFx';
+import { sfx } from '../../audio/sfx';
 
 // brief §10: ~0.5 s out, ~0.7 s in, with the pad pulse + scan plane
 const OUT = 0.5;
@@ -39,9 +40,24 @@ export function ShipDisplay({ shipId, forceUnlocked = false }: { shipId: ShipId;
   useEffect(() => {
     ship.setLivery(livery, true);
   }, [ship, livery]);
+  // locked -> unlocked on the same ship (a purchase): the hologram solidifies
+  // with a dissolve-in, the pad shockwave and the materialise sweep
+  const wasLocked = useRef({ ship, locked });
   useEffect(() => {
+    const unlockedNow = wasLocked.current.ship === ship && wasLocked.current.locked && !locked;
+    wasLocked.current = { ship, locked };
     ship.setHologram(locked);
-  }, [ship, locked]);
+    if (!unlockedNow || reduceMotion) return;
+    const d = dis.current;
+    d.v = 1;
+    ship.setDissolve(1);
+    padMaterialise(IN, false);
+    sfx.play('materialise');
+    const tw = gsap.to(d, { v: 0, duration: IN, ease: 'power2.out', onUpdate: () => ship.setDissolve(d.v) });
+    return () => {
+      tw.kill();
+    };
+  }, [ship, locked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // dissolve in: only ships arriving through a swap (flag survives StrictMode
   // effect replays; cleared when the tween lands)
@@ -52,6 +68,7 @@ export function ShipDisplay({ shipId, forceUnlocked = false }: { shipId: ShipId;
     d.v = 1;
     ship.setDissolve(1);
     padMaterialise(IN, reduceMotion);
+    sfx.play('materialise');
     const tw = gsap.to(d, {
       v: 0,
       duration: IN,

@@ -26,7 +26,7 @@ export const BOOT = {
   reduced: { fade: 0.25, logoHold: 1.2, creditHold: 0.6, taglineHold: 0.7 },
 } as const;
 
-export const TAGLINE = 'Beyond the last star, the dark has learned to hunt.';
+export { TAGLINE } from './lore'; // canon copy lives in lore.ts
 
 /** Loader status lines (brief §4) mapped to real loader tasks. */
 export const STATUS_LINES = {

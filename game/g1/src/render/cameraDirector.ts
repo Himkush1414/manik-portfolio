@@ -19,7 +19,7 @@ const DEG = Math.PI / 180;
 export const HANGAR_ORBIT = {
   target: [-0.3, 2.35, 0] as const, // look point left of the ship => ship sits at ~52% x
   focus: [0, 2.3, 0] as const,
-  dist: 28.5,
+  dist: 32,
   elev: 13.5 * DEG,
   azim: 0,
   fov: 30,

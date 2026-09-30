@@ -14,6 +14,7 @@ export type BusEvents = {
   'doors:slam': { id: string };
   'flow:state': { from: string; to: string };
   'audio:unlocked': Record<string, never>;
+  'hangarUi:enter': Record<string, never>;
 };
 
 type Handler<T> = (payload: T) => void;

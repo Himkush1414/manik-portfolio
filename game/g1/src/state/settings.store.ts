@@ -6,7 +6,7 @@ import type { Bindings } from '../input/bindings';
 import type { CameraMode } from '../render/cameraRig';
 import type { Preset } from '../render/quality';
 
-type Section = keyof Omit<SettingsData, 'bootSeen'>;
+type Section = keyof Omit<SettingsData, 'bootSeen' | 'briefingSeen'>;
 
 type SettingsActions = {
   patch<K extends Section>(section: K, values: Partial<SettingsData[K]>): void;
@@ -14,6 +14,7 @@ type SettingsActions = {
   setCameraMode(mode: CameraMode): void;
   setPreset(preset: Preset, auto?: boolean): void;
   setBootSeen(): void;
+  setBriefingSeen(): void;
   replace(data: SettingsData): void;
 };
 
@@ -27,6 +28,7 @@ export const useSettings = create<SettingsState>()(set => ({
   setCameraMode: mode => set(s => ({ camera: { ...s.camera, mode } })),
   setPreset: (preset, auto = false) => set(s => ({ graphics: { ...s.graphics, preset, autoPicked: auto || s.graphics.autoPicked } })),
   setBootSeen: () => set({ bootSeen: true }),
+  setBriefingSeen: () => set({ briefingSeen: true }),
   replace: data => set({ ...data }),
 }));
 
@@ -39,5 +41,6 @@ export function settingsSnapshot(): SettingsData {
     audio: s.audio,
     accessibility: s.accessibility,
     bootSeen: s.bootSeen,
+    briefingSeen: s.briefingSeen,
   };
 }

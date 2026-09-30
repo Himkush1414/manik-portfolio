@@ -1,15 +1,19 @@
 // Semantic sound names -> synth voices. UI and scenes only ever call
 // sfx.play('name'); the synthesis lives in synth/*.
 import { AudioBus } from './AudioBus';
-import { uiTick, uiConfirm, uiDeny } from './synth/ui';
+import { uiTick, uiConfirm, uiDeny, uiLocked, uiPurchase, uiLivery, sfxMaterialise } from './synth/ui';
 import { sting, zing, whoosh, loaderTick, clunk, hiss } from './synth/boot';
 
-export type SfxName = 'hover' | 'confirm' | 'deny' | 'sting' | 'zing' | 'whoosh' | 'loaderTick' | 'clunk' | 'clunkHeavy' | 'hiss';
+export type SfxName = 'hover' | 'confirm' | 'deny' | 'locked' | 'purchase' | 'livery' | 'materialise' | 'sting' | 'zing' | 'whoosh' | 'loaderTick' | 'clunk' | 'clunkHeavy' | 'hiss';
 
 const VOICES: Record<SfxName, () => void> = {
   hover: uiTick,
   confirm: uiConfirm,
   deny: uiDeny,
+  locked: uiLocked,
+  purchase: uiPurchase,
+  livery: uiLivery,
+  materialise: sfxMaterialise,
   sting,
   zing,
   whoosh,

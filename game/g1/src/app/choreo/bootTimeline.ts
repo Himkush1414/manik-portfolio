@@ -4,6 +4,7 @@
 // callbacks are only used for side effects (FSM beats, audio) that QA seeking
 // may skip. The loading beat pauses on the real loader, never on a fake timer.
 import gsap from 'gsap';
+import { bus } from '../../core/bus';
 import { SplitText } from 'gsap/SplitText';
 import type { BootRefs } from '../../ui/screens/boot/BootSequence';
 import { BOOT } from '../../data/boot.config';
@@ -180,7 +181,8 @@ export function runBoot(refs: BootRefs, opts: BootOptions): BootHandle {
     tl.to(director.focus, { x: V.focus[0], y: V.focus[1], z: V.focus[2], duration: 2.2, ease: 'power2.inOut' }, dolly);
     endAt = dolly + 2.2 - 0.3;
   }
-  // letterbox retracts as the hangar UI arrives (UI stagger lands in 1E)
+  // letterbox retracts as the hangar UI staggers in (brief §8: 10.90-11.90)
+  beat(endAt, () => bus.emit('hangarUi:enter', {}));
   tl.to(refs.lbTop, { yPercent: -100, duration: R ? B.reduced.fade : 0.6, ease: 'expo.in' }, endAt);
   tl.to(refs.lbBottom, { yPercent: 100, duration: R ? B.reduced.fade : 0.6, ease: 'expo.in' }, endAt);
   beat(endAt + (R ? 0.3 : 0.6), () => {

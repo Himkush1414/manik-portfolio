@@ -66,8 +66,9 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
           if (unlockState(next, profile).unlocked) profile.selectShip(next);
         },
         keysBlocked: () => {
+          // any focused control (inventory list, tabs, sliders...) owns the arrows
           const a = document.activeElement;
-          return useUi.getState().modal !== null || (a instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+          return useUi.getState().modal !== null || (a instanceof HTMLElement && a !== document.body && a.tagName !== 'CANVAS');
         },
       }),
     [gl],

@@ -45,6 +45,8 @@ export type SettingsData = {
   audio: { master: number; music: number; sfx: number; ui: number; mute: boolean };
   accessibility: { reduceMotion: boolean; reduceFlashing: boolean; uiScale: number };
   bootSeen: boolean;
+  /** the briefing typewriter plays on first view only */
+  briefingSeen: boolean;
 };
 
 export type SaveData = { version: number; profile: ProfileData; settings: SettingsData };
@@ -81,6 +83,7 @@ export function defaultSettings(prefersReducedMotion = false): SettingsData {
     audio: { master: 0.8, music: 0.7, sfx: 0.85, ui: 0.7, mute: false },
     accessibility: { reduceMotion: prefersReducedMotion, reduceFlashing: false, uiScale: 1 },
     bootSeen: false,
+    briefingSeen: false,
   };
 }
 
@@ -173,6 +176,7 @@ function sanitizeSettings(raw: unknown): SettingsData {
       uiScale: num(ac.uiScale, 0.8, 1.3, 1),
     },
     bootSeen: bool(r.bootSeen, false),
+    briefingSeen: bool(r.briefingSeen, false),
   };
 }
 

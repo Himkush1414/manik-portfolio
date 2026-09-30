@@ -14,7 +14,7 @@ this file alone. Updated after every slice.
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
-| 1E Hangar UI + pilots + story | — | |
+| 1E Hangar UI + pilots + story | IN PROGRESS | lore.ts, UI primitives, full hangar overlay (top bar, inventory + thumbnails, ship block, pilot + briefing/codex, START MISSION, purchase), UI sounds DONE; next: 3D pilot busts |
 | 1F Upgrades / Settings / Save | — | |
 | 1G Cockpit + camera select | — | |
 | 1H QA / polish / perf | — | |
@@ -404,6 +404,21 @@ HDRIs / kit parts if ever needed (none used so far).
   (locked = hologram, as in the game; an unlocked one also becomes the
   selected ship). Add `&debug=1` to see a locked ship as the real craft
   (never saved). QA: `tools/qa-six.mjs [origin] [--debug]`.
+- **Hangar UI (1E):** `ui/primitives` (HudPanel, HudButton, Tooltip,
+  SegBar, RadarChart, Swatch, Tabs, CurrencyChip, ScrambleText, Keycap,
+  HoldButton, Toasts), `ui/icons`, `ui/screens/hangar/*` (layout in
+  hangar.module.css, all sizes var(--u); panels anchor to viewport edges).
+  Enters on the boot's `hangarUi:enter` beat (letterbox retract) or any
+  hangar entry. `hangarActions.ts` holds the only store writes. Pad view =
+  `ui.viewedShip`; unlocked selections also set `profile.selectedShip`.
+  Canvas turntable keys yield to any focused control. `settings.briefingSeen`
+  (typewriter on first view only). `app/domSettings.ts` mirrors
+  reduce-motion / reduce-flashing / UI scale onto <html>. DEV cheats on
+  `__G1__.cheats` (debug only). START MISSION / Upgrades / Settings show a
+  toast until 1F/1G. PITFALL: never centre a GSAP-animated element with the
+  CSS `translate` property — GSAP folds it into x and the tween zeroes it.
+  QA: `tools/qa-ui.mjs` (6 resolutions + locked/codex/livery),
+  `qa-purchase.mjs`.
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH

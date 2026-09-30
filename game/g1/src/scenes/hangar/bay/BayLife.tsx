@@ -101,10 +101,10 @@ export function BayLife({ particles = 1, reduceMotion = false, reduceFlashing = 
       cranePart(22.6, 0.9, 0.7, 0, 19.15, -0.45),
       cranePart(1.4, 0.7, 2.4, -11, 19.9, 0),
       cranePart(1.4, 0.7, 2.4, 11, 19.9, 0),
-      new CylinderGeometry(0.03, 0.03, 8.2, 6).translate(0, 14.6, 0.2),
-      new CylinderGeometry(0.03, 0.03, 8.2, 6).translate(0, 14.6, -0.2),
+      new CylinderGeometry(0.03, 0.03, 4.6, 6).translate(0, 16.4, 0.2),
+      new CylinderGeometry(0.03, 0.03, 4.6, 6).translate(0, 16.4, -0.2),
     ])!;
-    const craneHazard = mergeGeometries([cranePart(2.0, 0.9, 2.2, 0, 18.45, 0), cranePart(0.8, 0.9, 0.5, 0, 10.2, 0), new ConeGeometry(0.28, 0.6, 8).rotateX(Math.PI).translate(0, 9.5, 0)])!;
+    const craneHazard = mergeGeometries([cranePart(2.0, 0.9, 2.2, 0, 18.45, 0), cranePart(0.8, 0.9, 0.5, 0, 13.8, 0), new ConeGeometry(0.28, 0.6, 8).rotateX(Math.PI).translate(0, 13.1, 0)])!;
     const craneLamp = new SphereGeometry(0.12, 10, 8).translate(0, 18.0, 1.15);
 
     // --- beacons: housing + amber dome (instanced) + rotating beam cards
@@ -337,7 +337,9 @@ export function BayLife({ particles = 1, reduceMotion = false, reduceFlashing = 
       if (!g) return;
       const span = 44, speed = 0.35, ph = i * 0.5;
       const u = still ? 0.3 + i * 0.4 : (Math.sin((t * speed) / span * Math.PI + ph * Math.PI) * 0.5 + 0.5);
-      g.position.z = -16 + u * 40;
+      // stay behind the pad: a crane nearer than z ~ 6 swings its hook through
+      // the hangar camera's frame (a huge red wedge at the top of the shot)
+      g.position.z = -20 + u * 24;
     });
     // beacons: two beam cards per lamp, sweeping
     BEACONS.forEach(([x, y, z, f], i) => {
