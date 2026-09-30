@@ -21,3 +21,20 @@ export function markWorldMounted(w: WorldHandles): void {
 export function whenWorldMounted(): Promise<WorldHandles> {
   return world ? Promise.resolve(world) : worldPromise;
 }
+
+let contentReady = false;
+let resolveContent: (() => void) | null = null;
+const contentPromise = new Promise<void>(r => (resolveContent = r));
+
+/** Called once every staged part of the world content has mounted. */
+export function markContentReady(): void {
+  contentReady = true;
+  resolveContent?.();
+}
+
+/** Resolves when the world AND all of its staged content are mounted. */
+export async function whenContentReady(): Promise<WorldHandles> {
+  const w = await whenWorldMounted();
+  if (!contentReady) await contentPromise;
+  return w;
+}

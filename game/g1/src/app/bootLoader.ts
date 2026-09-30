@@ -2,14 +2,14 @@
 // loading"). Progress = completed weight / total; the loading beat waits for
 // true readiness. Tasks are added here as slices land (ship geometry in 1C,
 // hangar in 1D, cockpit compile in 1G).
-import { WebGLRenderTarget, HalfFloatType } from 'three';
+import { WebGLRenderTarget, HalfFloatType, type WebGLRenderer, type Scene, type Camera } from 'three';
 import { registerTask, whenDone } from '../core/loader';
 import { loadDoorAssets } from '../scenes/shared/doors/doorAssets';
 import { preloadShipGeometry } from '../ships/ShipFactory';
 import { hasSpec } from '../ships/specs';
 import { SHIP_IDS } from '../data/ships';
 import { useProfile } from '../state/profile.store';
-import { whenWorldMounted } from '../scenes/sceneBridge';
+import { whenWorldMounted, whenContentReady } from '../scenes/sceneBridge';
 import { AudioBus } from '../audio/AudioBus';
 import { isPersistent } from '../state/storage';
 import { useFlow, isBoot } from './flow';
@@ -91,24 +91,11 @@ export function registerBootTasks(): void {
     weight: 3,
     run: async () => {
       await whenDone('geometry');
-      const { gl, scene, camera } = await whenWorldMounted();
-      // two frames so every lazily-created material is in the scene graph
+      // the hangar mounts in stages: wait for all of it, then two frames so
+      // every lazily-created material is in the scene graph
+      const { gl, scene, camera } = await whenContentReady();
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-      // the boot beats render only the FX layer: open every layer for the compile
-      const mask = camera.layers.mask;
-      camera.layers.enableAll();
-      // Compile against an HDR render target: program variants are keyed on
-      // the output colour space, and the world always renders into the
-      // composer's linear HalfFloat buffer — compiling for the screen (sRGB)
-      // produced the wrong variants and a 3.3 s synchronous recompile later.
-      const probe = new WebGLRenderTarget(4, 4, { type: HalfFloatType });
-      const prevTarget = gl.getRenderTarget();
-      gl.setRenderTarget(probe);
-      const done = gl.compileAsync(scene, camera);
-      gl.setRenderTarget(prevTarget);
-      camera.layers.mask = mask;
-      await done;
-      probe.dispose();
+      await compileHdr(gl, scene, camera);
     },
   });
 
@@ -121,6 +108,10 @@ export function registerBootTasks(): void {
       // 2) the real post chain (N8AO, DOF, shadow + instancing variants) sees
       //    the world for a few frames at exposure 0 — invisible under the
       //    black loading beat — so nothing compiles at the door reveal.
+      // the floor switched to its reflector when 'shaders' finished: compile
+      // that material (and anything else mounted since) off the main thread
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await compileHdr(gl, scene, camera);
       await new Promise<void>(resolve => {
         const ready = (s: string) => !isBoot(s as never) || s === 'boot.loading' || s === 'boot.doors';
         if (ready(useFlow.getState().state)) return resolve();
@@ -170,3 +161,22 @@ const idle = () =>
     if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 1500 });
     else setTimeout(resolve, 200);
   });
+
+/**
+ * Parallel (KHR) compile of every layer's programs against an HDR target:
+ * variants are keyed on the output colour space, and the world always renders
+ * into the composer's linear HalfFloat buffer — compiling for the screen
+ * (sRGB) produced the wrong variants and a 3.3 s synchronous recompile later.
+ */
+async function compileHdr(gl: WebGLRenderer, scene: Scene, camera: Camera): Promise<void> {
+  const mask = camera.layers.mask;
+  camera.layers.enableAll();
+  const probe = new WebGLRenderTarget(4, 4, { type: HalfFloatType });
+  const prevTarget = gl.getRenderTarget();
+  gl.setRenderTarget(probe);
+  const done = gl.compileAsync(scene, camera);
+  gl.setRenderTarget(prevTarget);
+  camera.layers.mask = mask;
+  await done;
+  probe.dispose();
+}

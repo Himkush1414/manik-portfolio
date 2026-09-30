@@ -1,5 +1,5 @@
 // Direct lights for the studio rig: ONE shadow-casting key (warm, slightly
-// Ignition-tinted, top-front-left), two unshadowed rims (Nebula, Ice) and a
+// Ignition-tinted, top-front-left), two unshadowed rim spots (Nebula, Ice) and a
 // low fill. The key is a SPOT cone aimed at the pad (not a directional light)
 // so it never lights the bay doors' outer face. Bias tuned against acne.
 import { useLayoutEffect, useRef } from 'react';
@@ -39,8 +39,11 @@ export function StudioLights({ shadowMapSize = 2048, keyIntensity = 4.2 }: Props
         shadow-mapSize-height={shadowMapSize}
       />
       <primitive object={target.current} />
-      <directionalLight position={[-10, 6, -18]} intensity={1.3} color={HEX.nebula} />
-      <directionalLight position={[12, 5, -16]} intensity={1.1} color={HEX.ice} />
+      {/* rims are narrow, STEEP spots on the pad (not directional): a
+          directional rim grazed the whole deck + walls and tinted the bay
+          lilac; steep cones spend what passes the ship on the dark pad */}
+      <spotLight position={[-9, 21, -19]} target={target.current} angle={0.27} penumbra={0.85} distance={0} decay={0} intensity={1.5} color={HEX.nebula} />
+      <spotLight position={[10, 19, -18]} target={target.current} angle={0.27} penumbra={0.85} distance={0} decay={0} intensity={1.3} color={HEX.ice} />
       <hemisphereLight args={['#1a2040', '#04050A', 0.12]} />
     </>
   );

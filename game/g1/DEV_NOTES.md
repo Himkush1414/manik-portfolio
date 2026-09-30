@@ -13,7 +13,7 @@ this file alone. Updated after every slice.
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
-| 1D Hangar scene | — | |
+| 1D Hangar scene | IN PROGRESS | deck (reflector), bay shell, space vista + force field, pad (rings, pylons, pulse, scan plane), turntable + hangar camera DONE; next: bay details (cranes, beacons, holo displays, steam, sparks, shafts, dust), parked fighters, contact shadow + dissolve shadow, perf |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
 | 1G Cockpit + camera select | — | |
@@ -347,6 +347,36 @@ HDRIs / kit parts if ever needed (none used so far).
   credit card's static hold; the offscreen upload render + full post-chain
   warm-up (exposure 0) run under the black loading beat. Result (prod): boot
   timeline tracks wall-clock (12.15 s), zero stall during the logo sting.
+
+- **Hangar (1D):** `scenes/hangar/` — `Hangar.tsx` composes `bay/Floor`
+  (deck.ts canvas markings + tiled panel normals; drei MeshReflectorMaterial
+  512/1024, plain PBR on LOW), `bay/Bay` (bayGeometry.ts: walls, ribs, ceiling
+  trusses, catwalks + rails, pipes, sagging cable bundles, crane rails, back
+  opening + door wall; merged to 5 draw calls, box-projected UVs 1/4 m, reuses
+  the doors' gunmetal bake), `bay/SpaceVista` (star shell, nebula sphere,
+  planet with night-side city lights + atmosphere fresnel, hex force field),
+  `Pad` (stepped lathe plate, segmented Ignition ring, counter-rotating tick
+  ring, 3 pylons, pulse ring + scan plane driven by `padFx`), turntable.ts
+  (custom controller) and hangarCamera.ts (orbit + breathing + handheld +
+  parallax; `HANGAR_ORBIT` in cameraDirector so VIEWS.hangar = rest pose).
+  Pad view state: `ui.viewedShip` (may be locked) vs `profile.selectedShip`.
+- **Hangar pitfalls (measured):** (1) MeshReflectorMaterial re-renders the
+  whole scene with its OWN camera every frame, even while the boot hides the
+  world — mounted before the parallel compile it linked every world program
+  synchronously (2.3 s stall; the boot timeline ended at 9.0 s of 12.15). The
+  deck stays plain PBR until the `shaders` task is done; warm-up recompiles.
+  (2) The hangar mounts in 5 staged frames (`markContentReady` →
+  `whenContentReady` gates the shader compile — compiling before all stages
+  mounted cost a 3.4 s sync compile). (3) RingGeometry lies in local XY: after
+  a -90 deg x rotation, spin it about local Z, not Y (it tilted under the pad).
+  (4) LatheGeometry profiles listed centre-out face DOWN (culled) — reverse.
+  (5) Directional rim lights graze the whole bay (lilac deck/walls): rims are
+  steep narrow spots now. QA: `tools/qa-hangar.mjs`, `qa-bootlag.mjs`
+  (timeline vs wall clock), `prof-boot.mjs` (CDP per-long-task profile).
+- **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
+  the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
+  `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH
+  51-60 fps at 1080p. AO is the biggest post cost, then DOF (1H perf pass).
 
 ## 9. Known issues
 

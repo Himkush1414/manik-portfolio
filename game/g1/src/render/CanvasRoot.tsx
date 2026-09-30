@@ -40,7 +40,7 @@ export function CanvasRoot({ children }: Props) {
         shadows={{ type: PCFSoftShadowMap }}
         frameloop={hidden ? 'never' : 'always'}
         gl={{ antialias: false, alpha: false, stencil: false, depth: true, powerPreference: 'high-performance' }}
-        camera={{ fov: 30, near: 0.1, far: 600, position: [0, 3, 34] }}
+        camera={{ fov: 30, near: 0.15, far: 1000, position: [0, 3, 34] }}
         onCreated={({ gl, scene }) => {
           gl.setClearColor(CLEAR_COLOR, 1);
           // The void colour MUST be scene.background, not only the clear

@@ -1,7 +1,7 @@
 // The selected ship on the display pad: ShipFactory instance + hover (bob
 // +-0.08 u @ 0.22 Hz, +-0.6 deg roll drift, brief §10) + engine idle/flare.
-// Ship swap = dissolve the current ship out (0.4 s), then the next one in
-// (0.55 s); instant under reduced motion. Locked ships project as a hologram.
+// Ship swap = dissolve the current ship out (0.5 s), then the next one in
+// (0.7 s) with the pad ring pulse + scan-plane sweep; instant under reduced motion. Locked ships project as a hologram.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
@@ -14,9 +14,11 @@ import type { ShipId } from '../../data/ships';
 import { unlockState } from '../../data/unlocks';
 import { SPECS } from '../../ships/specs';
 import { registerDebug } from '../../debug/debugApi';
+import { padMaterialise } from './padFx';
 
-const OUT = 0.4;
-const IN = 0.55;
+// brief §10: ~0.5 s out, ~0.7 s in, with the pad pulse + scan plane
+const OUT = 0.5;
+const IN = 0.7;
 
 export function ShipDisplay({ shipId }: { shipId: ShipId }) {
   const [shown, setShown] = useState(shipId);
@@ -49,6 +51,7 @@ export function ShipDisplay({ shipId }: { shipId: ShipId }) {
     const d = dis.current;
     d.v = 1;
     ship.setDissolve(1);
+    padMaterialise(IN, reduceMotion);
     const tw = gsap.to(d, {
       v: 0,
       duration: IN,

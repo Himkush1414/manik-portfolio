@@ -1,0 +1,97 @@
+// The hangar (brief §11): bay, deck, space vista, pad + turntable ship, and
+// the hangar camera. Input binds to the canvas element only.
+import { useEffect, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import type { Group } from 'three';
+import { Bay } from './bay/Bay';
+import { markContentReady } from '../sceneBridge';
+import { Floor } from './bay/Floor';
+import { SpaceVista } from './bay/SpaceVista';
+import { Pad } from './Pad';
+import { ShipDisplay } from './ShipDisplay';
+import { turntable, updateTurntable, bindTurntable, stepShip } from './turntable';
+import { hangarCam, updateHangarCamera, pushIn } from './hangarCamera';
+import { useFlow } from '../../app/flow';
+import { useUi } from '../../state/ui.store';
+import { useProfile } from '../../state/profile.store';
+import { unlockState } from '../../data/unlocks';
+import type { ShipId } from '../../data/ships';
+import type { EffectiveQuality } from '../../render/perf';
+
+const STAGES = 4;
+
+export function Hangar({ shipId, q, reduceMotion }: { shipId: ShipId; q: EffectiveQuality; reduceMotion: boolean }) {
+  const gl = useThree(s => s.gl);
+  const flowState = useFlow(s => s.state);
+  const inHangar = flowState.startsWith('hangar.');
+  const spin = useRef<Group>(null);
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (step >= STAGES) {
+      markContentReady();
+      return;
+    }
+    const id = requestAnimationFrame(() => setStep(s => s + 1));
+    return () => cancelAnimationFrame(id);
+  }, [step]);
+
+  useEffect(() => {
+    turntable.reduceMotion = reduceMotion;
+  }, [reduceMotion]);
+  useEffect(() => {
+    turntable.enabled = flowState === 'hangar.idle';
+  }, [flowState]);
+
+  // direct hangar entry (no boot dolly) gets the 1.5 s push-in
+  const entered = useRef(false);
+  useEffect(() => {
+    if (!inHangar || entered.current) return;
+    entered.current = true;
+    const cameFromBoot = useFlow.getState().history.some(s => s.startsWith('boot.'));
+    if (!cameFromBoot) pushIn(reduceMotion);
+  }, [inHangar, reduceMotion]);
+
+  useEffect(
+    () =>
+      bindTurntable(gl.domElement, {
+        cycleShip: dir => {
+          const ui = useUi.getState();
+          const profile = useProfile.getState();
+          const next = stepShip(ui.viewedShip ?? profile.selectedShip, dir);
+          ui.setViewedShip(next);
+          if (unlockState(next, profile).unlocked) profile.selectShip(next);
+        },
+        keysBlocked: () => {
+          const a = document.activeElement;
+          return useUi.getState().modal !== null || (a instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+        },
+      }),
+    [gl],
+  );
+
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      hangarCam.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      hangarCam.mouse.y = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+    window.addEventListener('pointermove', move);
+    return () => window.removeEventListener('pointermove', move);
+  }, []);
+
+  useFrame((state, dt) => {
+    updateTurntable(dt);
+    if (spin.current) spin.current.rotation.y = turntable.yaw;
+    if (inHangar && !hangarCam.manual) updateHangarCamera(state.clock.elapsedTime, dt, reduceMotion);
+  });
+
+  return (
+    <>
+      {/* staged mount: one part per frame so no single commit blocks a boot beat */}
+      {step >= 0 && <Floor reflections={q.reflections} />}
+      {step >= 1 && <Bay />}
+      {step >= 2 && <Pad reduceMotion={reduceMotion} />}
+      {step >= 3 && <SpaceVista reduceMotion={reduceMotion} />}
+      <group ref={spin}>{step >= 4 && <ShipDisplay shipId={shipId} />}</group>
+    </>
+  );
+}

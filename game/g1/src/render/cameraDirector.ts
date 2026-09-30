@@ -14,9 +14,34 @@ export const director = {
   roll: 0,
 };
 
+const DEG = Math.PI / 180;
+/** Hangar product-shot orbit (brief §11); scenes/hangar/hangarCamera.ts animates it. */
+export const HANGAR_ORBIT = {
+  target: [-0.3, 2.35, 0] as const, // look point left of the ship => ship sits at ~52% x
+  focus: [0, 2.3, 0] as const,
+  dist: 28.5,
+  elev: 13.5 * DEG,
+  azim: 0,
+  fov: 30,
+  breathe: 0.4,
+  breathePeriod: 9,
+  noise: 0.02,
+  parallax: 0.5,
+  pushFrom: 1.32, // distance multiplier at the start of the load push-in
+} as const;
+
+function orbitRest(): [number, number, number] {
+  const o = HANGAR_ORBIT;
+  return [
+    o.target[0] + Math.sin(o.azim) * Math.cos(o.elev) * o.dist,
+    o.target[1] + Math.sin(o.elev) * o.dist,
+    o.target[2] + Math.cos(o.azim) * Math.cos(o.elev) * o.dist,
+  ];
+}
+
 export const VIEWS = {
   bootGate: { pos: [0, 6.6, 70], look: [0, 6.9, 38], focus: [0, 6.9, 38], fov: 30 },
-  hangar: { pos: [0, 3.4, 33], look: [0, 1.9, 0], focus: [0, 1.9, 0], fov: 30 },
+  hangar: { pos: orbitRest(), look: HANGAR_ORBIT.target, focus: HANGAR_ORBIT.focus, fov: HANGAR_ORBIT.fov },
   // ship QA angles (brief §10 iteration loop)
   ship3q: { pos: [18, 7.5, 22], look: [0, 1.9, 0], focus: [0, 1.9, 0], fov: 30 },
   shipSide: { pos: [33, 2.6, 0.01], look: [0, 2.1, 0], focus: [0, 2.1, 0], fov: 30 },

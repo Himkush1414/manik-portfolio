@@ -11,6 +11,8 @@ import { bootFx } from '../scenes/boot/bootFxParams';
 import { registerDebug } from '../debug/debugApi';
 import { shipThumbnail, type ThumbOptions } from '../render/thumbnails';
 import type { ShipId } from '../data/ships';
+import { hangarCam } from '../scenes/hangar/hangarCamera';
+import { turntable } from '../scenes/hangar/turntable';
 
 let applied = false;
 
@@ -33,7 +35,19 @@ export function applyStartParams(): void {
     state: () => ({ progress: bootDoors.progress, state: bootDoors.state }),
     view: (name: keyof typeof VIEWS) => setView(VIEWS[name]),
   });
-  registerDebug('camera', { view: (name: keyof typeof VIEWS) => setView(VIEWS[name]) });
+  registerDebug('camera', {
+    // QA angles own the camera and hold the turntable at yaw 0 (nose +z)
+    view: (name: keyof typeof VIEWS) => {
+      hangarCam.manual = true;
+      Object.assign(turntable, { frozen: true, yaw: 0, pitch: 0, vel: 0 });
+      setView(VIEWS[name]);
+    },
+    hangar: () => {
+      hangarCam.manual = false;
+      turntable.frozen = false;
+    },
+    turntable: (patch: Partial<typeof turntable>) => Object.assign(turntable, patch),
+  });
   registerDebug('flowState', { get: () => flow.state });
   registerDebug('thumbs', {
     // resolves to a data URL so the QA harness can save it
