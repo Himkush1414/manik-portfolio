@@ -428,6 +428,42 @@ const coarsePointer =
 const rippleFade = document.getElementById('ripple-fade');
 const rippleMount = coarsePointer ? null : document.getElementById('ripple-root');
 if (coarsePointer && rippleFade) rippleFade.style.display = 'none';
+
+// Touch devices get the SVG wordmark's own motion instead (lv2.css, "FOOTER
+// WATERMARK"): it surfaces once when the footer scrolls into view, a sheen
+// sweeps across it (SMIL, #sheenSweep) — paused while off screen, replayed
+// on tap.
+if (coarsePointer && footerWatermark && 'IntersectionObserver' in window) {
+  const wmSvg = footerWatermark.querySelector<SVGSVGElement>('.watermark__svg');
+  const sweep = document.getElementById('sheenSweep') as (SVGAnimationElement & Element) | null;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion) footerWatermark.classList.add('watermark--reveal');
+  wmSvg?.pauseAnimations();
+  new IntersectionObserver(
+    entries => {
+      const visible = entries[entries.length - 1].isIntersecting;
+      if (visible) footerWatermark.classList.add('is-inview');
+      if (!wmSvg) return;
+      if (visible) wmSvg.unpauseAnimations();
+      else wmSvg.pauseAnimations();
+    },
+    { threshold: 0.25 }
+  ).observe(footerWatermark);
+  // .watermark itself is pointer-events:none (it sits under the footer's
+  // depth layers), so listen on the footer and hit-test its box
+  document.getElementById('lv2-footer')?.addEventListener(
+    'touchstart',
+    e => {
+      if (!sweep || reduceMotion) return;
+      const t = e.touches[0];
+      const r = footerWatermark.getBoundingClientRect();
+      if (t && t.clientY >= r.top && t.clientY <= r.bottom && t.clientX >= r.left && t.clientX <= r.right) {
+        sweep.beginElement();
+      }
+    },
+    { passive: true }
+  );
+}
 if (rippleMount) {
   const mountRipple = () => {
     import('./lab/lv1/RippleDistortion')
@@ -451,6 +487,7 @@ if (rippleMount) {
             tint="#8fb8ea"
             tintAmount={0.06}
             highlightColor="#e2efff"
+            edgeFadeTop={0.26}
             style={{ pointerEvents: 'none' }}
           />
         );

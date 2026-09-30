@@ -173,7 +173,12 @@
       <section class="lv2-col lv2-col--mid">
         <div class="lv2-effect">
           <div class="lv2-effect__mount" id="shapeblur-mount"></div>
-          <div class="lv2-effect__logo" id="effect-logo-slot" aria-hidden="true"></div>
+          <div class="lv2-effect__logo" id="effect-logo-slot" aria-hidden="true">
+            <picture>
+              <source srcset="./effect-logo.webp" type="image/webp" />
+              <img src="./effect-logo.png" alt="" width="640" height="459" decoding="async" />
+            </picture>
+          </div>
         </div>
       </section>
 
@@ -421,11 +426,28 @@
         <mask id="baseFadeMask">
           <rect x="-400" y="0" width="2720" height="404" fill="url(#baseFade)" />
         </mask>
+
+        <!-- touch devices only (no cursor for the ripple canvas): a slanted
+             band of light that sweeps across the letters, pauses, repeats.
+             main.tsx restarts it on tap and pauses it while off screen. -->
+        <linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="0" y1="400" x2="480" y2="120">
+          <stop offset="0" stop-color="#F4F9FF" stop-opacity="0" />
+          <stop offset="0.36" stop-color="#F4F9FF" stop-opacity="0" />
+          <stop offset="0.5" stop-color="#F4F9FF" stop-opacity="0.78" />
+          <stop offset="0.64" stop-color="#F4F9FF" stop-opacity="0" />
+          <stop offset="1" stop-color="#F4F9FF" stop-opacity="0" />
+          <animateTransform id="sheenSweep" attributeName="gradientTransform" type="translate"
+                            values="-760 0; 2200 0; 2200 0" keyTimes="0; 0.42; 1"
+                            calcMode="spline" keySplines="0.45 0 0.25 1; 0 0 1 1"
+                            dur="7s" begin="0s" repeatCount="indefinite" />
+        </linearGradient>
       </defs>
 
       <g mask="url(#baseFadeMask)">
         <text class="watermark__fill" x="960" y="400" text-anchor="middle"
               textLength="1854" lengthAdjust="spacing" fill="url(#metal)">Manik Rana</text>
+        <text class="watermark__fill watermark__sheen" x="960" y="400" text-anchor="middle"
+              textLength="1854" lengthAdjust="spacing" fill="url(#sheen)">Manik Rana</text>
       </g>
     </svg>
   </div>

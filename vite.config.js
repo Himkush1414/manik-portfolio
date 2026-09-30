@@ -66,7 +66,7 @@ import { resolve } from "path";
 //  - force no-store on /lab/* HTML so a browser/proxy cache can't pin a stale
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
-const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/lv9/", "/lab/lv10/", "/lab/home-v0/"];
+const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/lv9/", "/lab/lv10/", "/lab/lv12/", "/lab/lv13/", "/lab/home-v0/"];
 const SITE_ROUTES = ["/about/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",

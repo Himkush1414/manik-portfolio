@@ -278,17 +278,26 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
 }
 .lv2-effect__mount > div { width: 100%; height: 100%; }
 .lv2-effect__mount canvas { display: block; }
+/* the MR mark, centred inside ShapeBlur's rounded-square outline. That
+   outline is centred in the (always square) box, and its inner edge sits
+   at ~45% of the box's width (ShapeBlur.tsx: sdRoundRect's 4.2 scale with
+   shapeSize 1 / borderSize 0.11) — 30% leaves the logo an even margin
+   inside it at every size, since both scale with the box. The image is
+   pre-trimmed to the mark's own bounds, so translate(-50%,-50%) centres
+   the mark itself, not empty canvas around it. */
 .lv2-effect__logo {
   position: absolute;
   z-index: 2;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 42%;
-  aspect-ratio: 1 / 1;
-  display: grid;
-  place-items: center;
+  width: 30%;
   pointer-events: none;
+}
+.lv2-effect__logo img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* ---- RIGHT (three numbered sections) ---- */
@@ -1121,4 +1130,106 @@ body.lv2 .lv3-returnnav {
 @media (max-width: 860px) {
   .lv2-shell { padding-top: 4px; }
   .nav.lv2-nav { padding-top: 4px; }
+}
+
+/* ============================================================
+   FOOTER WATERMARK — seam fix (desktop ripple) + touch treatment
+   ============================================================ */
+
+/* The ripple canvas (hover devices only, main.tsx) is opaque and used to
+   stop dead at its top edge, so moving the cursor near it showed a hard
+   horizontal line: rings sliced off mid-wave, the dotted grid lines ending
+   abruptly, and #ripple-fade's own 0.55-alpha top edge on top of that.
+   Now the ripple itself tapers out over the top of the canvas (the
+   edgeFadeTop prop, main.tsx), and the canvas is feathered into the live
+   footer underneath with a mask over that same band — it ends above the
+   letters, so only background is ever blended. A light side feather covers
+   ultra-wide screens, where the canvas is narrower than the viewport. The
+   mask replaces #ripple-fade, so that overlay is switched off here. */
+body.lv2 #ripple-root {
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.16) 6%, rgba(0, 0, 0, 0.5) 12%, rgba(0, 0, 0, 0.86) 18%, #000 23%),
+    linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.16) 6%, rgba(0, 0, 0, 0.5) 12%, rgba(0, 0, 0, 0.86) 18%, #000 23%),
+    linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
+  mask-composite: intersect;
+}
+body.lv2 #ripple-fade { display: none; }
+
+/* styles.css shrinks the wordmark's font-size at <=1200/<=860, but the
+   text also carries textLength="1854" — so a smaller font just gets its
+   letters spread apart ("M a n i k  R a n a") instead of shrinking. The
+   SVG's viewBox already scales it to the screen, so it keeps its 400-unit
+   size everywhere (also matching the ripple canvas's own texture). */
+body.lv2 #lv2-footer .watermark__fill {
+  font-size: 400px;
+  letter-spacing: -2px;
+}
+
+/* ---- touch devices: no cursor to drive the ripple canvas, so the crisp
+   SVG wordmark gets its own motion instead ---- */
+.watermark__sheen { display: none; }
+
+@media (hover: none), (pointer: coarse) {
+  body.lv2 #lv2-footer .watermark__sheen { display: inline; }
+
+  /* soft, slowly breathing underwater light behind the letters */
+  body.lv2 #lv2-footer .watermark::before {
+    content: '';
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    bottom: 0;
+    height: 92%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(52% 62% at 50% 80%,
+      rgba(112, 164, 230, 0.32) 0%,
+      rgba(78, 128, 196, 0.12) 52%,
+      rgba(60, 100, 170, 0) 76%);
+    filter: blur(16px);
+    animation: lv2WatermarkGlow 6s ease-in-out infinite alternate;
+  }
+
+  /* surfaces from below its own box (clipped, like breaking a waterline)
+     the first time the footer scrolls into view — main.tsx adds
+     .watermark--reveal, then .is-inview */
+  body.lv2 #lv2-footer .watermark--reveal { overflow: hidden; }
+  body.lv2 #lv2-footer .watermark--reveal .watermark__svg {
+    opacity: 0;
+    transform: translateY(24%);
+    filter: blur(6px);
+    transition:
+      opacity 1.1s cubic-bezier(0.2, 0.7, 0.2, 1),
+      transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+      filter 1.1s ease;
+  }
+  body.lv2 #lv2-footer .watermark--reveal.is-inview .watermark__svg {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes lv2WatermarkGlow {
+  from { opacity: 0.5; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1.04); }
+}
+
+/* the "deep water" backdrop blur is sized in % of the footer's height —
+   right for the 100vh desktop footer (it softens only the letters' lower
+   third), but the phone footer is a tall single column with a short name
+   at the bottom, so the same % covered and smeared the whole name. Sized
+   off the wordmark's own (width-bound) height instead: the name is
+   ~20.8vw tall here, and these keep the blur to its lower third again. */
+@media (max-width: 860px) {
+  body.lv2 #lv2-footer .hero__depth { height: 44vw; }
+  body.lv2 #lv2-footer .hero__depth2 { height: 22vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.lv2 #lv2-footer .watermark__sheen { display: none; }
+  body.lv2 #lv2-footer .watermark::before { animation: none; opacity: 0.8; }
 }

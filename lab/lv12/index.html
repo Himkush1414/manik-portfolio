@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — LV12</title>
+<meta name="description" content="Manik Rana — LV12: isolated preview of a cinematic loading-screen concept (centered Lottie mark + matte grain background), reviewed standalone before any real route is built around it." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<!-- The REAL Home<->About strip transition's own stylesheet (not a copy —
+     see main.tsx for why this route triggers the actual lv6-transition.ts
+     mechanism instead of rebuilding it). -->
+<link rel="stylesheet" href="../../lv6-transition.css" />
+<link rel="stylesheet" href="./lv12.css" />
+</head>
+<body>
+
+<div id="lv12-root" class="lv12">
+
+  <!-- ===================== LOADER ===================== -->
+  <div class="lv12-loader" id="lv12-loader">
+    <!-- Matte background: a diagonal two-tone gradient (no pure black
+         anywhere) plus an SVG feTurbulence noise layer at very low
+         opacity, so it reads as material grain rather than visible
+         static. Unchanged from the previous version of this route. -->
+    <div class="lv12-bg" aria-hidden="true"></div>
+    <div class="lv12-grain" aria-hidden="true"></div>
+
+    <!-- Lottie mount (main.tsx) — centered, autoplay, no loop, no player
+         chrome. Replaces the previous version's clip-path name reveal. -->
+    <div class="lv12-stage">
+      <div class="lv12-lottie" id="lv12-lottie-mount"></div>
+    </div>
+  </div>
+
+  <!-- ===================== PLACEHOLDER (post-loader) =====================
+       Stands in for the real homepage, which is deliberately NOT built or
+       copied in here yet — this route exists only to review the loader
+       above in isolation. -->
+  <div class="lv12-placeholder" id="lv12-placeholder">
+    <p>loading complete — home page will go here</p>
+  </div>
+
+</div>
+
+<!-- ===================== STRIP TRANSITION OVERLAY =====================
+     Identical markup to the root site's own #lv6-transition /
+     #lv6-transition-mobile (index.html) — same element count (7 desktop
+     columns, 5 mobile bars), same classes, styled by the same
+     lv6-transition.css linked above, driven by the same
+     strip-transition.ts this route imports in main.tsx. Not a rebuild. -->
+<div id="lv6-transition" class="lv6-transition" aria-hidden="true">
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+  <span class="lv6-transition__col"></span>
+</div>
+<div id="lv6-transition-mobile" class="lv6-transition-mobile" aria-hidden="true">
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+  <span class="lv6-transition-mobile__bar"></span>
+</div>
+
+<!-- Inline SVG noise source for .lv12-grain (feTurbulence, same technique
+     the root index.html already uses for its own fog-distortion filter —
+     kept out of CSS since filters/noise generators can't live in a
+     stylesheet). Zero-size, never visually rendered itself. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <filter id="lv12-noise" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise" />
+    <!-- RGB forced to white; alpha driven by the turbulence's own R/G/B
+         (not its own alpha, which is flat) so the grain actually varies
+         in visibility instead of reading as one uniform wash. -->
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.02 0.02 0.02 0 0" />
+  </filter>
+</svg>
+
+<script type="module" src="./main.tsx"></script>
+</body>
+</html>

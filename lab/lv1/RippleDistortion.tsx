@@ -79,6 +79,7 @@ uniform float uDispersion;
 uniform float uGlint;
 uniform float uTintAmount;
 uniform float uGrayscale;
+uniform float uEdgeTop;
 
 const float TAU = 6.283185307179586;
 
@@ -92,6 +93,9 @@ vec2 coverUV(vec2 uv) {
 
 void main() {
   float amount = texture2D(uDisplacement, vUv).r;
+  // Optional: taper the ripple to nothing over the top uEdgeTop of the
+  // canvas, so rings never get sliced off by its hard top edge (0 = off).
+  if (uEdgeTop > 0.0) amount *= smoothstep(0.0, uEdgeTop, 1.0 - vUv.y);
   vec2 base = coverUV(vUv);
 
   float theta = amount * uSwirl * TAU;
@@ -155,6 +159,9 @@ export interface RippleDistortionProps {
   clickStrength?: number;
   quality?: RippleQuality;
   enabled?: boolean;
+  /** Fraction (0-1) of the canvas height, from its top edge, over which the
+   *  ripple fades out. 0 (default) leaves the edge untouched. */
+  edgeFadeTop?: number;
   className?: string;
   style?: CSSProperties;
 }
@@ -192,6 +199,7 @@ interface CompositeUniforms {
   uGlint: { value: number };
   uTintAmount: { value: number };
   uGrayscale: { value: number };
+  uEdgeTop: { value: number };
   [key: string]: { value: unknown };
 }
 
@@ -238,6 +246,7 @@ const RippleDistortion = ({
   clickStrength = 2,
   quality = 'low',
   enabled = true,
+  edgeFadeTop = 0,
   className = '',
   style
 }: RippleDistortionProps) => {
@@ -359,7 +368,8 @@ const RippleDistortion = ({
       uDispersion: { value: dispersion },
       uGlint: { value: glint },
       uTintAmount: { value: tintAmount },
-      uGrayscale: { value: grayscale ? 1 : 0 }
+      uGrayscale: { value: grayscale ? 1 : 0 },
+      uEdgeTop: { value: edgeFadeTop }
     };
 
     const compositeMesh = new Mesh(gl, {
@@ -514,7 +524,8 @@ const RippleDistortion = ({
     u.composite.uGrayscale.value = grayscale ? 1 : 0;
     u.composite.uHighlight.value = hexToRGB(highlightColor);
     u.composite.uTint.value = hexToRGB(tint);
-  }, [rings, strength, swirl, dispersion, glint, tintAmount, grayscale, highlightColor, tint]);
+    u.composite.uEdgeTop.value = edgeFadeTop;
+  }, [rings, strength, swirl, dispersion, glint, tintAmount, grayscale, highlightColor, tint, edgeFadeTop]);
 
   return (
     <div

@@ -1,0 +1,593 @@
+/* /lab/lv13/ — standalone Contact-page concept preview. Nothing here is
+   imported by or shared with any other route (checked first — see the
+   chat reply for why the existing cursor-follow pieces weren't reused
+   as-is); the underline-wipe tab hover and the matte/grain background
+   treatment deliberately mirror techniques already established elsewhere
+   on the site (projects.css's .lv7-nav__link, home-loader.css). */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: auto; } /* GSAP ScrollTrigger drives Section 2's scroll-lit copy; native smooth-scroll would fight it */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #030303;
+  color: #EDEAE3;
+  font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+.lv13 { position: relative; }
+
+a { color: inherit; }
+
+/* ===================== CUSTOM CURSOR ===================== */
+
+#lv13-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #EDEAE3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate3d(-50%, -50%, 0);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, width, height;
+}
+#lv13-cursor.is-hover { width: 86px; height: 86px; }
+#lv13-cursor.is-drag { width: 60px; height: 60px; background: #EDEAE3; }
+.lv13-cursor__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0A0A0C;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.08s;
+  white-space: nowrap;
+}
+#lv13-cursor.is-hover .lv13-cursor__label,
+#lv13-cursor.is-drag .lv13-cursor__label { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .lv13, .lv13 * { cursor: none; }
+}
+
+/* ===================== NAV =====================
+   Three independently-positioned pieces — brand (left), tabs (right) and
+   a pill background that fades/wraps in behind them — geometry driven
+   1:1 by scroll position every frame in main.tsx (no CSS transition on
+   left/right/top: this needs to visibly TRACK scroll, not ease toward a
+   target after the fact). Base values here are the "top of page" state;
+   main.tsx interpolates from these toward the shrunk-state target it
+   computes at runtime from actual measured element widths. */
+
+.lv13-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 500;
+  height: 0; /* purely a positioning root — brand/tabs/pillbg are their own fixed-position children */
+  pointer-events: none;
+}
+.lv13-nav a, .lv13-nav__tabs { pointer-events: auto; }
+
+.lv13-nav__pillbg {
+  position: fixed;
+  border-radius: 999px;
+  background: rgba(18, 18, 20, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity, width, height;
+}
+
+.lv13-nav__brand {
+  position: fixed;
+  top: 40px;
+  left: 56px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  will-change: left, top;
+}
+.lv13-nav__mark { width: 30px; height: 30px; object-fit: contain; display: block; }
+.lv13-nav__name {
+  display: inline-block;
+  max-width: 160px;
+  margin-left: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: #EDEAE3;
+  opacity: 1;
+  transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-left 0.4s ease;
+}
+.lv13-nav.is-shrunk .lv13-nav__name { max-width: 0; opacity: 0; margin-left: 0; }
+
+.lv13-nav__tabs {
+  position: fixed;
+  top: 40px;
+  right: 56px;
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  will-change: right, top, gap;
+}
+
+.lv13-nav__tab {
+  position: relative;
+  text-decoration: none;
+  color: #EDEAE3;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 4px 1px;
+}
+.lv13-nav__tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.lv13-nav__tab:hover::after,
+.lv13-nav__tab:focus-visible::after { transform: scaleX(1); }
+
+/* ===================== SECTION 1 — HERO ===================== */
+
+.lv13-hero {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.lv13-hero__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 22% 18%, #17171a 0%, #101012 42%, #0a0a0c 78%),
+    linear-gradient(155deg, #141416 0%, #0a0a0c 60%, #08080a 100%);
+}
+.lv13-hero__grain {
+  position: absolute;
+  inset: 0;
+  filter: url(#lv13-noise);
+}
+.lv13-hero__word {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: 'Bebas Neue', ui-sans-serif, sans-serif;
+  font-size: min(200px, 19vw);
+  line-height: 0.82;
+  letter-spacing: 0.01em;
+  color: #EDEAE3;
+  text-transform: uppercase;
+}
+.lv13-hero__word span {
+  display: inline-block;
+  transform: scaleY(1.22);
+  transform-origin: 50% 100%;
+}
+
+/* ===================== SECTION 2 — SCROLL-LIT COPY =====================
+   Full-width now (was a ~46vw left column) — a wide, generous paragraph
+   column rather than a narrow stack. Scroll-lit brighten mechanism is
+   unchanged (main.tsx), just applied across more/longer lines. */
+
+.lv13-copy {
+  position: relative;
+  min-height: 110vh;
+  background: #030303;
+  display: flex;
+  justify-content: center;
+}
+.lv13-copy__col {
+  width: min(1360px, 86vw);
+  padding: 100px 0 90px;
+}
+.lv13-copy__lines {
+  margin: 0;
+  display: block;
+}
+.lv13-copy__line {
+  display: block;
+  max-width: 960px;
+  font-size: 33px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: rgba(237, 234, 227, 0.16); /* scroll-lit brighten target set by main.tsx/GSAP */
+  margin-bottom: 14px;
+}
+.lv13-copy__cta {
+  margin: 90px 0 0;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: rgba(237, 234, 227, 0.16);
+}
+
+/* ===================== SECTION 3 — CARD WHEEL =====================
+   No longer scroll-jacked/pinned — a normal-flow block the page scrolls
+   straight past. main.tsx drives card position purely via pointer drag.
+   Tightened top spacing so this sits right under Section 2 instead of
+   leaving a tall gap. */
+
+.lv13-wheel-section {
+  position: relative;
+  padding: 56px 0 90px;
+  background: #030303;
+}
+.lv13-wheel__eyebrow {
+  margin: 0 0 36px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(237, 234, 227, 0.42);
+}
+.lv13-wheel__hint {
+  margin: 30px 0 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(237, 234, 227, 0.32);
+}
+.lv13-wheel-stage {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  perspective: 1500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* drag claims horizontal gesture; vertical page scroll still passes
+     through untouched on touch devices */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lv13-wheel-track {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 1px; /* cards are absolutely positioned from this single anchor point */
+  height: 1px;
+  transform-style: preserve-3d;
+}
+.lv13-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300px;
+  height: 400px;
+  margin: -200px 0 0 -150px;
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+}
+.lv13-card.is-active { outline: 2px solid rgba(237, 234, 227, 0.55); outline-offset: 3px; }
+/* Section 3 -> 4 handoff (main.tsx: Flip.from + appendChild into
+   #lv13-detail-photo-slot, on CLICK now, not a scroll trigger) — the SAME
+   .lv13-card node is re-parented and restyled to fill the slot, not
+   swapped for a new element. */
+.lv13-card--docked {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
+  padding: 0;
+}
+.lv13-card__img {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.lv13-card__img::before {
+  content: attr(data-letter);
+  position: absolute;
+  right: -0.08em;
+  bottom: -0.22em;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 220px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+.lv13-card__img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.65) 100%);
+}
+.lv13-card[data-tone="a"] .lv13-card__img { background: linear-gradient(150deg, #1c2b4a 0%, #0d1524 100%); }
+.lv13-card[data-tone="b"] .lv13-card__img { background: linear-gradient(150deg, #1d3d33 0%, #0c1d18 100%); }
+.lv13-card[data-tone="c"] .lv13-card__img { background: linear-gradient(150deg, #3a2a1a 0%, #1c130b 100%); }
+.lv13-card[data-tone="d"] .lv13-card__img { background: linear-gradient(150deg, #33213f 0%, #180f1e 100%); }
+.lv13-card[data-tone="e"] .lv13-card__img { background: linear-gradient(150deg, #3c1f24 0%, #1c0e10 100%); }
+
+.lv13-card__title {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #F5F3EF;
+}
+.lv13-card__desc {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(245, 243, 239, 0.78);
+}
+
+/* ===================== SECTION 4 — DETAIL + PRICING =====================
+   Collapsed to zero height by default — main.tsx animates .lv13-detail-wrap's
+   `height` (a measured pixel value, not max-height:<arbitrary-large>) from
+   0 open/closed, so it reserves no layout space and isn't in the tab order
+   (inert) while closed. Lives inside Section 3 so it slides in directly
+   below the wheel without a page-scroll, and the wheel's own background
+   continues straight through underneath — no seam. */
+
+.lv13-detail-wrap {
+  height: 0;
+  overflow: hidden;
+}
+.lv13-detail {
+  position: relative;
+  background: #030303;
+  padding: 70px 8vw 10px;
+}
+.lv13-detail__top {
+  display: flex;
+  gap: 64px;
+  align-items: flex-start;
+  margin-bottom: 80px;
+}
+.lv13-detail__photo-slot {
+  flex: 0 0 auto;
+  width: 420px;
+  height: 600px;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+}
+.lv13-detail__copy {
+  flex: 1 1 auto;
+  padding-top: 48px;
+  max-width: 560px;
+}
+.lv13-detail__eyebrow {
+  margin: 0 0 20px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 46px;
+  letter-spacing: 0.01em;
+  color: #EDEAE3;
+}
+.lv13-detail__text {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.75;
+  color: rgba(237, 234, 227, 0.74);
+}
+
+/* ---- pricing: stronger hierarchy — Growth reads as the recommended
+   choice via scale/elevation/accent border, not just a translateY nudge;
+   each box gets a real header row (index + name), a closing line, and a
+   hover lift instead of plain stacked text. ---- */
+.lv13-pricing {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 28px;
+}
+.lv13-pricing__tier {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 36px 34px 30px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+.lv13-pricing__tier:hover { transform: translateY(-8px); border-color: rgba(237, 234, 227, 0.28); }
+.lv13-pricing__tier--mid {
+  background: linear-gradient(165deg, rgba(237, 234, 227, 0.1) 0%, rgba(237, 234, 227, 0.02) 100%);
+  border: 1px solid rgba(237, 234, 227, 0.32);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(237, 234, 227, 0.05) inset;
+  transform: scale(1.06) translateY(-18px);
+  z-index: 1;
+}
+.lv13-pricing__tier--mid:hover { transform: scale(1.06) translateY(-24px); }
+.lv13-pricing__tag {
+  position: absolute;
+  top: -13px;
+  left: 34px;
+  margin: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #EDEAE3;
+  color: #0A0A0C;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.lv13-pricing__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lv13-pricing__index {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  color: rgba(237, 234, 227, 0.38);
+}
+.lv13-pricing__name {
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 0.02em;
+  color: #F5F3EF;
+}
+.lv13-pricing__scope {
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: rgba(237, 234, 227, 0.68);
+}
+.lv13-pricing__list {
+  margin: 0 0 auto;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  font-size: 13.5px;
+  color: rgba(237, 234, 227, 0.86);
+}
+.lv13-pricing__list li { position: relative; padding-left: 20px; }
+.lv13-pricing__list li::before {
+  content: '\2713';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  font-size: 11px;
+  color: rgba(237, 234, 227, 0.5);
+}
+.lv13-pricing__foot {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(237, 234, 227, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===================== SECTION 5 — FOOTER =====================
+   Distinct background from Section 3/4's #030303 — a step lighter, warm-
+   neutral near-black so the boundary reads clearly without breaking the
+   matte language. */
+
+.lv13-footer {
+  position: relative;
+  background: #0c0b0e;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 64px 8vw 32px;
+}
+.lv13-footer__cols {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  padding-bottom: 48px;
+}
+.lv13-footer__col--brand { flex: 1 1 auto; }
+.lv13-footer__logo { width: 44px; height: auto; object-fit: contain; opacity: 0.92; }
+.lv13-footer__label {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(237, 234, 227, 0.42);
+}
+.lv13-footer__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lv13-footer__list a { text-decoration: none; font-size: 14px; color: rgba(237, 234, 227, 0.82); transition: color 0.25s ease; }
+.lv13-footer__list a:hover { color: #EDEAE3; }
+.lv13-footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12.5px;
+  color: rgba(237, 234, 227, 0.42);
+}
+.lv13-footer__legal { display: flex; gap: 22px; }
+.lv13-footer__legal a { text-decoration: none; color: inherit; transition: color 0.25s ease; }
+.lv13-footer__legal a:hover { color: #EDEAE3; }
+
+/* ===================== RESPONSIVE (touch / narrow) =====================
+   Same convention the rest of the site uses (projects-rows.ts,
+   projects-cursor-trail.ts, ShapeBlur/RippleDistortion's coarsePointer
+   checks): complex desktop-only interaction — the custom cursor, the
+   drag-to-spin wheel, the FLIP handoff, the scroll-tied nav closing-in —
+   is skipped outright on coarse pointers / narrow viewports, and CSS here
+   provides the static fallback layout main.tsx switches to. */
+@media (max-width: 860px), (hover: none), (pointer: coarse) {
+  .lv13-nav__brand { left: 20px; top: 18px; }
+  .lv13-nav__tabs { right: 20px; top: 18px; gap: 16px; }
+
+  .lv13-hero__word { font-size: min(120px, 22vw); }
+
+  .lv13-copy__col { width: 100%; padding: 70px 7vw 60px; }
+  .lv13-copy__line { font-size: 24px; max-width: 100%; }
+  .lv13-copy__cta { margin-top: 60px; font-size: 24px; }
+
+  .lv13-wheel-section { padding: 30px 0 60px; }
+  .lv13-wheel-stage { perspective: none; height: auto; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; padding: 0 7vw; scroll-snap-type: x proximity; touch-action: pan-x pan-y; }
+  .lv13-wheel-track { position: static; display: flex; gap: 18px; width: max-content; height: auto; }
+  .lv13-card { position: static; margin: 0; width: 240px; height: 320px; scroll-snap-align: center; transform: none !important; }
+  .lv13-card__img::before { font-size: 140px; }
+  .lv13-wheel__hint { display: none; }
+
+  .lv13-detail { padding: 50px 7vw 10px; }
+  .lv13-detail__top { flex-direction: column; gap: 32px; margin-bottom: 50px; }
+  .lv13-detail__photo-slot { width: 100%; max-width: 420px; height: 420px; }
+  .lv13-detail__copy { padding-top: 0; }
+
+  .lv13-pricing { grid-template-columns: 1fr; }
+  .lv13-pricing__tier, .lv13-pricing__tier--mid { max-width: 100%; aspect-ratio: auto; transform: none !important; }
+  .lv13-pricing__tier--mid { margin-top: 24px; }
+
+  .lv13-footer__cols { flex-direction: column; gap: 32px; }
+}

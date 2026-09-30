@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manik Rana — Contact</title>
+<meta name="description" content="Manik Rana — LV13: standalone preview of a new Contact page concept (scroll-lit copy, a drag-to-spin curved card wheel with a click-to-reveal pricing panel). Not linked from anywhere yet." />
+<link rel="icon" type="image/png" href="../../assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Bebas Neue — already the site's own condensed display face (used for
+     e.g. the Skill & Fun hero) and, unlike a normal weight/width axis,
+     it's tall/condensed BY DESIGN, which is exactly the "stretched
+     upward, classic display caps" treatment the hero word asks for. Sora
+     is the site's body/UI face everywhere else, reused here for the same
+     consistency. -->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./lv13.css" />
+</head>
+<body class="lv13">
+
+<!-- Custom cursor — see main.tsx: a genuinely new implementation for this
+     page (checked first; see the chat reply for why neither existing
+     cursor-follow piece in the codebase — projects-cursor-trail.ts's
+     difference-blend canvas box, sized/coloured for Projects/Contact's
+     own flat two-tone palette, or projects-rows.ts's per-row pill,
+     constrained to hover-within-one-row — fits a global, varied-background,
+     enlarge-with-label cursor for a new page). Desktop/fine-pointer only,
+     same convention every other cursor-follow effect on this site already
+     uses (coarse pointers get no listeners at all, not just a hidden box). -->
+<div id="lv13-cursor" aria-hidden="true">
+  <span class="lv13-cursor__label"></span>
+</div>
+
+<!-- Matte grain source — same feTurbulence technique as the home page's
+     loader (home-loader.css) and /lab/lv12/, own filter id so nothing
+     collides if this is ever viewed alongside those. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <filter id="lv13-noise" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise" />
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.02 0.02 0.02 0 0" />
+  </filter>
+</svg>
+
+<!-- ===================== NAV =====================
+     Three independently-positioned pieces (brand, tabs, and a pill
+     background that fades/wraps in behind them), not one element with a
+     class toggle — main.tsx interpolates brand's `left` and tabs' `right`
+     continuously against scroll position, so they visibly close the gap
+     together as the user scrolls rather than snapping at a threshold.
+     See main.tsx for the exact method. -->
+<nav class="lv13-nav" id="lv13-nav" aria-label="Primary">
+  <div class="lv13-nav__pillbg" id="lv13-nav-pillbg" aria-hidden="true"></div>
+  <a class="lv13-nav__brand" id="lv13-nav-brand" href="#top" data-cursor-label="Home">
+    <picture>
+      <source srcset="../../nav-logo-mark.webp" type="image/webp" />
+      <img src="../../nav-logo-mark.png" alt="" class="lv13-nav__mark" width="220" height="147" />
+    </picture>
+    <span class="lv13-nav__name">Manik Rana</span>
+  </a>
+  <div class="lv13-nav__tabs" id="lv13-nav-tabs">
+    <a class="lv13-nav__tab" href="#top">Home</a>
+    <a class="lv13-nav__tab" href="#top">About</a>
+    <a class="lv13-nav__tab" href="#top">Projects</a>
+    <a class="lv13-nav__tab" href="#top">Skills</a>
+  </div>
+</nav>
+
+<main id="top">
+
+  <!-- ===================== SECTION 1 — HERO ===================== -->
+  <section class="lv13-hero" id="lv13-hero">
+    <div class="lv13-hero__bg" aria-hidden="true"></div>
+    <div class="lv13-hero__grain" aria-hidden="true"></div>
+    <h1 class="lv13-hero__word" aria-label="Contact">
+      <span aria-hidden="true">Contact</span>
+    </h1>
+  </section>
+
+  <!-- ===================== SECTION 2 — SCROLL-LIT COPY =====================
+       Full-width now (was a ~46vw left column) — see lv13.css. -->
+  <section class="lv13-copy" id="lv13-copy">
+    <div class="lv13-copy__col">
+      <p class="lv13-copy__lines" id="lv13-copy-lines">
+        <span class="lv13-copy__line">I build fast. I build clean.</span>
+        <span class="lv13-copy__line">Every interface earns its motion — nothing moves without a reason, nothing loads without intent.</span>
+        <span class="lv13-copy__line">I'd rather ship one thing that feels inevitable than ten things that just look busy.</span>
+        <span class="lv13-copy__line">That means fewer dependencies, faster paint times, and interactions that respond the instant you touch them.</span>
+        <span class="lv13-copy__line">Design and code happen in the same head here, so nothing gets lost in translation between the two.</span>
+        <span class="lv13-copy__line">You bring the problem. I bring the craft, the speed, and an unreasonable amount of attention to detail.</span>
+        <span class="lv13-copy__line">This is what working together actually looks like.</span>
+      </p>
+      <p class="lv13-copy__cta" id="lv13-copy-cta">Book your preferred website</p>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 3 — CARD WHEEL =====================
+       No longer scroll-jacked — main.tsx now drives this purely by
+       pointer drag (mouse/touch); normal page scroll passes straight
+       through. See main.tsx for the drag/inertia implementation. -->
+  <section class="lv13-wheel-section" id="lv13-wheel-section">
+    <p class="lv13-wheel__eyebrow">What I build</p>
+    <div class="lv13-wheel-stage" id="lv13-wheel-stage" data-cursor-label="Drag">
+      <ul class="lv13-wheel-track" id="lv13-wheel-track">
+        <li class="lv13-card" data-index="0" data-tone="a">
+          <div class="lv13-card__img" data-cursor-label="View" data-letter="P"></div>
+          <h3 class="lv13-card__title">Portfolio</h3>
+          <p class="lv13-card__desc">A quiet, confident showcase — built to make the work do the talking.</p>
+        </li>
+        <li class="lv13-card" data-index="1" data-tone="b">
+          <div class="lv13-card__img" data-cursor-label="View" data-letter="E"></div>
+          <h3 class="lv13-card__title">E-Commerce</h3>
+          <p class="lv13-card__desc">Fast product pages and a checkout that doesn't lose people halfway through.</p>
+        </li>
+        <li class="lv13-card" data-index="2" data-tone="c">
+          <div class="lv13-card__img" data-cursor-label="View" data-letter="S"></div>
+          <h3 class="lv13-card__title">SaaS Landing</h3>
+          <p class="lv13-card__desc">One clear pitch, one clear action — built to convert, not just to look nice.</p>
+        </li>
+        <li class="lv13-card" data-index="3" data-tone="d">
+          <div class="lv13-card__img" data-cursor-label="View" data-letter="B"></div>
+          <h3 class="lv13-card__title">Personal Brand</h3>
+          <p class="lv13-card__desc">A site that reads like you — considered, distinct, and easy to update.</p>
+        </li>
+        <li class="lv13-card" data-index="4" data-tone="e">
+          <div class="lv13-card__img" data-cursor-label="View" data-letter="R"></div>
+          <h3 class="lv13-card__title">Restaurant &amp; Local</h3>
+          <p class="lv13-card__desc">Menu, hours, location and booking — the things people actually open the site for.</p>
+        </li>
+      </ul>
+    </div>
+    <p class="lv13-wheel__hint" id="lv13-wheel-hint">Drag to explore — click a card for details</p>
+
+    <!-- ===================== SECTION 4 — DETAIL + PRICING =====================
+         Collapsed to zero height by default (lv13.css: max-height:0,
+         overflow:hidden — not opacity, so it reserves no space and isn't
+         reachable by keyboard/AT either) until a card is clicked
+         (main.tsx). Lives INSIDE Section 3 on purpose: it slides open
+         directly below the wheel and pushes the footer down, and the
+         wheel itself (this section's own background/eyebrow) stays
+         visible above it rather than being a separate scroll-triggered
+         section. -->
+    <div class="lv13-detail-wrap" id="lv13-detail-wrap">
+      <div class="lv13-detail" id="lv13-detail">
+        <div class="lv13-detail__top">
+          <div class="lv13-detail__photo-slot" id="lv13-detail-photo-slot" aria-hidden="true"></div>
+          <div class="lv13-detail__copy">
+            <p class="lv13-detail__eyebrow" id="lv13-detail-eyebrow">Portfolio</p>
+            <p class="lv13-detail__text" id="lv13-detail-text">
+              A quiet, confident showcase built entirely around the work itself.
+            </p>
+          </div>
+        </div>
+
+        <div class="lv13-pricing" id="lv13-pricing">
+          <div class="lv13-pricing__tier" data-cursor-label="Enquire">
+            <div class="lv13-pricing__head">
+              <span class="lv13-pricing__index">01</span>
+              <p class="lv13-pricing__name">Starter</p>
+            </div>
+            <p class="lv13-pricing__scope">A single, polished one-pager — everything a first impression needs and nothing it doesn't.</p>
+            <ul class="lv13-pricing__list">
+              <li>Single-page build</li>
+              <li>Responsive, all devices</li>
+              <li>Core on-page SEO</li>
+              <li>1 revision round</li>
+            </ul>
+            <p class="lv13-pricing__foot">Best for a fast, focused launch <span aria-hidden="true">&rarr;</span></p>
+          </div>
+          <div class="lv13-pricing__tier lv13-pricing__tier--mid" data-cursor-label="Enquire">
+            <p class="lv13-pricing__tag">Recommended</p>
+            <div class="lv13-pricing__head">
+              <span class="lv13-pricing__index">02</span>
+              <p class="lv13-pricing__name">Growth</p>
+            </div>
+            <p class="lv13-pricing__scope">A multi-page site with a CMS you can actually edit, plus the analytics to know it's working.</p>
+            <ul class="lv13-pricing__list">
+              <li>Up to 5 pages</li>
+              <li>Editable content (CMS)</li>
+              <li>Analytics + SEO setup</li>
+              <li>2 revision rounds</li>
+            </ul>
+            <p class="lv13-pricing__foot">Best for a growing business <span aria-hidden="true">&rarr;</span></p>
+          </div>
+          <div class="lv13-pricing__tier" data-cursor-label="Enquire">
+            <div class="lv13-pricing__head">
+              <span class="lv13-pricing__index">03</span>
+              <p class="lv13-pricing__name">Premium</p>
+            </div>
+            <p class="lv13-pricing__scope">A fully custom build — bespoke interaction design, integrations, and support that doesn't disappear after launch.</p>
+            <ul class="lv13-pricing__list">
+              <li>Fully custom design</li>
+              <li>Advanced interactions</li>
+              <li>Integrations (booking, payments…)</li>
+              <li>Priority support</li>
+            </ul>
+            <p class="lv13-pricing__foot">Best for a serious, standout brand <span aria-hidden="true">&rarr;</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 5 — FOOTER =====================
+       Content/structure lifted from the real site's own Projects/Contact
+       footer (index.html's .lv7-footer — logo, Navigation, Social,
+       copyright/legal), restyled into this page's dark palette rather
+       than reinvented from scratch. Own background colour (lv13.css),
+       visibly distinct from Section 3/4's #030303. -->
+  <footer class="lv13-footer">
+    <div class="lv13-footer__cols">
+      <div class="lv13-footer__col lv13-footer__col--brand">
+        <picture>
+          <source srcset="../../nav-logo-mark.webp" type="image/webp" />
+          <img src="../../nav-logo-mark.png" alt="Manik Rana" class="lv13-footer__logo" width="220" height="147" />
+        </picture>
+      </div>
+      <div class="lv13-footer__col">
+        <p class="lv13-footer__label">Navigation</p>
+        <ul class="lv13-footer__list">
+          <li><a href="#top">Home</a></li>
+          <li><a href="#top">About</a></li>
+          <li><a href="#top">Projects</a></li>
+          <li><a href="#top">Skills</a></li>
+        </ul>
+      </div>
+      <div class="lv13-footer__col">
+        <p class="lv13-footer__label">Social</p>
+        <ul class="lv13-footer__list">
+          <li><a href="https://www.linkedin.com/in/manik-rana-752154277" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://github.com/Himkush1414" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="mailto:manikrana831@gmail.com">Gmail</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="lv13-footer__bottom">
+      <p class="lv13-footer__copy">&copy; 2026 | Manik Rana</p>
+      <div class="lv13-footer__legal">
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#terms">Terms of Use</a>
+      </div>
+    </div>
+  </footer>
+
+</main>
+
+<script type="module" src="./main.tsx"></script>
+</body>
+</html>

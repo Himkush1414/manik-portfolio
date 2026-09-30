@@ -1,0 +1,110 @@
+/* /lab/lv12/ — isolated loader preview. Nothing here is shared with any
+   other route; no CSS variables, classes or fonts borrowed from the real
+   site on purpose, so this can be judged purely on its own. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #0a0a0c;
+}
+
+.lv12 {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ===================== LOADER ===================== */
+
+.lv12-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* the exit transition (JS adds .is-exiting): a clean, quick fade —
+     nothing to prove here beyond "doesn't just cut to blank" */
+  opacity: 1;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.lv12-loader.is-exiting { opacity: 0; pointer-events: none; }
+
+/* Matte near-black background: a soft diagonal/radial blend between two
+   close dark tones (never pure #000) — this alone is what kills the
+   flat/plasticky look before the grain layer even gets involved. */
+.lv12-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 22% 18%, #17171a 0%, #101012 42%, #0a0a0c 78%),
+    linear-gradient(155deg, #141416 0%, #0a0a0c 60%, #08080a 100%);
+}
+
+/* Grain: SVG feTurbulence filter (see index.html — #lv12-noise), alpha-
+   modulated white speckle at a genuinely low, non-uniform opacity so it
+   reads as a physical material texture, not a flat opacity wash. */
+.lv12-grain {
+  position: absolute;
+  inset: 0;
+  filter: url(#lv12-noise);
+  /* plain alpha compositing, not a blend mode — `overlay`/`multiply`
+     against a base this dark would crush the white speckle to near
+     nothing; the feColorMatrix's own alpha output (~2-6%) already is the
+     "very low opacity" target, so this is just full-strength on top of
+     that, not an extra multiplier. */
+}
+
+.lv12-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ---- Lottie mount: full-bleed container. The dotlottie-web canvas is
+   told `layout: { fit: 'contain' }` (main.tsx) so IT does the proportional
+   scale-to-fit itself — the animation's own 1920x1080 (16:9) aspect ratio
+   is preserved, never stretched, and the canvas (transparent outside the
+   drawn content) lets .lv12-bg/.lv12-grain show through in any letterboxed
+   margin. Reduced-motion doesn't need a rule here — main.tsx skips
+   mounting the animation entirely in that case instead of fighting an
+   autoplaying canvas after the fact. ---- */
+.lv12-lottie {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lv12-lottie canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===================== PLACEHOLDER (post-loader) ===================== */
+
+.lv12-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 90% at 22% 18%, #17171a 0%, #101012 42%, #0a0a0c 78%),
+    linear-gradient(155deg, #141416 0%, #0a0a0c 60%, #08080a 100%);
+}
+.lv12-placeholder p {
+  margin: 0;
+  font-family: 'SF Mono', ui-monospace, 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: rgba(237, 234, 227, 0.5);
+}
