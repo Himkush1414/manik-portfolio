@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { createRoot } from 'react-dom/client';
 // ShapeBlur (three.js) and RippleDistortion (ogl) are both dynamically
 // imported below instead of statically here — together they pulled ~530KB
@@ -20,6 +21,7 @@ import { slowScroll } from './scroll-speed';
 import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
 import type { LogoItem } from './LogoLoop';
 import './lv2.css';
+import tailwindHref from './tailwind.css?url';
 import './lab/lv1/lab.css';
 import './lv6-transition';
 import './home-loader';
@@ -47,8 +49,26 @@ import './projects-nav';
   else window.addEventListener('load', runIdleSkillsFun);
 }
 
-// Freshness beacon — if this line isn't in the console you're on a cached bundle.
-console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
+// Tailwind utilities for the React islands (LogoLoop, InfiniteSpiral,
+// StaggeredMenu, …), precompiled into ./tailwind.css — replaces the runtime
+// play CDN (cdn.tailwindcss.com), which logged a "should not be used in
+// production" warning and re-scanned the DOM on every mutation. Appended as
+// the LAST stylesheet in <head>, exactly where the CDN injected its <style>:
+// a plain <link> in index.html gets merged by Vite into a bundle that the
+// separately-emitted styles.css then follows, which would flip the cascade
+// between Tailwind's preflight and styles.css's own element rules.
+{
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = tailwindHref;
+  document.head.appendChild(link);
+}
+
+// Freshness beacon — if this line isn't in the console you're on a cached
+// bundle. Dev server only: on the live site it was just a stale-dated log.
+if (import.meta.env.DEV) {
+  console.log('%croot build 2026-09-11 (synced from lab/lv6: About<->Home transition)', 'color:#8fb8ea;font-weight:600');
+}
 
 // Homepage scroll speed: a real, JS-driven smooth scroll (see
 // scroll-speed.ts — native scroll can't be meaningfully slowed just by
@@ -59,7 +79,9 @@ slowScroll(0.55, 0.16);
 
 // Clear any stray service worker / caches on localhost:5173 that could pin a
 // stale page at the bare URL (the "?query works, plain doesn't" symptom).
-if ('serviceWorker' in navigator) {
+// Dev server only — in production this was unregistering service workers
+// and wiping the origin's entire Cache Storage on every single visit.
+if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     if (regs.length) {
       regs.forEach(r => r.unregister());
@@ -392,13 +414,23 @@ requestAnimationFrame(() => requestAnimationFrame(layoutRippleLayer));
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutRippleLayer);
 
 // manual horizontal alignment nudge — kept independent from lv1's own key so
-// tuning it here can never change what /lab/lv1 renders.
+// tuning it here can never change what /lab/lv1 renders. The stored value and
+// the [ / ] keys are a dev-server tuning aid only: live, the keys fired while
+// typing in the newsletter/contact fields too (a "[" typed into a message
+// shifted the footer effect and saved that shift), and an unguarded
+// localStorage read throws where storage is blocked, which aborted the rest of
+// this module (ripple, menu, contact form …). ?rx= still works anywhere.
 const NUDGE_KEY = 'lv2FooterRippleNudgeX';
 const urlNudge = new URLSearchParams(location.search).get('rx');
-let nudgeX =
-  urlNudge != null
-    ? parseFloat(urlNudge) || 0
-    : parseFloat(localStorage.getItem(NUDGE_KEY) || '0') || 0;
+function storedNudge() {
+  if (!import.meta.env.DEV) return 0;
+  try {
+    return parseFloat(localStorage.getItem(NUDGE_KEY) || '0') || 0;
+  } catch {
+    return 0;
+  }
+}
+let nudgeX = urlNudge != null ? parseFloat(urlNudge) || 0 : storedNudge();
 
 function applyNudge() {
   for (const id of ['ripple-root', 'ripple-fade']) {
@@ -408,6 +440,9 @@ function applyNudge() {
 applyNudge();
 
 window.addEventListener('keydown', e => {
+  if (!import.meta.env.DEV) return;
+  const t = e.target as HTMLElement | null;
+  if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
   if (e.key === '[' || e.key === ']') {
     nudgeX += e.key === '[' ? -2 : 2;
     try {
@@ -724,16 +759,20 @@ document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]:not([href="#projects"
 // ==========================================================================
 // PROJECTS — LogoLoop tech-stack strip, ported from /lab/lv7/'s current
 // build (same icon set/props/recolouring; lv7's own copy is untouched).
+// Each icon also gets its own `title` (react-icons renders it as the SVG's
+// <title>): these items have no href, so LogoLoop never applies their
+// ariaLabel, and the role="img" SVGs were otherwise nameless to screen
+// readers.
 // ==========================================================================
 const PROJ_ICON_COLOR = '#111111';
 const projTechLogos: LogoItem[] = [
-  { node: <SiReact color={PROJ_ICON_COLOR} />, title: 'React', ariaLabel: 'React' },
-  { node: <SiNextdotjs color={PROJ_ICON_COLOR} />, title: 'Next.js', ariaLabel: 'Next.js' },
-  { node: <SiTypescript color={PROJ_ICON_COLOR} />, title: 'TypeScript', ariaLabel: 'TypeScript' },
-  { node: <SiTailwindcss color={PROJ_ICON_COLOR} />, title: 'Tailwind CSS', ariaLabel: 'Tailwind CSS' },
-  { node: <SiSupabase color={PROJ_ICON_COLOR} />, title: 'Supabase', ariaLabel: 'Supabase' },
-  { node: <SiVite color={PROJ_ICON_COLOR} />, title: 'Vite', ariaLabel: 'Vite' },
-  { node: <SiVercel color={PROJ_ICON_COLOR} />, title: 'Vercel', ariaLabel: 'Vercel' },
+  { node: <SiReact color={PROJ_ICON_COLOR} title="React" />, title: 'React', ariaLabel: 'React' },
+  { node: <SiNextdotjs color={PROJ_ICON_COLOR} title="Next.js" />, title: 'Next.js', ariaLabel: 'Next.js' },
+  { node: <SiTypescript color={PROJ_ICON_COLOR} title="TypeScript" />, title: 'TypeScript', ariaLabel: 'TypeScript' },
+  { node: <SiTailwindcss color={PROJ_ICON_COLOR} title="Tailwind CSS" />, title: 'Tailwind CSS', ariaLabel: 'Tailwind CSS' },
+  { node: <SiSupabase color={PROJ_ICON_COLOR} title="Supabase" />, title: 'Supabase', ariaLabel: 'Supabase' },
+  { node: <SiVite color={PROJ_ICON_COLOR} title="Vite" />, title: 'Vite', ariaLabel: 'Vite' },
+  { node: <SiVercel color={PROJ_ICON_COLOR} title="Vercel" />, title: 'Vercel', ariaLabel: 'Vercel' },
 ];
 // Deferred like the other decorative mounts above — #lv7-logoloop-mount
 // lives inside #proj-root, which stays display:none until the user

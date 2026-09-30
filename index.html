@@ -12,17 +12,15 @@
      Paint. Same families/weights, generated from the exact CSS Google Fonts
      served, just fetched same-origin now. -->
 <link rel="stylesheet" href="./fonts.css" />
-<!-- LogoLoop (react-bits), used by the ported Projects section below,
-     ships styled with Tailwind utility classes and this project has no
-     Tailwind build step of its own — the play CDN compiles those classes
-     at runtime. Same approach /lab/lv7/ itself already uses. -->
-<script src="https://cdn.tailwindcss.com" defer></script>
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="./lv2.css" />
 <link rel="stylesheet" href="./lv6-transition.css" />
 <link rel="stylesheet" href="./projects.css" />
 <link rel="stylesheet" href="./skillsfun.css" />
 <link rel="stylesheet" href="./home-loader.css" />
+<!-- Tailwind utilities for the React islands (LogoLoop, InfiniteSpiral,
+     StaggeredMenu, …) come from the precompiled ./tailwind.css, appended
+     to the end of <head> by main.tsx — see the note there. -->
 </head>
 <body class="lv2">
 
@@ -657,7 +655,10 @@
   </main>
 
   <!-- ===================== VIEW 2 — CONTACT ===================== -->
-  <section class="lv7-view" id="proj-view-contact">
+  <!-- <main>, like the Projects view above: views are display:none unless
+       active, so this is still the only main landmark on screen while it
+       shows (as a <section>, the Contact view left the page without one). -->
+  <main class="lv7-view" id="proj-view-contact">
     <div class="lv7-contact">
       <div class="lv7-contact__top">
         <h1 class="lv7-contact__heading">CONTACT</h1>
@@ -702,7 +703,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </main>
 
 </div>
 <!-- ===================== /#proj-root ===================== -->

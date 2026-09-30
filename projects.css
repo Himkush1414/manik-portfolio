@@ -552,7 +552,9 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  opacity: 0.55;
+  /* 0.55 gave 3.84:1 on the footer's #E3E1DC — under WCAG AA's 4.5:1 for
+     10px text. 0.64 lands at ~5:1 with the same muted look. */
+  opacity: 0.64;
 }
 .lv7-footer__list {
   list-style: none;

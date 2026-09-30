@@ -156,7 +156,17 @@ function goTo(target: ViewId) {
 // Delegated on `document` (not attached per-element) since several of
 // these are only rendered once React mounts them, well after this
 // script's first run.
+// Ctrl/Cmd/Shift/Alt-click on these links means "open in a new tab/window"
+// — the browser's job, not a view swap. Intercepting them anyway (as every
+// click used to be) left those gestures doing nothing at all. A new tab of
+// "/#projects" / "/#skills" still lands on the right view (see the
+// location.hash handling at the bottom of this file).
+function isPlainClick(e: MouseEvent) {
+  return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+}
+
 document.addEventListener('click', e => {
+  if (!isPlainClick(e)) return;
   const target = e.target as HTMLElement;
 
   const about = target.closest('a[href="/about"]');
@@ -246,6 +256,7 @@ function wireAboutFrameLinks() {
   if (!doc || doc === wiredDoc) return;
   wiredDoc = doc;
   doc.addEventListener('click', e => {
+    if (!isPlainClick(e)) return;
     const target = e.target as HTMLElement;
     const projects = target.closest('a[href="/#projects"]');
     if (projects) {

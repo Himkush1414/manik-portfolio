@@ -1233,3 +1233,36 @@ body.lv2 #lv2-footer .watermark__fill {
   body.lv2 #lv2-footer .watermark__sheen { display: none; }
   body.lv2 #lv2-footer .watermark::before { animation: none; opacity: 0.8; }
 }
+
+/* ============================================================
+   §2/§3 PIN — native sticky instead of the JS absolute<->fixed swap
+   ============================================================ */
+/* The stack/reveal pins used to be switched between position:absolute and
+   position:fixed by main.tsx on scroll. That class swap lands a frame after
+   the scroll it reacts to, so the panel visibly jumped at the start and end
+   of each pin (Chrome logged 0.6–1.0 layout shifts per boundary). A sticky
+   pin inside the same tall (300vh / 340vh) section does the identical hold-
+   then-release natively, in the same frame as the scroll. main.tsx still
+   computes progress from the section's own rect — only the positioning
+   mechanism changes, so its is-pinned/is-past classes are now inert here.
+
+   Sticky needs an ancestor chain that isn't a scroll container, and
+   styles.css's `html, body { overflow-x: hidden }` makes <body> one (with
+   <html> also non-visible, body's overflow no longer propagates to the
+   viewport). overflow-x:clip hides the same horizontal overflow without
+   creating a scroll container. Browsers without `clip` keep the old
+   JS-driven fixed pin untouched. */
+@supports (overflow: clip) {
+  body.lv2 { overflow-x: clip; }
+
+  .lv2-stack.is-pin-ready .lv2-stack__pin,
+  .lv2-stack.is-pin-ready.is-pinned .lv2-stack__pin,
+  .lv2-stack.is-pin-ready.is-past .lv2-stack__pin,
+  .lv2-reveal.is-pin-ready .lv2-reveal__pin,
+  .lv2-reveal.is-pin-ready.is-pinned .lv2-reveal__pin,
+  .lv2-reveal.is-pin-ready.is-past .lv2-reveal__pin {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+  }
+}
