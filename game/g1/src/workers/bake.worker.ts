@@ -9,7 +9,8 @@ import type { ShipId } from '../data/ships';
 export type BakeRequest =
   | { id: number; type: 'metal'; opts: MetalSetOptions }
   | { id: number; type: 'erode'; data: Uint8ClampedArray; width: number; rects: { x: number; y: number; w: number; h: number; amount: number }[] }
-  | { id: number; type: 'ship'; ship: ShipId; lod: Lod };
+  | { id: number; type: 'ship'; ship: ShipId; lod: Lod }
+  | { id: number; type: 'png'; px: Uint8Array; w: number; h: number };
 
 const post = (msg: unknown, transfer: Transferable[] = []) => (self as unknown as Worker).postMessage(msg, transfer);
 
@@ -26,6 +27,18 @@ self.onmessage = (e: MessageEvent<BakeRequest>) => {
       const g = buildShipGeometry(SPECS[req.ship], req.lod);
       const { data, transfer } = serializeShipGeometry(g);
       post({ id: req.id, ok: true, result: data }, transfer);
+    } else if (req.type === 'png') {
+      // thumbnail encode: GL rows are bottom-up -> flip, then PNG off-thread
+      const { px, w, h } = req;
+      const out = new Uint8ClampedArray(w * h * 4);
+      const row = w * 4;
+      for (let y = 0; y < h; y++) out.set(px.subarray((h - 1 - y) * row, (h - y) * row), y * row);
+      const c = new OffscreenCanvas(w, h);
+      c.getContext('2d')!.putImageData(new ImageData(out, w, h), 0, 0);
+      void c.convertToBlob({ type: 'image/png' }).then(
+        blob => post({ id: req.id, ok: true, result: blob }),
+        err => post({ id: req.id, ok: false, error: String(err) }),
+      );
     }
   } catch (err) {
     post({ id: req.id, ok: false, error: String(err) });

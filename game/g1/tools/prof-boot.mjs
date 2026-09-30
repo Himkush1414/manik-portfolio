@@ -16,7 +16,7 @@ await p.addInitScript(() => {
 await p.goto(origin + '/game/g1/?debug=1', { waitUntil: 'commit' });
 await cdp.send('Profiler.start');
 const tStart = await p.evaluate(() => performance.now()); // page ms at profiler start
-await p.waitForTimeout(13000);
+await p.waitForTimeout(+(process.env.PROF_MS || 13000));
 const { profile } = await cdp.send('Profiler.stop');
 const lts = (await p.evaluate(() => window.__lt)).filter(t => t.dur > 120 && t.start >= from && t.start <= to);
 const nodes = new Map(profile.nodes.map(n => [n.id, n]));

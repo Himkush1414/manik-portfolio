@@ -121,7 +121,7 @@
   pointer-events: auto;
 }
 .pilotPanel { flex: 0 0 auto; }
-.pilots { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 10); padding: calc(var(--u) * 12) calc(var(--u) * 14) calc(var(--u) * 14); }
+.pilots { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 10); padding: calc(var(--u) * 12) calc(var(--u) * 14) calc(var(--u) * 14); }
 .pilot {
   position: relative;
   display: flex;

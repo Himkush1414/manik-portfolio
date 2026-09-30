@@ -14,7 +14,7 @@ this file alone. Updated after every slice.
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
-| 1E Hangar UI + pilots + story | IN PROGRESS | lore.ts, UI primitives, full hangar overlay (top bar, inventory + thumbnails, ship block, pilot + briefing/codex, START MISSION, purchase), UI sounds DONE; next: 3D pilot busts |
+| 1E Hangar UI + pilots + story | IN PROGRESS | lore.ts, UI primitives, full hangar overlay (top bar, inventory + thumbnails, ship block, pilot + briefing/codex, START MISSION, purchase), UI sounds, 3D pilot busts (OffscreenCanvas worker) DONE; next: 1E polish/keyboard QA, then 1F |
 | 1F Upgrades / Settings / Save | — | |
 | 1G Cockpit + camera select | — | |
 | 1H QA / polish / perf | — | |
@@ -419,12 +419,30 @@ HDRIs / kit parts if ever needed (none used so far).
   CSS `translate` property — GSAP folds it into x and the tween zeroes it.
   QA: `tools/qa-ui.mjs` (6 resolutions + locked/codex/livery),
   `qa-purchase.mjs`.
+- **Pilot busts (1E):** `pilots/` — `buildBust.ts` (procedural, ONYX 23.7k /
+  EMBER 24.5k tris), `bustRenderer.ts` (DOM-free core: two scenes, own
+  lights, scissored into the card slots at 30 fps, compileAsync first),
+  `bust.worker.ts` (OffscreenCanvas via transferControlToOffscreen) and
+  `PilotBusts.tsx` (host: forwards slot rects / pointer / selection; main-
+  thread fallback when OffscreenCanvas WebGL is missing). On the main thread
+  the second context + first-render links were 165 + ~700 ms long tasks at the
+  UI's entrance. A FRESH canvas per mount (StrictMode: a force-lost or
+  transferred canvas never yields a context again — Chrome's sad-face).
+- **Post-boot long tasks (measured, 1E):** `hasWebGL2()` probed a new WebGL
+  context on every App render (66 ms each) → cached. Thumbnails: async PBO
+  readback (`readRenderTargetPixelsAsync`) + PNG row-flip/encode in the bake
+  worker (`bakeClient.png`, OffscreenCanvas.convertToBlob). Remaining: one
+  ~120-210 ms task per session from the first thumbnail readback + a one-off
+  program link — candidate for 1H: render thumbnails fully in a worker.
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH
   51-60 fps at 1080p. AO is the biggest post cost, then DOF (1H perf pass).
 
 ## 9. Known issues
+
+- After boot, the first hangar seconds still show one 120-210 ms long task
+  (first thumbnail readback + a program link); brief budget is 50 ms. 1H.
 
 
 - Temporary deck under the ship reads lilac (Nebula rim light at grazing

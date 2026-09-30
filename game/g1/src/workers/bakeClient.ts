@@ -39,4 +39,6 @@ export const bakeClient = {
   erode: (data: Uint8ClampedArray, width: number, rects: { x: number; y: number; w: number; h: number; amount: number }[]) =>
     call<Uint8ClampedArray>({ type: 'erode', data, width, rects }, [data.buffer]),
   shipGeometry: (ship: ShipId, lod: Lod) => call<ShipGeometryData>({ type: 'ship', ship, lod }),
+  /** bottom-up RGBA pixels -> PNG blob (row flip + encode off the main thread) */
+  png: (px: Uint8Array, w: number, h: number) => call<Blob>({ type: 'png', px, w, h }, [px.buffer]),
 };

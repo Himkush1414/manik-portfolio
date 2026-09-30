@@ -96,11 +96,18 @@ function installShaderErrorFilter(gl: WebGLRenderer): void {
 }
 
 /** WebGL2 capability check, run before mounting anything 3D. */
+// cached: App renders on every flow change, and each probe created a WebGL
+// context (a 66 ms long task per call, found profiling the hangar)
+let webgl2: boolean | null = null;
 export function hasWebGL2(): boolean {
+  if (webgl2 !== null) return webgl2;
   try {
     const c = document.createElement('canvas');
-    return !!c.getContext('webgl2');
+    const ctx = c.getContext('webgl2');
+    webgl2 = !!ctx;
+    (ctx?.getExtension('WEBGL_lose_context') as { loseContext(): void } | null)?.loseContext();
   } catch {
-    return false;
+    webgl2 = false;
   }
+  return webgl2;
 }

@@ -28,6 +28,7 @@ import { ShipFactory } from '../ships/ShipFactory';
 import type { ShipId } from '../data/ships';
 import { whenWorldMounted } from '../scenes/sceneBridge';
 import { HEX } from './palette';
+import { bakeClient } from '../workers/bakeClient';
 
 export const THUMB = { w: 304, h: 192, dpr: 2 } as const;
 const FILL = 0.9; // box corners are conservative; the hull itself lands ~0.8
@@ -124,6 +125,7 @@ async function render(id: ShipId, opts: ThumbOptions): Promise<string> {
   try {
     gl.setRenderTarget(hdrRT); // compile the HalfFloat variants (see bootLoader)
     await gl.compileAsync(scene, cam);
+    gl.setRenderTarget(prev.target);
     gl.toneMapping = NoToneMapping;
     gl.autoClear = true;
     gl.setClearColor(0x000000, 0);
@@ -132,9 +134,15 @@ async function render(id: ShipId, opts: ThumbOptions): Promise<string> {
     tonemap.uniforms.tSrc.value = hdrRT.texture;
     tonemap.uniforms.uRaw.value = opts.silhouette ? 1 : 0;
     gl.setRenderTarget(ldrRT);
+    await gl.compileAsync(quadScene(), quadCam);
+    // frames ran during the await: re-bind the target + clear state
+    gl.setRenderTarget(ldrRT);
+    gl.setClearColor(0x000000, 0);
     gl.render(quadScene(), quadCam);
     const px = new Uint8Array(W * H * 4);
-    gl.readRenderTargetPixels(ldrRT, 0, 0, W, H, px);
+    // async (PBO + fence) readback: the sync read stalled ~70 ms per thumbnail
+    await gl.readRenderTargetPixelsAsync(ldrRT, 0, 0, W, H, px);
+    if (typeof OffscreenCanvas !== 'undefined') return URL.createObjectURL(await bakeClient.png(px, W, H));
     return await encode(px, W, H);
   } finally {
     gl.setRenderTarget(prev.target);
@@ -160,7 +168,7 @@ function quadScene(): Scene {
   return quad;
 }
 
-/** GL rows are bottom-up: flip while copying into the canvas. */
+/** Main-thread fallback (no OffscreenCanvas): GL rows are bottom-up, flip while copying. */
 async function encode(px: Uint8Array, W: number, H: number): Promise<string> {
   const c = document.createElement('canvas');
   c.width = W;

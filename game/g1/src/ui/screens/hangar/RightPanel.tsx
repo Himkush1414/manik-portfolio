@@ -8,7 +8,7 @@ import { MISSION_01, CODEX, PILOTS } from '../../../data/lore';
 import { useProfile } from '../../../state/profile.store';
 import { useSettings } from '../../../state/settings.store';
 import { sfx } from '../../../audio/sfx';
-import { PilotViewport } from './PilotViewport';
+import { PilotBusts } from '../../../pilots/PilotBusts';
 
 function PilotCard() {
   const pilot = useProfile(p => p.pilot);
@@ -16,6 +16,7 @@ function PilotCard() {
   return (
     <HudPanel title="Pilot" meta={`${PILOTS[pilot].rank} ${PILOTS[pilot].name}`} className={s.pilotPanel}>
       <div className={s.pilots} role="radiogroup" aria-label="Pilot">
+        <PilotBusts />
         {(['onyx', 'ember'] as const).map(id => {
           const p = PILOTS[id];
           return (
@@ -32,9 +33,8 @@ function PilotCard() {
                 setPilot(id);
               }}
             >
-              <span className={s.bust}>
-                <PilotViewport id={id} selected={pilot === id} />
-              </span>
+              {/* the live bust renders into this slot (pilots/PilotBusts.tsx) */}
+              <span className={s.bust} data-pilot-slot={id} />
               <span className={s.pilotName}>{p.callsign}</span>
               <span className={s.pilotReal}>
                 {p.rank} {p.name}
