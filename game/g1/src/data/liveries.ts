@@ -33,8 +33,14 @@ export const EMBER_FORGE: Livery = {
   finish: 'metal',
 };
 
+const NOCTURNE_ORDER: readonly Livery[] = [LIVERIES[2], LIVERIES[0], LIVERIES[1], LIVERIES[3], LIVERIES[4]];
+
 export function liveriesFor(ship: ShipId): readonly Livery[] {
-  return ship === 'obsidian' ? [...LIVERIES, EMBER_FORGE] : LIVERIES;
+  // OBSIDIAN CROWN leads with its exclusive EMBER FORGE (its default look)
+  // NOCTURNE leads with VOID (a stealth skin by default)
+  if (ship === 'obsidian') return [EMBER_FORGE, ...LIVERIES];
+  if (ship === 'nocturne') return NOCTURNE_ORDER;
+  return LIVERIES;
 }
 
 export function clampLivery(ship: ShipId, index: number): number {

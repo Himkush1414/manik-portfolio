@@ -8,6 +8,7 @@ import { loadDoorAssets } from '../scenes/shared/doors/doorAssets';
 import { preloadShipGeometry } from '../ships/ShipFactory';
 import { hasSpec } from '../ships/specs';
 import { SHIP_IDS } from '../data/ships';
+import { useProfile } from '../state/profile.store';
 import { whenWorldMounted } from '../scenes/sceneBridge';
 import { AudioBus } from '../audio/AudioBus';
 import { isPersistent } from '../state/storage';
@@ -49,13 +50,21 @@ export function registerBootTasks(): void {
     run: async () => {
       await whenDone('fonts'); // decal atlas renders stencil text
       await loadDoorAssets();
-      // every authored ship, both LODs, built in the bake worker
-      const jobs: Promise<void>[] = [];
-      for (const id of SHIP_IDS) {
-        if (!hasSpec(id)) continue;
-        for (const lod of [0, 1] as const) jobs.push(preloadShipGeometry(id, lod));
-      }
-      await Promise.all(jobs);
+      // the selected ship (both LODs) gates the loader; the other five are
+      // built after the boot sequence has handed over to the hangar, one per
+      // idle slot, so their main-thread upload never lands in the door beat
+      // (measured: 260 + 170 ms long tasks at 9.2 s when run after warm-up)
+      const selected = useProfile.getState().selectedShip;
+      await Promise.all([preloadShipGeometry(selected, 0), preloadShipGeometry(selected, 1)]);
+      void whenHangar().then(async () => {
+        for (const id of SHIP_IDS) {
+          if (id === selected || !hasSpec(id)) continue;
+          for (const lod of [0, 1] as const) {
+            await idle();
+            await preloadShipGeometry(id, lod);
+          }
+        }
+      });
     },
   });
 
@@ -143,3 +152,21 @@ export function registerBootTasks(): void {
     },
   });
 }
+
+function whenHangar(): Promise<void> {
+  return new Promise(resolve => {
+    if (!isBoot(useFlow.getState().state)) return resolve();
+    const unsub = useFlow.subscribe(st => {
+      if (!isBoot(st.state)) {
+        unsub();
+        resolve();
+      }
+    });
+  });
+}
+
+const idle = () =>
+  new Promise<void>(resolve => {
+    if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 1500 });
+    else setTimeout(resolve, 200);
+  });

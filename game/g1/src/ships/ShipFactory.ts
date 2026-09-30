@@ -6,7 +6,9 @@
 // per instance (liveries animate per instance). Merged per material: paint,
 // nozzle, guns, heat ring, core, plume, glass, frame, pilot, greebles
 // (instanced), nav lights x3, repulsors.
-import { BoxGeometry, Group, InstancedMesh, Matrix4, Mesh, type BufferGeometry, type Material } from 'three';
+import { AdditiveBlending, BoxGeometry, BufferGeometry, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, MeshPhysicalMaterial, Points, ShaderMaterial, type Material } from 'three';
+import { createRng } from '../core/rng';
+import { hdr } from '../render/palette';
 import gsap from 'gsap';
 import type { Hardpoint } from './types';
 import { buildShipGeometry, deserializeShipGeometry, disposeShipGeometry, type ShipGeometry, type Lod } from './geometry';
@@ -90,6 +92,23 @@ export const ShipFactory = {
     add(geo.navGreen, mats.navGreen);
     add(geo.navWhite, mats.navWhite);
     add(geo.repulsor, mats.repulsor);
+    add(geo.trim, mats.trimEmissive);
+    if (spec.emissiveTrim === 'ember-fissures') paintMat.uniforms.uFissure.value = 1;
+
+    // OBSIDIAN CROWN: orbiting shard fragments + ember motes
+    let shardGroup: Group | null = null;
+    let shardMat: MeshPhysicalMaterial | null = null;
+    let motes: Points | null = null;
+    if (geo.shards) {
+      shardGroup = new Group();
+      shardMat = new MeshPhysicalMaterial({ color: '#040305', metalness: 0.35, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.45, emissive: hdr('ignition', 1), emissiveIntensity: 0.02 });
+      const sm = new Mesh(geo.shards, shardMat);
+      sm.castShadow = true;
+      shardGroup.add(sm);
+      motes = makeMotes(spec.shards!.radius, spec.shards!.y, spec.shards!.seed);
+      shardGroup.add(motes);
+      group.add(shardGroup);
+    }
     let greebleMesh: InstancedMesh | null = null;
     const gCount = geo.greebles.length / 16;
     if (gCount) {
@@ -134,6 +153,12 @@ export const ShipFactory = {
       },
       update(t) {
         glow.setLevel(engineLevel, t);
+        paintMat.uniforms.uTime.value = t;
+        if (shardGroup) {
+          shardGroup.rotation.y = t * 0.12;
+          shardGroup.position.y = Math.sin(t * 0.7) * 0.12;
+          (motes!.material as ShaderMaterial).uniforms.uTime.value = t;
+        }
         const blink = Math.sin(t * 3.1) > 0.2 ? 1 : 0.15;
         const strobe = t % 1.6 < 0.07 ? 1 : 0.05;
         mats.navRed.emissiveIntensity = 5 * blink;
@@ -147,6 +172,11 @@ export const ShipFactory = {
         glow.plume.dispose();
         Object.values(mats).forEach(m => m.dispose());
         greebleMesh?.dispose();
+        shardMat?.dispose();
+        if (motes) {
+          motes.geometry.dispose();
+          (motes.material as ShaderMaterial).dispose();
+        }
         // geometry is cached + shared: see disposeShipCache()
       },
     };
@@ -156,4 +186,50 @@ export const ShipFactory = {
 export function disposeShipCache(): void {
   for (const g of cache.values()) disposeShipGeometry(g);
   cache.clear();
+}
+
+/** Ember motes drifting around the OBSIDIAN CROWN (HDR, additive). */
+function makeMotes(radius: number, y: number, seed: number): Points {
+  const rng = createRng(seed * 7 + 1);
+  const n = 70;
+  const seeds = new Float32Array(n * 4);
+  for (let i = 0; i < seeds.length; i++) seeds[i] = rng.next();
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute(new Float32Array(n * 3), 3));
+  g.setAttribute('aSeed', new Float32BufferAttribute(seeds, 4));
+  const m = new ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uR: { value: radius }, uY: { value: y }, uCol: { value: hdr('hot', 3.2) } },
+    vertexShader: /* glsl */ `
+      attribute vec4 aSeed;
+      uniform float uTime, uR, uY;
+      varying float vA;
+      void main() {
+        float life = 3.0 + aSeed.w * 3.0;
+        float k = fract(uTime / life + aSeed.z);
+        float a = aSeed.x * 6.2832 + uTime * 0.2;
+        float r = uR * (0.4 + aSeed.y * 0.9);
+        vec3 p = vec3(cos(a) * r, uY - 0.8 + k * 3.2, sin(a) * r * 1.3);
+        vA = smoothstep(0.0, 0.15, k) * (1.0 - smoothstep(0.6, 1.0, k));
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = (2.0 + aSeed.w * 3.0) * (30.0 / -mv.z);
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uCol;
+      varying float vA;
+      void main() {
+        vec2 c = gl_PointCoord - 0.5;
+        float a = exp(-dot(c, c) * 16.0) * vA;
+        if (a < 0.01) discard;
+        gl_FragColor = vec4(uCol * a, 1.0);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    toneMapped: false,
+  });
+  const p = new Points(g, m);
+  p.frustumCulled = false;
+  p.renderOrder = 11;
+  return p;
 }

@@ -12,7 +12,7 @@ this file alone. Updated after every slice.
 | Plan | DONE | this file |
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
-| 1C Ship pipeline | IN PROGRESS | ShipFactory + HALCYON (5 passes) + bake worker DONE; next: VESPER, BASILISK, NOCTURNE, TEMPEST, OBSIDIAN CROWN, then hologram/dissolve/thumbnails/silhouette test |
+| 1C Ship pipeline | IN PROGRESS | ShipFactory + bake worker + all six ships DONE (HALCYON 5 passes, others 3 passes / TEMPEST 1 — see §8); next: hologram (locked ships), dissolve swap, offscreen thumbnails, LOD1 check, silhouette test |
 | 1D Hangar scene | — | |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
@@ -274,6 +274,33 @@ HDRIs / kit parts if ever needed (none used so far).
   ring samples placed by x across the ridge; clearcoat roughness ≥ 0.1 kills
   point-light glint flares → p5 smoother ridge ramp, subtler wear + flake.
   44.9k tris, 12 draw calls for the ship.
+- **Other five ships (1C):** extensions — `ShipSpec.bodies` (secondary lofted
+  hulls, mirrored: TEMPEST booms), `hull.faceted` (flat-shaded loft, low
+  radial count: NOCTURNE), `emissiveTrim: 'nebula-edges'` (tube strips on
+  every wing leading/trailing edge), `'ember-fissures'` (hull-paint `uFissure`:
+  ridged-noise veins gated by a low-frequency mask, pulsing), `shards`
+  (OBSIDIAN orbiting obsidian fragments + ember mote Points), `wear` (per-spec
+  edge-wear scale). Iteration log: VESPER p1 hidden nose guns + repulsors
+  poking out of the thin nose → p2 guns at the wing roots, pods behind the
+  leading edge → p3 single centreline nose repulsor (35.7k tris). BASILISK
+  p1 vertex-resolution hazard stripes aliased, "toilet-bowl" white prow, buried
+  canopy → p2 solid armour plates with an accent band, dark prow cap, lowered
+  brow so the canopy reads, bigger wing pods → p3 accepted (40.0k). NOCTURNE p1
+  wear blotches on the flat wing + notched trailing edge → p2 `wear: 0.35`,
+  straight trailing edge; leads with the VOID livery (see below) (10.4k — the
+  faceted hull is intentionally low-poly). TEMPEST p1 accepted after 5-view
+  review: the boom gap + one huge ion drive read at every angle (37.3k).
+  OBSIDIAN p1 fissures covered everything (lava lamp) → p2 masked too hard
+  (gone) → p3 mask 0.36-0.58, pow 36: sparse cracks; shards darkened (37.8k).
+- **Per-ship livery order:** liveries are index-addressed per ship
+  (`liveriesFor`). OBSIDIAN leads with its exclusive EMBER FORGE; NOCTURNE
+  leads with VOID so the stealth ship is dark by default. Same five liveries,
+  only the order differs.
+- **Ship preload:** only the selected ship (both LODs) gates the boot loader;
+  the other five are built one job per idle slot after the flow leaves boot.
+  Running them straight after warm-up put 260 + 170 ms long tasks inside the
+  door reveal (measured 9.2 s). QA display override: `?debug=1&ship=<id>`
+  (World.tsx, never written to the save).
 
 - **Boot performance (critical, fixed in 1C):** measured with
   `tools/perf-boot.mjs` (long tasks + `task:*` / `world:mounted` marks).

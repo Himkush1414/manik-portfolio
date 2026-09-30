@@ -2,8 +2,13 @@
 import type { ShipSpec } from '../types';
 import type { ShipId } from '../../data/ships';
 import { HALCYON } from './halcyon';
+import { VESPER } from './vesper';
+import { BASILISK } from './basilisk';
+import { NOCTURNE } from './nocturne';
+import { TEMPEST } from './tempest';
+import { OBSIDIAN } from './obsidian';
 
-const REGISTRY: Partial<Record<ShipId, ShipSpec>> = { halcyon: HALCYON };
+const REGISTRY: Partial<Record<ShipId, ShipSpec>> = { halcyon: HALCYON, vesper: VESPER, basilisk: BASILISK, nocturne: NOCTURNE, tempest: TEMPEST, obsidian: OBSIDIAN };
 
 export const SPECS = new Proxy(REGISTRY as Record<ShipId, ShipSpec>, {
   get(target, key: string) {

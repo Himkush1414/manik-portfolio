@@ -24,8 +24,12 @@ export type HullSpec = {
   radial: number; // points around each ring
   grooves?: number[]; // z positions of circumferential panel grooves
   seams?: number[]; // angles (rad, 0 = +x, PI/2 = top) of longitudinal seams
+  faceted?: boolean; // flat-shaded planar facets (stealth hulls)
   zone: ZoneFn;
 };
+
+/** Extra lofted body (booms, nacelles, spear tips) placed in the ship frame. */
+export type BodySpec = { hull: HullSpec; offset: [number, number, number]; mirror?: boolean };
 
 /** Faceted wing / fin / canard: root and tip leading-edge points + chords. */
 export type WingSpec = {
@@ -84,7 +88,12 @@ export type ShipSpec = {
   navLights: { pos: [number, number, number]; color: 'red' | 'green' | 'white' }[];
   repulsors: [number, number, number][];
   hardpoints: Hardpoint[];
+  bodies?: BodySpec[];
   /** extra emissive trim (e.g. NOCTURNE violet facet edges, OBSIDIAN fissures) */
   emissiveTrim?: 'none' | 'nebula-edges' | 'ember-fissures';
+  /** OBSIDIAN CROWN: shard fragments orbiting the hull */
+  shards?: { count: number; radius: number; seed: number; y: number };
   hoverHeight: number;
+  /** edge-wear scale (1 = default; stealth skins keep it low) */
+  wear?: number;
 };

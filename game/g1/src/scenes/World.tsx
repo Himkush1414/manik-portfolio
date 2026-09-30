@@ -8,7 +8,8 @@ import { BlastDoors } from './shared/BlastDoors';
 import { LookdevContent } from './LookdevContent';
 import { ShipDisplay } from './hangar/ShipDisplay';
 import { useProfile } from '../state/profile.store';
-import { QUERY } from '../core/constants';
+import { QUERY, DEBUG } from '../core/constants';
+import { isShipId } from '../data/ships';
 import { bootDoors, DOOR_Z, markWorldMounted } from './sceneBridge';
 import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from '../render/perf';
@@ -41,7 +42,10 @@ export function World() {
 
 /** Temporary bay floor + pad ring until the hangar lands (1D). */
 function ShipStage() {
-  const shipId = useProfile(s => s.selectedShip);
+  const selected = useProfile(s => s.selectedShip);
+  // ?debug=1&ship=<id>: QA display override (never written to the save)
+  const forced = DEBUG ? QUERY.get('ship') : null;
+  const shipId = forced && isShipId(forced) ? forced : selected;
   return (
     <>
       <ShipDisplay shipId={shipId} />

@@ -39,6 +39,8 @@ const fragment = /* glsl */ `
   uniform float uDissolve;  // 0 visible .. 1 gone
   uniform vec2 uZRange;     // hull z extent (tail, nose)
   uniform vec3 uEdge;       // HDR Ignition
+  uniform float uFissure;   // OBSIDIAN CROWN molten fissures (0 = off)
+  uniform float uTime;
   varying float vZone;
   varying float vWear;
   varying float vSoot;
@@ -135,7 +137,18 @@ const fragment = /* glsl */ `
     csm_Metalness = clamp(metal, 0.0, 1.0);
     csm_Clearcoat = coat;
     csm_ClearcoatRoughness = coatRough;
-    csm_Emissive = uEdge * (dEdge * 1.0 + band * 0.55);
+    // molten fissures: ridged-noise veins glowing through the obsidian glass
+    float fis = 0.0;
+    if (uFissure > 0.0) {
+      float r1 = 1.0 - abs(vnoise(vObjPos * vec3(0.9, 1.6, 0.45)) * 2.0 - 1.0);
+      float r2 = 1.0 - abs(vnoise(vObjPos * vec3(2.3, 3.1, 1.2) + 7.0) * 2.0 - 1.0);
+      float mask = smoothstep(0.36, 0.58, vnoise(vObjPos * vec3(0.3, 0.5, 0.18) + 3.0));
+      float vein = pow(max(r1, r2 * 0.7), 36.0) * mask;
+      float pulse = 0.75 + 0.25 * sin(uTime * 1.3 + vObjPos.z * 0.8);
+      fis = vein * pulse * uFissure * (1.0 - wear);
+      col = mix(col, vec3(0.02), fis);
+    }
+    csm_Emissive = uEdge * (dEdge * 1.0 + band * 0.55 + fis * 1.6);
   }`;
 
 export type HullPaint = CustomShaderMaterial & {
@@ -148,6 +161,8 @@ export type HullPaint = CustomShaderMaterial & {
     uDissolve: { value: number };
     uZRange: { value: [number, number] };
     uEdge: { value: Color };
+    uFissure: { value: number };
+    uTime: { value: number };
   };
 };
 
@@ -170,6 +185,8 @@ export function createHullPaint(livery: Livery, zRange: [number, number]): HullP
       uDissolve: { value: 0 },
       uZRange: { value: zRange },
       uEdge: { value: hdr('ignition', 5) },
+      uFissure: { value: 0 },
+      uTime: { value: 0 },
     },
     // base props (CSM overrides per fragment)
     roughness: 0.4,
