@@ -5,13 +5,14 @@
 import { Environment, Lightformer } from '@react-three/drei';
 import { HEX } from '../palette';
 
-export function StudioEnvironment({ intensity = 1 }: { intensity?: number }) {
+export function StudioEnvironment({ intensity = 0.65 }: { intensity?: number }) {
   return (
     <Environment resolution={256} frames={1} environmentIntensity={intensity}>
       <color attach="background" args={['#020309']} />
       {/* overhead strip softboxes: the long showroom lines */}
-      {[-9, -3, 3, 9].map((x, i) => (
-        <Lightformer key={x} form="rect" intensity={i % 2 ? 2.2 : 3.2} color="#fff4ea" position={[x, 10, 0]} rotation-x={Math.PI / 2} scale={[1.1, 38, 1]} />
+      {/* narrow strips = crisp specular lines, not a flood of reflection */}
+      {[-8, -2.6, 2.6, 8].map((x, i) => (
+        <Lightformer key={x} form="rect" intensity={i % 2 ? 1.8 : 2.4} color="#fff4ea" position={[x, 10, 0]} rotation-x={Math.PI / 2} scale={[0.55, 38, 1]} />
       ))}
       {/* side strips */}
       <Lightformer form="rect" intensity={2.4} color="#f3f5ff" position={[-18, 3, 0]} rotation-y={Math.PI / 2} scale={[36, 0.9, 1]} />

@@ -50,7 +50,9 @@ export function startLoading(): Promise<void> {
   finishedPromise = Promise.all(
     tasks.map(async t => {
       try {
+        performance.mark(`task:${t.id}:start`);
         await t.run();
+        performance.mark(`task:${t.id}:end`);
       } catch (err) {
         // a failed task never blocks boot forever: it is reported (retry UI in
         // the loader) and counted so the sequence can still complete

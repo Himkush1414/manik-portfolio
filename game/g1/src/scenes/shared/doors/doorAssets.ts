@@ -47,11 +47,12 @@ function armour(set: MetalSet, tint: string, clearcoat = 0): MeshPhysicalMateria
 /** Builds (or returns the cached) door assets, yielding between heavy steps. */
 export async function loadDoorAssets(): Promise<DoorAssets> {
   if (cache) return cache;
-  const metal = bakeMetalSet({ seed: 11, paint: [44, 49, 60], bare: [150, 156, 168], wear: 0.34, streaks: 0.55 });
-  await nextFrame();
-  const frameMetal = bakeMetalSet({ seed: 23, paint: [30, 34, 43], bare: [128, 134, 146], wear: 0.24, streaks: 0.7, roughPaint: [0.46, 0.7] });
-  await nextFrame();
-  const atlas = bakeDecalAtlas();
+  // heavy pixel work runs in the bake worker (parallel), never on the main thread
+  const [metal, frameMetal, atlas] = await Promise.all([
+    bakeMetalSet({ seed: 11, paint: [44, 49, 60], bare: [150, 156, 168], wear: 0.34, streaks: 0.55 }),
+    bakeMetalSet({ seed: 23, paint: [30, 34, 43], bare: [128, 134, 146], wear: 0.24, streaks: 0.7, roughPaint: [0.46, 0.7] }),
+    bakeDecalAtlas(),
+  ]);
   await nextFrame();
   const geo = buildDoorGeometry();
   const mats = {

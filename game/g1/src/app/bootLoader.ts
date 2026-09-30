@@ -5,9 +5,15 @@
 import { WebGLRenderTarget, HalfFloatType } from 'three';
 import { registerTask, whenDone } from '../core/loader';
 import { loadDoorAssets } from '../scenes/shared/doors/doorAssets';
+import { preloadShipGeometry } from '../ships/ShipFactory';
+import { hasSpec } from '../ships/specs';
+import { SHIP_IDS } from '../data/ships';
 import { whenWorldMounted } from '../scenes/sceneBridge';
 import { AudioBus } from '../audio/AudioBus';
 import { isPersistent } from '../state/storage';
+import { useFlow, isBoot } from './flow';
+import { stage } from '../scenes/Stage';
+import { postfx } from '../render/fxController';
 
 const FACES = [
   '900 64px "Big Shoulders Display"',
@@ -43,6 +49,13 @@ export function registerBootTasks(): void {
     run: async () => {
       await whenDone('fonts'); // decal atlas renders stencil text
       await loadDoorAssets();
+      // every authored ship, both LODs, built in the bake worker
+      const jobs: Promise<void>[] = [];
+      for (const id of SHIP_IDS) {
+        if (!hasSpec(id)) continue;
+        for (const lod of [0, 1] as const) jobs.push(preloadShipGeometry(id, lod));
+      }
+      await Promise.all(jobs);
     },
   });
 
@@ -75,8 +88,18 @@ export function registerBootTasks(): void {
       // the boot beats render only the FX layer: open every layer for the compile
       const mask = camera.layers.mask;
       camera.layers.enableAll();
-      await gl.compileAsync(scene, camera);
+      // Compile against an HDR render target: program variants are keyed on
+      // the output colour space, and the world always renders into the
+      // composer's linear HalfFloat buffer — compiling for the screen (sRGB)
+      // produced the wrong variants and a 3.3 s synchronous recompile later.
+      const probe = new WebGLRenderTarget(4, 4, { type: HalfFloatType });
+      const prevTarget = gl.getRenderTarget();
+      gl.setRenderTarget(probe);
+      const done = gl.compileAsync(scene, camera);
+      gl.setRenderTarget(prevTarget);
       camera.layers.mask = mask;
+      await done;
+      probe.dispose();
     },
   });
 
@@ -86,8 +109,20 @@ export function registerBootTasks(): void {
     run: async () => {
       await whenDone('shaders');
       const { gl, scene, camera } = await whenWorldMounted();
-      // one offscreen render under the black cover: uploads every texture and
-      // buffer so the first visible hangar frame has no hitch
+      // 2) the real post chain (N8AO, DOF, shadow + instancing variants) sees
+      //    the world for a few frames at exposure 0 — invisible under the
+      //    black loading beat — so nothing compiles at the door reveal.
+      await new Promise<void>(resolve => {
+        const ready = (s: string) => !isBoot(s as never) || s === 'boot.loading' || s === 'boot.doors';
+        if (ready(useFlow.getState().state)) return resolve();
+        const unsub = useFlow.subscribe(st => {
+          if (ready(st.state)) {
+            unsub();
+            resolve();
+          }
+        });
+      });
+      // 1) one offscreen render: uploads every texture/buffer + shadow variants
       const rt = new WebGLRenderTarget(256, 144, { type: HalfFloatType });
       const prev = gl.getRenderTarget();
       const mask = camera.layers.mask;
@@ -97,6 +132,14 @@ export function registerBootTasks(): void {
       gl.setRenderTarget(prev);
       camera.layers.mask = mask;
       rt.dispose();
+      if (isBoot(useFlow.getState().state) && stage.world < 0.5) {
+        const exp = postfx.exposure;
+        stage.world = 1;
+        postfx.exposure = 0;
+        for (let i = 0; i < 3; i++) await new Promise(r => requestAnimationFrame(r));
+        stage.world = 0;
+        postfx.exposure = exp;
+      }
     },
   });
 }

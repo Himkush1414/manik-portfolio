@@ -12,7 +12,7 @@ this file alone. Updated after every slice.
 | Plan | DONE | this file |
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
-| 1C Ship pipeline | — | |
+| 1C Ship pipeline | IN PROGRESS | ShipFactory + HALCYON (5 passes) + bake worker DONE; next: VESPER, BASILISK, NOCTURNE, TEMPEST, OBSIDIAN CROWN, then hologram/dissolve/thumbnails/silhouette test |
 | 1D Hangar scene | — | |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
@@ -165,6 +165,17 @@ wings. Negative space between the booms is its signature.
 molten Ignition fissures; a crown of five swept spikes (wings + tail fins)
 radiating from the centre; floating shard fragments orbiting slowly; ember motes.
 
+## 6b. Ship asset decision (brief §10 time-box) — 2026-09-30
+
+Searched CC0 sources for an AAA-grade fighter: Quaternius (Spaceship pack,
+Ultimate Space Kit — https://poly.pizza/m/Jqfed124pQ,
+https://sketchfab.com/3d-models/ultimate-space-kit-84c108ff2bcf4d4cbf2adff74a942822),
+Kenney space kits, OpenGameArt "LowPoly Spaceships Pack", Poly Haven (no ships).
+All are stylised low-poly kits — explicitly disallowed as heroes. DECISION: all
+six ships are built in code by the ShipFactory (lofted hulls, faceted wings,
+lathed engines, real groove panel lines, CSM paint). CC0 only for textures /
+HDRIs / kit parts if ever needed (none used so far).
+
 ## 7. Phase 1 → Phase 2 handoff contract
 
 (Kept stable; filled in with exact signatures as slices land.)
@@ -246,7 +257,41 @@ radiating from the centre; floating shard fragments orbiting slowly; ember motes
   will also tween (GSAP folds it into px and the yPercent tween stacks on top);
   set the initial offset with gsap.set instead (letterbox bars).
 
+- **Ship pipeline (1C):** `ships/ShipFactory.ts` (`build(id,{livery,lod})`,
+  geometry cached per ship+LOD, built by the loader's geometry task),
+  `ships/geom/` (loft = lofted super-ellipse hull with real groove panel
+  lines; wing = faceted wing/canard/fin with flap + petal fold grooves; parts =
+  lathed engines, canopy loft + frames + pilot, pods, intakes, greebles;
+  finalize/curvature = baked edge wear + soot), `ships/materials/hullPaint.ts`
+  (CSM paint: zones, 5 finishes, wear, soot, panel lines, repaint band,
+  dissolve). QA: `tools/qa-ship.mjs <ship> <tag> [--livery n]` renders the 5
+  iteration angles (3/4, side, top, rear, low front).
+- **HALCYON iteration log:** p1 generic jet silhouette, floating wingtip guns,
+  engines buried in a flat tail, chrome look → p2 strake-blended arrowhead,
+  protruding engines, guns on the tip chord → p3 sunk canopy, taller spine,
+  side intakes, narrower lightformer strips → p4 FIX: boxy super-ellipse gave
+  the narrow ridge only 2-3 vertices (interpolated into a wide dome) — extra
+  ring samples placed by x across the ridge; clearcoat roughness ≥ 0.1 kills
+  point-light glint flares → p5 smoother ridge ramp, subtler wear + flake.
+  44.9k tris, 12 draw calls for the ship.
+
+- **Boot performance (critical, fixed in 1C):** measured with
+  `tools/perf-boot.mjs` (long tasks + `task:*` / `world:mounted` marks).
+  (1) Texture bakes + ship geometry moved to a module Web Worker
+  (`workers/bake.worker.ts` / `bakeClient.ts`; results transferred, not
+  copied); decal text is drawn on the main thread, erosion runs in the worker.
+  (2) `bakeWear` uses a numeric spatial hash (string keys were ~3 s).
+  (3) `debug/shaderCheck.ts` must query `COMPLETION_STATUS_KHR` before
+  `LINK_STATUS` — reading LINK_STATUS early forces synchronous links.
+  (4) `compileAsync` must run with a HalfFloat render target bound: programs
+  are keyed on output colour space, and compiling for the screen produced the
+  wrong variants → a 3.3 s synchronous recompile on the first real frame.
+  (5) World mount (~0.5-0.9 s of React/material work) is deferred to the
+  credit card's static hold; the offscreen upload render + full post-chain
+  warm-up (exposure 0) run under the black loading beat. Result (prod): boot
+  timeline tracks wall-clock (12.15 s), zero stall during the logo sting.
+
 ## 9. Known issues
 
-- Lookdev deck still reads slightly blue from IBL irradiance — irrelevant (the
-  real hangar floor is a tuned reflector in 1D).
+- Temporary deck under the ship reads lilac (Nebula rim light at grazing
+  angles on a plain rough plane) — replaced by the tuned reflector floor in 1D.

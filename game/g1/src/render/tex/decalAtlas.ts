@@ -3,7 +3,7 @@
 // (the loader orders this after the fonts task). UV rects exported for meshes.
 import type { Texture } from 'three';
 import { makeCanvas, toTexture } from './bake';
-import { ValueNoise } from './noise';
+import { bakeClient } from '../../workers/bakeClient';
 import { HEX } from '../palette';
 
 export type AtlasRect = { x: number; y: number; w: number; h: number }; // in 0..1 UV, origin bottom-left
@@ -29,23 +29,6 @@ export const DECAL = {
 
 export type DecalKey = keyof typeof DECAL;
 
-function erode(ctx: CanvasRenderingContext2D, noise: ValueNoise, x: number, y: number, w: number, h: number, amount: number) {
-  // stencil wear: knock alpha out where low-frequency noise dips
-  const img = ctx.getImageData(x, y, w, h);
-  const d = img.data;
-  for (let j = 0; j < h; j++) {
-    for (let i = 0; i < w; i++) {
-      const k = (j * w + i) * 4 + 3;
-      if (d[k] === 0) continue;
-      const nv = noise.fbm((x + i) / SIZE, (y + j) / SIZE, 40, 3);
-      const fine = noise.noise((x + i) * 0.9, (y + j) * 0.9, 921);
-      const keep = nv + fine * 0.18 > amount ? 1 : 0.15;
-      d[k] = d[k] * keep;
-    }
-  }
-  ctx.putImageData(img, x, y);
-}
-
 function stencilText(ctx: CanvasRenderingContext2D, text: string, r: { x: number; y: number; w: number; h: number }, font: string, color: string, bridges: number) {
   ctx.save();
   ctx.fillStyle = color;
@@ -68,9 +51,12 @@ function stencilText(ctx: CanvasRenderingContext2D, text: string, r: { x: number
   ctx.restore();
 }
 
-export function bakeDecalAtlas(): Texture {
+/** Draws the stencils (main thread: needs the loaded fonts), then erodes them
+ *  in the bake worker (the per-pixel noise pass is the expensive part). */
+export async function bakeDecalAtlas(): Promise<Texture> {
   const { canvas, ctx } = makeCanvas(SIZE, SIZE);
-  const noise = new ValueNoise(4071);
+  const rects: { x: number; y: number; w: number; h: number; amount: number }[] = [];
+  const erode = (x: number, y: number, w: number, h: number, amount: number) => rects.push({ x, y, w, h, amount });
   ctx.clearRect(0, 0, SIZE, SIZE);
 
   // hazard stripes (Ignition / near-black), 45°
@@ -91,16 +77,16 @@ export function bakeDecalAtlas(): Texture {
     ctx.fill();
   }
   ctx.restore();
-  erode(ctx, noise, 0, 0, 192, 1024, 0.3);
+  erode(0, 0, 192, 1024, 0.3);
 
   const title = '900 280px "Big Shoulders Display"';
   const mono = '500 64px "JetBrains Mono"';
   stencilText(ctx, 'BAY 07', { x: 208, y: 16, w: 800, h: 300 }, title, '#d9dde8', 2);
-  erode(ctx, noise, 208, 16, 800, 300, 0.26);
+  erode(208, 16, 800, 300, 0.26);
   stencilText(ctx, 'PRESSURE DOOR', { x: 208, y: 340, w: 800, h: 110 }, '900 104px "Big Shoulders Display"', HEX.hot, 1);
-  erode(ctx, noise, 208, 340, 800, 110, 0.3);
+  erode(208, 340, 800, 110, 0.3);
   stencilText(ctx, 'DO NOT OBSTRUCT DOOR PATH', { x: 208, y: 460, w: 800, h: 70 }, mono, '#c9cfdc', 0);
-  erode(ctx, noise, 208, 460, 800, 70, 0.28);
+  erode(208, 460, 800, 70, 0.28);
 
   // warning glyph: triangle + bar
   ctx.save();
@@ -123,7 +109,7 @@ export function bakeDecalAtlas(): Texture {
   ctx.fillRect(-9, -26, 18, 56);
   ctx.fillRect(-9, 40, 18, 16);
   ctx.restore();
-  erode(ctx, noise, 208, 552, 232, 208, 0.3);
+  erode(208, 552, 232, 208, 0.3);
 
   // direction chevrons
   ctx.save();
@@ -141,12 +127,15 @@ export function bakeDecalAtlas(): Texture {
     ctx.fill();
   }
   ctx.restore();
-  erode(ctx, noise, 456, 552, 552, 208, 0.32);
+  erode(456, 552, 552, 208, 0.32);
 
   stencilText(ctx, 'HALCYON WING  //  ICS MERIDIAN', { x: 208, y: 784, w: 800, h: 90 }, '600 58px "JetBrains Mono"', '#aeb6c8', 0);
-  erode(ctx, noise, 208, 784, 800, 90, 0.3);
+  erode(208, 784, 800, 90, 0.3);
   stencilText(ctx, '07-A   07-B   LOAD 42T', { x: 208, y: 890, w: 800, h: 118 }, '900 96px "Big Shoulders Display"', '#d9dde8', 1);
-  erode(ctx, noise, 208, 890, 800, 118, 0.3);
+  erode(208, 890, 800, 118, 0.3);
 
+  const img = ctx.getImageData(0, 0, SIZE, SIZE);
+  const eroded = await bakeClient.erode(img.data, SIZE, rects);
+  ctx.putImageData(new ImageData(eroded as Uint8ClampedArray<ArrayBuffer>, SIZE, SIZE), 0, 0);
   return toTexture(canvas, 'color', false, 8);
 }

@@ -8,7 +8,7 @@ import { HEX } from '../palette';
 
 type Props = { shadowMapSize?: number; keyIntensity?: number };
 
-export function StudioLights({ shadowMapSize = 2048, keyIntensity = 3.2 }: Props) {
+export function StudioLights({ shadowMapSize = 2048, keyIntensity = 4.2 }: Props) {
   const key = useRef<SpotLight>(null);
   const target = useRef(new Object3D());
   useLayoutEffect(() => {

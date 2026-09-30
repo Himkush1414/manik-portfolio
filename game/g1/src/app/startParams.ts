@@ -31,6 +31,7 @@ export function applyStartParams(): void {
     state: () => ({ progress: bootDoors.progress, state: bootDoors.state }),
     view: (name: keyof typeof VIEWS) => setView(VIEWS[name]),
   });
+  registerDebug('camera', { view: (name: keyof typeof VIEWS) => setView(VIEWS[name]) });
   registerDebug('flowState', { get: () => flow.state });
   const mode = startMode();
   if (mode === 'boot') return; // the boot timeline sets up its own initial state

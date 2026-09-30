@@ -17,6 +17,12 @@ export const director = {
 export const VIEWS = {
   bootGate: { pos: [0, 6.6, 70], look: [0, 6.9, 38], focus: [0, 6.9, 38], fov: 30 },
   hangar: { pos: [0, 3.4, 33], look: [0, 1.9, 0], focus: [0, 1.9, 0], fov: 30 },
+  // ship QA angles (brief §10 iteration loop)
+  ship3q: { pos: [18, 7.5, 22], look: [0, 1.9, 0], focus: [0, 1.9, 0], fov: 30 },
+  shipSide: { pos: [33, 2.6, 0.01], look: [0, 2.1, 0], focus: [0, 2.1, 0], fov: 30 },
+  shipTop: { pos: [0, 36, 0.6], look: [0, 2.1, 0], focus: [0, 2.1, 0], fov: 30 },
+  shipRear: { pos: [-13, 5.5, -26], look: [0, 2.1, 0], focus: [0, 2.1, 0], fov: 30 },
+  shipLow: { pos: [9, 0.7, 25], look: [0, 2.4, 0], focus: [0, 2.2, 0], fov: 30 },
 } as const;
 
 /** Boot FX plane: 8 u in front of the gate camera. */
