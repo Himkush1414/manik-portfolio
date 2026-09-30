@@ -7,7 +7,8 @@ import { Bay } from './bay/Bay';
 import { BayLife } from './bay/BayLife';
 import { ParkedFighters } from './bay/ParkedFighters';
 import { ContactShadow } from './ContactShadow';
-import { markContentReady } from '../sceneBridge';
+import { markContentReady, cockpitMount } from '../sceneBridge';
+import { stage } from '../Stage';
 import { Floor } from './bay/Floor';
 import { SpaceVista } from './bay/SpaceVista';
 import { Pad } from './Pad';
@@ -100,7 +101,18 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
     return () => window.removeEventListener('pointermove', move);
   }, []);
 
+  // pre-warm the cockpit a few seconds after the hangar first settles
+  useEffect(() => {
+    if (flowState !== 'hangar.idle' || cockpitMount.wanted) return;
+    const idle = (window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300))) as (cb: () => void, o?: { timeout: number }) => number;
+    const t = window.setTimeout(() => idle(() => cockpitMount.want(), { timeout: 3000 }), 2500);
+    return () => window.clearTimeout(t);
+  }, [flowState]);
+
+  const hall = useRef<Group>(null);
   useFrame((state, dt) => {
+    // the hangar is hidden while the pilot is in the cockpit (swapped behind the bulkhead)
+    if (hall.current) hall.current.visible = stage.cockpit < 0.5;
     updateTurntable(dt);
     if (spin.current) spin.current.rotation.y = turntable.yaw;
     if (bay.current) bay.current.visible = !hangarCam.manual;
@@ -108,7 +120,7 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
   });
 
   return (
-    <>
+    <group ref={hall} name="hangar">
       {/* staged mount: one part per frame so no single commit blocks a boot beat */}
       {step >= 0 && <Floor reflections={q.reflections} />}
       <group ref={bay}>
@@ -120,6 +132,6 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
       {step >= 2 && <Pad reduceMotion={reduceMotion} />}
       <group ref={spin}>{step >= 6 && <ShipDisplay shipId={shipId} forceUnlocked={forceUnlocked} />}</group>
       {step >= 6 && <ContactShadow />}
-    </>
+    </group>
   );
 }

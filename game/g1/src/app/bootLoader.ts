@@ -2,8 +2,9 @@
 // loading"). Progress = completed weight / total; the loading beat waits for
 // true readiness. Tasks are added here as slices land (ship geometry in 1C,
 // hangar in 1D, cockpit compile in 1G).
-import { WebGLRenderTarget, HalfFloatType, type WebGLRenderer, type Scene, type Camera } from 'three';
+import { WebGLRenderTarget, HalfFloatType } from 'three';
 import { registerTask, whenDone } from '../core/loader';
+import { compileHdr } from '../render/compile';
 import { loadDoorAssets } from '../scenes/shared/doors/doorAssets';
 import { preloadShipGeometry } from '../ships/ShipFactory';
 import { hasSpec } from '../ships/specs';
@@ -162,22 +163,3 @@ const idle = () =>
     if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 1500 });
     else setTimeout(resolve, 200);
   });
-
-/**
- * Parallel (KHR) compile of every layer's programs against an HDR target:
- * variants are keyed on the output colour space, and the world always renders
- * into the composer's linear HalfFloat buffer — compiling for the screen
- * (sRGB) produced the wrong variants and a 3.3 s synchronous recompile later.
- */
-async function compileHdr(gl: WebGLRenderer, scene: Scene, camera: Camera): Promise<void> {
-  const mask = camera.layers.mask;
-  camera.layers.enableAll();
-  const probe = new WebGLRenderTarget(4, 4, { type: HalfFloatType });
-  const prevTarget = gl.getRenderTarget();
-  gl.setRenderTarget(probe);
-  const done = gl.compileAsync(scene, camera);
-  gl.setRenderTarget(prevTarget);
-  camera.layers.mask = mask;
-  await done;
-  probe.dispose();
-}

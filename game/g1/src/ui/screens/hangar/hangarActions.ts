@@ -7,6 +7,7 @@ import { unlockState } from '../../../data/unlocks';
 import { SHIPS, type ShipId } from '../../../data/ships';
 import { sfx } from '../../../audio/sfx';
 import { flow } from '../../../app/flow';
+import { launch } from '../../../app/choreo/launchTimeline';
 
 /** The ship on the pad (may be locked). */
 export function useViewedShip(): ShipId {
@@ -55,7 +56,7 @@ export function closeModal(): void {
   useUi.getState().openModal(null);
 }
 
-/** START MISSION: the launch sequence (bulkhead, cockpit) lands in 1G. */
+/** START MISSION: bulkhead -> cockpit (app/choreo/launchTimeline.ts). */
 export function startMission(): boolean {
   const ui = useUi.getState();
   const profile = useProfile.getState();
@@ -64,7 +65,7 @@ export function startMission(): boolean {
     sfx.play('deny');
     return false;
   }
-  sfx.play('confirm');
-  ui.toast('Launch sequence arms in the next build — Sortie 001 standing by', 'info');
-  return true;
+  // the pad shows the flown ship: launch always flies the selected (unlocked) one
+  ui.setViewedShip(profile.selectedShip);
+  return launch();
 }

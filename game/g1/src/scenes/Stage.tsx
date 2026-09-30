@@ -8,6 +8,7 @@ import { PostFX } from '../render/PostFX';
 import { BootFX } from './boot/BootFX';
 import { BOOT_LAYER, bootFx } from './boot/bootFxParams';
 import { World } from './World';
+import { MIRROR_LAYER } from './sceneBridge';
 import { useLoader } from '../core/loader';
 import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from '../render/perf';
@@ -16,12 +17,15 @@ import gsap from 'gsap';
 import { useFlow, isBoot } from '../app/flow';
 import { BOOT } from '../data/boot.config';
 
-export const stage = { world: 0 };
+/** world: 0 = boot FX only, 1 = full world. cockpit: 0 = hangar, 1 = cockpit (swapped while the bulkhead is sealed). */
+export const stage = { world: 0, cockpit: 0 };
 
 function LayerMask() {
   useFrame(({ camera }) => {
-    if (stage.world >= 0.5) camera.layers.enableAll();
-    else camera.layers.set(BOOT_LAYER);
+    if (stage.world >= 0.5) {
+      camera.layers.enableAll();
+      camera.layers.disable(MIRROR_LAYER); // own ship: mirrors only
+    } else camera.layers.set(BOOT_LAYER);
   }, -2);
   return null;
 }

@@ -1,17 +1,20 @@
-// The persistent 3D world content: the hangar (bay, deck, pad, ship) + the
-// bay's pressure doors at the entrance. Camera/post live in <Stage/>.
-import { useEffect } from 'react';
+// The persistent 3D world content: the hangar (bay, deck, pad, ship), the
+// bay's pressure doors at the entrance, the launch bulkhead (camera-attached)
+// and the cockpit (mounted during hangar idle). Camera/post live in <Stage/>.
+import { useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { StudioEnvironment } from '../render/env/StudioEnvironment';
 import { StudioLights } from '../render/env/StudioLights';
 import { BlastDoors } from './shared/BlastDoors';
 import { LookdevContent } from './LookdevContent';
 import { Hangar } from './hangar/Hangar';
+import { Bulkhead } from './cockpit/Bulkhead';
+import { Cockpit, CockpitLights } from './cockpit/Cockpit';
 import { useUi } from '../state/ui.store';
 import { useProfile } from '../state/profile.store';
 import { QUERY, DEBUG } from '../core/constants';
 import { isShipId } from '../data/ships';
-import { bootDoors, DOOR_Z, markWorldMounted, markContentReady } from './sceneBridge';
+import { bootDoors, DOOR_Z, markWorldMounted, markContentReady, cockpitMount } from './sceneBridge';
 import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from '../render/perf';
 import { registerDebug } from '../debug/debugApi';
@@ -31,18 +34,24 @@ export function World() {
   const gl = useThree(s => s.gl);
   const scene = useThree(s => s.scene);
   const camera = useThree(s => s.camera);
+  const lookdev = QUERY.get('screen') === 'lookdev';
+  const [cockpitOn, setCockpitOn] = useState(cockpitMount.wanted);
+  useEffect(() => cockpitMount.subscribe(() => setCockpitOn(true)), []);
   useEffect(() => {
     performance.mark('world:mounted');
     markWorldMounted({ gl, scene, camera });
-    if (QUERY.get('screen') === 'lookdev') markContentReady(); // no staged hangar there
+    if (lookdev) markContentReady(); // no staged hangar there
     registerDebug('world', { scene: () => scene });
-  }, [gl, scene, camera]);
+  }, [gl, scene, camera, lookdev]);
   return (
     <>
       <StudioEnvironment />
       <StudioLights shadowMapSize={q.shadowMap} />
-      {QUERY.get('screen') === 'lookdev' ? <LookdevContent /> : <Hangar shipId={shipId} forceUnlocked={!!forced} q={q} reduceMotion={reduceMotion} reduceFlashing={reduceFlashing} />}
+      <CockpitLights />
+      {lookdev ? <LookdevContent /> : <Hangar shipId={shipId} forceUnlocked={!!forced} q={q} reduceMotion={reduceMotion} reduceFlashing={reduceFlashing} />}
       <BlastDoors controller={bootDoors} position={[0, 0, DOOR_Z]} particles={q.particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
+      {!lookdev && <Bulkhead reduceMotion={reduceMotion} />}
+      {!lookdev && cockpitOn && <Cockpit reduceMotion={reduceMotion} />}
       <fog attach="fog" args={['#04050A', 40, 110]} />
     </>
   );

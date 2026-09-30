@@ -18,11 +18,14 @@ type Props = {
   particles?: number;
   reduceFlashing?: boolean;
   reduceMotion?: boolean;
+  /** DoorFX + corridor light. OFF for the bulkhead: adding lights later would
+   *  change every program's light count (recompile hitch). */
+  fx?: boolean;
 };
 
 const LED = { sealed: hdr('danger', 1), moving: hdr('hot', 1), open: hdr('ok', 1) };
 
-export function BlastDoors({ controller, position = [0, 0, 0], particles = 1, reduceFlashing = false, reduceMotion = false }: Props) {
+export function BlastDoors({ controller, position = [0, 0, 0], particles = 1, reduceFlashing = false, reduceMotion = false, fx = true }: Props) {
   const assets = getDoorAssets();
   const right = useRef<Group>(null);
   const left = useRef<Group>(null);
@@ -141,9 +144,13 @@ export function BlastDoors({ controller, position = [0, 0, 0], particles = 1, re
       </group>
 
       {/* cold overhead corridor light: gives the plate bevels a highlight */}
-      <primitive object={built.corridorTarget} position={[0, 5, 0]} />
-      <spotLight position={[0, 19, 16]} angle={0.62} penumbra={0.9} intensity={60} distance={40} decay={1.4} color="#cfdcff" target={built.corridorTarget} />
-      <DoorFX controller={controller} particles={particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
+      {fx && (
+        <>
+          <primitive object={built.corridorTarget} position={[0, 5, 0]} />
+          <spotLight position={[0, 19, 16]} angle={0.62} penumbra={0.9} intensity={60} distance={40} decay={1.4} color="#cfdcff" target={built.corridorTarget} />
+          <DoorFX controller={controller} particles={particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
+        </>
+      )}
     </group>
   );
 }

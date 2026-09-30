@@ -15,6 +15,11 @@ class PostFxController {
   /** 0..1 full-screen transition blur */
   blur = 0;
   exposure = 1;
+  /** AO intensity multiplier and radius scale (cockpit = near-field scale) */
+  ao = 1;
+  aoRadius = 1;
+  /** DOF bokeh multiplier (cockpit: near-zero, the HUD must stay crisp) */
+  dof = 1;
   reduceFlashing = false;
   private lastPulse = 0;
 

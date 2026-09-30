@@ -6,7 +6,8 @@
 import { QUERY } from '../core/constants';
 import { flow } from './flow';
 import { setView, VIEWS } from '../render/cameraDirector';
-import { bootDoors } from '../scenes/sceneBridge';
+import { bootDoors, launchDoors } from '../scenes/sceneBridge';
+import { bulkhead } from '../scenes/cockpit/Bulkhead';
 import { stage } from '../scenes/Stage';
 import { bootFx } from '../scenes/boot/bootFxParams';
 import { registerDebug } from '../debug/debugApi';
@@ -54,6 +55,16 @@ export function applyStartParams(): void {
     turntableState: () => ({ yaw: turntable.yaw, pitch: turntable.pitch, zoom: turntable.zoom, zoomTarget: turntable.zoomTarget, vel: turntable.vel, enabled: turntable.enabled }),
   });
   registerDebug('flowState', { get: () => flow.state });
+  registerDebug('launch', {
+    stage: () => stage,
+    bulkhead: (patch?: Partial<typeof bulkhead>) => (patch ? Object.assign(bulkhead, patch) : bulkhead),
+    doors: (p: 0 | 1) => launchDoors.set(p),
+    doorsP: () => launchDoors.progress,
+    hide: (name: string, on = true) => {
+      const root = (window as unknown as { __G1__: { world: { scene(): import('three').Scene } } }).__G1__.world.scene();
+      root.traverse(o => void (o.name === name && (o.visible = !on)));
+    },
+  });
   // DEV CHEATS (brief §14; only exist with ?debug=1)
   registerDebug('cheats', {
     credits: (n = 10000) => useProfile.getState().grantCredits(n),

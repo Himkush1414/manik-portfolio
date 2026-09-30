@@ -46,6 +46,7 @@ type Chain = {
   dof: DepthOfFieldEffect | null;
   blur: TransitionBlurEffect;
   blurPass: EffectPass;
+  n8: N8AOPostPass | null;
 };
 
 export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range }: PostFXProps) {
@@ -72,8 +73,9 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
     const composer = new EffectComposer(gl, { frameBufferType: HalfFloatType, multisampling: q.multisampling });
     composer.addPass(new RenderPass(scene, camera));
 
+    let n8: N8AOPostPass | null = null;
     if (useAO) {
-      const n8 = new N8AOPostPass(scene, camera, size.width, size.height);
+      n8 = new N8AOPostPass(scene, camera, size.width, size.height);
       Object.assign(n8.configuration, POST.ao);
       n8.setQualityMode(POST.aoQuality);
       composer.addPass(n8);
@@ -117,7 +119,7 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
     composer.setSize(size.width, size.height);
     composerRef.current = composer;
     registerDebug('post', { composer: () => composer });
-    chainRef.current = { bloom, ca, exposure, vignette, dof, blur, blurPass };
+    chainRef.current = { bloom, ca, exposure, vignette, dof, blur, blurPass, n8 };
     return () => {
       composerRef.current = null;
       chainRef.current = null;
@@ -152,6 +154,18 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
     }
     if (chain.vignette) chain.vignette.darkness = POST.vignette.darkness + postfx.vignette;
     chain.exposure.exposure = postfx.exposure;
+    if (chain.dof) chain.dof.bokehScale = POST.dof.bokeh * postfx.dof;
+    if (chain.n8) {
+      // uniforms only (no recompile): intensity + near-field radius scale
+      // intensity 0 made N8AO output NaN (pow(0,0)) -> black frame through bloom:
+      // below a floor the pass is disabled instead (postprocessing skips it)
+      chain.n8.enabled = postfx.ao > 0.02;
+      const c = chain.n8.configuration as { intensity: number; aoRadius: number; distanceFalloff: number };
+      const I = POST.ao.intensity * Math.max(0.02, postfx.ao), R = POST.ao.aoRadius * postfx.aoRadius, F = POST.ao.distanceFalloff * postfx.aoRadius;
+      if (c.intensity !== I) c.intensity = I;
+      if (c.aoRadius !== R) c.aoRadius = R;
+      if (c.distanceFalloff !== F) c.distanceFalloff = F;
+    }
     chain.blur.amount = postfx.blur;
     chain.blurPass.enabled = postfx.blur > 0.002;
 

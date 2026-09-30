@@ -29,6 +29,7 @@ import type { ShipId } from '../data/ships';
 import { whenWorldMounted } from '../scenes/sceneBridge';
 import { HEX } from './palette';
 import { bakeClient } from '../workers/bakeClient';
+import { safeCompileAsync } from './compile';
 
 export const THUMB = { w: 304, h: 192, dpr: 2 } as const;
 const FILL = 0.9; // box corners are conservative; the hull itself lands ~0.8
@@ -124,7 +125,7 @@ async function render(id: ShipId, opts: ThumbOptions): Promise<string> {
   const prev = { target: gl.getRenderTarget(), color: gl.getClearColor(new Color()), alpha: gl.getClearAlpha(), tm: gl.toneMapping, autoClear: gl.autoClear };
   try {
     gl.setRenderTarget(hdrRT); // compile the HalfFloat variants (see bootLoader)
-    await gl.compileAsync(scene, cam);
+    await safeCompileAsync(gl, scene, cam);
     gl.setRenderTarget(prev.target);
     gl.toneMapping = NoToneMapping;
     gl.autoClear = true;
@@ -134,7 +135,7 @@ async function render(id: ShipId, opts: ThumbOptions): Promise<string> {
     tonemap.uniforms.tSrc.value = hdrRT.texture;
     tonemap.uniforms.uRaw.value = opts.silhouette ? 1 : 0;
     gl.setRenderTarget(ldrRT);
-    await gl.compileAsync(quadScene(), quadCam);
+    await safeCompileAsync(gl, quadScene(), quadCam);
     // frames ran during the await: re-bind the target + clear state
     gl.setRenderTarget(ldrRT);
     gl.setClearColor(0x000000, 0);

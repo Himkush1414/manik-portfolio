@@ -110,7 +110,7 @@ export function HangarUI() {
   // MISSION -> pilot / briefing. Both panel layers share the parallax vars.
   const drift = { position: 'absolute', inset: 0, pointerEvents: 'none', transform: 'translate3d(var(--px, 0px), var(--py, 0px), 0)' } as const;
   return (
-    <div ref={root} className={s.root} data-modal={flowState === 'hangar.upgrades' || flowState === 'hangar.settings'}>
+    <div ref={root} className={s.root} data-modal={flowState === 'hangar.upgrades' || flowState === 'hangar.settings'} data-launch={flowState.startsWith('launch.')}>
       <div className={s.grain} aria-hidden />
       <TopBar />
       <div ref={layer} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>

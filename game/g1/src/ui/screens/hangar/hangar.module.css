@@ -20,6 +20,11 @@
 .root > * { transition: opacity var(--dur-base) var(--ease-out-expo), filter var(--dur-base); }
 .root[data-modal='true'] > :not([role='dialog']):not([role='status']) { opacity: 0; filter: blur(6px); pointer-events: none !important; }
 .root[data-modal='true'] > :not([role='dialog']) * { pointer-events: none !important; }
+/* START MISSION: the whole hangar UI retracts (0.5 s) while the bulkhead
+   seals; it fades back when the pilot returns */
+.root[data-launch='true'] { visibility: hidden; transition: visibility 0s linear 0.5s; }
+.root[data-launch='true'] > * { opacity: 0; filter: blur(10px); transform: scale(1.015); transition: opacity 0.45s var(--ease-in-out-quart), filter 0.45s, transform 0.5s var(--ease-in-out-quart); }
+.root[data-launch='true'] * { pointer-events: none !important; }
 
 /* grain + scanlines over the whole UI layer (<= 6%) */
 .grain {

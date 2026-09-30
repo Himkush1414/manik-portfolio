@@ -16,7 +16,7 @@ this file alone. Updated after every slice.
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
-| 1G Cockpit + camera select | — | |
+| 1G Cockpit + camera select | IN PROGRESS | bulkhead, cockpit (interior, tunnel, 3 live mirrors), systems boot, combiner briefing, camera selector, standby, ESC return DONE; next: polish pass (hands/body framing, tunnel mouth), light/heavy variant check, 20-round-trip leak check |
 | 1H QA / polish / perf | — | |
 
 **Next step:** see the first slice not marked DONE above; its sub-steps are in §5.
@@ -451,6 +451,31 @@ HDRIs / kit parts if ever needed (none used so far).
   phase (Esc cancels; reserved codes refused), conflicts offer SWAP/CANCEL.
   PITFALL: an absolutely positioned <svg> with only `inset: 0` stays 300x150 —
   give replaced elements explicit width/height. QA: `tools/qa-modals.mjs`.
+- **Cockpit entry (1G):** `app/choreo/launchTimeline.ts` (launch / briefingAck /
+  chooseCamera / returnToHangar; every step a flow event). Bulkhead =
+  `scenes/cockpit/Bulkhead.tsx`: the same BlastDoors (shared assets, `fx=false`
+  => no extra lights => no program recompiles) attached to the director pose at
+  0.32 m, scaled so the view sits INSIDE the panels' travel (closed: covered;
+  open: toothed edges clear). The world swaps while sealed (`stage.cockpit`).
+  Cockpit at `COCKPIT_ORIGIN` (-2600 z: outside every hangar light cone, past
+  the far plane from the bay) = `buildCockpit.ts` (interior, variants from
+  `cockpitSpec.ts`), `LaunchTunnel.tsx`, own ship on MIRROR_LAYER (mirrors
+  only), `Mirrors.tsx` (3 HalfFloat RTs, 30 fps, surfaces on their own layer),
+  `displays.ts` (MFD + combiner canvases). `CockpitLights` live in the World
+  from boot (constant light count), dark until needed. Pre-warm: the hangar
+  asks for the cockpit 2.5 s after it settles (`cockpitMount`), the cockpit
+  compiles hidden (force-visible) and reports ready; START MISSION waits on
+  it behind the sealed doors. Cockpit post: `postfx.ao/aoRadius/dof` (AO
+  near-field scale, DOF ~off so the combiner text stays crisp).
+- **1G pitfalls (measured):** (1) N8AO intensity 0 => NaN => black frame:
+  disable the pass instead. (2) DoorController keeps ONE live tween: building
+  the open tween up front killed the close tween (doors never closed) —
+  start each move at its beat. (3) three's compileAsync throws (uncaught) if
+  a material is disposed while it polls and never resolves — use
+  `render/compile.ts safeCompileAsync` everywhere. (4) renderer.compile uses
+  traverseVisible: hidden subtrees must be force-visible to pre-compile.
+  (5) combiner text: no mipmaps + anisotropy, under the bloom threshold.
+  QA: `tools/qa-launch.mjs` (beat-polled round trip).
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH

@@ -7,6 +7,7 @@ import { AgXToneMapping, Color, DirectionalLight, HemisphereLight, PMREMGenerato
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildBust, type Bust } from './buildBust';
 import { PILOT_SPECS } from './specs';
+import { safeCompileAsync } from '../render/compile';
 
 export type PilotId = 'onyx' | 'ember';
 export type Rect = { x: number; y: number; w: number; h: number }; // canvas-local CSS px, y from top
@@ -67,7 +68,7 @@ export function createBustRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, 
 
   // parallel (KHR) compile before the first draw: no synchronous links
   let compiled = false;
-  const ready = Promise.all(rigs.map(r => renderer.compileAsync(r.scene, r.cam))).then(() => {
+  const ready = Promise.all(rigs.map(r => safeCompileAsync(renderer, r.scene, r.cam))).then(() => {
     compiled = true;
   });
 

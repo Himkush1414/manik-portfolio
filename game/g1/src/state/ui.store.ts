@@ -14,6 +14,9 @@ type UiState = {
   ctaHover: boolean;
   audioLocked: boolean;
   toasts: Toast[];
+  /** HUD status lines shown over the sealed bulkhead */
+  launchLines: string[];
+  setLaunchLines(l: string[]): void;
   openModal(m: ModalId): void;
   setCtaHover(v: boolean): void;
   setAudioLocked(v: boolean): void;
@@ -30,6 +33,8 @@ export const useUi = create<UiState>()(set => ({
   ctaHover: false,
   audioLocked: false,
   toasts: [],
+  launchLines: [],
+  setLaunchLines: launchLines => set({ launchLines }),
   openModal: modal => set({ modal }),
   setCtaHover: ctaHover => set({ ctaHover }),
   setAudioLocked: audioLocked => set({ audioLocked }),

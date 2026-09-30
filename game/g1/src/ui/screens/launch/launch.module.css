@@ -1,0 +1,78 @@
+/* Launch / cockpit overlay (brief §15). The 3D HUD lives on the combiner
+   glass; this layer carries the seal lines, the helmet frame and the
+   interactive controls (keyboard + pointer + screen readers). */
+.root { position: fixed; inset: 0; z-index: 30; pointer-events: none; color: var(--frost); }
+.root button { pointer-events: auto; }
+
+.seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 12);
+  font: 600 calc(var(--u) * 20) / 1 var(--font-mono);
+  letter-spacing: 0.34em;
+  text-align: center;
+  color: var(--core);
+  text-shadow: 0 0 calc(var(--u) * 16) rgba(255, 90, 31, 0.6);
+}
+.seal span { animation: typeIn 0.28s steps(12) both; overflow: hidden; white-space: nowrap; }
+@keyframes typeIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* helmet frame: dark visor rim (Settings > Camera > Helmet frame) */
+.helmet { position: absolute; inset: 0; pointer-events: none; transition: opacity var(--dur-slow); }
+.helmet[data-mode='subtle'] { background: radial-gradient(ellipse 78% 82% at 50% 46%, transparent 72%, rgba(2, 3, 6, 0.55) 90%, rgba(2, 3, 6, 0.9) 100%); }
+.helmet[data-mode='full'] { background: radial-gradient(ellipse 70% 76% at 50% 44%, transparent 62%, rgba(2, 3, 6, 0.8) 82%, #020306 94%); }
+
+.bar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 54);
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 14);
+}
+.hint { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.2em; color: var(--steel); text-transform: uppercase; }
+.go { min-width: calc(var(--u) * 260); height: calc(var(--u) * 56); font-size: calc(var(--u) * 16) !important; letter-spacing: 0.34em !important; }
+.esc { position: absolute; left: calc(var(--u) * 48); top: calc(var(--u) * 32); }
+
+/* camera-mode selector */
+.select { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 22); }
+.selTitle { font: 900 calc(var(--u) * 44) / 1 var(--font-title); letter-spacing: 0.08em; text-shadow: 0 2px calc(var(--u) * 24) rgba(4, 5, 10, 0.95); }
+.cards { display: flex; gap: calc(var(--u) * 18); }
+.card {
+  --c: calc(var(--u) * 14);
+  position: relative;
+  width: calc(var(--u) * 330);
+  padding: calc(var(--u) * 18) calc(var(--u) * 20) calc(var(--u) * 20);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 10);
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--steel-a30);
+  background: linear-gradient(160deg, rgba(13, 19, 48, 0.92), rgba(4, 5, 10, 0.94));
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  outline: none;
+  transition: transform var(--dur-fast) var(--ease-out-expo), border-color var(--dur-fast), background var(--dur-fast);
+}
+.card:hover { transform: translateY(calc(var(--u) * -4)); border-color: var(--steel-a60); }
+.card:focus-visible { border-color: var(--ice); box-shadow: inset 0 0 0 1px var(--ice); }
+.card[data-default='true'] { border-color: var(--ignition-a60); background: linear-gradient(160deg, rgba(255, 90, 31, 0.16), rgba(4, 5, 10, 0.94)); }
+.cardKey { position: absolute; right: calc(var(--u) * 16); top: calc(var(--u) * 16); }
+.cardName { font: 700 calc(var(--u) * 22) / 1 var(--font-ui); letter-spacing: 0.12em; }
+.cardDesc { font: 400 calc(var(--u) * 14) / 1.45 var(--font-body); color: var(--frost-a85); min-height: 2.9em; }
+.best { align-self: flex-start; font: 600 calc(var(--u) * 10) / 1 var(--font-mono); letter-spacing: 0.2em; color: var(--hot); border: 1px solid var(--ignition-a60); padding: calc(var(--u) * 5) calc(var(--u) * 8); }
+.schem { width: 100%; height: calc(var(--u) * 110); }
+.foot { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.18em; color: var(--steel); }
+.saved { font: 500 calc(var(--u) * 10) / 1 var(--font-mono); letter-spacing: 0.2em; color: var(--ok); }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .seal span { animation: none; }
+}
