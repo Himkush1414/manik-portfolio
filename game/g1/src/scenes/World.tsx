@@ -23,7 +23,8 @@ export function World() {
   const degrade = usePerf(s => s.degrade);
   const selected = useProfile(s => s.selectedShip);
   const viewed = useUi(s => s.viewedShip);
-  // ?debug=1&ship=<id>: QA display override (never written to the save)
+  // ?debug=1&ship=<id>: QA display override — the real ship even if locked,
+  // never written to the save (plain ?ship= is a deep link, see startParams)
   const forced = DEBUG ? QUERY.get('ship') : null;
   const shipId = forced && isShipId(forced) ? forced : (viewed ?? selected);
   const q = resolveQuality(graphics, degrade);
@@ -40,7 +41,7 @@ export function World() {
     <>
       <StudioEnvironment />
       <StudioLights shadowMapSize={q.shadowMap} />
-      {QUERY.get('screen') === 'lookdev' ? <LookdevContent /> : <Hangar shipId={shipId} q={q} reduceMotion={reduceMotion} reduceFlashing={reduceFlashing} />}
+      {QUERY.get('screen') === 'lookdev' ? <LookdevContent /> : <Hangar shipId={shipId} forceUnlocked={!!forced} q={q} reduceMotion={reduceMotion} reduceFlashing={reduceFlashing} />}
       <BlastDoors controller={bootDoors} position={[0, 0, DOOR_Z]} particles={q.particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
       <fog attach="fog" args={['#04050A', 40, 110]} />
     </>

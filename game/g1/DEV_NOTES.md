@@ -13,7 +13,7 @@ this file alone. Updated after every slice.
 | 1A Foundation | DONE | lookdev gate renders full post stack; 26 unit tests; prod build isolated |
 | 1B Boot + BlastDoors | DONE | BlastDoors + full 5-beat boot timeline, honest loader, skip, reduced motion |
 | 1C Ship pipeline | DONE | ShipFactory + bake worker, six ships (HALCYON 5 passes, others 3 / TEMPEST 1 — §8), hologram, dissolve swap, thumbnails, LOD tests, silhouette test PASS |
-| 1D Hangar scene | IN PROGRESS | deck (reflector), bay shell, space vista + force field, pad (rings, pylons, pulse, scan plane), turntable + hangar camera, bay life (cranes, beacons, holo displays, shafts + dust, steam, welding), 4 parked fighters, contact shadow, dissolving key shadow DONE; next: final 1D pass (six-ship check in the hangar, polish, URLs) |
+| 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
 | 1E Hangar UI + pilots + story | — | |
 | 1F Upgrades / Settings / Save | — | |
 | 1G Cockpit + camera select | — | |
@@ -400,6 +400,10 @@ HDRIs / kit parts if ever needed (none used so far).
 - **QA:** `tools/qa-turntable.mjs` (drag/inertia, pitch spring, zoom clamps,
   reset, keys, auto-rotate rate), `qa-holo.mjs`, `qa-hangar.mjs`. QA ship
   views (`camera.view`) hide the bay (they sit outside its walls).
+- **Ship links:** `/game/g1/?boot=0&ship=<id>` puts that ship on the pad
+  (locked = hologram, as in the game; an unlocked one also becomes the
+  selected ship). Add `&debug=1` to see a locked ship as the real craft
+  (never saved). QA: `tools/qa-six.mjs [origin] [--debug]`.
 - **QA GPU:** headless Chrome defaults to the Intel UHD 770 iGPU (well below
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH

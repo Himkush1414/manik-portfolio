@@ -1,6 +1,7 @@
 // Query-param entry points (QA harness + dev). Idempotent.
 //   ?boot=0          skip the boot sequence, land in the hangar
 //   ?screen=doors    park the camera on the bay doors (seek via __G1__.doors)
+//   ?ship=<id>       deep link: that ship on the pad (+ debug=1: shown unlocked)
 // Default: the full boot sequence (flow stays in boot.black until it starts).
 import { QUERY } from '../core/constants';
 import { flow } from './flow';
@@ -10,7 +11,10 @@ import { stage } from '../scenes/Stage';
 import { bootFx } from '../scenes/boot/bootFxParams';
 import { registerDebug } from '../debug/debugApi';
 import { shipThumbnail, type ThumbOptions } from '../render/thumbnails';
-import type { ShipId } from '../data/ships';
+import { isShipId, type ShipId } from '../data/ships';
+import { useUi } from '../state/ui.store';
+import { useProfile } from '../state/profile.store';
+import { unlockState } from '../data/unlocks';
 import { hangarCam } from '../scenes/hangar/hangarCamera';
 import { turntable } from '../scenes/hangar/turntable';
 
@@ -61,6 +65,14 @@ export function applyStartParams(): void {
       });
     },
   });
+  // ?ship=<id>: deep link — that ship on the pad (locked ones as holograms);
+  // an unlocked one also becomes the selected ship
+  const linked = QUERY.get('ship');
+  if (isShipId(linked)) {
+    useUi.getState().setViewedShip(linked);
+    const profile = useProfile.getState();
+    if (unlockState(linked, profile).unlocked) profile.selectShip(linked);
+  }
   const mode = startMode();
   if (mode === 'boot') return; // the boot timeline sets up its own initial state
   stage.world = 1;

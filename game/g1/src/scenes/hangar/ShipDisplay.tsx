@@ -20,10 +20,10 @@ import { padFx, padMaterialise } from './padFx';
 const OUT = 0.5;
 const IN = 0.7;
 
-export function ShipDisplay({ shipId }: { shipId: ShipId }) {
+export function ShipDisplay({ shipId, forceUnlocked = false }: { shipId: ShipId; forceUnlocked?: boolean }) {
   const [shown, setShown] = useState(shipId);
   const livery = useProfile(s => s.liveryByShip[shown] ?? 0);
-  const locked = useProfile(s => !unlockState(shown, s).unlocked);
+  const locked = useProfile(s => !forceUnlocked && !unlockState(shown, s).unlocked);
   const reduceMotion = useSettings(s => s.accessibility.reduceMotion);
   const ctaHover = useUi(s => s.ctaHover);
   const root = useRef<Group>(null);

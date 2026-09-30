@@ -23,7 +23,7 @@ import type { EffectiveQuality } from '../../render/perf';
 
 const STAGES = 6;
 
-export function Hangar({ shipId, q, reduceMotion, reduceFlashing }: { shipId: ShipId; q: EffectiveQuality; reduceMotion: boolean; reduceFlashing: boolean }) {
+export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceFlashing }: { shipId: ShipId; forceUnlocked?: boolean; q: EffectiveQuality; reduceMotion: boolean; reduceFlashing: boolean }) {
   const gl = useThree(s => s.gl);
   const flowState = useFlow(s => s.state);
   const inHangar = flowState.startsWith('hangar.');
@@ -100,7 +100,7 @@ export function Hangar({ shipId, q, reduceMotion, reduceFlashing }: { shipId: Sh
         {step >= 5 && <ParkedFighters />}
       </group>
       {step >= 2 && <Pad reduceMotion={reduceMotion} />}
-      <group ref={spin}>{step >= 6 && <ShipDisplay shipId={shipId} />}</group>
+      <group ref={spin}>{step >= 6 && <ShipDisplay shipId={shipId} forceUnlocked={forceUnlocked} />}</group>
       {step >= 6 && <ContactShadow />}
     </>
   );
