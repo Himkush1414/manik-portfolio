@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | | (a) post-boot stalls DONE; next (b) first-gesture audio, (c) iGPU hangar DRS, then sim core / input / FSM / DRS / perf / bot as separate pushes |
+| 2A Foundation | IN PROGRESS | 562274a (a) | (a) post-boot stalls DONE; (b) first-gesture audio DONE; next (c) iGPU hangar DRS, then sim core / input / FSM / DRS / perf / bot as separate pushes |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -147,10 +147,34 @@ Decisions (2026-10-01, before code):
    (material, object kind), polled parallel link, one texture upload per
    step) replaces the cockpit's compileHdr; HangarUI mounts its five panels
    one per frame and enters them with WAAPI keyframes (no style reads);
-   thumbnails read back in 48-row strips, one per idle slot. Result (prod,
+   thumbnails read back in row strips (see amendment 2 for the final size). Result (prod,
    2 runs, full boot): **0 tasks > 30 ms after 11 s** (boot-masked tasks
    unchanged); qa:phase1 hangar + cockpit groups on prod: 43 shots, console
-   clean.
+   clean. Pushed `562274a`.
+2. **Carry-over (b), first-gesture audio (2026-10-01).** Measured: the first
+   `new AudioContext()` in a browser process blocks the main thread 15-280 ms
+   on this machine (synchronous audio-service/output setup; later contexts
+   < 1 ms), plus 2-10 ms of noise synthesis — all inside the first click
+   (prod: 261-292 ms gesture task). A pre-gesture context would make Chrome
+   log its autoplay warning (zero-warnings rule), so: `AudioBus.prewarm()`
+   calls the async, permission-free `enumerateDevices()` at load (some runs
+   then construct in ~15 ms) and synthesises the shared noise in idle slices;
+   the context is created in the task AFTER the gesture (sticky activation),
+   never inside it. Result (prod x3): **gesture task 1.5-8 ms**; the one-off
+   audio-init task (230-270 ms here) still follows it — known issue P2.7.
+   Audio verified: context running, hangar bed RMS 0.018 (Phase 1: 0.017),
+   hint gone, console clean. Also fixed a regression from (a): 48-row strips
+   with an idle wait each delayed thumbnails to ~25 s; now 2 strips of 192
+   rows without idle waits — all six by ~16 s (Phase 1 ~12 s), 0 tasks > 30 ms.
+
+## P2.7 Known issues (Phase 2)
+
+- First-click audio init: the browser's one-off AudioContext setup
+  (230-270 ms in headless Chrome on this machine, 15 ms on some warm runs) runs
+  in the task right after the first gesture. Unavoidable without a
+  pre-gesture context (Chrome autoplay warning). It happens once, in the
+  boot/hangar, never in a mission (a mission is always entered by clicks).
+- Thumbnails appear ~4 s later than Phase 1 (2-strip readback, fences).
 
 ## P2.5 Design intent — Phase 2 assets (written before modelling)
 

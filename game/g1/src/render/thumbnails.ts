@@ -30,11 +30,10 @@ import { whenWorldMounted } from '../scenes/sceneBridge';
 import { HEX } from './palette';
 import { bakeClient } from '../workers/bakeClient';
 import { safeCompileAsync } from './compile';
-import { idleSlot } from '../core/slicer';
 
 export const THUMB = { w: 304, h: 192, dpr: 2 } as const;
 /** readback strip height (px rows) — keeps each driver copy small */
-const THUMB_STRIP = 48;
+const THUMB_STRIP = 192;
 const FILL = 0.9; // box corners are conservative; the hull itself lands ~0.8
 
 export type ThumbOptions = { livery?: number; locked?: boolean; silhouette?: boolean };
@@ -153,13 +152,13 @@ async function render(id: ShipId, opts: ThumbOptions): Promise<string> {
     gl.setClearColor(0x000000, 0);
     gl.render(quadScene(), quadCam);
     const px = new Uint8Array(W * H * 4);
-    // async (PBO + fence) readback in row STRIPS, one per idle slot: the sync
-    // read stalled ~70 ms; one async read of the whole 608x384 target still
-    // cost a 30-60 ms getBufferSubData (ANGLE/D3D11 copies at map time)
+    // async (PBO + fence) readback in row STRIPS: the sync read stalled ~70 ms;
+    // one async read of the whole 608x384 target still cost a 30-60 ms
+    // getBufferSubData (ANGLE/D3D11 copies at map time). Each strip waits for
+    // its own fence, so the copies land on separate frames.
     for (let y = 0; y < H; y += THUMB_STRIP) {
       const h = Math.min(THUMB_STRIP, H - y);
       const strip = px.subarray(y * W * 4, (y + h) * W * 4);
-      await idleSlot();
       gl.setRenderTarget(ldrRT); // frames ran meanwhile
       await gl.readRenderTargetPixelsAsync(ldrRT, 0, y, W, h, strip);
     }
