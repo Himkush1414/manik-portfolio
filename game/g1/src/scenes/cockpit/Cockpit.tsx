@@ -4,7 +4,7 @@
 // hitches; visible only while stage.cockpit is on (the swap happens behind
 // the sealed bulkhead). While visible it owns the camera: the pilot's eyes,
 // breathing + tiny head-bob noise, FOV from Settings > Camera.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { DirectionalLight, Fog, Object3D, PointLight, Vector3, type Group } from 'three';
 import { buildCockpit } from './buildCockpit';
@@ -41,6 +41,12 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
   const mirrorQ = QUALITY[useSettings(s => s.graphics.preset)].mirror;
   const root = useRef<Group | null>(null);
   const [rootObj, setRootObj] = useState<Group | null>(null);
+  // stable ref callback: an inline one is re-called (null, el) on every render,
+  // which flipped rootObj and re-ran everything parented to it
+  const setRoot = useCallback((el: Group | null) => {
+    root.current = el;
+    setRootObj(el);
+  }, []);
 
   const displays = useMemo(() => createDisplays(), []);
   useEffect(() => () => displays.dispose(), [displays]);
@@ -125,10 +131,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
 
   return (
     <group
-      ref={el => {
-        root.current = el;
-        if (el !== rootObj) setRootObj(el);
-      }}
+      ref={setRoot}
       position={COCKPIT_ORIGIN}
       visible={false}
       name="cockpit-root"

@@ -70,6 +70,8 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
     return { rig, surfaces, bezelMat, bezelGeos };
   }, []);
 
+  // attach / detach only: re-parenting must never dispose (the materials are
+  // reused — disposing them here deleted live programs mid-compile)
   useEffect(() => {
     if (!parent) return;
     m.rig.attach(parent);
@@ -77,16 +79,25 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
     m.surfaces.forEach(s => parent.add(s.holder));
     registerDebug('mirrors', { rig: () => m.rig });
     return () => {
+      m.surfaces.forEach(s => parent.remove(s.holder));
+      m.rig.detach();
+      m.rig.setSource(null);
+    };
+  }, [parent, scene, m]);
+
+  // GPU resources: released once, on unmount
+  useEffect(
+    () => () => {
       m.surfaces.forEach(s => {
-        parent.remove(s.holder);
         s.mat.dispose();
         s.surface.geometry.dispose();
       });
       m.bezelGeos.forEach(g => g.dispose());
       m.bezelMat.dispose();
       m.rig.dispose();
-    };
-  }, [parent, scene, m]);
+    },
+    [m],
+  );
 
   useEffect(() => {
     m.rig.fps = quality.fps;

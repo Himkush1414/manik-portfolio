@@ -40,7 +40,19 @@
 .esc { position: absolute; left: calc(var(--u) * 48); top: calc(var(--u) * 32); }
 
 /* camera-mode selector */
-.select { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 22); }
+.select {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 22);
+  padding: calc(var(--u) * 34) calc(var(--u) * 60);
+  /* scrim: separates the cards from the live cockpit without backdrop-filter */
+  background: radial-gradient(ellipse 60% 58% at 50% 52%, rgba(4, 5, 10, 0.82), rgba(4, 5, 10, 0.55) 62%, transparent 100%);
+}
 .selTitle { font: 900 calc(var(--u) * 44) / 1 var(--font-title); letter-spacing: 0.08em; text-shadow: 0 2px calc(var(--u) * 24) rgba(4, 5, 10, 0.95); }
 .cards { display: flex; gap: calc(var(--u) * 18); }
 .card {
@@ -68,7 +80,7 @@
 .cardDesc { font: 400 calc(var(--u) * 14) / 1.45 var(--font-body); color: var(--frost-a85); min-height: 2.9em; }
 .best { align-self: flex-start; font: 600 calc(var(--u) * 10) / 1 var(--font-mono); letter-spacing: 0.2em; color: var(--hot); border: 1px solid var(--ignition-a60); padding: calc(var(--u) * 5) calc(var(--u) * 8); }
 .schem { width: 100%; height: calc(var(--u) * 110); }
-.foot { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.18em; color: var(--steel); }
+.foot { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: 0.18em; color: var(--steel); background: rgba(4, 5, 10, 0.88); padding: calc(var(--u) * 7) calc(var(--u) * 14); }
 .saved { font: 500 calc(var(--u) * 10) / 1 var(--font-mono); letter-spacing: 0.2em; color: var(--ok); }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

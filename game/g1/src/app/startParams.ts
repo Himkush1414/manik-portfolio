@@ -2,6 +2,10 @@
 //   ?boot=0          skip the boot sequence, land in the hangar
 //   ?screen=doors    park the camera on the bay doors (seek via __G1__.doors)
 //   ?ship=<id>       deep link: that ship on the pad (+ debug=1: shown unlocked)
+//   ?livery=<0-4|5>  livery of that ship        ?pilot=onyx|ember
+//   ?screen=upgrades|settings              open that modal once the hangar is up
+//   ?screen=briefing|camera|cockpit        run the real launch flow (sped up) to it
+//   ?unlock=all  ?credits=<n>              save edits: only with ?debug=1
 // Default: the full boot sequence (flow stays in boot.black until it starts).
 import { QUERY } from '../core/constants';
 import { flow } from './flow';
@@ -18,6 +22,12 @@ import { useProfile } from '../state/profile.store';
 import { unlockState } from '../data/unlocks';
 import { hangarCam } from '../scenes/hangar/hangarCamera';
 import { turntable } from '../scenes/hangar/turntable';
+import { whenContentReady } from '../scenes/sceneBridge';
+import { useLoader } from '../core/loader';
+import { DEBUG } from '../core/constants';
+import gsap from 'gsap';
+import { jumpTo, returnToHangar, type LaunchJump } from './choreo/launchTimeline';
+import { openModal } from '../ui/screens/hangar/hangarActions';
 
 let applied = false;
 
@@ -60,6 +70,10 @@ export function applyStartParams(): void {
     bulkhead: (patch?: Partial<typeof bulkhead>) => (patch ? Object.assign(bulkhead, patch) : bulkhead),
     doors: (p: 0 | 1) => launchDoors.set(p),
     doorsP: () => launchDoors.progress,
+    // QA: drive the real flow (soak tests); rate = GSAP global time scale
+    jump: (target: LaunchJump) => jumpTo(target),
+    back: () => returnToHangar(),
+    rate: (r: number) => void gsap.globalTimeline.timeScale(r),
     hide: (name: string, on = true) => {
       const root = (window as unknown as { __G1__: { world: { scene(): import('three').Scene } } }).__G1__.world.scene();
       root.traverse(o => void (o.name === name && (o.visible = !on)));
@@ -83,14 +97,22 @@ export function applyStartParams(): void {
       });
     },
   });
+  // save edits first, so ?ship=<id>&unlock=all selects that ship
+  const profile = useProfile.getState();
+  if (DEBUG && QUERY.get('unlock') === 'all') profile.unlockAll();
+  const credits = Number(QUERY.get('credits'));
+  if (DEBUG && QUERY.has('credits') && Number.isFinite(credits)) profile.grantCredits(credits - profile.credits);
   // ?ship=<id>: deep link — that ship on the pad (locked ones as holograms);
   // an unlocked one also becomes the selected ship
   const linked = QUERY.get('ship');
   if (isShipId(linked)) {
     useUi.getState().setViewedShip(linked);
-    const profile = useProfile.getState();
-    if (unlockState(linked, profile).unlocked) profile.selectShip(linked);
+    if (unlockState(linked, useProfile.getState()).unlocked) profile.selectShip(linked);
   }
+  const pilot = QUERY.get('pilot');
+  if (pilot === 'onyx' || pilot === 'ember') profile.setPilot(pilot);
+  const liv = Number(QUERY.get('livery'));
+  if (QUERY.has('livery') && Number.isInteger(liv)) profile.setLivery(useUi.getState().viewedShip ?? useProfile.getState().selectedShip, liv);
   const mode = startMode();
   if (mode === 'boot') return; // the boot timeline sets up its own initial state
   stage.world = 1;
@@ -103,4 +125,15 @@ export function applyStartParams(): void {
     bootDoors.set(1);
   }
   flow.force('hangar.idle');
+  const screen = QUERY.get('screen');
+  if (screen === 'upgrades' || screen === 'settings' || screen === 'briefing' || screen === 'camera' || screen === 'cockpit') void openScreen(screen);
+}
+
+/** Waits for the hangar (content + loader), then opens a modal or runs the launch flow. */
+async function openScreen(screen: 'upgrades' | 'settings' | LaunchJump): Promise<void> {
+  await whenContentReady();
+  if (!useLoader.getState().finished) await new Promise<void>(r => { const u = useLoader.subscribe(s => s.finished && (u(), r())); });
+  await new Promise(r => setTimeout(r, 1200)); // hangar UI entrance
+  if (screen === 'upgrades' || screen === 'settings') openModal(screen);
+  else await jumpTo(screen);
 }

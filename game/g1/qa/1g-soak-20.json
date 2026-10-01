@@ -1,0 +1,53 @@
+{
+ "rows": [
+  {
+   "trip": 0,
+   "heapMB": 23.4,
+   "geometries": 123,
+   "textures": 52,
+   "programs": 80
+  },
+  {
+   "trip": 1,
+   "heapMB": 23.2,
+   "geometries": 220,
+   "textures": 73,
+   "programs": 80
+  },
+  {
+   "trip": 5,
+   "heapMB": 23.9,
+   "geometries": 220,
+   "textures": 73,
+   "programs": 80
+  },
+  {
+   "trip": 10,
+   "heapMB": 24.3,
+   "geometries": 220,
+   "textures": 73,
+   "programs": 80
+  },
+  {
+   "trip": 15,
+   "heapMB": 23.9,
+   "geometries": 220,
+   "textures": 73,
+   "programs": 80
+  },
+  {
+   "trip": 20,
+   "heapMB": 24.2,
+   "geometries": 220,
+   "textures": 73,
+   "programs": 80
+  }
+ ],
+ "verdict": {
+  "heapGrowthMB": 0.8,
+  "geometriesDelta": 97,
+  "texturesDelta": 21,
+  "programsDelta": 0
+ },
+ "logs": []
+}

@@ -159,3 +159,39 @@ export function returnToHangar(): boolean {
   }, [], 3.2);
   return true;
 }
+
+export type LaunchJump = 'briefing' | 'camera' | 'cockpit';
+
+/** QA / deep-link entry (?screen=briefing|camera|cockpit): runs the REAL
+ *  launch flow with GSAP's global clock sped up, then acknowledges the
+ *  briefing / picks the saved camera mode as needed. Resolves at the target. */
+export function jumpTo(target: LaunchJump, rate = 6): Promise<boolean> {
+  if (!startMissionFn?.()) return Promise.resolve(false);
+  gsap.globalTimeline.timeScale(rate);
+  return new Promise(resolve => {
+    const step = (s: string) => {
+      if (s === 'launch.briefing') {
+        if (target === 'briefing') return done(true);
+        briefingAck(); // skip the typewriter
+        briefingAck(); // LET'S GO
+      } else if (s === 'launch.cameraSelect') {
+        if (target === 'camera') return done(true);
+        chooseCamera(useSettings.getState().camera.mode);
+      } else if (s === 'launch.standby') done(true);
+    };
+    // flow.send notifies synchronously, mid-callback: act on the next frame
+    const unsub = useFlow.subscribe(st => void requestAnimationFrame(() => step(st.state)));
+    function done(ok: boolean) {
+      unsub();
+      gsap.globalTimeline.timeScale(1);
+      resolve(ok);
+    }
+  });
+}
+
+// START MISSION goes through the hangar's guard (locked ship check); the
+// hangar actions register it here to keep app/ free of ui/ imports.
+let startMissionFn: (() => boolean) | null = null;
+export function registerStartMission(fn: () => boolean): void {
+  startMissionFn = fn;
+}

@@ -293,12 +293,7 @@ export function createDisplays(): Displays {
         }
       }
       if (cockpitFx.typed < BRIEFING_CHARS && Math.sin(t * 12) > 0) g.fillRect(75, y - 22, 12, 22);
-    } else if (mode === 'select') {
-      g.font = '600 24px "JetBrains Mono", monospace';
-      g.textAlign = 'center';
-      g.fillText('SELECT FLIGHT CAMERA', w / 2, h - 70);
-      g.textAlign = 'left';
-    } else if (mode === 'standby') {
+    } else if (mode === 'standby') { // ('select': the DOM selector carries the title; the combiner stays clear)
       g.font = '700 34px "JetBrains Mono", monospace';
       g.textAlign = 'center';
       g.globalAlpha = p * (0.75 + 0.25 * Math.sin(t * 3));

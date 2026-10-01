@@ -122,7 +122,10 @@
   position: absolute;
   inset: 1px;
   clip-path: inherit;
-  background: var(--btn-fill, rgba(13, 19, 48, 0.9));
+  /* translucent fill composited over an opaque base: the edge colour paints
+     the WHOLE button box, so a see-through fill let it bleed across the face
+     (primary read pink, focused buttons pale blue) */
+  background: linear-gradient(var(--btn-fill, rgba(13, 19, 48, 0.9)), var(--btn-fill, rgba(13, 19, 48, 0.9))), var(--abyss);
   z-index: -1;
 }
 .btn > * { position: relative; }

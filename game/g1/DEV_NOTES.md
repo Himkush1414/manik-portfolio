@@ -16,7 +16,7 @@ this file alone. Updated after every slice.
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
-| 1G Cockpit + camera select | IN PROGRESS | bulkhead, cockpit (interior, tunnel, 3 live mirrors), systems boot, combiner briefing, camera selector, standby, ESC return DONE; MirrorRig + BlurDissolve handoff primitives DONE; next: polish pass (body framing, tunnel mouth, dash labels, select-screen legibility), light/heavy variant check, 20-round-trip leak check |
+| 1G Cockpit + camera select | DONE | bulkhead, cockpit (interior, tub, tunnel + deep-space mouth, 3 live mirrors), body framing (fists, knees, kneeboard), systems boot, combiner briefing, camera selector, standby, ESC return; MirrorRig + BlurDissolve; light/heavy variants verified; 20-round-trip soak flat |
 | 1H QA / polish / perf | — | |
 
 **Next step:** see the first slice not marked DONE above; its sub-steps are in §5.
@@ -487,6 +487,45 @@ HDRIs / kit parts if ever needed (none used so far).
   the brief's GTX 1660 target: HIGH preset 16 fps). `G1_DGPU=1` (+
   `WSLENV=G1_DGPU`) adds `--force_high_performance_gpu` → RTX 3050: HIGH
   51-60 fps at 1080p. AO is the biggest post cost, then DOF (1H perf pass).
+
+- **1G polish (measured):** eye pitch is -0.1 rad (5.7 deg), so at the default
+  75 deg FOV the frame bottom is ~43 deg below the eye and the dash's lower edge
+  ~36 deg: the body framing lives in that band (`scenes/cockpit/cockpitBody.ts`:
+  `fist()` closed on the stick and on the throttle — moved forward to
+  `C.z1 + 0.12` so it is in frame — raised knees/thighs, G-suit, garters,
+  kneeboard with the mission card). Fists + legs are merged per material
+  (`mergeByMaterial`): cockpit 168 -> 111 draw calls. DECISION: no shoulder
+  harness / headrest geometry — they sit behind/below the eye at every
+  allowed FOV (60-100) and only cost triangles; the helmet rim is the DOM frame.
+  The cockpit needed a TUB (knee-well, footwell walls, floor): the tunnel
+  floor's hazard bands showed through as ochre wedges. Tunnel mouth: zEnd
+  -190 -> -84 (it was a ~100 px patch) and one opaque deep-space window
+  shader (2 procedural star layers + log-spiral Veil with its core outside
+  the opening) replaced a star sphere (~3 stars landed in the opening) and a
+  far Veil plane (its flat core filled the mouth).
+- **Inline ref callbacks (bug, fixed):** `<group ref={el => ...}>` is re-called
+  (null, el) on EVERY render; Cockpit stored it in state, so each re-render
+  flipped `rootObj` and re-ran the Mirrors effect, whose cleanup disposed the
+  mirror materials (then reused) — live programs deleted mid-compile ->
+  intermittent `GL_INVALID_VALUE: glGetProgramiv`. Rule: stable ref callbacks
+  (useCallback); dispose GPU resources only in an unmount-only effect.
+- **HudButton fill (bug, fixed):** the edge colour paints the whole button box
+  and the ::before fill was translucent, so the edge bled across the face
+  (primary looked pink, focused buttons pale blue). The fill now composites
+  over an opaque `--abyss` base.
+- **QA entry points:** `?screen=upgrades|settings|briefing|camera|cockpit`
+  (cockpit states run the REAL launch flow with GSAP's clock x6),
+  `?livery=n ?pilot=onyx|ember`, and with `?debug=1` only: `?unlock=all
+  ?credits=n`. `__G1__.launch.jump(t) / back() / rate(r)`. Pitfall: a debug
+  fn must not RETURN a GSAP timeline — Playwright hangs serialising it.
+- **Leak soak (brief §17):** `tools/qa-soak.mjs [origin] [trips] [rate] [warm]`.
+  Result (`qa/1g-soak-20.json`, iGPU): first cockpit visit uploads +97
+  geometries / +21 textures once; trips 1 -> 20 exactly flat (220 / 73 / 80
+  programs), heap 23.2 -> 24.2 MB (GC'd, noise). PASS.
+- **QA env pitfall:** `node.exe` (Windows) does not see WSL env vars unless
+  listed in `WSLENV` (e.g. `export WSLENV=G1_DGPU`). `node` in WSL is a shim to
+  node.exe, so stopping a backgrounded `npx vite` can orphan the Windows
+  process on :5199 — stop it by PID after checking its command line.
 
 ## 9. Known issues
 

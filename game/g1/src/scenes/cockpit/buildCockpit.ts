@@ -26,6 +26,7 @@ import {
   CircleGeometry,
   SphereGeometry,
   SRGBColorSpace,
+  RepeatWrapping,
   TubeGeometry,
   Vector3,
   type BufferGeometry,
@@ -34,6 +35,7 @@ import {
 } from 'three';
 import { COCKPIT, type CockpitVariant } from './cockpitSpec';
 import type { Displays } from './displays';
+import { fist, legs, type BodyKit } from './cockpitBody';
 
 export type BuiltCockpit = {
   group: Group;
@@ -92,6 +94,62 @@ function labelTexture(lines: string[], opts: { w: number; h: number; bg?: string
   return t;
 }
 
+/** Flight-suit fabric: a tiling twill bump (the suit must not read as plastic). */
+function weaveTexture(): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#808080';
+  g.fillRect(0, 0, 64, 64);
+  for (let y = 0; y < 64; y += 4) {
+    for (let x = 0; x < 64; x += 4) {
+      const up = ((x + y) / 4) % 4 < 2;
+      g.fillStyle = up ? '#a0a0a0' : '#606060';
+      g.fillRect(x, y, 4, 4);
+    }
+  }
+  const t = new CanvasTexture(c);
+  t.wrapS = t.wrapT = RepeatWrapping;
+  t.repeat.set(10, 10);
+  return t;
+}
+
+/** Side-console top: dark panel with screwed plates, switch legends, panel lines. */
+function consoleTexture(side: 1 | -1): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 192;
+  c.height = 640;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#101218';
+  g.fillRect(0, 0, c.width, c.height);
+  const plates = side < 0 ? ['LIGHTS', 'RADIO', 'IFF', 'EXT PWR'] : ['ECS', 'O2 REG', 'NAV', 'DEFOG'];
+  plates.forEach((name, i) => {
+    const y = 12 + i * 156;
+    g.fillStyle = '#181b23';
+    g.fillRect(10, y, c.width - 20, 144);
+    g.strokeStyle = 'rgba(140,154,192,0.28)';
+    g.lineWidth = 2;
+    g.strokeRect(10, y, c.width - 20, 144);
+    g.fillStyle = 'rgba(232,236,255,0.62)';
+    g.font = '600 17px "JetBrains Mono", monospace';
+    g.textAlign = 'center';
+    g.fillText(name, c.width / 2, y + 26);
+    g.fillStyle = 'rgba(232,236,255,0.32)';
+    g.font = '500 12px "JetBrains Mono", monospace';
+    ['OFF', 'ON', 'AUTO'].forEach((l, k) => g.fillText(l, 40 + k * 56, y + 128));
+    g.fillStyle = '#2a2f3a';
+    for (const [sx, sy] of [[18, y + 8], [c.width - 18, y + 8], [18, y + 136], [c.width - 18, y + 136]]) {
+      g.beginPath();
+      g.arc(sx, sy, 4, 0, Math.PI * 2);
+      g.fill();
+    }
+  });
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
 function gaugeFace(label: string): CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
@@ -144,8 +202,9 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   const rubber = keep(new MeshStandardMaterial({ color: '#0b0c10', roughness: 0.85, metalness: 0.05 }));
   const bright = keep(new MeshStandardMaterial({ color: '#8f97a6', roughness: 0.3, metalness: 1, envMapIntensity: 0.9 }));
   const accent = keep(new MeshStandardMaterial({ color: '#ff5a1f', roughness: 0.45, metalness: 0.3 }));
-  const suit = keep(new MeshStandardMaterial({ color: '#1a1e29', roughness: 0.9, metalness: 0.02 }));
-  const glove = keep(new MeshStandardMaterial({ color: '#0e0f13', roughness: 0.6, metalness: 0.05 }));
+  const weave = keep(weaveTexture());
+  const suit = keep(new MeshStandardMaterial({ color: '#232835', roughness: 0.88, metalness: 0.02, bumpMap: weave, bumpScale: 0.9 }));
+  const glove = keep(new MeshStandardMaterial({ color: '#2b2622', roughness: 0.52, metalness: 0.04, envMapIntensity: 0.7 })); // dark leather: form must read
   const gloveTrim = keep(new MeshStandardMaterial({ color: '#8c9ac0', roughness: 0.5, metalness: 0.2 }));
   const glass = keep(
     new MeshPhysicalMaterial({ color: '#a8b8d6', roughness: 0.05, metalness: 0, transparent: true, opacity: 0.06, side: BackSide, depthWrite: false, envMapIntensity: 1.1, clearcoat: 1, clearcoatRoughness: 0.08 }),
@@ -154,8 +213,13 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   const ledAmberMat = keep(new MeshStandardMaterial({ color: '#000000', emissive: new Color('#ff8a3d'), emissiveIntensity: 0, toneMapped: false }));
   const screenMats = [displays.mfdL, displays.mfdC, displays.mfdR].map(t => keep(new MeshBasicMaterial({ map: t, color: new Color(0, 0, 0), toneMapped: false })));
   const hudMat = keep(new MeshBasicMaterial({ map: displays.hud, color: new Color(0, 0, 0), transparent: true, blending: AdditiveBlending, depthWrite: false, side: DoubleSide, toneMapped: false }));
-  const stencilTex = keep(labelTexture(['FUEL  ·  COMM  ·  ECM  ·  O2'], { w: 512, h: 64, fg: '#e8ecff', font: '600 30px "JetBrains Mono", monospace' }));
-  const stencilMat = keep(new MeshBasicMaterial({ map: stencilTex, color: new Color(0, 0, 0), transparent: true, depthWrite: false, toneMapped: false }));
+  // backlit stencils: one label per toggle bank (aspect-correct, clear of the stick)
+  const stencilTex = [keep(labelTexture(['FUEL · COMM'], { w: 512, h: 64, fg: '#e8ecff', font: '600 40px "JetBrains Mono", monospace' })), keep(labelTexture(['ECM · O2'], { w: 512, h: 64, fg: '#e8ecff', font: '600 40px "JetBrains Mono", monospace' }))];
+  const stencilMat = keep(new MeshBasicMaterial({ map: stencilTex[0], color: new Color(0, 0, 0), transparent: true, depthWrite: false, toneMapped: false }));
+  const stencilMat2 = stencilMat.clone();
+  stencilMat2.map = stencilTex[1];
+  stencilMat2.color = stencilMat.color; // one power level drives both
+  keep(stencilMat2);
   const warnTex = keep(labelTexture(['CANOPY JETTISON'], { w: 512, h: 96, fg: '#111', font: '800 34px "JetBrains Mono", monospace', hazard: true }));
   const warnMat = keep(new MeshStandardMaterial({ map: warnTex, roughness: 0.6, metalness: 0.1 }));
   const combinerGlass = keep(new MeshPhysicalMaterial({ color: '#c8a888', roughness: 0.02, metalness: 0, transparent: true, opacity: 0.08, depthWrite: false, side: DoubleSide }));
@@ -185,7 +249,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     add(group, new TubeGeometry(new CatmullRomCurve3(pts), 40, 0.03, 10, false), frameMat);
     // warning label on the sill
     const warn = add(group, new PlaneGeometry(0.13, 0.024), warnMat);
-    const zl = -0.35;
+    const zl = -0.48;
     warn.position.set(sx * (cw * kz(zl) - 0.035), sill + 0.034, zl);
     warn.rotation.set(-Math.PI / 2 + 0.9, sx * 0.3, 0);
   }
@@ -286,14 +350,19 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     dash.add(levers, bases, ledsG, ledsA);
   }
   // backlit stencil strip along the bottom of the panel
-  const stencil = add(dash, bend(new PlaneGeometry(D.w * 0.7, 0.022, 16, 1), bk), stencilMat);
-  stencil.position.set(0, -D.h / 2 + 0.018, 0.028);
+  [-1, 1].forEach((sx, i) => {
+    const x = sx * 0.27;
+    const st = add(dash, new PlaneGeometry(0.15, 0.019), i ? stencilMat2 : stencilMat);
+    st.position.set(x, -0.146, 0.031 + bk * x * x);
+    st.rotation.y = -Math.atan(2 * bk * x);
+  });
 
   // ------------------------------------------------------------ side consoles
   const C = S.console;
   for (const sx of [-1, 1]) {
     const len2 = C.z0 - C.z1;
-    const top = add(group, new BoxGeometry(C.w, 0.03, len2), panelMat);
+    const ctex = keep(consoleTexture(sx as 1 | -1));
+    const top = add(group, new BoxGeometry(C.w, 0.03, len2), keep(new MeshStandardMaterial({ map: ctex, roughness: 0.74, metalness: 0.3, envMapIntensity: 0.35 })));
     top.position.set(sx * C.x, C.y, (C.z0 + C.z1) / 2);
     top.rotation.z = sx * 0.12;
     const wall = add(group, new BoxGeometry(0.02, 0.2, len2), frameMat);
@@ -310,9 +379,20 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     }
     group.add(im);
   }
+  // tub: knee-well face under the dash, footwell side walls + floor (closes the
+  // cockpit: without it the tunnel floor's hazard bands showed through)
+  const tubMat = keep(new MeshStandardMaterial({ color: '#0d0f14', roughness: 0.8, metalness: 0.3 }));
+  const kneeWell = add(group, bend(new BoxGeometry(D.w, 0.6, 0.03, 16, 1, 1), bk), tubMat);
+  kneeWell.position.set(0, D.y - D.h / 2 - 0.28, D.z + 0.03);
+  for (const sx of [-1, 1]) {
+    const side = add(group, new BoxGeometry(0.02, 0.62, 1.0), tubMat);
+    side.position.set(sx * (C.x - C.w / 2 - 0.01), C.y - 0.31, -0.42);
+  }
+  add(group, new BoxGeometry(2 * C.x, 0.02, 1.1).translate(0, -1.08, -0.4), tubMat);
+
   // throttle quadrant (left console)
   const thr = new Group();
-  thr.position.set(-C.x, C.y + 0.015, -0.34);
+  thr.position.set(-C.x, C.y + 0.015, C.z1 + 0.12); // forward, inside the eye's frame
   group.add(thr);
   add(thr, new BoxGeometry(0.07, 0.03, 0.16), frameMat);
   const lever = add(thr, new BoxGeometry(0.018, 0.12, 0.022).translate(0, 0.06, 0), bright);
@@ -331,42 +411,20 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   add(stick, new BoxGeometry(0.012, 0.012, 0.012).translate(0, 0.43, 0.012), frameMat); // hat
 
   // ------------------------------------------------------------- body framing
-  const hand = (parent: Group, right: boolean) => {
-    const g = new Group();
-    parent.add(g);
-    const sx = right ? 1 : -1;
-    add(g, new SphereGeometry(1, 20, 14).scale(0.042, 0.03, 0.05), glove);
-    for (let f = 0; f < 4; f++) {
-      const fg = add(g, new CapsuleGeometry(0.0095, 0.03, 4, 8), glove);
-      fg.position.set(sx * 0.02 - sx * f * 0.013, 0.012 - f * 0.004, -0.045);
-      fg.rotation.set(1.2, 0, sx * 0.1);
-    }
-    const th = add(g, new CapsuleGeometry(0.01, 0.028, 4, 8), glove);
-    th.position.set(-sx * 0.03, 0.02, -0.02);
-    th.rotation.set(0.6, 0, sx * 0.9);
-    const cuff = add(g, new CylinderGeometry(0.036, 0.038, 0.045, 16).rotateX(Math.PI / 2), gloveTrim);
-    cuff.position.set(0, 0, 0.05);
-    // forearm: from the cuff down and back, out of frame (never toward the eye)
-    const dir = new Vector3(sx * 0.18, -0.8, 0.57).normalize();
-    const arm = add(g, new CylinderGeometry(0.042, 0.052, 0.4, 16), suit);
-    arm.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), dir);
-    arm.position.set(0, 0, 0.06).addScaledVector(dir, 0.2);
-    return g;
-  };
-  const rHand = hand(group, true);
-  rHand.position.set(0.015, -0.41, -0.53);
-  rHand.rotation.set(-0.15, -0.25, 0.1);
-  const lHand = hand(group, false);
-  lHand.position.set(-C.x + 0.01, C.y + 0.14, -0.4);
-  lHand.rotation.set(-0.2, 0.35, -0.3);
-  for (const sx of [-1, 1]) {
-    const th = add(group, new CapsuleGeometry(0.078, 0.44, 6, 16).rotateX(Math.PI / 2 - 0.2), suit);
-    th.position.set(sx * 0.125, -0.64, -0.26);
-    const knee = add(group, new SphereGeometry(0.06, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.6, 1.1), frameMat);
-    knee.position.set(sx * 0.125, -0.56, -0.5);
-  }
-  add(group, new BoxGeometry(0.4, 0.035, 0.05).translate(0, -0.61, -0.04), rubber); // lap belt
-  add(group, new BoxGeometry(0.06, 0.05, 0.02).translate(0, -0.6, -0.07), bright); // buckle
+  const kit: BodyKit = { keep, mats: { suit, glove, gloveTrim, bright } };
+  // right fist on the stick grip (grip axis = local Y); sleeve runs down-back-right
+  const rFist = fist(kit, 0.026, new Vector3(0.36, -0.52, 0.78).normalize());
+  rFist.position.copy(grip.position);
+  rFist.rotation.copy(grip.rotation);
+  stick.add(rFist);
+  // left fist on the throttle handle (axis along x): rotate so the back of the hand faces up
+  const lFist = fist(kit, 0.024, new Vector3(-0.2, 0.2, 0.96).normalize());
+  lFist.position.copy(handle.position);
+  lFist.rotation.set(0, 0, Math.PI / 2);
+  thr.add(lFist);
+  legs(kit, group);
+  add(group, new BoxGeometry(0.4, 0.035, 0.05).translate(0, -0.66, -0.06), rubber); // lap belt
+  add(group, new BoxGeometry(0.06, 0.05, 0.02).translate(0, -0.65, -0.09), bright); // buckle
 
   // ------------------------------------------------------------------ combiner
   const comb = new Group();

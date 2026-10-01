@@ -7,7 +7,7 @@ import { unlockState } from '../../../data/unlocks';
 import { SHIPS, type ShipId } from '../../../data/ships';
 import { sfx } from '../../../audio/sfx';
 import { flow } from '../../../app/flow';
-import { launch } from '../../../app/choreo/launchTimeline';
+import { launch, registerStartMission } from '../../../app/choreo/launchTimeline';
 
 /** The ship on the pad (may be locked). */
 export function useViewedShip(): ShipId {
@@ -69,3 +69,5 @@ export function startMission(): boolean {
   ui.setViewedShip(profile.selectedShip);
   return launch();
 }
+
+registerStartMission(startMission);
