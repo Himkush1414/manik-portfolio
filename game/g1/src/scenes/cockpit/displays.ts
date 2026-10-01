@@ -10,7 +10,12 @@ import { MISSION_01 } from '../../data/lore';
 export const cockpitFx = {
   /** per-system power 0..1 (systems boot staggers these) */
   power: { dash: 0, mfdL: 0, mfdC: 0, mfdR: 0, hud: 0 },
-  hudMode: 'off' as 'off' | 'boot' | 'briefing' | 'select' | 'standby',
+  hudMode: 'off' as 'off' | 'boot' | 'briefing' | 'select' | 'standby' | 'launch',
+  /** Phase 2 launch: countdown digit (3, 2, 1; 0 = LAUNCH), catapult speed (u/s), FOV kick (deg), camera view */
+  count: 3,
+  launchSpeed: 0,
+  fovKick: 0,
+  view: 'eye' as 'eye' | 'third' | 'chase',
   /** briefing characters revealed (typewriter) */
   typed: 0,
   shipName: 'HALCYON',
@@ -262,7 +267,7 @@ export function createDisplays(): Displays {
     g.globalAlpha = p;
     g.strokeRect(w / 2 - 44, 20, 88, 30);
     g.textAlign = 'center';
-    g.fillText('000', w / 2, 43);
+    g.fillText(String(Math.round(cockpitFx.launchSpeed)).padStart(3, '0'), w / 2, 43);
     g.textAlign = 'left';
     // mode text
     const mode = cockpitFx.hudMode;
@@ -293,6 +298,12 @@ export function createDisplays(): Displays {
         }
       }
       if (cockpitFx.typed < BRIEFING_CHARS && Math.sin(t * 12) > 0) g.fillRect(75, y - 22, 12, 22);
+    } else if (mode === 'launch') {
+      // Phase 2 catapult countdown: 3 - 2 - 1 - LAUNCH, big and centred under the boresight
+      g.textAlign = 'center';
+      g.font = cockpitFx.count > 0 ? '700 120px "JetBrains Mono", monospace' : '700 64px "JetBrains Mono", monospace';
+      g.fillText(cockpitFx.count > 0 ? String(cockpitFx.count) : 'LAUNCH', w / 2, h / 2 + 150);
+      g.textAlign = 'left';
     } else if (mode === 'standby') { // ('select': the DOM selector carries the title; the combiner stays clear)
       g.font = '700 34px "JetBrains Mono", monospace';
       g.textAlign = 'center';

@@ -3,7 +3,7 @@
 // stars, carrier hull lights and a distant swirling Veil glow. Behind the
 // ship: the launch bay's back wall (seen in the mirrors). Cockpit-local
 // metres; the ship rides a rail with its eye at the origin.
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   AdditiveBlending,
@@ -11,6 +11,7 @@ import {
   BufferGeometry,
   CanvasTexture,
   Float32BufferAttribute,
+  type Group,
   InstancedMesh,
   Matrix4,
   Mesh,
@@ -179,8 +180,11 @@ export function* buildLaunchTunnelSteps() {
     });
     const sky = new Mesh(skyGeo, skyMat);
     sky.position.set(0, Fy + Hh / 2, zEnd - 300);
-    return { wallMat, darkMat, hazTex, hazMat, shell, ribGeo, ribs, stripGeo, stripMat, strips, rail, haz, bayLights, bayMat, mouth, blinks, blinkGeo, blinkMat, sky, skyGeo, skyMat };
+    return { wallMat, darkMat, hazTex, hazMat, shell, ribGeo, ribs, stripGeo, stripMat, strips, rail, haz, bayLights, bayMat, mouth, blinks, blinkGeo, blinkMat, sky, skyGeo, skyMat, spots };
 }
+
+/** Phase 2 launch: the catapult slides this group (+z = the ship moves forward) and streaks the strips. */
+export const launchTunnelRef = { group: null as Group | null, strips: null as InstancedMesh | null, spots: [] as Vector3[], sky: null as Mesh | null };
 
 export type LaunchTunnelBundle = ReturnType<typeof buildLaunchTunnelSteps> extends Generator<unknown, infer R, unknown> ? R : never;
 
@@ -208,7 +212,18 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
 
   const { floor: Fy, zBack, zEnd } = TUNNEL;
   return (
-    <group name="launch-tunnel">
+    <group
+      name="launch-tunnel"
+      ref={useCallback(
+        (g: Group | null) => {
+          launchTunnelRef.group = g;
+          launchTunnelRef.strips = g ? b.strips : null;
+          launchTunnelRef.spots = g ? b.spots : [];
+          launchTunnelRef.sky = g ? b.sky : null;
+        },
+        [b],
+      )}
+    >
       <mesh geometry={b.shell} material={b.wallMat} receiveShadow />
       <primitive object={b.ribs} />
       <primitive object={b.strips} />

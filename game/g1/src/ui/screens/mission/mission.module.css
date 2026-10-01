@@ -1,0 +1,31 @@
+/* Mission overlays (Phase 2). Phase 1 tokens + shape language: angular cuts,
+   no rounded pills; no backdrop-filter during play (brief §4 rule 11). */
+.launch { position: fixed; inset: 0; z-index: 30; pointer-events: none; display: grid; place-items: center; }
+.count {
+  font: 900 calc(var(--u) * 210) / 1 var(--font-title);
+  color: var(--frost);
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 calc(var(--u) * 40) var(--ignition-a60);
+  transform: translateY(calc(var(--u) * -40));
+}
+.count[data-go='true'] { font-size: calc(var(--u) * 120); letter-spacing: 0.24em; color: var(--core); }
+.line {
+  --c: calc(var(--u) * 10);
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--u) * 150);
+  transform: translateX(-50%);
+  display: flex;
+  gap: calc(var(--u) * 14);
+  align-items: baseline;
+  padding: calc(var(--u) * 12) calc(var(--u) * 22);
+  max-width: min(calc(var(--u) * 900), 90vw);
+  background: rgba(4, 5, 10, 0.78);
+  border-left: 3px solid var(--ice);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  font: 500 calc(var(--u) * 17) / 1.35 var(--font-body);
+  color: var(--frost);
+}
+.line[data-size='small'] { font-size: calc(var(--u) * 14); }
+.line[data-size='large'] { font-size: calc(var(--u) * 22); }
+.speaker { font: 600 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: var(--track-label); color: var(--ice); white-space: nowrap; }

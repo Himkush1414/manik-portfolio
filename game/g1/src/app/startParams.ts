@@ -29,7 +29,7 @@ import { DEBUG } from '../core/constants';
 import gsap from 'gsap';
 import { jumpTo, returnToHangar, type LaunchJump } from './choreo/launchTimeline';
 import { openModal, closeModal, viewShip } from '../ui/screens/hangar/hangarActions';
-import { enterMission, pauseMission, resumeMission, missionToHangar, retryMission } from './mission/missionFlow';
+import { enterMission, prewarmMission, pauseMission, resumeMission, missionToHangar, retryMission } from './mission/missionFlow';
 import { isBotSkill } from '../data/bot';
 import { mission } from '../scenes/mission/missionRuntime';
 
@@ -73,7 +73,7 @@ export function applyStartParams(): void {
   registerDebug('mission', {
     start: (levelId: string, opts: { bot?: string; god?: boolean; seed?: number } = {}) => {
       flow.force('launch.standby');
-      return enterMission(levelId, { bot: isBotSkill(opts.bot) ? opts.bot : null, god: opts.god, seed: opts.seed });
+      return enterMission(levelId, { bot: isBotSkill(opts.bot) ? opts.bot : null, god: opts.god, seed: opts.seed }, true);
     },
     pause: () => pauseMission(),
     resume: () => resumeMission(),
@@ -191,8 +191,11 @@ async function startLevel(level: string): Promise<void> {
   const mood = QUERY.get('mood');
   if (mood === 'l1' || mood === 'l22' || mood === 'l10') mission.qa.mood = mood;
   if (QUERY.has('storm')) mission.qa.storm = Math.max(0, Math.min(1, Number(QUERY.get('storm')) || 0));
-  flow.force('launch.standby');
-  await enterMission(level, { bot: isBotSkill(bot) ? bot : null, god: QUERY.get('god') === '1', seed: Number(QUERY.get('seed')) || undefined });
+  const opts = { bot: isBotSkill(bot) ? bot : null, god: QUERY.get('god') === '1', seed: Number(QUERY.get('seed')) || undefined };
+  // the REAL path: hangar -> bulkhead -> cockpit -> briefing (prepare starts here) -> camera -> standby -> LAUNCH
+  prewarmMission(level, opts);
+  await jumpTo('cockpit');
+  await enterMission(level, opts, QUERY.get('launch') === 'skip');
 }
 
 /** Waits for the hangar (content + loader), then opens a modal or runs the launch flow. */

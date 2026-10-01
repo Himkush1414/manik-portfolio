@@ -170,3 +170,23 @@ export const MISSION_LIGHTS = {
   hemi: { sky: '#2a3168', ground: '#04050A', intensity: 0.4 },
   fog: { color: '#1A1F5C', near: 150, far: 520 },
 } as const;
+
+/** Launch sequence (brief §14 LAUNCH SEQUENCE), seconds / u / deg. */
+export const LAUNCH = {
+  countdown: 1.0, // per digit (3, 2, 1)
+  catapult: 3.3, // clamps release -> gate
+  /** launch-tunnel travel at the gate (cockpit-local u): mouth at 84, gate beyond */
+  travel: 350,
+  gateZ: -344,
+  gateRadius: 57,
+  fovPunch: 16,
+  flash: 7,
+  flashIn: 0.22,
+  flashOut: 0.7,
+  /** retries: the fast relaunch inside the corridor */
+  fast: 1.6,
+  stripStretch: 0.09,
+  /** sky sphere radius (inside the 1000 u far plane) and the bay mouth (travel at which the window plane hides) */
+  skyRadius: 860,
+  mouthTravel: 80,
+} as const;

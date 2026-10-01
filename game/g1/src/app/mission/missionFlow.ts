@@ -18,6 +18,7 @@ import { perfMon } from '../../render/perfMon';
 import { CameraShaker } from '../../render/CameraShaker';
 import { MISSION_LIGHTS } from '../../data/mission';
 import { returnSequence } from '../choreo/launchTimeline';
+import { runLaunch, runFastLaunch, resetLaunchRig } from './launchSequence';
 import type { SpotLight, HemisphereLight, Light, Object3D } from 'three';
 
 /** presentation beats (s) until the fail / results screens exist */
@@ -26,19 +27,29 @@ const BEAT = { death: 1.4, failedAutoRetry: 1.2, complete: 1.0, resultsAutoExit:
 let saved: { fog: [number, number, number]; shadowAuto: boolean } | null = null;
 let gl: WebGLRenderer | null = null;
 
-/** standby -> LAUNCH -> prepare -> playing. Resolves true once playing. */
-export async function enterMission(levelId: string, opts: MissionOptions = {}): Promise<boolean> {
+/** standby -> LAUNCH -> prepare -> launch sequence -> playing. Resolves true once playing.
+ *  `skipLaunch` (QA): cut straight into the corridor. */
+export async function enterMission(levelId: string, opts: MissionOptions = {}, skipLaunch = false): Promise<boolean> {
   const level = levelById(levelId);
   if (!level) return false;
   if (!flow.send('LAUNCH')) return false;
   await MissionLoader.prepare(level, opts);
   if (!flow.send('PREPARED')) return false;
-  await beginFrame();
+  if (skipLaunch) beginFrame();
+  else await runLaunch(beginFrame);
   return flow.send('LAUNCHED');
 }
 
-async function beginFrame(): Promise<void> {
-  const w = await whenWorldMounted();
+/** Warm the mission while the player reads the briefing (brief §14 MISSION PREPARE). */
+export function prewarmMission(levelId: string, opts: MissionOptions = {}): void {
+  const level = levelById(levelId);
+  if (level) void MissionLoader.prepare(level, opts);
+}
+
+/** the cut into the mission frame (at the breach flash peak) */
+function beginFrame(): void {
+  const w = mission.world;
+  if (!w) return;
   gl = w.gl;
   const fog = w.scene.fog as Fog | null;
   saved = { fog: fog ? [fog.color.getHex(), fog.near, fog.far] : [0, 0, 0], shadowAuto: w.gl.shadowMap.autoUpdate };
@@ -65,6 +76,7 @@ async function beginFrame(): Promise<void> {
 
 function endFrame(): void {
   CameraShaker.setRumble(0);
+  resetLaunchRig();
   InputManager.detach();
   InputManager.hooks = {};
   stage.mission = 0;
@@ -177,8 +189,10 @@ export function retryMission(): void {
   for (const c of cps) if (c <= sim.player.s) at = c;
   sim.reset(at);
   mission.stepper.resync();
-  InputManager.playing = true;
-  flow.send('LAUNCHED');
+  void runFastLaunch().then(() => {
+    InputManager.playing = true;
+    flow.send('LAUNCHED');
+  });
 }
 
 /** QA: current flow state (debug API) */

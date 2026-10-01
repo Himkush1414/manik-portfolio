@@ -16,6 +16,7 @@ import { AudioHint } from '../ui/screens/AudioHint';
 import { HangarUI } from '../ui/screens/hangar/HangarUI';
 import { FpsOverlay } from '../ui/screens/FpsOverlay';
 import { LaunchHUD } from '../ui/screens/launch/LaunchHUD';
+import { LaunchOverlay } from '../ui/screens/mission/LaunchOverlay';
 import { FaultPanel } from '../ui/screens/FaultPanel';
 import { QUERY } from '../core/constants';
 import { debugEnabled } from '../debug/debugApi';
@@ -55,6 +56,7 @@ function Game() {
       {bootMounted && fontsReady && isBoot(flowState) && <BootController onDone={() => setBootMounted(false)} />}
       <HangarUI />
       <LaunchHUD />
+      <LaunchOverlay />
       <FpsOverlay />
       <AudioHint />
       <FaultPanel />

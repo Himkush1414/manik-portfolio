@@ -20,7 +20,7 @@ production build, QA script with 0 console errors/warnings, then commit
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
-| 2B Wormhole + launch | IN PROGRESS | 6c06350 (tunnel), (speed FX) | tunnel + tiers + moods, speed FX DONE; next: launch catapult + Veil Gate + breach, set pieces, perf gate + heap trend |
+| 2B Wormhole + launch | IN PROGRESS | 6c06350 (tunnel), b6ef2fe (speed FX), (launch) | tunnel + tiers + moods, speed FX, launch sequence + Veil Gate DONE; next: set pieces (chamber, collapse, wreck field), storms check, perf gate + 5-min heap trend |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
@@ -377,6 +377,34 @@ Decisions (2026-10-01, before code):
   radially OUT and the camera sits on the axis -> FrontSide culled every one
   (DoubleSide); (2) `smoothstep(hi, lo, x)` is undefined in GLSL — always
   write `1.0 - smoothstep(lo, hi, x)` (fixed in the streaks and the rings).
+- **Launch sequence (2B):** `app/mission/launchSequence.ts` — one GSAP
+  timeline: 3-2-1 (1 s each; combiner in the cockpit view = new hudMode
+  'launch', DOM `LaunchOverlay` in third / chase) with Sato lines
+  (`LAUNCH_LINES`, subtitled, size setting honoured) -> clamps release
+  (clunk + trauma, rumble) -> 3.3 s power2.in catapult: the launch-tunnel
+  GROUP slides +z (the ship is static in the cockpit frame), strip lights
+  stretch by velocity (per-instance matrix, only during the run), FOV punch
+  +16 deg, catapult speed on the combiner -> out of the mouth the Phase 1
+  window plane hides and `LaunchSky` (direction-hashed stars + Veil glow,
+  sphere fixed to the cockpit frame = skybox) shows -> `VeilGate` (rotating
+  ring + fins + Ignition lamps, counter-rotating Ice emitter, log-spiral
+  vortex over the corridor noise, HDR core, additive halo) -> breach:
+  chromatic burst + exposure flash x7 -> `beginFrame()` at the flash peak
+  (lights borrowed, fog, mission frame, input) -> flash clears on the
+  corridor -> LAUNCHED. Retries: `runFastLaunch()` (~1.6 s flash + settle
+  in the corridor). `cockpitFx.view` = eye / third / chase: launch views
+  watch the own ship from its CENTRE (it sits canopy-on-eye), interior
+  hidden; layer toggles only on view change. `MissionLoader.prepare` builds
+  the gate + sky and compiles them with the mission root; QA `?level=` now
+  runs the REAL path (prewarm at load, jumpTo('cockpit'), LAUNCH; `&launch=
+  skip` cuts straight in). `tools/qa-launch-seq.mjs` (GSAP clock x0.25, 12
+  beats per camera mode). Phase 1 amendments: cockpitFx gains count /
+  launchSpeed / fovKick / view; Cockpit applies view + fovKick and stops
+  driving the camera in missions; LaunchTunnel exposes `launchTunnelRef`.
+- **iGPU measurement caveat:** the UHD 770 drives the display; when the
+  owner's editor (Cursor) renders heavily it took ~88 % of a 3D engine and
+  every iGPU number dropped ~25 % (mission LOW 60 -> 44 fps, both launch
+  paths identical). iGPU tables are only comparable within one session.
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;

@@ -28,6 +28,7 @@ import { peekCockpit, releaseCockpit } from './cockpitPrebuild';
 import { registerDebug } from '../../debug/debugApi';
 import { QUALITY } from '../../render/quality';
 import { lightRig } from '../../render/lightRig';
+import { RIGS } from '../../data/mission';
 
 const ORIGIN = new Vector3(...COCKPIT_ORIGIN);
 const FOG_HANGAR = [40, 110] as const;
@@ -43,6 +44,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
   const livery = useProfile(p => clampLivery(p.selectedShip, p.liveryByShip[p.selectedShip] ?? 0));
   const mirrorQ = QUALITY[useSettings(s => s.graphics.preset)].mirror;
   const root = useRef<Group | null>(null);
+  const viewApplied = useRef<string>('eye');
   const [rootObj, setRootObj] = useState<Group | null>(null);
   // stable ref callback: an inline one is re-called (null, el) on every render,
   // which flipped rootObj and re-ran everything parented to it
@@ -134,6 +136,26 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
     built.needles[0].rotation.z = -2.1 + P.dash * (1.4 + Math.sin(t * 0.7) * 0.05);
     built.needles[1].rotation.z = -2.1 + P.dash * 0.9;
     own.update(t);
+    if (stage.mission >= 0.5) return; // the mission frame owns the camera
+    // Phase 2 launch: third / chase views watch the own ship from outside (interior hidden)
+    const view = cockpitFx.view;
+    if (viewApplied.current !== view) {
+      // layers change only when the view changes (no per-frame traversal)
+      viewApplied.current = view;
+      built.group.visible = view === 'eye';
+      own.group.traverse(o => (view === 'eye' ? o.layers.set(MIRROR_LAYER) : o.layers.enable(0)));
+    }
+    if (view !== 'eye') {
+      // offsets are from the SHIP's centre (the own ship sits canopy-on-eye, centre behind the eye)
+      const R = view === 'third' ? RIGS.third : RIGS.chase;
+      const c = own.group.position;
+      director.pos.copy(ORIGIN).add(c).add(tmp.set(R.offset[0], R.offset[1], R.offset[2]));
+      director.look.copy(ORIGIN).add(c).add(tmp.set(0, R.offset[1] * 0.35, -R.lookDist));
+      director.focus.copy(ORIGIN).add(c);
+      director.fov = R.fov * (useSettings.getState().camera.fov / RIGS.fovBase) + cockpitFx.fovKick;
+      director.roll = 0;
+      return;
+    }
     // the pilot's eyes: breathing + a whisper of head-bob
     const still = reduceMotion;
     const bx = still ? 0 : Math.sin(t * 0.9) * 0.0018 + Math.sin(t * 2.3 + 1) * 0.0008;
@@ -142,7 +164,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
     director.look.copy(director.pos).add(tmp.set(0, Math.sin(EYE_PITCH), -Math.cos(EYE_PITCH)));
     // focus on the combiner (HUD text sharp; the tunnel softens with depth); the bulkhead holds focus while it is up
     if (!bulkhead.active) director.focus.copy(director.pos).add(tmp.set(0, -0.05, -0.64));
-    director.fov = useSettings.getState().camera.fov;
+    director.fov = useSettings.getState().camera.fov + cockpitFx.fovKick;
     director.roll = 0;
   });
 

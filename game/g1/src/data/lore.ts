@@ -100,3 +100,11 @@ export const CODEX: readonly CodexEntry[] = [
     body: 'A colonial fleet carrier, older than most of her crew and patched in places she will not admit to. She holds station at the mouth of the Veil, launching fighters down the line and waiting for them to come back. Commander Sato runs the flight deck. The ship runs on coffee and stubbornness.',
   },
 ];
+
+/** Launch comms (brief §14 LAUNCH SEQUENCE: countdown with Sato). */
+export const LAUNCH_LINES = {
+  count: 'Catapult armed. Clear in three.',
+  release: 'Clamps away. Ride the line, Seven.',
+  gate: 'Veil Gate ahead. Hold her steady.',
+  retry: 'Back on the line. Again.',
+} as const;

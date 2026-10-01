@@ -17,7 +17,7 @@ p.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(m.
 p.on('pageerror', e => logs.push('pageerror ' + e.message));
 await p.addInitScript(pr => localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: pr, autoPicked: true }, gpuHintShown: true } })), preset);
 const t0 = Date.now();
-await p.goto(`${origin}/game/g1/?level=${level}&bot=${bot}&debug=1&drs=0`);
+await p.goto(`${origin}/game/g1/?level=${level}&bot=${bot}&debug=1&drs=0${process.env.QS ?? ''}`);
 await p.waitForFunction(() => window.__G1__?.flowState?.get() === 'mission.playing', null, { timeout: 90000, polling: 100 });
 const tPlaying = (Date.now() - t0) / 1000;
 await p.waitForTimeout(3000); // warm-up

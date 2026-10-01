@@ -16,6 +16,9 @@ import type { LevelDef } from '../../levels/types';
 import { whenWorldMounted } from '../sceneBridge';
 import { buildTunnelSteps } from '../../render/mission/tunnel/Tunnel';
 import { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
+import { VeilGate } from '../../render/mission/launch/VeilGate';
+import { createLaunchSky } from '../../render/mission/launch/LaunchSky';
+import { LAUNCH } from '../../data/mission';
 import { mission, type MissionOptions } from './missionRuntime';
 
 let inflight: Promise<void> | null = null;
@@ -31,7 +34,9 @@ export const MissionLoader = {
 };
 
 async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
-  const { gl, scene, camera } = await whenWorldMounted();
+  const world = await whenWorldMounted();
+  mission.world = world;
+  const { gl, scene, camera } = world;
   if (mission.root.parent !== scene) scene.add(mission.root);
   // the player's ship (rebuilt only when the ship / livery changed)
   const p = useProfile.getState();
@@ -61,12 +66,18 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   t.setTier(useSettings.getState().graphics.preset);
   t.setMood(mission.qa.mood ? { preset: mission.qa.mood, storm: level.mood.storm } : level.mood);
   t.setPath(level.pathParams.amp, level.pathParams.freq);
+  // the Veil Gate (launch set piece): shares the corridor's noise + mood colours
+  if (!mission.gate) {
+    const u = t.uniforms;
+    mission.gate = new VeilGate(u.tNoise.value, { near: u.uNear.value, mid: u.uMid.value, far: u.uFar.value, core: u.uCore.value, fil: u.uFil.value });
+  }
+  if (!mission.sky) mission.sky = createLaunchSky(LAUNCH.skyRadius);
   mission.progress = 0.3;
   // every program of the mission frame, compiled in <= 4 ms slices (hidden root included)
   const vis = mission.root.visible;
   mission.root.visible = true;
   try {
-    await runSliced('mission:compile', compileSteps(gl, [mission.root], camera, scene));
+    await runSliced('mission:compile', compileSteps(gl, [mission.root, mission.gate.group, mission.sky], camera, scene));
   } finally {
     mission.root.visible = vis;
   }

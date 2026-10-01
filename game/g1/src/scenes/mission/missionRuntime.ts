@@ -10,6 +10,8 @@ import type { LevelDef } from '../../levels/types';
 import type { BuiltShip } from '../../ships/ShipFactory';
 import type { Tunnel } from '../../render/mission/tunnel/Tunnel';
 import type { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
+import type { VeilGate } from '../../render/mission/launch/VeilGate';
+import type { WorldHandles } from '../sceneBridge';
 import type { BotSkillId } from '../../data/bot';
 import { ThirdPersonRig } from '../../render/rigs/ThirdPersonRig';
 import { MISSION_ORIGIN } from '../sceneBridge';
@@ -35,6 +37,9 @@ export const mission = {
   ship: null as BuiltShip | null,
   tunnel: null as Tunnel | null,
   streaks: null as SpeedStreaks | null,
+  gate: null as VeilGate | null,
+  sky: null as import('three').Mesh | null,
+  world: null as WorldHandles | null,
   /** QA overrides (?mood= ?storm=) */
   qa: { mood: null as null | 'l1' | 'l22' | 'l10', storm: -1 },
   /** QA: input fields forced on top of the pilot each step (__G1__.sim.force) */
