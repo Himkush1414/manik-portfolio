@@ -14,3 +14,22 @@ export const POST = {
 } as const;
 
 export const CLEAR_COLOR = '#04050A';
+
+/**
+ * Dynamic-resolution governor (brief §4 rule 9; render/drs.ts). One algorithm,
+ * per-scene thresholds: missions hold 60 fps (19 / 12.5 ms p95); the hangar
+ * and cockpit menus hold >= 30 fps (carry-over (c)) at the highest resolution
+ * that allows it — every step reallocates the render targets (measured 60-110
+ * ms on the integrated GPU), so the menu governor moves rarely.
+ */
+export const DRS = {
+  scales: [1, 0.85, 0.72, 0.6, 0.5],
+  window: 90,
+  mission: { downMs: 19, upMs: 12.5, downHold: 2, upHold: 6, minInterval: 3 },
+  // menu thresholds straddle the vsync quanta (16.7 / 33.3 / 50 / 66.7 ms):
+  // step down when > 5 % of frames take >= 66.7 ms, up when nearly all take
+  // 16.7 ms. Measured integrated-GPU hangar at LOW (prod, 1080p): scale 1.0
+  // 25 fps / 0.85 28 / 0.72 38 (p95 50) / 0.6 47 / 0.5 55 -> it settles at
+  // 0.72, the sharpest scale that holds >= 30 fps (0.5 was visibly jaggy)
+  menu: { downMs: 55, upMs: 26, downHold: 3, upHold: 8, minInterval: 5 },
+} as const;

@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | 562274a (a) | (a) post-boot stalls DONE; (b) first-gesture audio DONE; next (c) iGPU hangar DRS, then sim core / input / FSM / DRS / perf / bot as separate pushes |
+| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b) | (a)(b)(c) carry-overs DONE; next: sim core push, then input / FSM / perf / bot / empty mission scene as separate pushes |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -166,6 +166,43 @@ Decisions (2026-10-01, before code):
    hint gone, console clean. Also fixed a regression from (a): 48-row strips
    with an idle wait each delayed thumbnails to ~25 s; now 2 strips of 192
    rows without idle waits — all six by ~16 s (Phase 1 ~12 s), 0 tasks > 30 ms.
+   Pushed `c9dd224`.
+3. **Carry-over (c), integrated-GPU hangar >= 30 fps (2026-10-01).**
+   Findings: `detectPreset()` existed but was never called (every first run
+   got HIGH = 16-18 fps on the UHD 770); drei's PerformanceMonitor degrade
+   toggled AO/DOF (composer rebuild = 77-224 ms recompile tasks) and clamped a
+   degraded DPR UP to 0.75 (overriding resScale 0.5); postprocessing's
+   BloomEffect ignores `resolutionScale` in mipmap mode (bloom = the largest
+   post cost on the iGPU). Changes: `render/drs.ts` DRS governor (p95 over 90
+   frames, quantised scales 1/.85/.72/.6/.5, rate-limited, then AO -> DOF ->
+   reflections -> particles; unit-tested) driven by `render/DrsDriver.tsx`
+   (replaces PerformanceMonitor; no sampling in boot / hidden tab; window reset
+   per flow change; profile `menu` vs `mission`, tunables in
+   `data/render.config.ts` DRS); first-run pick wired (MEDIAN frame time over
+   2 s after the hangar settles + detect-gpu; > 22 ms steps down once, > 40 ms
+   twice; only replaces the untouched default); one-time integrated-GPU toast
+   (`settings.gpuHintShown`, additive field; Toast gained an optional
+   duration and wraps at a max width); `scaleBloom` runs bloom at the preset's
+   resolution (LOW 1/4, MED/HIGH 1/2, ULTRA full; levels 5/6/8/8);
+   `resolveQuality` = base DPR x resScale x DRS scale (floor 0.4).
+   QA harness: `qa-phase1` seeds HIGH as already picked + `?drs=0` (new QA
+   param: governor frozen) so its scored captures stay at HIGH.
+   Result (prod, 1080p): iGPU fresh profile -> LOW + toast, governor settles
+   at 0.72 (1382x777) **36-37 fps, 0 long tasks** (Phase 1: 16-23 fps);
+   dGPU fresh -> HIGH, 60 fps, scale 1.0 (look unchanged); full qa:phase1 on
+   prod: 84 shots, console clean, layout clean, dGPU hangar 60 / cockpit 59.8.
+   Unreproduced once: one iGPU run logged 36 console messages (not captured);
+   10 reruns incl. forced HIGH were clean — the QA console gate remains.
+
+### P2 perf table — hangar (prod build, 1920x1080)
+
+| GPU | preset | DRS scale | avg fps | p95 ms | long tasks |
+|---|---|---|---|---|---|
+| UHD 770 (iGPU) | LOW | 1.0 / .85 / .72 / .6 / .5 (pinned) | 25 / 28 / 38 / 47 / 55 | 83 / 67 / 50 / 50 / 33 | 0 |
+| UHD 770 (iGPU) | LOW (auto) | 0.72 (governor) | 36.5 | 50 | 0 |
+| UHD 770 (iGPU) | MEDIUM | 0.5 + AO off | 33.6 | 67 | 1 (96 ms, DRS step) |
+| UHD 770 (iGPU) | HIGH | 0.5 + AO/DOF/refl off (after ~60 s) | 35 | 45 | DRS steps only |
+| RTX 3050 | HIGH (auto) | 1.0 | 60 | 16.8 | 0 |
 
 ## P2.7 Known issues (Phase 2)
 

@@ -339,7 +339,7 @@ export function Toasts() {
   useEffect(() => {
     if (!toasts.length) return;
     const t = toasts[0];
-    const id = window.setTimeout(() => dismiss(t.id), 3200);
+    const id = window.setTimeout(() => dismiss(t.id), t.ms ?? 3200);
     return () => window.clearTimeout(id);
   }, [toasts, dismiss]);
   return (

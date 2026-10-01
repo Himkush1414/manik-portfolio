@@ -26,7 +26,7 @@ import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from './perf';
 import { postfx } from './fxController';
 import { CameraShaker } from './CameraShaker';
-import { ExposureEffect, TransitionBlurEffect } from './effects';
+import { ExposureEffect, TransitionBlurEffect, scaleBloom } from './effects';
 import { POST } from '../data/render.config';
 import { frameInfoBegin, frameInfoEnd, registerDebug } from '../debug/debugApi';
 
@@ -88,7 +88,7 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
       dof.target = dofTarget;
       effects.push(dof);
     }
-    const bloom = graphics.bloom ? new BloomEffect({ mipmapBlur: true, ...POST.bloom }) : null;
+    const bloom = graphics.bloom ? scaleBloom(new BloomEffect({ mipmapBlur: true, ...POST.bloom, levels: q.bloom.levels }), q.bloom.scale) : null;
     if (bloom) effects.push(bloom);
     const ca = graphics.chromatic
       ? new ChromaticAberrationEffect({ offset: caBase.current, radialModulation: true, modulationOffset: 0.2 })
@@ -127,7 +127,7 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
     };
     // size handled separately below; dofTarget identity is stable per scene
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gl, scene, camera, useAO, useDOF, q.multisampling, graphics.bloom, graphics.chromatic, graphics.vignette, graphics.grain]);
+  }, [gl, scene, camera, useAO, useDOF, q.multisampling, q.bloom, graphics.bloom, graphics.chromatic, graphics.vignette, graphics.grain]);
 
   useEffect(() => {
     composerRef.current?.setSize(size.width, size.height);

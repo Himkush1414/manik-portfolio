@@ -47,6 +47,8 @@ export type SettingsData = {
   bootSeen: boolean;
   /** the briefing typewriter plays on first view only */
   briefingSeen: boolean;
+  /** the one-time "use the high-performance GPU" advice was shown (brief §4.10) */
+  gpuHintShown: boolean;
 };
 
 export type SaveData = { version: number; profile: ProfileData; settings: SettingsData };
@@ -84,6 +86,7 @@ export function defaultSettings(prefersReducedMotion = false): SettingsData {
     accessibility: { reduceMotion: prefersReducedMotion, reduceFlashing: false, uiScale: 1 },
     bootSeen: false,
     briefingSeen: false,
+    gpuHintShown: false,
   };
 }
 
@@ -177,6 +180,7 @@ function sanitizeSettings(raw: unknown): SettingsData {
     },
     bootSeen: bool(r.bootSeen, false),
     briefingSeen: bool(r.briefingSeen, false),
+    gpuHintShown: bool(r.gpuHintShown, false),
   };
 }
 

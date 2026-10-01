@@ -35,8 +35,16 @@ async function open(group, query, { w = 1920, h = 1080, args = GPU, init } = {})
   const logs = (M.logs[group] ??= []);
   p.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(m.text().slice(0, 200)); });
   p.on('pageerror', e => logs.push('pageerror ' + (e?.message || String(e))));
+  // Phase 2: a fresh profile auto-picks a preset for the GPU and the DRS
+  // governor scales resolution; the Phase 1 captures are scored at HIGH, so
+  // seed HIGH as already picked and freeze the governor (?drs=0)
+  await p.addInitScript(() => {
+    const KEY = 'spacewar.darkedition.save.v1';
+    if (localStorage.getItem(KEY)) return;
+    localStorage.setItem(KEY, JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: 'high', autoPicked: true }, gpuHintShown: true } }));
+  });
   if (init) await p.addInitScript(init);
-  await p.goto(`${origin}/game/g1/?${query}`);
+  await p.goto(`${origin}/game/g1/?${query}&drs=0`);
   await p.waitForFunction(() => !!window.__G1__?.info, null, { timeout: 60000 });
   const shot = async (name, clip) => {
     const file = `${group}-${name}.png`;

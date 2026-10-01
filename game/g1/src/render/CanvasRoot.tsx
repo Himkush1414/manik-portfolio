@@ -4,10 +4,10 @@
 // automatic re-init after a lost context.
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { PerformanceMonitor } from '@react-three/drei';
 import { Color, PCFSoftShadowMap, type WebGLRenderer } from 'three';
 import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from './perf';
+import { DrsDriver } from './DrsDriver';
 import { CLEAR_COLOR } from '../data/render.config';
 import { registerRenderer } from '../debug/debugApi';
 import { watchShaderLinks } from '../debug/shaderCheck';
@@ -18,7 +18,6 @@ type Props = { children: ReactNode };
 export function CanvasRoot({ children }: Props) {
   const graphics = useSettings(s => s.graphics);
   const degrade = usePerf(s => s.degrade);
-  const setDegrade = usePerf(s => s.setDegrade);
   const q = resolveQuality(graphics, degrade);
   const [hidden, setHidden] = useState(document.hidden);
   const [lost, setLost] = useState(false);
@@ -63,14 +62,7 @@ export function CanvasRoot({ children }: Props) {
           canvas.addEventListener('webglcontextrestored', () => setLost(false));
         }}
       >
-        <PerformanceMonitor
-          ms={250}
-          iterations={12}
-          threshold={0.8}
-          bounds={() => [50, graphics.fpsCap === 30 ? 29 : 58]}
-          onDecline={() => setDegrade(usePerf.getState().degrade + 1)}
-          flipflops={3}
-        />
+        <DrsDriver />
         <Suspense fallback={null}>{children}</Suspense>
       </Canvas>
       {lost && (

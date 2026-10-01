@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { ShipId } from '../data/ships';
 
 export type ModalId = 'upgrades' | 'settings' | null;
-export type Toast = { id: number; text: string; tone: 'info' | 'ok' | 'danger' };
+export type Toast = { id: number; text: string; tone: 'info' | 'ok' | 'danger'; ms?: number };
 
 type UiState = {
   modal: ModalId;
@@ -20,7 +20,7 @@ type UiState = {
   openModal(m: ModalId): void;
   setCtaHover(v: boolean): void;
   setAudioLocked(v: boolean): void;
-  toast(text: string, tone?: Toast['tone']): void;
+  toast(text: string, tone?: Toast['tone'], ms?: number): void;
   dismissToast(id: number): void;
 };
 
@@ -38,6 +38,6 @@ export const useUi = create<UiState>()(set => ({
   openModal: modal => set({ modal }),
   setCtaHover: ctaHover => set({ ctaHover }),
   setAudioLocked: audioLocked => set({ audioLocked }),
-  toast: (text, tone = 'info') => set(s => ({ toasts: [...s.toasts.slice(-2), { id: ++toastSeq, text, tone }] })),
+  toast: (text, tone = 'info', ms) => set(s => ({ toasts: [...s.toasts.slice(-2), { id: ++toastSeq, text, tone, ms }] })),
   dismissToast: id => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })),
 }));

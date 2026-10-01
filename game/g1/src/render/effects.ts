@@ -1,6 +1,6 @@
 // Custom postprocessing effects: exposure grade (before the single tone-map
 // stage) and a separable-ish transition blur (its own pass; convolution).
-import { Effect, EffectAttribute, BlendFunction } from 'postprocessing';
+import { Effect, EffectAttribute, BlendFunction, type BloomEffect } from 'postprocessing';
 import { Uniform } from 'three';
 
 export class ExposureEffect extends Effect {
@@ -48,4 +48,24 @@ export class TransitionBlurEffect extends Effect {
   set amount(v: number) {
     this.uniforms.get('amount')!.value = v;
   }
+}
+
+/**
+ * Bloom resolution (brief §4.10: LOW 1/4, MED/HIGH 1/2, ULTRA full).
+ * postprocessing's BloomEffect ignores `resolutionScale` in mipmap-blur mode:
+ * its luminance pass and the mip chain always start at full size. Measured on
+ * the integrated GPU: bloom was the largest single post cost in the hangar.
+ * This runs both at `scale` of the frame (the effect samples the result with
+ * linear filtering, so the glow just gets softer).
+ */
+export function scaleBloom(bloom: BloomEffect, scale: number): BloomEffect {
+  if (scale >= 1) return bloom;
+  const base = bloom.setSize.bind(bloom);
+  bloom.setSize = (width: number, height: number) => {
+    base(width, height);
+    const w = Math.max(1, Math.round(width * scale)), h = Math.max(1, Math.round(height * scale));
+    bloom.luminancePass.setSize(w, h);
+    bloom.mipmapBlurPass.setSize(w, h);
+  };
+  return bloom;
 }

@@ -309,7 +309,10 @@
 .toast {
   --c: calc(var(--u) * 8);
   min-width: calc(var(--u) * 280);
+  max-width: calc(var(--u) * 520);
   padding: calc(var(--u) * 12) calc(var(--u) * 16);
+  white-space: normal;
+  overflow-wrap: break-word;
   font: 500 calc(var(--u) * 12) / 1.3 var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
