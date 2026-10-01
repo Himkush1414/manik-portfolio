@@ -33,6 +33,8 @@ export type SimConfig = {
   aimAssist?: AimAssist;
   /** QA ?god=1: damage is computed and reported but never applied */
   god?: boolean;
+  /** twin cannon muzzles [left, right] (rail-space offsets: x right, y up, forward); default PLAYER.muzzles */
+  muzzles?: readonly (readonly [number, number, number])[];
 };
 
 export class Player {
@@ -121,6 +123,7 @@ export class Sim {
   cursor = 0;
   done = false;
   private assist: (typeof AIM_ASSIST)[AimAssist];
+  private muzzles: readonly (readonly [number, number, number])[];
 
   constructor(cfg: SimConfig) {
     this.cfg = cfg;
@@ -128,6 +131,7 @@ export class Sim {
     this.stats = playerStats(cfg.ship, cfg.tiers);
     this.rng = createStreams(cfg.seed ?? cfg.level.seed);
     this.assist = AIM_ASSIST[cfg.aimAssist ?? 'low'];
+    this.muzzles = cfg.muzzles ?? PLAYER.muzzles;
     this.reset(0);
   }
 
@@ -300,7 +304,7 @@ export class Sim {
   /** One bolt from the alternating cannon, converging on the aim point (or an assisted target). */
   private firePlayer(): void {
     const p = this.player;
-    const m = PLAYER.muzzles[p.cannon];
+    const m = this.muzzles[p.cannon];
     p.cannon ^= 1;
     const C = PLAYER.aim.convergence;
     // muzzle in rail space (ship-local x right / y up / z forward)

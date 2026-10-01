@@ -149,8 +149,9 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
       // offsets are from the SHIP's centre (the own ship sits canopy-on-eye, centre behind the eye)
       const R = view === 'third' ? RIGS.third : RIGS.chase;
       const c = own.group.position;
-      director.pos.copy(ORIGIN).add(c).add(tmp.set(R.offset[0], R.offset[1], R.offset[2]));
-      director.look.copy(ORIGIN).add(c).add(tmp.set(0, R.offset[1] * 0.35, -R.lookDist));
+      const k = Math.max(1, SPECS[shipId].length / RIGS.refLength); // same framing as the mission rigs
+      director.pos.copy(ORIGIN).add(c).add(tmp.set(R.offset[0] * k, R.offset[1] * k, R.offset[2] * k));
+      director.look.copy(ORIGIN).add(c).add(tmp.set(0, R.offset[1] * k * 0.35, -R.lookDist));
       director.focus.copy(ORIGIN).add(c);
       director.fov = R.fov * (useSettings.getState().camera.fov / RIGS.fovBase) + cockpitFx.fovKick;
       director.roll = 0;

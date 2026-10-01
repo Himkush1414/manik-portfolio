@@ -19,7 +19,12 @@ export const MIRROR_SURFACE_LAYER = 4;
  *  (beyond both far planes). Render places entities at z = -(s - playerS). */
 export const MISSION_ORIGIN: [number, number, number] = [0, -3000, 0];
 
-import type { Camera, Scene, WebGLRenderer } from 'three';
+import type { Camera, Object3D, Scene, WebGLRenderer } from 'three';
+
+/** Phase 2 cockpit rig (additive): while `on`, the Phase 1 cockpit root rides on the flown ship's
+ *  eye in the mission frame (render/rigs/CockpitRig.ts places it), its interior + mirrors render,
+ *  and the launch tunnel + its own display ship stay hidden. <Cockpit/> registers `root`. */
+export const cockpitInMission = { on: false, root: null as Object3D | null };
 
 export type WorldHandles = { gl: WebGLRenderer; scene: Scene; camera: Camera };
 let world: WorldHandles | null = null;

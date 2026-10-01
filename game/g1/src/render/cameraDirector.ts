@@ -3,7 +3,7 @@
 // applies them once per frame before rendering (CameraShaker adds on top).
 import { Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
-import type { PerspectiveCamera } from 'three';
+import type { PerspectiveCamera, Quaternion } from 'three';
 
 export const director = {
   pos: new Vector3(0, 6.6, 70),
@@ -12,6 +12,9 @@ export const director = {
   focus: new Vector3(0, 6.64, 62),
   fov: 30,
   roll: 0,
+  /** Phase 2 (additive): when set, the camera takes this orientation instead of lookAt(look) + roll
+   *  (mission rigs: the cockpit interior rides on the same quaternion, so it never swims). */
+  quat: null as Quaternion | null,
 };
 
 const DEG = Math.PI / 180;
@@ -64,8 +67,11 @@ export function CameraDirector() {
   useFrame(({ camera }) => {
     const cam = camera as PerspectiveCamera;
     cam.position.copy(director.pos);
-    cam.up.set(Math.sin(director.roll), Math.cos(director.roll), 0);
-    cam.lookAt(director.look);
+    if (director.quat) cam.quaternion.copy(director.quat);
+    else {
+      cam.up.set(Math.sin(director.roll), Math.cos(director.roll), 0);
+      cam.lookAt(director.look);
+    }
     if (Math.abs(cam.fov - director.fov) > 0.001) {
       cam.fov = director.fov;
       cam.updateProjectionMatrix();

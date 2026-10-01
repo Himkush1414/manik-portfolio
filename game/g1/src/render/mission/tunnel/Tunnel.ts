@@ -130,6 +130,15 @@ export class Tunnel {
     u.uStorm.value = storm;
   }
 
+  /** CPU twin of the shader's pathOffset(d) (current frame's phases): the cosmetic bend at
+   *  distance d ahead, relative to the player (camera sway follows it). */
+  pathAt(d: number, out: { x: number; y: number }): { x: number; y: number } {
+    const A = this.uniforms.uPathA.value, P = this.uniforms.uPathPh.value;
+    out.x = A.x * (Math.sin(P.x + d * A.z) - Math.sin(P.x)) + A.x * 0.45 * (Math.sin(P.y + d * A.w) - Math.sin(P.y));
+    out.y = A.y * (Math.cos(P.z + d * A.w) - Math.cos(P.z)) + A.y * 0.4 * (Math.sin(P.w + d * A.z) - Math.sin(P.w));
+    return out;
+  }
+
   dispose(): void {
     this.dispose_.forEach(f => f());
     this.dispose_ = [];

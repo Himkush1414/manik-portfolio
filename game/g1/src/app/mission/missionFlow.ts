@@ -66,7 +66,10 @@ function beginFrame(): void {
   stage.cockpit = 0;
   stage.mission = 1;
   mission.root.visible = true;
-  mission.rig.attach(w.camera, mission.player);
+  // 2C step 3 wires the saved camera mode + Cycle Camera; until then the mission flies third person
+  mission.rig.attach(w.camera, mission.player, 'third');
+  mission.vfx?.reset();
+  mission.attitude.reset();
   mission.stepper.resync();
   InputManager.attach(w.gl.domElement);
   InputManager.playing = true;
@@ -188,6 +191,8 @@ export function retryMission(): void {
   let at = 0;
   for (const c of cps) if (c <= sim.player.s) at = c;
   sim.reset(at);
+  mission.vfx?.reset();
+  mission.attitude.reset();
   mission.stepper.resync();
   void runFastLaunch().then(() => {
     InputManager.playing = true;

@@ -20,6 +20,10 @@ import { VeilGate } from '../../render/mission/launch/VeilGate';
 import { createLaunchSky } from '../../render/mission/launch/LaunchSky';
 import { LAUNCH } from '../../data/mission';
 import { mission, type MissionOptions } from './missionRuntime';
+import { MissionVfx } from '../../render/mission/vfx/MissionVfx';
+import { SPECS } from '../../ships/specs';
+import { cannonMuzzles } from './shipMounts';
+import { registerDebug } from '../../debug/debugApi';
 
 let inflight: Promise<void> | null = null;
 
@@ -50,6 +54,14 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
     mission.player.add(ship.group);
     mission.ship = ship;
     mission.shipKey = key;
+    if (!mission.vfx) {
+      mission.vfx = new MissionVfx();
+      mission.vfx.attach(mission.root, mission.player);
+      const vfx = mission.vfx;
+      registerDebug('vfx', { stats: () => vfx.stats() });
+    }
+    mission.vfx.setShip(ship.group, SPECS[p.selectedShip]);
+    mission.rig.setShipLength(SPECS[p.selectedShip].length);
   }
   mission.progress = 0.15;
   // the wormhole: built once (noise bake sliced), reused across launches
@@ -62,6 +74,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
     mission.root.add(mission.streaks.mesh);
   }
   mission.streaks.setTier(useSettings.getState().graphics.preset);
+  mission.vfx?.setTier(useSettings.getState().graphics.preset);
   const t = mission.tunnel;
   t.setTier(useSettings.getState().graphics.preset);
   t.setMood(mission.qa.mood ? { preset: mission.qa.mood, storm: level.mood.storm } : level.mood);
@@ -89,7 +102,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   const pr = useProfile.getState();
   mission.level = level;
   mission.opts = opts;
-  mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god });
+  mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god, muzzles: cannonMuzzles(SPECS[pr.selectedShip]) });
   mission.bot = opts.bot ? new Bot(opts.bot, opts.seed ?? level.seed) : null;
   mission.progress = 1;
   mission.prepared = true;

@@ -11,9 +11,11 @@ import type { BuiltShip } from '../../ships/ShipFactory';
 import type { Tunnel } from '../../render/mission/tunnel/Tunnel';
 import type { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
 import type { VeilGate } from '../../render/mission/launch/VeilGate';
+import type { MissionVfx } from '../../render/mission/vfx/MissionVfx';
 import type { WorldHandles } from '../sceneBridge';
 import type { BotSkillId } from '../../data/bot';
-import { ThirdPersonRig } from '../../render/rigs/ThirdPersonRig';
+import { RigSwitcher } from '../../render/rigs/RigSwitcher';
+import { ShipAttitude } from '../../render/mission/shipAttitude';
 import { MISSION_ORIGIN } from '../sceneBridge';
 
 export type MissionOptions = { bot?: BotSkillId | null; god?: boolean; seed?: number };
@@ -38,6 +40,8 @@ export const mission = {
   tunnel: null as Tunnel | null,
   streaks: null as SpeedStreaks | null,
   gate: null as VeilGate | null,
+  /** weapons / impacts / trails (render/mission/vfx) */
+  vfx: null as MissionVfx | null,
   sky: null as import('three').Mesh | null,
   world: null as WorldHandles | null,
   /** QA overrides (?mood= ?storm=) */
@@ -50,7 +54,8 @@ export const mission = {
   opts: {} as MissionOptions,
   input: emptyInput(),
   stepper: new FixedStepper(),
-  rig: new ThirdPersonRig(),
+  /** the three camera rigs + blend (brief §8) */
+  rig: new RigSwitcher(),
   /** presentation time scale (hit-stop / slow-mo); the sim always steps at 60 Hz */
   timeScale: 1,
   prepared: false,
@@ -58,4 +63,6 @@ export const mission = {
   progress: 0,
   /** visual roll angle (barrel roll animation) */
   rollVis: 0,
+  /** the flown ship's visual attitude springs (presentation only) */
+  attitude: new ShipAttitude(),
 };

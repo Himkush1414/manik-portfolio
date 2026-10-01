@@ -146,18 +146,68 @@ export const INPUT = {
   steerActive: 0.8,
 } as const;
 
-/** Camera rigs (brief §8). Offsets in ship space (x right, y up, z = behind). */
+/** Camera rigs (brief §8). Offsets in ship space (x right, y up, z = behind).
+ *  follow: fraction of the ship's lateral offset the camera follows (< 1: the ship visibly moves
+ *  across the screen, the tunnel does not swing 1:1 — Star Fox readability).
+ *  roll: camera roll per radian of ship bank (x the settings roll coupling; reduce-motion caps it). */
 export const RIGS = {
-  third: { offset: [0, 3.2, 12] as const, fov: 70, posLag: 0.08, rotLag: 0.12, lookAhead: 0.25, lookDist: 60 },
-  chase: { offset: [0, 1.6, 6.5] as const, fov: 78, posLag: 0.04, rotLag: 0.07, lookAhead: 0.3, lookDist: 50, rollCoupling: 1.4 },
+  third: { offset: [0, 3.2, 12] as const, fov: 70, posLag: 0.08, rotLag: 0.12, lookAhead: 0.25, lookDist: 60, follow: [0.84, 0.8] as const, roll: 0.2 },
+  chase: { offset: [0, 1.6, 6.5] as const, fov: 78, posLag: 0.04, rotLag: 0.07, lookAhead: 0.3, lookDist: 50, follow: [0.93, 0.9] as const, roll: 0.2 * 1.4 },
   cockpit: { fov: 82 },
   /** the settings FOV (default 75) scales every rig's base FOV */
   fovBase: 75,
   /** blend between rigs (s), never a hard cut */
   blend: 0.6,
-  /** visual ship attitude from motion */
-  bankPerVx: 0.032,
-  pitchPerVy: 0.02,
+  /** the brief's offsets assume a ~7.5 u fighter; ours are 11-17 u, so follow offsets scale by
+   *  max(1, ship length / refLength) — the whole ship + wing tips stay in frame (deviation, logged) */
+  refLength: 7.5,
+  /** reduce-motion: camera roll coupling at most this fraction (brief §18) */
+  reduceRoll: 0.3,
+  /** cosmetic tunnel curvature: look-point sway toward the bend ahead + bank into it */
+  sway: { look: 0.6, bankPerCurv: 900, maxBank: 4 * DEG },
+} as const;
+
+/** Cockpit rig (brief §8): head inertia (+-0.12 u lagging lateral acceleration), combiner focus,
+ *  share of the speed FOV kick (the cockpit already reads speed through the canopy). */
+export const COCKPIT_RIG = {
+  headMax: 0.12,
+  headPerAccel: 0.0011,
+  headTau: 0.11,
+  focusDist: 0.64,
+  fovKickShare: 0.6,
+} as const;
+
+/** Cockpit lights in the mission (the Phase 1 cockpit key + dash point, placed on the eye each
+ *  frame while the interior shows): positions in cockpit-root space, intensities as in Phase 1. */
+export const COCKPIT_LIGHTS = {
+  key: [-1.2, 4.5, 3] as const,
+  keyIntensity: 1.1,
+  dash: [0, -0.12, -0.7] as const,
+  dashBase: 0.15,
+  dashPower: 0.3,
+} as const;
+
+/** Ship attitude feel (brief §7 VISUALS: bank -k vx, pitch k vy, nose yaw to the reticle 30 %).
+ *  A critically-damped-ish spring (zeta < 1: a hint of overshoot = mass) toward targets built
+ *  from the interpolated lateral velocity plus a lead from lateral acceleration, so a key tap
+ *  banks before the velocity has built up. */
+export const FEEL = {
+  bankMax: 38 * DEG,
+  pitchMax: 15 * DEG,
+  /** extra bank / pitch per (u/s^2) of lateral acceleration, capped by the max */
+  bankLead: 0.002,
+  pitchLead: 0.0015,
+  /** the nose also yaws a little into lateral motion */
+  yawFromVx: 6 * DEG,
+  spring: { omega: 14, zeta: 0.68 },
+  /** acceleration estimate smoothing (s) */
+  accelTau: 0.05,
+  /** barrel roll visual: eased (front-loaded like the impulse), full turn */
+  rollEase: 1.6,
+  /** idle life: tiny bob + roll noise in the corridor's turbulence (reduce-motion: 25 %) */
+  wobble: { amp: 0.06, rollDeg: 0.8, pitchDeg: 0.35, hz: [0.37, 0.61, 0.83] as const },
+  /** shudder while the shield presses the envelope (s of decay) */
+  graze: { kick: 2.2 * DEG, decay: 0.12 },
 } as const;
 
 /** Borrowed light rig in the mission frame (brief §4 rule 3; render/lightRig.ts). Offsets from MISSION_ORIGIN. */

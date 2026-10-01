@@ -35,6 +35,9 @@ production build, QA script with 0 console errors/warnings, then commit
   pushed: slice **2A** (§3, §4 carry-overs + perf instrumentation + DRS, §5,
   §7 input core, §15 bot skeleton, §17 flow) and slice **2B** (§6 wormhole,
   §14 launch sequence) — closed after the 5-min in-mission heap trend.
+- **GPU in QA:** `node` is Windows `node.exe`; env vars reach it only via
+  `WSLENV`: `export WSLENV=G1_DGPU G1_DGPU=1 && node tools/<qa>.mjs` (else
+  the run silently uses the integrated GPU).
 - **Current: slice 2C** (§7 flight feel / weapons VFX, §8 rigs + mirrors, §9
   HUD + MFDs + settings rows, production launch path). Sub-checkpoints, each
   pushed once gated: (1) weapon VFX: tracers, orbs, muzzle flash, GPU
@@ -229,6 +232,12 @@ Decisions (2026-10-01, before code):
    `controls.aimAssist` (low), `controls.autoFire`, `camera.rollCoupling`,
    `graphics.speedLines`, `accessibility.subtitles` / `subtitleSize`.
    Pushed `2a78216`.
+6. **Camera director quaternion (2C, 2026-10-01).** `director.quat`
+   (additive, default null): when set, CameraDirector copies it instead of
+   lookAt(look) + roll. Mission rigs set it (the cockpit interior rides the
+   same orientation, no swimming); `RigSwitcher.detach()` clears it, so the
+   hangar / cockpit / launch paths are untouched. Cockpit launch third /
+   chase views scale their offsets by ship length like the mission rigs.
 5. **Mission frame hooks (2A, 2026-10-01).** `stage.mission` flag (Stage);
    `MISSION_ORIGIN` (sceneBridge); Hangar hall hidden while a mission is
    live; Cockpit stops writing fog and its lights while borrowed;
@@ -269,6 +278,7 @@ Decisions (2026-10-01, before code):
 | tunnel L1 (2B), 20 s | UHD 770 | MEDIUM (DRS frozen) | 41.9 | 33.6 | 0.05 | 1.7 / 3.3 | 0 | 32 | 72k | yes | -0.4 MB |
 | + speed FX (2B), 20 s | RTX 3050 | HIGH / ULTRA | 60 / 60 | 16.8 | 0.03 | 0.73 / 1.4 | 0 | 38 | 79k | yes (101) | — |
 | + speed FX (2B), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.04 | 1.1 / 1.8 | 0 | 31 | 73k | yes (81) | — |
+| 2C cp1 weapons + feel: qa-flight, sustained fire 6 s | RTX 3050 | HIGH | 60 | 16.9 (p99 17.1) | 0.05 | 1.75 / 3.1 | 0 | 43 | 91k | yes (109) | — |
 | 2B close: 5-min soak (test corridor looped x5, bot mid), 300 s | RTX 3050 | HIGH | 60 (every 14 s window 59.6-60) | 16.8-16.9 | 0.03 / 0.1 | 1.6 / 3.9 | 0 | 38 | 79k | yes (104) | +0.09 MB/min, sawtooth 1.45 MB (rule 8: < 8 MB, flat) |
 
 ## P2.8 Engine notes (Phase 2)
@@ -449,7 +459,63 @@ Decisions (2026-10-01, before code):
   a 3-min idle-hangar soak, the 5-min fps probe, a level-complete -> hangar
   probe, or a screenshot-mid-run probe; the second coincided with heavy
   tsc / vitest runs on the same machine. Treated as external contention;
-  the 2C round-trip soak re-checks it.
+  the 2C round-trip soak re-checks it. **CORRECTION (same day):** those two
+  runs (and every `G1_DGPU=1 node ...` QA run this session until the fix)
+  ran on the INTEGRATED GPU: `node` is a symlink to Windows `node.exe` and
+  WSL forwards no env vars unless listed in `WSLENV`. The slow tails were
+  the UHD 770 at HIGH with DRS frozen — expected, not contention. The heap
+  numbers stand (GPU-independent); the 5-min 60 fps probe stands (it
+  hard-coded the dGPU flag). **Always:** `export WSLENV=G1_DGPU
+  G1_DGPU=1 && node tools/...` (check: `node -e
+  "console.log(process.env.G1_DGPU)"` prints 1).
+- **Weapon VFX (2C, checkpoint 1):** `render/mission/vfx/` — `Particles`
+  (THE GPU particle system: InstancedBufferGeometry ring of spawn records
+  x, y, s, t0 | velocity, life | size, ramp, drag, stretch; the vertex shader
+  integrates exponential drag and ages by the presentation clock; sparks
+  stretch along view-space velocity; colour ramps in `data/vfx.ts`; ring
+  1500 / 3000 / 6000 / 9000 per preset; partial uploads of only the records
+  written this frame via preallocated `updateRanges` objects — three's
+  `addUpdateRange` allocates), `Bolts` (player tracers = elongated
+  camera-facing ribbons, white-hot core + Ignition body, tail grows from the
+  muzzle at the bolt's speed RELATIVE to the ship; enemy orbs = round
+  Nebula->Danger rim + white core; written from the sim SoA pools each frame,
+  interpolated by alpha), `MuzzleFlash` (two star quads on the real cannon
+  hardpoints, child of the attitude group), `Ribbons` (wing-tip contrails:
+  rail-space history, camera-facing strip in the shader, ~0.22 s, fade near
+  the camera), `MissionVfx` (own event reader: PlayerFire -> flash, Hit /
+  weak -> sparks + puff, Kill -> burst, Spark -> wall spray, Graze -> Ice
+  sparks on the boundary side or roll-dodge flicker, BoostOn -> engine puff).
+  `scenes/mission/shipMounts.ts`: per-ship cannon muzzles (outermost
+  off-centre cannon pair, mirrored if single) -> `SimConfig.muzzles`
+  (additive; sim default unchanged), wing tips, engines. QA: `__G1__.vfx.stats()`,
+  `tools/qa-flight.mjs` (12 beats per rig + sustained-fire perf +
+  programs-constant). BUGS FOUND: (1) every frame with fire was BLACK —
+  `pow(1.0 - along, 1.6)` with along a hair above 1 = NaN on ANGLE/D3D, bloom
+  spreads it to the whole frame: never `pow()` a possibly-negative base
+  (clamp, or `x * x`), guard `atan(0, 0)`; (2) the ribbon passed the
+  third-person camera as a screen-wide white band: short trails + camera
+  fade; (3) at HDR 8 / 4.6 AgX turned the tracers WHITE, reading as speed
+  streaks — body 2.4 / core 4.2 keeps them Ignition orange; boost ribbons
+  stay Ice (orange streaks mean player fire).
+- **Flight feel (2C, checkpoint 1):** `render/mission/shipAttitude.ts` springs
+  (data `FEEL`: bank max 38 deg, pitch 15 deg, omega 14, zeta 0.68, a lead
+  from lateral acceleration so a tap banks before velocity builds, release
+  swings through a small counter-bank; eased front-loaded barrel roll from
+  the interpolated roll time; bob + roll / pitch life noise, 25 % under
+  reduce-motion; shudder while the shield presses the envelope) — unit-tested
+  (`tests/attitude.test.ts`: convergence, lead, bounded overshoot < 35 %,
+  stability at 0.1 s and 240 Hz frames, full eased roll). Camera:
+  `render/rigs/FollowRig.ts` follows 84 % / 80 % of the ship's lateral offset
+  (the ship moves across the screen; the tunnel does not swing 1:1), rolls
+  0.2 x bank x settings roll coupling (<= 30 % under reduce-motion), leans
+  into the tunnel's cosmetic bend (`Tunnel.pathAt`, CPU twin of the shader).
+  DEVIATION: brief offsets assume a ~7.5 u fighter; ours are 11-17 u, so
+  follow offsets scale by max(1, length / 7.5) (HALCYON 1.87: third person
+  (0, 6, 22.4)) — at (0, 3.2, 12) the ship filled 70 % of the frame and cut
+  the wing tips; the launch views use the same scale (no framing jump at the
+  breach). `RigSwitcher` (render/rigs) owns the rigs + 0.6 s blend and writes
+  the director through the new additive `director.quat` (Phase 1
+  amendment 6); the mission flies third person until checkpoint 3.
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;

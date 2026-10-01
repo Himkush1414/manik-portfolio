@@ -10,19 +10,20 @@ import { onSimEvent } from '../../app/mission/missionFlow';
 import { InputManager } from '../../input/InputManager';
 import { useFlow, isSimLive } from '../../app/flow';
 import { perfMon } from '../../render/perfMon';
-import { rigAim, rigFlight } from '../../render/rigs/ThirdPersonRig';
+import { rigAim, rigFlight } from '../../render/rigs/rigState';
 import { PLAYER, RIGS } from '../../data/mission';
 import type { EventReader } from '../../game/core/events';
-import { curveAt } from '../../game/rail';
+import { curveAt, envelopeAt, ellipseR } from '../../game/rail';
+import { STEP } from '../../game/core/step';
 import { TUNNEL, SPEED_FX, STORM_FX } from '../../data/tunnel';
-import { Rng } from '../../game/core/rng';
+import { vfxRng } from '../../render/mission/vfx/gpu';
 import { useSettings } from '../../state/settings.store';
 import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
 
 let reader: EventReader | null = null;
-/** presentation-only randomness (brief §3: VFX never draw from the sim streams) */
-const vfxRng = new Rng(0x7f4a7c15);
+const _env = { a: 0, b: 0 };
+const _p1 = { x: 0, y: 0 }, _p2 = { x: 0, y: 0 };
 let stormFlash = 0, stormGap = 0;
 let readerSim: unknown = null;
 
@@ -49,18 +50,29 @@ export function MissionDriver() {
     }
     perfMon.end('sim');
     if (!isSimLive(flowState)) mission.stepper.resync();
+    mission.vfx?.drain(sim, mission.time);
     reader?.drain(onSimEvent);
 
     // ---- player view (interpolated between the last two sim states)
     const p = sim.player, a = mission.stepper.alpha;
     const x = p.prevX + (p.x - p.prevX) * a, y = p.prevY + (p.y - p.prevY) * a;
     const pl = mission.player;
-    pl.position.set(x, y, 0);
     // attitude: bank against lateral velocity, pitch with vertical, nose yaw toward the reticle, barrel roll
-    const yaw = (mission.bot ? mission.input.aimYaw : InputManager.state.yaw) * PLAYER.aim.noseYaw;
-    const pitchAim = (mission.bot ? mission.input.aimPitch : InputManager.state.pitch) * PLAYER.aim.noseYaw;
-    mission.rollVis = p.rollT >= 0 ? -p.rollDir * (p.rollT / PLAYER.roll.duration) * Math.PI * 2 : 0;
-    pl.rotation.set(p.vy * RIGS.pitchPerVy + pitchAim, -yaw, -p.vx * RIGS.bankPerVx + mission.rollVis, 'YXZ');
+    // a human's reticle is the raw late-latched one; the bot / QA-forced aim is what the sim consumed
+    const simAim = !!mission.bot || (mission.qaForce !== null && 'aimYaw' in mission.qaForce);
+    const aimYaw = simAim ? mission.input.aimYaw : InputManager.state.yaw;
+    const aimPitch = simAim ? mission.input.aimPitch : InputManager.state.pitch;
+    // springs toward bank / pitch / yaw targets (render/mission/shipAttitude.ts, data FEEL); the
+    // roll time is interpolated so the barrel roll is smooth above 60 Hz
+    const env = envelopeAt(sim.level.envelope, p.s, _env);
+    const press = Math.max(0, ellipseR(x, y, env.a, env.b) - 1);
+    const rollT = p.rollT >= 0 ? p.rollT + a * STEP : -1;
+    const reduceLife = useSettings.getState().accessibility.reduceMotion ? 0.25 : 1;
+    const att = mission.attitude;
+    att.update(dt * mission.timeScale, p.vx, p.vy, sim.stats.lateralSpeed, aimYaw, aimPitch, rollT, PLAYER.roll.duration, p.rollDir, press, reduceLife);
+    mission.rollVis = att.roll;
+    pl.position.set(x, y + att.bob, 0);
+    pl.rotation.set(att.pitch + att.noisePitch, -att.yaw, att.bank + att.roll + att.noiseBank, 'YXZ');
     if (mission.ship) {
       mission.ship.setEngineLevel(p.boosting ? 1 : p.braking ? 0.25 : 0.6);
       mission.ship.update(state.clock.elapsedTime);
@@ -91,12 +103,27 @@ export function MissionDriver() {
       rigFlight.speedRatio = ratio;
       rigFlight.boost = p.boosting;
       rigFlight.reduceMotion = reduce;
+      // cosmetic bend ahead: the look point leans into it, the camera banks a touch
+      const S = RIGS.sway;
+      const p1 = mission.tunnel.pathAt(RIGS.third.lookDist, _p1), p2x = mission.tunnel.pathAt(RIGS.third.lookDist * 2, _p2).x;
+      rigFlight.swayX = p1.x * S.look;
+      rigFlight.swayY = p1.y * S.look;
+      const curv = (p2x - 2 * p1.x) / (RIGS.third.lookDist * RIGS.third.lookDist);
+      rigFlight.swayBank = Math.max(-S.maxBank, Math.min(S.maxBank, -curv * S.bankPerCurv * ratio * ratio));
       CameraShaker.setRumble(mission.tunnel.moodDef.turbulence * speed01 * SPEED_FX.rumble, SPEED_FX.rumbleHz);
     }
 
+    // ---- weapons / impacts / trails (after the attitude: ribbons sample the wing tips)
+    mission.vfx?.frame(dt, sim, a, ps, mission.time);
+
     // ---- camera: the reticle the HUD shows is the raw (late-latched) one
-    rigAim.yaw = mission.bot ? mission.input.aimYaw : InputManager.state.yaw;
-    rigAim.pitch = mission.bot ? mission.input.aimPitch : InputManager.state.pitch;
+    rigAim.yaw = aimYaw;
+    rigAim.pitch = aimPitch;
+    rigFlight.bank = att.bank;
+    rigFlight.roll = att.roll;
+    rigFlight.ax = att.ax;
+    rigFlight.ay = att.ay;
+    rigFlight.rollCoupling = useSettings.getState().camera.rollCoupling;
     mission.rig.update(dt);
   }, -3);
   return null;
