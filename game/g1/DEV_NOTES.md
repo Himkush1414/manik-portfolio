@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS | | weapon VFX, flight feel, rigs + blend, cockpit rig + live mirrors, HUD, MFDs, settings rows, production launch path |
+| 2C Flight + rigs + HUD | IN PROGRESS (checkpoint 1 of 9 done) | ba206d5 | cp1 weapon VFX + flight feel DONE; cp2-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -30,31 +30,147 @@ production build, QA script with 0 console errors/warnings, then commit
 | 2I Level 10 + THE WARDEN | TODO | | |
 | 2J Audio, balance, soak, final QA | TODO | | |
 
-**HANDOFF (2026-10-01, resumed session) — read this first.**
-- Brief steps are the sections §0-§23; build slices (§20) group them. Done +
-  pushed: slice **2A** (§3, §4 carry-overs + perf instrumentation + DRS, §5,
-  §7 input core, §15 bot skeleton, §17 flow) and slice **2B** (§6 wormhole,
-  §14 launch sequence) — closed after the 5-min in-mission heap trend.
-- **GPU in QA:** `node` is Windows `node.exe`; env vars reach it only via
-  `WSLENV`: `export WSLENV=G1_DGPU G1_DGPU=1 && node tools/<qa>.mjs` (else
-  the run silently uses the integrated GPU).
-- **Current: slice 2C** (§7 flight feel / weapons VFX, §8 rigs + mirrors, §9
-  HUD + MFDs + settings rows, production launch path). Sub-checkpoints, each
-  pushed once gated: (1) weapon VFX: tracers, orbs, muzzle flash, GPU
-  particles (impact / wall / graze / boost), wing-tip ribbons, per-ship
-  muzzles; (2) flight feel: spring attitude (data FEEL), camera follow
-  fraction + roll coupling + tunnel sway; (3) rig switcher: third / chase /
-  cockpit with the 0.6 s blend, Cycle Camera, director quaternion path;
-  (4) cockpit rig in the mission frame (Phase 1 interior on the ship's eye)
-  + live mirrors (reduced layers, cheapest tunnel variant, cost measured);
-  (5) DOM HUD (reticle late-latched, bars, combo, progress) + combiner;
-  (6) live MFDs; (7) settings rows; (8) standby auto-LAUNCH (production
-  path) + Level 1 skeleton; (9) flight-feel review + input robustness re-run
-  + perf tables + 2C close.
-- Known open items: storm bolts subtle (L22, revisit in 2H); test level's
-  chamber shows as a bright "doorway" from the narrow tube (expected);
-  iGPU numbers vary with the owner's editor using the iGPU (see notes);
-  ghost-echo silhouettes / Meridian fragments planned for 2G (L1 content).
+**HANDOFF (2026-10-01, paused by the owner mid-2C) — read this first.**
+
+*Where we are.* Brief = "PHASE 2 OF 4", sections §0-§23 (the owner's "steps";
+a session's brief text is NOT in the repo — the last session recovered it
+from `~/.claude/projects/-mnt-d-Manik-Work-Portfolio/91b9452b-...jsonl`;
+the slice plan below + P2.2 are enough to continue). **Current step: §7
+(player ship / input / weapons), inside slice 2C** (2C = §7 + §8 + §9).
+
+*Step map (§ = brief section):*
+| § | topic | status |
+|---|---|---|
+| 0-2 | role / hard rules / scope | DONE (rules, followed) |
+| 3 | architecture (sim/render split, pools, event bus) | DONE + pushed (2A) |
+| 4 | zero-hitch contract: carry-overs, DRS, instrumentation, heap | DONE + pushed (2A; 5-min heap 2B close) |
+| 5 | world, rail, sim core | DONE + pushed (2A) |
+| 6 | wormhole + speed FX + set pieces | DONE + pushed (2B) |
+| 7 | player ship, input, weapons | IN PROGRESS: sim + input (2A) and weapon VFX + attitude feel (2C cp1, ba206d5) done; LEFT: cockpit hands/recoil (cp4), shield-hit ripple + low-hull smoke/decals (2D), flight-feel review write-up (cp9) |
+| 8 | 3 camera rigs + live mirrors | IN PROGRESS: FollowRig (third/chase), CockpitRig, RigSwitcher written + pushed but only third person is wired; LEFT: cp3, cp4 |
+| 9 | HUD + in-mission UI | TODO in 2C: overlay HUD, combiner, MFDs, settings rows (cp5-cp7); pause menu / failed (2D); results, sortie select, comms, tutorial (2G) |
+| 10 | combat systems (damage, pickups, hazards, scoring, juice) | partial (sim damage/scoring 2A); rest 2D |
+| 11 | Umbra ships + AI + PatternLib + health bars | TODO 2E |
+| 12 | Voidspawn monsters | TODO 2F |
+| 13 | VFX library (explosions S/M/L/boss, dissolve, telegraphs, ?screen=vfxlab) | partial (particle system + weapon VFX in cp1); rest 2D-2F |
+| 14 | LevelDef + levels 1/10/22 + boss + launch + prepare | partial: launch sequence + prepare DONE (2B); validator, levels, Warden TODO 2G-2I |
+| 15 | difficulty gate + balance | partial (bot skeleton + CLI 2A); TODO 2I/2J |
+| 16 | audio | TODO 2J |
+| 17 | flow FSM | DONE + pushed (2A) |
+| 18 | accessibility & safety | ongoing (reduce-motion/flash honoured in all new code) |
+| 19 | pitfalls | ongoing |
+| 20 | build order | ongoing (slices) |
+| 21 | QA protocol (`qa:phase2`) | partial tools (qa-mission, qa-flight, qa-input, qa-launch-seq); `qa:phase2` aggregate TODO 2J |
+| 22 | Phase 3 handoff contract | TODO 2J |
+| 23 | final message | TODO end of Phase 2 |
+Fully complete + pushed: §0, §1, §2, §3, §4, §5, §6, §17 = **8 of the 24
+sections (§0-§23)**; substantive build steps complete: §3, §4, §5, §6, §17.
+
+*Pushes this session (2026-10-01, resumed):* `578b7df` (2B close-out: 5-min
+heap trend, qa-mission --loopAt), `ba206d5` (2C cp1). Earlier Phase 2 pushes:
+562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db,
+6c06350, b6ef2fe, 80f637d, 2cd09be. (+ the commit carrying this handoff.)
+
+*Working tree at pause:* clean build at HEAD. TWO UNCOMMITTED WIP files,
+intentionally not pushed (they compile; nothing imports them yet):
+`src/scenes/mission/missionCamera.ts` (cockpit view on/off: ship to
+MIRROR_LAYER, cockpit lights placed on the eye each frame, `cycleCamera()`,
+`setCockpitEye()`) and `src/ui/screens/mission/hudView.ts` (`hudView.cockpit`
+flag for the HUD layout). They belong to cp3/cp4 — review, then use or
+delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
+`data/mission.ts`; `cockpitInMission` in `scenes/sceneBridge.ts`.
+
+*2C remaining checkpoints (push each once gated):*
+- **cp2** (small): flight-feel tuning pass with the bot + manual notes —
+  watch `qa/p2c/flight-third-*.png`; consider tracer presence vs the busy
+  tunnel (data/vfx.ts TRACER), muzzle size, chase framing. Optional; can fold
+  into cp9.
+- **cp3** rig switching: in `missionFlow.beginFrame` attach with
+  `useSettings.getState().camera.mode` instead of the hard-coded `'third'`;
+  set `mission.rig.onView = applyCockpitView` (missionCamera.ts) BEFORE
+  attach; call `setCockpitEye(shipId)` in MissionLoader when the ship
+  changes; wire `InputManager.hooks.cycleCamera = cycleCamera` and subscribe
+  to `camera.mode` changes -> `mission.rig.set(mode)` (0.6 s blend);
+  `endFrame` -> `mission.rig.detach()` already clears `director.quat`. Chase
+  rig: `RIGS.chase`, streak amount x1.3 in chase. Capture with
+  `tools/qa-flight.mjs --modes third,chase` + a blend sequence.
+- **cp4** cockpit rig + live mirrors: in `scenes/cockpit/Cockpit.tsx`
+  register `cockpitInMission.root = root.current`; visible when
+  `stage.cockpit >= 0.5 || cockpitInMission.on`; while on: force
+  `built.group.visible = true`, hide `own.group` and the LaunchTunnel group,
+  keep drawing displays; on off: restore position to COCKPIT_ORIGIN,
+  identity rotation, reset `viewApplied`. Call
+  `updateCockpitLights(cockpitFx.power.dash)` each frame in MissionDriver
+  while on (lights are borrowed: applyLights zeroes them). `Mirrors.tsx`
+  useFrame gate -> `stage.cockpit < 0.5 && !cockpitInMission.on`. Mirrors
+  must use a reduced layer set + the cheapest tunnel variant (second LOW
+  tunnel mesh on MIRROR_LAYER, main tunnel on a main-only layer); MEASURE:
+  > 1.2 ms GPU on MEDIUM for 3 targets -> one shared wide rear render
+  sampled through 3 UV windows (same MirrorRig API). Hands: expose `stick` /
+  throttle groups from buildCockpit (additive), tilt with input, recoil on
+  PlayerFire. Draw-call budget <= 150 (cockpit alone ~111 in Phase 1: merge
+  static meshes by material if over). Check no clipping at envelope corners.
+- **cp5** DOM HUD (brief §9, <= 120 nodes, 20 Hz from `sim.hud`, reticle via
+  rAF transform only, late-latched `InputManager.state.yaw/pitch`; bars via
+  transform scaleX; no backdrop-filter): reticle ring + dot + ship pipper +
+  hit/kill markers (Ev.Hit/Ev.Kill), SHIELD/HULL segbars (Danger pulse < 25 %),
+  boost energy + speed + roll-cooldown ring, score + combo ring, progress bar,
+  credits, target panel (when `hud.targetSlot >= 0`), 8 pooled threat
+  chevrons. Phase 1 primitives/tokens (ui/primitives, ui/tokens.css).
+  Cockpit: light overlay + combiner (`hudView.cockpit`).
+- **cp6** live MFDs + combiner: `scenes/cockpit/displays.ts` new
+  `hudMode 'mission'`: left shield/hull/energy/roll cd, right radar + progress,
+  centre target wireframe/health or ship status; combiner flight symbology.
+- **cp7** settings rows (fields already in `state/schema.ts`):
+  controls.aimAssist, controls.autoFire, accessibility.subtitles +
+  subtitleSize, camera.rollCoupling (0-1.4), graphics.speedLines — in
+  `ui/screens/settings/SettingsModal.tsx` with the existing row components.
+- **cp8** production launch path: standby auto-LAUNCH after a beat (today only
+  QA `?level=` launches) + `levels/level01.ts` skeleton LevelDef (corridor 1,
+  58 u/s, ~9300 m, mood l1, empty timeline until 2G) in `levels/registry.ts`;
+  prewarm at briefing start. Verify hangar -> START MISSION -> cockpit ->
+  LET'S GO -> camera -> standby -> launch -> playing with page-level clicks.
+- **cp9** 2C close: flight-feel review (bot recording + manual notes, honest),
+  re-run `tools/qa-input.mjs` (input robustness), qa-flight all 3 rigs,
+  qa-mission perf rows on both GPUs, 20 hangar<->mission round trips
+  (memory), qa:phase1 cockpit group still green, DEV_NOTES 2C table row DONE.
+
+*Then:* 2D (§10 hazards + damage + feedback, pause menu, fail/retry), 2E
+(§11 Umbra + AI + PatternLib + health bars + explosions + bestiary), 2F (§12
+monsters), 2G (§14 Level 1 + tutorial + KESTREL-9 + results + Sortie Select +
+awardMission/save v2), 2H (Level 22 + BULWARK + storms/collapse), 2I (Level 10
++ THE WARDEN + §15 difficulty gate), 2J (§16 audio, balance report, soak,
+`qa:phase2`, §22 handoff, §23 report). Details per slice: P2.2.
+
+*First actions on resume (exact):*
+1. `git status` (expect only the two WIP files above) and `git log --oneline
+   -3` == `git ls-remote origin main`.
+2. `cd game/g1 && npm run typecheck && npx vitest run` (102 tests) and, at the
+   repo root, `npm run build` (only the two pre-existing portfolio warnings).
+3. Start preview for QA: repo root `npx vite preview --port 5198
+   --strictPort` (run in background with the MAX timeout; the WSL shim can be
+   killed while the Windows node keeps serving — record its Windows PID via
+   `Get-NetTCPConnection -LocalPort 5198` and stop exactly that at the end).
+   Port 5173 belongs to the owner's own dev server — never touch it.
+4. GPU: `export WSLENV=G1_DGPU G1_DGPU=1` before every `node tools/...`
+   (verify with `node -e "console.log(process.env.G1_DGPU)"`), else the run
+   is on the integrated GPU.
+5. Sanity: `node tools/qa-flight.mjs --modes third --out qa/p2c` -> 60 fps,
+   programs constant, logs []; open a few `qa/p2c/flight-third-*.png`.
+6. Continue with **cp3** above.
+
+*Gate before every push (unchanged):* typecheck, all unit tests, production
+build clean, QA script with 0 console errors/warnings + screenshots actually
+inspected, `git diff --cached` only game/g1 paths staged explicitly (never
+`git add -A`/`.`), author `Himkush1414 <light.dark14143@gmail.com>`, push,
+`git ls-remote origin main` == HEAD. Cadence: ~2-3 verified pushes per step.
+
+*Known open items:* storm bolts subtle (L22, 2H); test level's chamber reads
+as a bright "doorway" from the narrow tube (expected); iGPU numbers vary
+with the owner's editor using the iGPU; the sim's bolt-vs-wall test uses the
+constant 46 u radius, so in the chamber (visual radius 110) wall sparks
+appear mid-air — make the wall radius follow `level.radius` (sim, 2D);
+ghost-echo silhouettes / Meridian fragments planned for 2G.
 
 ## P2.1 Architecture (brief §3, decided)
 
