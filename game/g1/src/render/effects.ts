@@ -69,3 +69,32 @@ export function scaleBloom(bloom: BloomEffect, scale: number): BloomEffect {
   };
   return bloom;
 }
+
+/**
+ * Radial speed blur (brief §6 SPEED SENSATION, HIGH/ULTRA): samples toward the
+ * screen centre, stronger at the edges and with speed. A CONVOLUTION effect,
+ * so it runs in its own pass ahead of the main pass (HDR, pre-tone-map).
+ */
+export class RadialBlurEffect extends Effect {
+  constructor(taps: number) {
+    super(
+      'RadialBlurEffect',
+      /* glsl */ `
+        uniform float strength;
+        void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+          vec2 dir = uv - 0.5;
+          float edge = smoothstep(0.12, 0.72, length(dir));
+          vec3 acc = inputColor.rgb;
+          for (int i = 1; i < ${taps}; i++) {
+            float k = float(i) / float(${taps});
+            acc += texture2D(inputBuffer, uv - dir * strength * edge * k).rgb;
+          }
+          outputColor = vec4(acc / float(${taps}), inputColor.a);
+        }`,
+      { attributes: EffectAttribute.CONVOLUTION, uniforms: new Map([['strength', new Uniform(0)]]) },
+    );
+  }
+  set strength(v: number) {
+    this.uniforms.get('strength')!.value = v;
+  }
+}

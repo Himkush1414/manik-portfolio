@@ -8,12 +8,15 @@ import type { CameraRig } from '../cameraRig';
 import { director } from '../cameraDirector';
 import { RIGS, PLAYER } from '../../data/mission';
 import { useSettings } from '../../state/settings.store';
+import { SPEED_FX } from '../../data/tunnel';
 
 const _want = new Vector3();
 const _look = new Vector3();
 
 /** reticle angles the look-ahead follows (written by the mission loop each frame) */
 export const rigAim = { yaw: 0, pitch: 0 };
+/** flight state for FOV feel: speed / cruise ratio, boosting, reduce-motion */
+export const rigFlight = { speedRatio: 1, boost: false, reduceMotion: false };
 
 export class ThirdPersonRig implements CameraRig {
   readonly mode = 'third' as const;
@@ -21,6 +24,9 @@ export class ThirdPersonRig implements CameraRig {
   private pos = new Vector3();
   private look = new Vector3();
   private primed = false;
+  /** critically damped FOV kick (deg) */
+  private fovKick = 0;
+  private fovVel = 0;
 
   attach(_camera: Camera, target: Object3D): void {
     this.target = target;
@@ -50,7 +56,13 @@ export class ThirdPersonRig implements CameraRig {
     director.pos.copy(this.pos);
     director.look.copy(this.look);
     director.focus.copy(t.position).add(o);
-    director.fov = R.fov * (useSettings.getState().camera.fov / RIGS.fovBase);
+    // FOV widens with speed (+12 % per +100 % over cruise) and kicks on boost; none under reduce-motion
+    const base = R.fov * (useSettings.getState().camera.fov / RIGS.fovBase);
+    const kick = rigFlight.reduceMotion ? 0 : base * SPEED_FX.fovPerSpeed * Math.max(0, rigFlight.speedRatio - 1) + (rigFlight.boost ? SPEED_FX.fovBoostDeg : 0);
+    const w = SPEED_FX.fovOmega;
+    this.fovVel += (w * w * (kick - this.fovKick) - 2 * w * this.fovVel) * dt;
+    this.fovKick += this.fovVel * dt;
+    director.fov = base + this.fovKick;
     director.roll = 0;
   }
 

@@ -15,6 +15,7 @@ import { stage } from '../../scenes/Stage';
 import { lightRig } from '../../render/lightRig';
 import { InputManager } from '../../input/InputManager';
 import { perfMon } from '../../render/perfMon';
+import { CameraShaker } from '../../render/CameraShaker';
 import { MISSION_LIGHTS } from '../../data/mission';
 import { returnSequence } from '../choreo/launchTimeline';
 import type { SpotLight, HemisphereLight, Light, Object3D } from 'three';
@@ -63,6 +64,7 @@ async function beginFrame(): Promise<void> {
 }
 
 function endFrame(): void {
+  CameraShaker.setRumble(0);
   InputManager.detach();
   InputManager.hooks = {};
   stage.mission = 0;

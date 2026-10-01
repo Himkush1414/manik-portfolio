@@ -20,7 +20,7 @@ production build, QA script with 0 console errors/warnings, then commit
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
-| 2B Wormhole + launch | IN PROGRESS | (tunnel) | tunnel shell + tiers + 3 moods DONE; next: speed FX (streaks, FOV, radial blur/CA), launch catapult + Veil Gate + breach, set pieces, perf gate + heap trend |
+| 2B Wormhole + launch | IN PROGRESS | 6c06350 (tunnel), (speed FX) | tunnel + tiers + moods, speed FX DONE; next: launch catapult + Veil Gate + breach, set pieces, perf gate + heap trend |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
@@ -246,6 +246,8 @@ Decisions (2026-10-01, before code):
 | tunnel L1 (2B), 20 s | RTX 3050 | MEDIUM | 60 | 16.8 | 0.03 | 1.3 / 2.6 | 0 | 32 | 72k | yes | +0.3 MB |
 | tunnel L1 (2B), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.04 | 2.0 / 3.5 | 0 | 30 | 72k | yes | -3.6 MB (GC) |
 | tunnel L1 (2B), 20 s | UHD 770 | MEDIUM (DRS frozen) | 41.9 | 33.6 | 0.05 | 1.7 / 3.3 | 0 | 32 | 72k | yes | -0.4 MB |
+| + speed FX (2B), 20 s | RTX 3050 | HIGH / ULTRA | 60 / 60 | 16.8 | 0.03 | 0.73 / 1.4 | 0 | 38 | 79k | yes (101) | — |
+| + speed FX (2B), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.04 | 1.1 / 1.8 | 0 | 31 | 73k | yes (81) | — |
 
 ## P2.8 Engine notes (Phase 2)
 
@@ -361,6 +363,20 @@ Decisions (2026-10-01, before code):
   stretch along the rail (220 m per repeat, 8 around) so it reads as flow;
   (3) uv.x from the geometry (duplicated seam column), never atan: no seam.
   QA: `&mood=l1|l22|l10&storm=0..1` with `?level=`.
+- **Speed sensation (2B):** `render/mission/vfx/SpeedStreaks.ts` (one
+  InstancedMesh, per-instance (angle, radius, phase, seed); placement +
+  rail-locked scroll + speed stretch entirely in the vertex shader; count per
+  preset 140 / 260 / 420 / 600; `graphics.speedLines` scales it); FOV kick
+  in the rig (+12 % per +100 % over cruise, +9 deg boost, critically damped,
+  off under reduce-motion); `RadialBlurEffect` (CONVOLUTION -> its own pass
+  before the main pass, HIGH / ULTRA only, enabled above a visible strength;
+  compiled in the warm render); edge CA scaled with speed (`missionPost.ca`);
+  turbulence micro-shake via `CameraShaker.setRumble` (mood turbulence x
+  speed; 25 % under reduce-motion). QA: `__G1__.sim.force({ boost: true })`
+  forces input fields over any pilot. BUGS FOUND: (1) streak quads face
+  radially OUT and the camera sits on the axis -> FrontSide culled every one
+  (DoubleSide); (2) `smoothstep(hi, lo, x)` is undefined in GLSL — always
+  write `1.0 - smoothstep(lo, hi, x)` (fixed in the streaks and the rings).
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;

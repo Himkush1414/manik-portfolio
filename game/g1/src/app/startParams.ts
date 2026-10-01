@@ -88,6 +88,8 @@ export function applyStartParams(): void {
       const p = s.player;
       return { tick: s.tick, s: p.s, x: p.x, y: p.y, speed: p.speed, hull: p.hull, shield: p.shield, alive: p.alive, score: s.score, kills: s.kills, shots: p.shotsFired, hits: p.shotsHit, enemies: s.enemies.aliveCount, done: s.done, dropped: mission.stepper.dropped };
     },
+    /** force input fields on top of the pilot (QA: boost, fire, roll...); null clears */
+    force: (patch: Record<string, unknown> | null) => void (mission.qaForce = patch as never),
     /** advance N fixed steps immediately with the current input (QA) */
     step: (n = 1) => {
       const s = mission.sim;

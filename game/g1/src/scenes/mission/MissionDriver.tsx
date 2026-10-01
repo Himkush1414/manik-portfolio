@@ -10,11 +10,14 @@ import { onSimEvent } from '../../app/mission/missionFlow';
 import { InputManager } from '../../input/InputManager';
 import { useFlow, isSimLive } from '../../app/flow';
 import { perfMon } from '../../render/perfMon';
-import { rigAim } from '../../render/rigs/ThirdPersonRig';
+import { rigAim, rigFlight } from '../../render/rigs/ThirdPersonRig';
 import { PLAYER, RIGS } from '../../data/mission';
 import type { EventReader } from '../../game/core/events';
 import { curveAt } from '../../game/rail';
-import { TUNNEL } from '../../data/tunnel';
+import { TUNNEL, SPEED_FX } from '../../data/tunnel';
+import { useSettings } from '../../state/settings.store';
+import { missionPost } from '../../render/MissionPostFX';
+import { CameraShaker } from '../../render/CameraShaker';
 
 let reader: EventReader | null = null;
 let readerSim: unknown = null;
@@ -37,6 +40,7 @@ export function MissionDriver() {
     for (let i = 0; i < n; i++) {
       if (mission.bot) mission.bot.think(sim, mission.input);
       else InputManager.state.sample(mission.input, now);
+      if (mission.qaForce) Object.assign(mission.input, mission.qaForce);
       sim.step(mission.input);
     }
     perfMon.end('sim');
@@ -60,10 +64,23 @@ export function MissionDriver() {
 
     // ---- wormhole: rail-locked scroll from the interpolated rail position
     mission.time += dt * mission.timeScale;
+    const st = useSettings.getState();
+    const reduce = st.accessibility.reduceMotion;
+    const ps = p.prevS + (p.s - p.prevS) * a;
+    const speed01 = Math.min(1.5, p.speed / TUNNEL.speedRef);
     if (mission.tunnel) {
-      const ps = p.prevS + (p.s - p.prevS) * a;
       const storm = mission.qa.storm >= 0 ? mission.qa.storm : curveAt(sim.level.mood.storm, ps);
-      mission.tunnel.update(ps, Math.min(1.5, p.speed / TUNNEL.speedRef), mission.time, storm);
+      mission.tunnel.update(ps, speed01, mission.time, reduce ? storm * 0.5 : storm);
+      // ---- speed sensation: streaks, radial blur + edge CA, FOV, turbulence rumble
+      const cruise = curveAt(sim.level.speedCurve, p.s) || sim.level.cruiseSpeed;
+      const ratio = p.speed / Math.max(1, cruise);
+      mission.streaks?.update(ps, speed01, st.graphics.speedLines * (reduce ? 0.5 : 1), mission.tunnel.uniforms.uFil.value, state.camera.position.z - mission.root.position.z);
+      missionPost.blur = reduce ? 0 : SPEED_FX.blur * Math.min(1, Math.max(0, (ratio - 1.05) / 0.4) + Math.max(0, speed01 - 0.85));
+      missionPost.ca = SPEED_FX.caPerSpeed * speed01 * (reduce ? 0.3 : 1);
+      rigFlight.speedRatio = ratio;
+      rigFlight.boost = p.boosting;
+      rigFlight.reduceMotion = reduce;
+      CameraShaker.setRumble(mission.tunnel.moodDef.turbulence * speed01 * SPEED_FX.rumble, SPEED_FX.rumbleHz);
     }
 
     // ---- camera: the reticle the HUD shows is the raw (late-latched) one

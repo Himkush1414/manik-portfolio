@@ -139,7 +139,7 @@ const FRAG = /* glsl */ `
 
     // ---- travelling rings (rail-locked, brighter with speed)
     float rd = fract((d + uRingScroll) / ${TUNNEL.ringSpacing.toFixed(1)} * uRingDensity);
-    float ring = smoothstep(0.0, 0.012, rd) * smoothstep(0.045, 0.012, rd);
+    float ring = smoothstep(0.0, 0.012, rd) * (1.0 - smoothstep(0.012, 0.045, rd));
     // rings fade in with distance: no hoop sweeping past the camera at full strength
     col += mix(uFil, uFar, 0.35) * ring * (0.25 + uSpeed * 0.9) * exp(-d / ${TUNNEL.ringFade.toFixed(1)}) * smoothstep(25.0, 140.0, d);
 

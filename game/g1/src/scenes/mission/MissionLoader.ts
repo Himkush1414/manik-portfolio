@@ -15,6 +15,7 @@ import { Bot } from '../../game/bot/bot';
 import type { LevelDef } from '../../levels/types';
 import { whenWorldMounted } from '../sceneBridge';
 import { buildTunnelSteps } from '../../render/mission/tunnel/Tunnel';
+import { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
 import { mission, type MissionOptions } from './missionRuntime';
 
 let inflight: Promise<void> | null = null;
@@ -51,6 +52,11 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
     mission.tunnel = await runSliced('mission:tunnel', buildTunnelSteps(level.seed));
     mission.root.add(mission.tunnel.group);
   }
+  if (!mission.streaks) {
+    mission.streaks = new SpeedStreaks(level.seed ^ 0x51ed);
+    mission.root.add(mission.streaks.mesh);
+  }
+  mission.streaks.setTier(useSettings.getState().graphics.preset);
   const t = mission.tunnel;
   t.setTier(useSettings.getState().graphics.preset);
   t.setMood(mission.qa.mood ? { preset: mission.qa.mood, storm: level.mood.storm } : level.mood);
