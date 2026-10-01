@@ -8,6 +8,7 @@
 import gsap from 'gsap';
 import { flow, useFlow } from '../flow';
 import { launchDoors, cockpitMount } from '../../scenes/sceneBridge';
+import { warmCockpit } from '../../scenes/cockpit/cockpitPrebuild';
 import { bulkhead } from '../../scenes/cockpit/Bulkhead';
 import { cockpitFx, BRIEFING_CHARS } from '../../scenes/cockpit/displays';
 import { stage } from '../../scenes/Stage';
@@ -46,7 +47,7 @@ function powerDown(): void {
 
 export function launch(): boolean {
   if (!flow.send('START_MISSION')) return false;
-  cockpitMount.want();
+  void warmCockpit(); // sliced pre-build if the idle pre-warm has not run yet; the sealed hold waits on it
   tl?.kill();
   const R = reduced();
   useUi.getState().setCtaHover(false);

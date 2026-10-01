@@ -8,6 +8,7 @@ import { BayLife } from './bay/BayLife';
 import { ParkedFighters } from './bay/ParkedFighters';
 import { ContactShadow } from './ContactShadow';
 import { markContentReady, cockpitMount } from '../sceneBridge';
+import { warmCockpit } from '../cockpit/cockpitPrebuild';
 import { stage } from '../Stage';
 import { Floor } from './bay/Floor';
 import { SpaceVista } from './bay/SpaceVista';
@@ -105,7 +106,7 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
   useEffect(() => {
     if (flowState !== 'hangar.idle' || cockpitMount.wanted) return;
     const idle = (window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300))) as (cb: () => void, o?: { timeout: number }) => number;
-    const t = window.setTimeout(() => idle(() => cockpitMount.want(), { timeout: 3000 }), 2500);
+    const t = window.setTimeout(() => idle(() => void warmCockpit(), { timeout: 3000 }), 2500);
     return () => window.clearTimeout(t);
   }, [flowState]);
 

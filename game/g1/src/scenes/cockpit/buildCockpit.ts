@@ -35,7 +35,8 @@ import {
 } from 'three';
 import { COCKPIT, type CockpitVariant } from './cockpitSpec';
 import type { Displays } from './displays';
-import { fist, legs, type BodyKit } from './cockpitBody';
+import { fist, legsSteps, type BodyKit } from './cockpitBody';
+import { runNow } from '../../core/slicer';
 
 export type BuiltCockpit = {
   group: Group;
@@ -182,7 +183,17 @@ function gaugeFace(label: string): CanvasTexture {
   return t;
 }
 
+/** Synchronous build (fallback; the pre-warm path uses buildCockpitSteps sliced). */
 export function buildCockpit(variant: CockpitVariant, displays: Displays): BuiltCockpit {
+  return runNow(buildCockpitSteps(variant, displays));
+}
+
+/**
+ * The cockpit build as small steps (brief §4 rule 4): the hangar's pre-warm
+ * runs it through core/slicer in <= 4 ms slices — built in one go it was a
+ * ~60 ms main-thread task ~3 s after the hangar settled (Phase 1 known issue).
+ */
+export function* buildCockpitSteps(variant: CockpitVariant, displays: Displays): Generator<void, BuiltCockpit, void> {
   const S = COCKPIT[variant];
   const own: { dispose(): void }[] = [];
   const keep = <T extends { dispose(): void }>(x: T) => (own.push(x), x);
@@ -203,6 +214,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   const bright = keep(new MeshStandardMaterial({ color: '#8f97a6', roughness: 0.3, metalness: 1, envMapIntensity: 0.9 }));
   const accent = keep(new MeshStandardMaterial({ color: '#ff5a1f', roughness: 0.45, metalness: 0.3 }));
   const weave = keep(weaveTexture());
+  yield;
   const suit = keep(new MeshStandardMaterial({ color: '#232835', roughness: 0.88, metalness: 0.02, bumpMap: weave, bumpScale: 0.9 }));
   const glove = keep(new MeshStandardMaterial({ color: '#2b2622', roughness: 0.52, metalness: 0.04, envMapIntensity: 0.7 })); // dark leather: form must read
   const gloveTrim = keep(new MeshStandardMaterial({ color: '#8c9ac0', roughness: 0.5, metalness: 0.2 }));
@@ -215,15 +227,18 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   const hudMat = keep(new MeshBasicMaterial({ map: displays.hud, color: new Color(0, 0, 0), transparent: true, blending: AdditiveBlending, depthWrite: false, side: DoubleSide, toneMapped: false }));
   // backlit stencils: one label per toggle bank (aspect-correct, clear of the stick)
   const stencilTex = [keep(labelTexture(['FUEL · COMM'], { w: 512, h: 64, fg: '#e8ecff', font: '600 40px "JetBrains Mono", monospace' })), keep(labelTexture(['ECM · O2'], { w: 512, h: 64, fg: '#e8ecff', font: '600 40px "JetBrains Mono", monospace' }))];
+  yield;
   const stencilMat = keep(new MeshBasicMaterial({ map: stencilTex[0], color: new Color(0, 0, 0), transparent: true, depthWrite: false, toneMapped: false }));
   const stencilMat2 = stencilMat.clone();
   stencilMat2.map = stencilTex[1];
   stencilMat2.color = stencilMat.color; // one power level drives both
   keep(stencilMat2);
   const warnTex = keep(labelTexture(['CANOPY JETTISON'], { w: 512, h: 96, fg: '#111', font: '800 34px "JetBrains Mono", monospace', hazard: true }));
+  yield;
   const warnMat = keep(new MeshStandardMaterial({ map: warnTex, roughness: 0.6, metalness: 0.1 }));
   const combinerGlass = keep(new MeshPhysicalMaterial({ color: '#c8a888', roughness: 0.02, metalness: 0, transparent: true, opacity: 0.08, depthWrite: false, side: DoubleSide }));
 
+  yield;
   // ------------------------------------------------------------------ canopy
   const { w: cw, h: ch, sill, len, bowZ } = S.canopy;
   const zc = -0.15;
@@ -239,9 +254,11 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     }
     return new TubeGeometry(new CatmullRomCurve3(pts), 48, r, 10, false);
   };
+  yield;
   add(group, bow(bowZ, 0.022), frameMat);
   add(group, bow(bowZ - 0.03, 0.01), accent);
   add(group, bow(0.12, 0.026), frameMat);
+  yield;
   // sills
   for (const sx of [-1, 1]) {
     const pts: Vector3[] = [];
@@ -253,6 +270,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     warn.position.set(sx * (cw * kz(zl) - 0.035), sill + 0.034, zl);
     warn.rotation.set(-Math.PI / 2 + 0.9, sx * 0.3, 0);
   }
+  yield;
   // rivets along the windscreen bow (instanced)
   {
     const k = kz(bowZ);
@@ -269,6 +287,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     own.push(im);
   }
 
+  yield;
   // --------------------------------------------------------------- dashboard
   const D = S.dash;
   const dash = new Group();
@@ -283,6 +302,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   hood.rotation.x = D.tilt * 0.8;
   const lip = add(dash, bend(new BoxGeometry(D.w + 0.08, 0.008, 0.012, 24, 1, 1), bk), accent);
   lip.position.set(0, D.h / 2 + 0.03, 0.17);
+  yield;
   // MFDs: screen + bezel + OSB buttons
   const mfdX = D.w * 0.31;
   const osb = keep(new BoxGeometry(0.018, 0.011, 0.008));
@@ -307,6 +327,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     }
   });
   dash.add(osbMesh);
+  yield;
   // gauges
   const needles: Mesh[] = [];
   const needleGeo = keep(new BoxGeometry(0.003, 0.03, 0.002).translate(0, 0.012, 0));
@@ -322,6 +343,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     nd.position.set(x, -0.1, gm.position.z + 0.003);
     needles.push(nd);
   });
+  yield;
   // toggle row + LEDs under the MFDs
   {
     // two banks either side of the gauges (clear of them)
@@ -349,6 +371,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     }
     dash.add(levers, bases, ledsG, ledsA);
   }
+  yield;
   // backlit stencil strip along the bottom of the panel
   [-1, 1].forEach((sx, i) => {
     const x = sx * 0.27;
@@ -357,9 +380,11 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     st.rotation.y = -Math.atan(2 * bk * x);
   });
 
+  yield;
   // ------------------------------------------------------------ side consoles
   const C = S.console;
   for (const sx of [-1, 1]) {
+    yield;
     const len2 = C.z0 - C.z1;
     const ctex = keep(consoleTexture(sx as 1 | -1));
     const top = add(group, new BoxGeometry(C.w, 0.03, len2), keep(new MeshStandardMaterial({ map: ctex, roughness: 0.74, metalness: 0.3, envMapIntensity: 0.35 })));
@@ -379,6 +404,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
     }
     group.add(im);
   }
+  yield;
   // tub: knee-well face under the dash, footwell side walls + floor (closes the
   // cockpit: without it the tunnel floor's hazard bands showed through)
   const tubMat = keep(new MeshStandardMaterial({ color: '#0d0f14', roughness: 0.8, metalness: 0.3 }));
@@ -390,6 +416,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   }
   add(group, new BoxGeometry(2 * C.x, 0.02, 1.1).translate(0, -1.08, -0.4), tubMat);
 
+  yield;
   // throttle quadrant (left console)
   const thr = new Group();
   thr.position.set(-C.x, C.y + 0.015, C.z1 + 0.12); // forward, inside the eye's frame
@@ -399,6 +426,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   lever.rotation.x = -0.35;
   const handle = add(thr, new CapsuleGeometry(0.024, 0.05, 6, 12).rotateZ(Math.PI / 2), rubber);
   handle.position.set(0.01, 0.115, -0.04);
+  yield;
   // flight stick
   const stick = new Group();
   stick.position.set(0, -0.78, -0.5);
@@ -410,6 +438,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   grip.rotation.x = -0.18;
   add(stick, new BoxGeometry(0.012, 0.012, 0.012).translate(0, 0.43, 0.012), frameMat); // hat
 
+  yield;
   // ------------------------------------------------------------- body framing
   const kit: BodyKit = { keep, mats: { suit, glove, gloveTrim, bright } };
   // right fist on the stick grip (grip axis = local Y); sleeve runs down-back-right
@@ -417,15 +446,18 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   rFist.position.copy(grip.position);
   rFist.rotation.copy(grip.rotation);
   stick.add(rFist);
+  yield;
   // left fist on the throttle handle (axis along x): rotate so the back of the hand faces up
   const lFist = fist(kit, 0.024, new Vector3(-0.2, 0.2, 0.96).normalize());
   lFist.position.copy(handle.position);
   lFist.rotation.set(0, 0, Math.PI / 2);
   thr.add(lFist);
-  legs(kit, group);
+  yield;
+  yield* legsSteps(kit, group);
   add(group, new BoxGeometry(0.4, 0.035, 0.05).translate(0, -0.66, -0.06), rubber); // lap belt
   add(group, new BoxGeometry(0.06, 0.05, 0.02).translate(0, -0.65, -0.09), bright); // buckle
 
+  yield;
   // ------------------------------------------------------------------ combiner
   const comb = new Group();
   comb.position.set(0, -0.03, D.z + 0.14);
@@ -438,6 +470,7 @@ export function buildCockpit(variant: CockpitVariant, displays: Displays): Built
   hudPane.renderOrder = 22;
   for (const sx of [-1, 1]) add(comb, new BoxGeometry(0.008, 0.39, 0.012).translate(sx * 0.274, 0, 0), frameMat);
 
+  yield;
   let tris = 0;
   group.traverse(o => {
     const me = o as Mesh;

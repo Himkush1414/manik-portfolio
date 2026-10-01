@@ -19,14 +19,17 @@ import { startMission } from './hangarActions';
 import { UpgradesModal } from '../upgrades/UpgradesModal';
 import { SettingsModal } from '../settings/SettingsModal';
 
-const FROM: Record<string, gsap.TweenVars> = {
+const FROM: Record<string, { x?: number; y?: number }> = {
   top: { y: -36 },
   left: { x: -70 },
   right: { x: 70 },
   under: { y: 34 },
   cta: { y: 44 },
 };
-const ORDER = ['top', 'left', 'right', 'under', 'cta'];
+const ORDER = ['top', 'left', 'right', 'under', 'cta'] as const;
+type PanelKey = (typeof ORDER)[number];
+/** entrance stagger (s) and durations — the Phase 1 values */
+const STAGGER = 0.07, CTA_EXTRA = 0.12, DUR = 0.6, DUR_CTA = 0.7;
 
 export function HangarUI() {
   const flowState = useFlow(f => f.state);
@@ -39,29 +42,67 @@ export function HangarUI() {
     if (inHangar) setShown(true);
   }, [inHangar]);
 
+  // Staged mount + entrance (brief §4 carry-over (a)): the five panels mount
+  // ONE PER TASK and each enters with a Web Animations keyframe. Phase 1 mounted
+  // all of them in one commit and let GSAP read every panel's computed style —
+  // a ~66 ms task (30 ms of forced style + layout) as the boot handed over.
   const root = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(0);
+  const t0 = useRef(0);
+  useEffect(() => {
+    if (!shown) {
+      setMounted(0);
+      return;
+    }
+    t0.current = performance.now();
+    let n = 0, raf = 0;
+    const next = () => {
+      n++;
+      setMounted(n);
+      if (n < ORDER.length) raf = requestAnimationFrame(next);
+    };
+    raf = requestAnimationFrame(next);
+    return () => cancelAnimationFrame(raf);
+  }, [shown]);
+  const anims = useRef<Animation[]>([]);
+  const animated = useRef(0);
+  useEffect(
+    () => () => {
+      anims.current.forEach(a => a.cancel());
+      anims.current = [];
+      animated.current = 0;
+    },
+    [shown],
+  );
   useLayoutEffect(() => {
-    if (!shown || !root.current) return;
-    const ctx = gsap.context(() => {
-      const els = ORDER.map(k => root.current!.querySelector<HTMLElement>(`[data-enter="${k}"]`)).filter(Boolean) as HTMLElement[];
+    if (!root.current) return;
+    for (; animated.current < mounted; animated.current++) {
+      const i = animated.current;
+      const key: PanelKey = ORDER[i];
+      const el = root.current.querySelector<HTMLElement>(`[data-enter="${key}"]`);
+      if (!el || typeof el.animate !== 'function') continue;
+      const elapsed = (performance.now() - t0.current) / 1000;
+      const delay = Math.max(0, i * STAGGER + (key === 'cta' ? CTA_EXTRA : 0) - elapsed) * 1000;
       if (reduce) {
-        gsap.fromTo(els, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25 });
-        return;
+        anims.current.push(el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, delay, fill: 'backwards' }));
+        continue;
       }
-      els.forEach((el, i) => {
-        const key = el.dataset.enter!;
-        const u = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-        const from = Object.fromEntries(Object.entries(FROM[key]).map(([k, v]) => [k, (v as number) * u]));
-        gsap.fromTo(
-          el,
-          { ...from, autoAlpha: 0, filter: 'blur(12px)' },
-          // only the entering axis: never touch the other (layout) offsets
-          { ...Object.fromEntries(Object.keys(from).map(k => [k, 0])), autoAlpha: 1, filter: 'blur(0px)', duration: key === 'cta' ? 0.7 : 0.6, ease: 'expo.out', delay: i * 0.07 + (key === 'cta' ? 0.12 : 0), clearProps: 'filter' },
-        );
-      });
-    }, root);
-    return () => ctx.revert();
-  }, [shown, reduce]);
+      const u = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      const f = FROM[key];
+      const from = `translate(${(f.x ?? 0) * u}px, ${(f.y ?? 0) * u}px)`;
+      anims.current.push(
+        el.animate(
+          [
+            { transform: from, opacity: 0, filter: 'blur(12px)', visibility: 'hidden', offset: 0 },
+            { visibility: 'visible', offset: 0.001 },
+            { transform: 'translate(0px, 0px)', opacity: 1, filter: 'blur(0px)', visibility: 'visible', offset: 1 },
+          ],
+          { duration: (key === 'cta' ? DUR_CTA : DUR) * 1000, delay, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' },
+        ),
+      );
+    }
+  }, [mounted, reduce]);
+  const has = (k: PanelKey) => mounted > ORDER.indexOf(k);
 
   // parallax: the panel layer drifts opposite the mouse (critically damped)
   const layer = useRef<HTMLDivElement>(null);
@@ -112,16 +153,14 @@ export function HangarUI() {
   return (
     <div ref={root} className={s.root} data-modal={flowState === 'hangar.upgrades' || flowState === 'hangar.settings'} data-launch={flowState.startsWith('launch.')}>
       <div className={s.grain} aria-hidden />
-      <TopBar />
+      {has('top') && <TopBar />}
       <div ref={layer} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <div style={drift}>
-          <Inventory />
-          <ShipInfo />
+          {has('left') && <Inventory />}
+          {has('under') && <ShipInfo />}
         </div>
-        <StartMission />
-        <div style={drift}>
-          <RightPanel />
-        </div>
+        {has('cta') && <StartMission />}
+        <div style={drift}>{has('right') && <RightPanel />}</div>
       </div>
       {flowState === 'hangar.upgrades' && <UpgradesModal />}
       {flowState === 'hangar.settings' && <SettingsModal />}

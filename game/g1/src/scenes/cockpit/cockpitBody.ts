@@ -166,8 +166,9 @@ function kneeboardTexture(): CanvasTexture {
   return t;
 }
 
-/** Raised knees + thighs (G-suit, garters) and the kneeboard on the right thigh. */
-export function legs(kit: BodyKit, target: Group): void {
+/** Raised knees + thighs (G-suit, garters) and the kneeboard on the right thigh,
+ *  as small steps (the cockpit pre-warm runs sliced, see buildCockpitSteps). */
+export function* legsSteps(kit: BodyKit, target: Group): Generator<void, void, void> {
   const parent = new Group();
   const { keep, mats } = kit;
   const gsuit = keep(new MeshStandardMaterial({ color: '#262c31', roughness: 0.82, metalness: 0.03 }));
@@ -179,6 +180,7 @@ export function legs(kit: BodyKit, target: Group): void {
     return me;
   };
   for (const sx of [-1, 1]) {
+    yield;
     const hip = new Vector3(sx * 0.11, -0.74, -0.1);
     const knee = new Vector3(sx * 0.165, -0.497, -0.57); // knee tops sit just under the dash's lower edge
     const axis = knee.clone().sub(hip);
@@ -216,7 +218,9 @@ export function legs(kit: BodyKit, target: Group): void {
       parent.add(kb);
       const board = new Mesh(keep(new BoxGeometry(0.135, 0.17, 0.006)), mats.suit);
       board.position.z = -0.003;
+      yield;
       const tex = keep(kneeboardTexture());
+      yield;
       const paper = new Mesh(keep(new PlaneGeometry(0.118, 0.152)), keep(new MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0 })));
       paper.position.set(0, -0.004, 0.0004);
       const clip = new Mesh(keep(new BoxGeometry(0.07, 0.018, 0.008)), mats.bright);
@@ -226,5 +230,6 @@ export function legs(kit: BodyKit, target: Group): void {
       kb.add(board, paper, clip, band);
     }
   }
+  yield;
   target.add(mergeByMaterial(parent, keep));
 }

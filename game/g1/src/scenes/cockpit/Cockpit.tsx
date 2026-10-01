@@ -22,7 +22,9 @@ import { useSettings } from '../../state/settings.store';
 import { COCKPIT_ORIGIN, MIRROR_LAYER, cockpitMount } from '../sceneBridge';
 import { stage } from '../Stage';
 import { director } from '../../render/cameraDirector';
-import { compileHdr } from '../../render/compile';
+import { compileSteps } from '../../render/compileSliced';
+import { runSliced } from '../../core/slicer';
+import { peekCockpit, releaseCockpit } from './cockpitPrebuild';
 import { registerDebug } from '../../debug/debugApi';
 import { QUALITY } from '../../render/quality';
 
@@ -48,11 +50,20 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
     setRootObj(el);
   }, []);
 
-  const displays = useMemo(() => createDisplays(), []);
-  useEffect(() => () => displays.dispose(), [displays]);
   const variant = SHIPS[shipId].cockpit;
-  const built = useMemo(() => buildCockpit(variant, displays), [variant, displays]);
-  useEffect(() => () => built.dispose(), [built]);
+  // the hangar pre-warm builds these in idle slices (cockpitPrebuild.ts);
+  // building them here, inside the mount commit, was a ~60 ms task
+  const pre = peekCockpit(variant);
+  const displays = useMemo(() => pre?.displays ?? createDisplays(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => displays.dispose(), [displays]);
+  const built = useMemo(() => {
+    const p = peekCockpit(variant);
+    return p && p.displays === displays ? p.built : buildCockpit(variant, displays);
+  }, [variant, displays]);
+  useEffect(() => {
+    releaseCockpit(peekCockpit(variant));
+    return () => built.dispose();
+  }, [built, variant]);
 
   // the flown ship around the pilot, visible ONLY in the mirrors (tail fins,
   // engine glow): its canopy centre sits on the eye
@@ -77,14 +88,19 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
   }, [displays, shipId]);
   useEffect(() => built.setGloveTrim(pilot === 'ember' ? '#ff5a1f' : '#8c9ac0'), [built, pilot]);
 
-  // pre-warm: compile every cockpit program in parallel, then report ready
+  // pre-warm: compile every cockpit program + upload its textures in idle
+  // slices (render/compileSliced.ts; one compileHdr was a ~45 ms task), then
+  // report ready
   useEffect(() => {
     let live = true;
     const r = root.current;
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         if (!live || !r) return;
-        void compileHdr(gl, scene, camera, [r]).then(() => live && cockpitMount.markReady());
+        void runSliced('cockpit:compile', compileSteps(gl, [r], camera, scene)).then(
+          () => live && cockpitMount.markReady(),
+          () => live && cockpitMount.markReady(), // failure logged by the slicer; never block the launch
+        );
       }),
     );
     registerDebug('cockpit', { tris: () => built.tris, variant: () => variant });

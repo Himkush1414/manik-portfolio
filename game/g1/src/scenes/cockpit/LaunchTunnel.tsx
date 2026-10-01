@@ -27,6 +27,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { createRng } from '../../core/rng';
 import { hdr, col } from '../../render/palette';
 import { getDoorAssets } from '../shared/doors/doorAssets';
+import { runNow } from '../../core/slicer';
+import { peekLaunchTunnel, releaseLaunchTunnel } from './cockpitPrebuild';
 
 // zEnd: the mouth must read through the canopy (at -190 it was a ~100 px patch)
 export const TUNNEL = { floor: -1.9, half: 7, height: 9, zBack: 26, zEnd: -84, rib: 6 } as const;
@@ -53,8 +55,9 @@ function hazardTexture(): CanvasTexture {
   return t;
 }
 
-export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
-  const b = useMemo(() => {
+/** The tunnel's GPU objects, built as small steps (the cockpit pre-warm runs
+ *  them sliced — see cockpitPrebuild.ts). */
+export function* buildLaunchTunnelSteps() {
     const { floor: Fy, half: X, height: Hh, zBack, zEnd, rib } = TUNNEL;
     const top = Fy + Hh;
     const L = zBack - zEnd, zMid = (zBack + zEnd) / 2;
@@ -64,6 +67,7 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
     const hazTex = hazardTexture();
     hazTex.repeat.set(L / 2, 1);
     const hazMat = new MeshStandardMaterial({ map: hazTex, roughness: 0.6, metalness: 0.2 });
+    yield;
     // shell: floor, ceiling, walls (inward-facing), with the opening at zEnd
     const shell = mergeGeometries([
       new BoxGeometry(2 * X, 0.4, L).translate(0, Fy - 0.2, zMid),
@@ -72,6 +76,7 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
       new BoxGeometry(0.4, Hh, L).translate(X + 0.2, Fy + Hh / 2, zMid),
       new BoxGeometry(2 * X, Hh, 0.6).translate(0, Fy + Hh / 2, zBack + 0.3), // bay back wall
     ])!;
+    yield;
     // rib frames every `rib` metres (instanced: 4 bars per rib merged)
     const ribGeo = mergeGeometries([
       new BoxGeometry(0.5, Hh, 0.5).translate(-X + 0.25, Fy + Hh / 2, 0),
@@ -84,6 +89,7 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
     const ribs = new InstancedMesh(ribGeo, wallMat, nRib);
     const m = new Matrix4();
     for (let i = 0; i < nRib; i++) ribs.setMatrixAt(i, m.makeTranslation(0, 0, zBack - 2 - i * rib));
+    yield;
     // strip lights: ceiling corners + floor edges, every 3 m (receding lines)
     const stripGeo = new BoxGeometry(0.12, 0.06, 1.6);
     const spots: Vector3[] = [];
@@ -99,6 +105,7 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
     // bay back wall lights (mirrors see these)
     const bayLights = mergeGeometries([-4, -1.5, 1.5, 4].map(x => new BoxGeometry(1.4, 0.14, 0.05).translate(x, top - 1.2, zBack - 0.02)))!;
     const bayMat = new MeshBasicMaterial({ color: hdr('core', 2.2), toneMapped: false });
+    yield;
     // opening frame + carrier hull lights around the mouth
     const mouth = mergeGeometries([
       new BoxGeometry(2 * X + 4, 1.2, 1.5).translate(0, top + 0.2, zEnd),
@@ -127,6 +134,7 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
     });
     const blinks = new Points(blinkGeo, blinkMat);
     blinks.frustumCulled = false;
+    yield;
     // deep space through the mouth: ONE opaque window plane (a star sphere put
     // ~3 stars inside the opening; a far Veil plane read as a flat panel).
     // Two procedural star layers + the Veil as a log-spiral whose bright core
@@ -172,7 +180,13 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
     const sky = new Mesh(skyGeo, skyMat);
     sky.position.set(0, Fy + Hh / 2, zEnd - 300);
     return { wallMat, darkMat, hazTex, hazMat, shell, ribGeo, ribs, stripGeo, stripMat, strips, rail, haz, bayLights, bayMat, mouth, blinks, blinkGeo, blinkMat, sky, skyGeo, skyMat };
-  }, []);
+}
+
+export type LaunchTunnelBundle = ReturnType<typeof buildLaunchTunnelSteps> extends Generator<unknown, infer R, unknown> ? R : never;
+
+export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
+  // pre-built in idle slices by the cockpit pre-warm when available
+  const b = useMemo(() => peekLaunchTunnel() ?? runNow(buildLaunchTunnelSteps()), []);
 
   useEffect(
     () => () => {
@@ -181,6 +195,7 @@ export function LaunchTunnel({ reduceMotion }: { reduceMotion: boolean }) {
       b.hazTex.dispose();
       b.ribs.dispose();
       b.strips.dispose();
+      releaseLaunchTunnel(b);
     },
     [b],
   );

@@ -3,6 +3,209 @@
 Source of truth for `/game/g1/`. A fresh session must be able to resume from
 this file alone. Updated after every slice.
 
+**Layout:** Phase 2 lives in the `P2.*` sections directly below; the frozen
+Phase 1 record follows (sections 0-10, unchanged except where a "Phase 1
+amendment" is logged in P2.4).
+
+---
+
+## P2.0 Phase 2 status (update every slice)
+
+Brief: "PHASE 2 OF 4 — THE WORMHOLE" (§0-§23), received 2026-10-01.
+Slices 2A-2J (brief §20). Push gate per slice: typecheck, unit tests,
+production build, QA script with 0 console errors/warnings, then commit
+(game/g1 paths staged explicitly) + push + `git ls-remote` == HEAD.
+
+| Slice | Status | Push | Notes |
+|---|---|---|---|
+| Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
+| 2A Foundation | IN PROGRESS | | (a) post-boot stalls DONE; next (b) first-gesture audio, (c) iGPU hangar DRS, then sim core / input / FSM / DRS / perf / bot as separate pushes |
+| 2B Wormhole + launch | TODO | | |
+| 2C Flight + rigs + HUD | TODO | | |
+| 2D Hazards + damage + pause/fail | TODO | | |
+| 2E Umbra ships + AI + bestiary | TODO | | |
+| 2F Voidspawn monsters | TODO | | |
+| 2G Level 1 + results + Sortie Select | TODO | | |
+| 2H Level 22 + BULWARK | TODO | | |
+| 2I Level 10 + THE WARDEN | TODO | | |
+| 2J Audio, balance, soak, final QA | TODO | | |
+
+**Next step:** 2A (see P2.2).
+
+## P2.1 Architecture (brief §3, decided)
+
+```
+src/game/        pure-TS deterministic sim (NO three / react / DOM; unit test scans imports)
+  core/          fixed step, RNG streams, event ring, pools (SoA), math
+  sim.ts         Sim: step order input->player->spawner->AI->projectiles->collisions->damage->pickups->scoring->events->HUD bus
+  rail.ts        rail frame (s double, x, y), envelope, speed curve
+  collide.ts     swept sphere / capsule / segment tests, s-sorted broadphase
+  player.ts weapons.ts hazards.ts pickups.ts scoring.ts difficulty.ts
+  enemies/ creatures/ boss/   AI + per-type behaviour (data from data/*.ts)
+  patterns/      PatternLib: pure (t, params, seed) -> rail offset
+  bot/           scripted bot (novice / mid / expert)
+src/levels/      LevelDef types, validator, intensity estimator, levels 1 / 10 / 22, sortie registry
+src/input/       InputManager (DOM: pointer lock, stuck-input clearing, late-latched reticle)
+src/render/mission/  Mission scene: tunnel, entity views (InstancedMesh), VFX, camera rigs, DRS governor, MissionPostFX
+src/creatures/   CreatureFactory (voidspawn meshes)
+src/ui/screens/mission/  HUD, pause, failed, results, sortie select, comms, tutorial
+tools/qa-phase2.mjs, tools/balance.mjs (bundles the sim with esbuild, runs N seeds per skill)
+```
+
+Decisions (2026-10-01, before code):
+1. **Mission frame at `MISSION_ORIGIN = (0, -3000, 0)`**: 3000 u below the
+   hangar and ~4 km from the cockpit (beyond the 1000 u far plane of both).
+   Render uses `d = s - playerS`: the player stays near the frame origin, the
+   tunnel scrolls in its shader, everything else is placed relative. float32
+   ulp at 3000 u = 0.24 mm (was 1 mm at 9000 u).
+2. **Fog stays the ONE linear `Fog`** (type switch = recompile of every
+   material). The mission writes near/far/colour (uniforms). The tunnel shader
+   does its own exp2-style depth grade.
+3. **No new scene lights.** Light count/type changes recompile every program
+   (Phase 1 pitfall). The mission BORROWS the existing rig while active
+   (`render/lightRig.ts`): studio key spot (forward key, from behind the
+   player), the two rim spots (core backlight + Nebula rim), hemisphere (level
+   ambient), cockpit directional + dash point (cockpit rig), door-FX point
+   lights (pooled explosion lights). Originals restored on exit. Shadow map
+   auto-update is OFF in missions (no casters; castShadow flags never toggled).
+4. **Post:** a separate mission composer (built + warmed during prepare,
+   last pass rendered off-screen once) instead of rebuilding the Phase 1
+   composer (a rebuild = synchronous EffectPass compile at the launch).
+   `PostFX` yields while `stage.mission` is on.
+5. **Brake default moves off Ctrl** (`ControlLeft` -> `KeyF`): holding Ctrl
+   (brake) + W (move up) = Ctrl+W, which closes the tab and cannot be
+   prevented. Ctrl/Alt/Meta are never gameplay keys (InputManager ignores
+   them; rebinding refuses them). Save v2 migration remaps an untouched
+   `ControlLeft` brake. (Phase 1 amendment, P2.4.)
+6. **Launch wiring:** STANDBY -> `LAUNCH` is only reachable via QA params
+   until the mission is presentable (2C); from then the standby beat
+   auto-launches.
+7. **TS CLI** (balance harness): `tools/balance.mjs` bundles
+   `src/game/bot/cli.ts` with the installed esbuild (Vite's) and runs it on
+   Node 24 — no new dependency.
+8. **Coordinates:** rail `s` forward (+), `x` right, `y` up; render
+   `z = -(s - playerS)`. Ship nose = -z in the mission frame.
+
+## P2.2 Slice plan (brief §20)
+
+- **2A Foundation:** carry-over (a) post-hangar stall, (b) first-gesture
+  audio, (c) iGPU hangar >= 30 fps via the DRS governor; sim core (fixed 60 Hz
+  step + accumulator, max 5 steps, render alpha; RNG streams sim/ai/spawn vs
+  vfx; SoA pools; rail frame; swept collision; event ring; HudBus 20 Hz);
+  InputManager; FSM mission states; mission quality presets + DRS governor;
+  perf instrumentation (marks, long-task observer, `perf.table()`); debug
+  overlays; bot skeleton; unit tests (determinism, import boundary, pools,
+  collision, FSM, input clearing, DRS). GATE: empty mission scene at 60 fps,
+  perf tables, programs-constant test.
+- **2B** Wormhole tunnel shader + quality tiers, launch catapult, Veil Gate,
+  breach, speed FX, set pieces.
+- **2C** Player flight, 3 camera rigs, live mirrors, reticle/aim/fire, weapon
+  VFX, overlay + combiner HUD, live MFDs.
+- **2D** Hazards (asteroids, wreckage, mines), damage model, feedback, pause,
+  fail/retry.
+- **2E** REAVER / LANCER / SPORE-CARRIER / BULWARK, AI + PatternLib, health
+  bars, explosions, `?screen=bestiary`.
+- **2F** SKITTERLING / TENDRILLER / HOLLOW MANTA + telegraphs.
+- **2G** Level 1 + tutorial + KESTREL-9 + results + Sortie Select +
+  `profile.awardMission` (save v2).
+- **2H** Level 22 + BULWARK mini-boss + storms + collapse.
+- **2I** Level 10 + THE WARDEN + difficulty gate + cinematics.
+- **2J** Combat audio + adaptive music, balance report, soak, final QA, docs,
+  Phase 3 handoff.
+
+## P2.3 Risk register (Phase 2)
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Shader compile mid-play | hitch | everything compiled in prepare (compileHdr + warm render of every instanced mesh at zero scale); programs/geometries/textures counted before vs after a bot run (gate) |
+| Cockpit rig draw calls (cockpit alone = 111) | > 150 budget | merge static cockpit meshes by material in mission; mirrors on a reduced layer set |
+| iGPU fill rate (tunnel + additive VFX) | < 40 fps LOW | DRS governor (5 quantised scales), 1-layer tunnel on LOW, explosion overdraw cap, quarter-res bloom |
+| GC spikes | frame spikes | SoA pools, module scratch objects, no per-frame closures; heap sawtooth checked |
+| Sim / render drift (interpolation) | jitter | prev/cur state per entity, render alpha; dt clamp + accumulator resync after tab switch |
+| Bot not representative | bad balance | three skill tiers with explicit reaction/aim/dodge parameters, logged; manual playtests noted honestly |
+| Pointer lock edge cases | stuck input / no lock | pointerlockchange-driven pause, clear-all on blur/visibility/modal, absolute-cursor fallback |
+| Fog / env / light state leaking between hangar and mission | wrong look or recompiles | lightRig borrow/restore + fog writer owned by the active scene; programs-constant test across round trips |
+| Scope (23 sections) | unfinished P0 | cut order P2 -> MANTA -> adaptive music -> boss cinematic polish; never P0 |
+
+## P2.4 Phase 1 amendments (minimal, logged)
+
+1. **Carry-over (a), post-boot stalls (2026-10-01).** Traced with
+   `tools/trace-window.mjs` (Chrome trace + V8 samples on the same clock) /
+   `tools/prof-idle.mjs`. The "~55 ms stall" was three main-thread tasks after
+   the boot handed over (prod, RTX 3050): **61-66 ms HangarUI entrance** (GSAP
+   `fromTo` read every panel's computed style -> ~30 ms forced style/layout),
+   **~64 ms cockpit pre-warm mount** (buildCockpit + fists/legs + kneeboard
+   canvas text inside one React commit) and **~59 ms cockpit compileHdr**
+   (sync part of `gl.compile` for the whole subtree); plus a 30-60 ms
+   thumbnail `getBufferSubData`. Fixes: `core/slicer.ts` (generator jobs in
+   <= 4 ms idle slices, per-job failure isolation, `WAIT` to end a polling
+   slice); `buildCockpitSteps` / `legsSteps` / `buildLaunchTunnelSteps`
+   (sync `buildCockpit` kept as a drain wrapper — API unchanged);
+   `scenes/cockpit/cockpitPrebuild.ts` (`warmCockpit()` pre-builds sliced,
+   then `cockpitMount.want()`; `<Cockpit/>` / `<LaunchTunnel/>` peek the
+   pre-built objects); `render/compileSliced.ts` (one compile per
+   (material, object kind), polled parallel link, one texture upload per
+   step) replaces the cockpit's compileHdr; HangarUI mounts its five panels
+   one per frame and enters them with WAAPI keyframes (no style reads);
+   thumbnails read back in 48-row strips, one per idle slot. Result (prod,
+   2 runs, full boot): **0 tasks > 30 ms after 11 s** (boot-masked tasks
+   unchanged); qa:phase1 hangar + cockpit groups on prod: 43 shots, console
+   clean.
+
+## P2.5 Design intent — Phase 2 assets (written before modelling)
+
+**Wormhole (L1 clean corridor):** a living throat, not a texture: three
+swirl layers at different scales and speeds give parallax, ridged filaments
+read as energy threads, travelling rings rush at the camera with speed, and
+the vanishing-point core is HDR so bloom makes it the brightest thing on
+screen. Navy near -> Indigo -> Violet mid -> warm Core light at the exit.
+**L22 infested:** Indigo-black walls with Nebula -> magenta veins pulsing, a
+10 % Danger heartbeat, Ice lightning storms, organic ridges. **L10 chamber:**
+black void, dark red-violet energy, giant Ignition-amber ring structures, the
+Warden's Danger-red eye as the focal point.
+
+**REAVER (~4 u):** hammerhead arrowhead; two splayed mandible prongs forward
+frame a single eye-cannon; scavenged hull plates bolted over violet chitin;
+tail flagella trail behind. Reads at 64 px as "a hammer with fangs" — the
+widest point is FORWARD (player ships are widest at the wings/rear).
+**LANCER (~9 u):** long spear hull, two outrigger gun arms on struts give a
+trident silhouette; ribbed chitin spine; muzzle glow at both arm tips.
+**SPORE-CARRIER (~12 u):** bulbous pod, dorsal sacs that swell and glow
+before release, short stubby bio-thrusters; the only round silhouette among
+the ships. **BULWARK (~52 u):** a salvaged frigate fused into a ribbed
+carapace; broad armoured prow visor; two dorsal turret clusters; ventral
+heavy cannon; two engine pods; bio-membrane shield bubble. **THE WARDEN
+(~120 u):** crescent hull with exposed ribbing, central organic eye core, two
+pylon arms with turrets, underbelly hangar maw, dorsal beam lance.
+Umbra rule: asymmetry, scorched human plating + violet-black chitin + sinew,
+emissive veins Nebula -> Danger. Never clean lines.
+
+**SKITTERLING (2.5 u span):** bat/ray: membrane wings flapping in the vertex
+shader, long whip tail, glowing belly sac, two eyes. **TENDRILLER (core 16 u
++ 8 x 14 u tentacles):** a ribbed bell-like core with an eye and a maw; tapered
+tentacles with suckers and barbs on spring-damped bone chains. **HOLLOW MANTA
+(14 u span):** ray body with rippling wing edges, dorsal glowing weak spot.
+Voidspawn rule: wet chitin (clearcoat), wrap + rim lighting, bioluminescent
+veins that SWELL 0.6-0.8 s before any attack.
+
+**Hazards:** asteroids backlit by the core (strong rim) with craters and
+fracture lines; Meridian wing fragments (Halcyon steel + Ignition stripe,
+torn) tumbling and sparking; mines with a fuse glow ring.
+**KESTREL-9 transports:** blocky industrial hulls, warm lit windows, dead
+engines — the only warm-lit human things in the corridor.
+
+## P2.6 Baseline (2026-10-01, before Phase 2 code)
+
+- `npm run typecheck` clean; `vitest` 41/41; root `npm run build` clean
+  apart from the two PRE-EXISTING portfolio warnings (dotlottie "use client",
+  portfolio `three.module` chunk > 500 kB) — the game's own build emits none.
+- `npm run qa:phase1` (dev, port 5199, G1_DGPU=1): 84 shots, 0 group errors,
+  console clean in all 7 groups; max 187 draw calls / 295k tris; perf
+  (RTX 3050, 1080p HIGH): hangar 60.1 fps (min 59.8), 124 calls, 252k tris,
+  91 programs, 22.1 MB heap; cockpit 60.0 fps, 130 calls, 36k tris,
+  23.8 MB, mirrors 28.6 refreshes/s (iGPU 14.5/s).
+- Spot-checked `res-1920x1080-hangar.png`, `cockpit-8-standby.png`: correct.
+
 ---
 
 ## 0. Status (update every slice)
