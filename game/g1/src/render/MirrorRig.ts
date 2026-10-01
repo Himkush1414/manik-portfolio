@@ -24,6 +24,8 @@ export class MirrorRig {
   /** frames per second the mirrors refresh at (brief: 30; LOW preset: 20) */
   fps = 30;
   enabled = true;
+  /** refreshes so far (QA: proves the mirrors are live, and idle outside the cockpit) */
+  renders = 0;
 
   constructor(defs: MirrorDef[]) {
     this.targets = defs.map(d => new WebGLRenderTarget(d.size[0], d.size[1], { type: HalfFloatType, samples: 2 }));
@@ -66,6 +68,7 @@ export class MirrorRig {
     this.acc += dt;
     if (this.acc < 1 / this.fps - 0.002) return false;
     this.acc = 0;
+    this.renders++;
     const prevTarget = gl.getRenderTarget();
     const prevShadow = gl.shadowMap.autoUpdate;
     gl.shadowMap.autoUpdate = false; // the key's shadow map is reused, not re-rendered per mirror

@@ -1,0 +1,1105 @@
+{
+ "shots": [
+  {
+   "group": "boot",
+   "name": "t0.3",
+   "file": "boot-t0.3.png",
+   "info": {
+    "drawCalls": 41,
+    "triangles": 45,
+    "textures": 46,
+    "geometries": 40,
+    "programs": 73
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t0.7",
+   "file": "boot-t0.7.png",
+   "info": {
+    "drawCalls": 41,
+    "triangles": 45,
+    "textures": 63,
+    "geometries": 94,
+    "programs": 77
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t1.2",
+   "file": "boot-t1.2.png",
+   "info": {
+    "drawCalls": 31,
+    "triangles": 32,
+    "textures": 56,
+    "geometries": 95,
+    "programs": 75
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t2.0",
+   "file": "boot-t2.0.png",
+   "info": {
+    "drawCalls": 31,
+    "triangles": 32,
+    "textures": 56,
+    "geometries": 95,
+    "programs": 75
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t3.0",
+   "file": "boot-t3.0.png",
+   "info": {
+    "drawCalls": 20,
+    "triangles": 21,
+    "textures": 50,
+    "geometries": 96,
+    "programs": 67
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t4.0",
+   "file": "boot-t4.0.png",
+   "info": {
+    "drawCalls": 20,
+    "triangles": 21,
+    "textures": 50,
+    "geometries": 96,
+    "programs": 67
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t4.6",
+   "file": "boot-t4.6.png",
+   "info": {
+    "drawCalls": 17,
+    "triangles": 17,
+    "textures": 60,
+    "geometries": 98,
+    "programs": 67
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t5.3",
+   "file": "boot-t5.3.png",
+   "info": {
+    "drawCalls": 17,
+    "triangles": 17,
+    "textures": 60,
+    "geometries": 98,
+    "programs": 67
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t6.4",
+   "file": "boot-t6.4.png",
+   "info": {
+    "drawCalls": 17,
+    "triangles": 17,
+    "textures": 65,
+    "geometries": 99,
+    "programs": 67
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t7.8",
+   "file": "boot-t7.8.png",
+   "info": {
+    "drawCalls": 17,
+    "triangles": 17,
+    "textures": 73,
+    "geometries": 113,
+    "programs": 70
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t8.4",
+   "file": "boot-t8.4.png",
+   "info": {
+    "drawCalls": 17,
+    "triangles": 17,
+    "textures": 73,
+    "geometries": 113,
+    "programs": 70
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t9.2",
+   "file": "boot-t9.2.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 286497,
+    "textures": 78,
+    "geometries": 114,
+    "programs": 70
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t9.9",
+   "file": "boot-t9.9.png",
+   "info": {
+    "drawCalls": 131,
+    "triangles": 286499,
+    "textures": 78,
+    "geometries": 115,
+    "programs": 70
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t10.6",
+   "file": "boot-t10.6.png",
+   "info": {
+    "drawCalls": 118,
+    "triangles": 285541,
+    "textures": 78,
+    "geometries": 115,
+    "programs": 70
+   }
+  },
+  {
+   "group": "boot",
+   "name": "t11.4",
+   "file": "boot-t11.4.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 243765,
+    "textures": 78,
+    "geometries": 115,
+    "programs": 70
+   }
+  },
+  {
+   "group": "res",
+   "name": "1280x720-hangar",
+   "file": "res-1280x720-hangar.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 67,
+    "geometries": 115,
+    "programs": 94
+   }
+  },
+  {
+   "group": "res",
+   "name": "1280x720-camera-select",
+   "file": "res-1280x720-camera-select.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 106,
+    "geometries": 221,
+    "programs": 91
+   }
+  },
+  {
+   "group": "res",
+   "name": "1366x768-hangar",
+   "file": "res-1366x768-hangar.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 65,
+    "geometries": 121,
+    "programs": 91
+   }
+  },
+  {
+   "group": "res",
+   "name": "1366x768-camera-select",
+   "file": "res-1366x768-camera-select.png",
+   "info": {
+    "drawCalls": 110,
+    "triangles": 32470,
+    "textures": 99,
+    "geometries": 222,
+    "programs": 90
+   }
+  },
+  {
+   "group": "res",
+   "name": "1920x1080-hangar",
+   "file": "res-1920x1080-hangar.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 67,
+    "geometries": 109,
+    "programs": 94
+   }
+  },
+  {
+   "group": "res",
+   "name": "1920x1080-camera-select",
+   "file": "res-1920x1080-camera-select.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 106,
+    "geometries": 222,
+    "programs": 91
+   }
+  },
+  {
+   "group": "res",
+   "name": "2560x1440-hangar",
+   "file": "res-2560x1440-hangar.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 67,
+    "geometries": 109,
+    "programs": 94
+   }
+  },
+  {
+   "group": "res",
+   "name": "2560x1440-camera-select",
+   "file": "res-2560x1440-camera-select.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 111,
+    "geometries": 222,
+    "programs": 91
+   }
+  },
+  {
+   "group": "res",
+   "name": "3440x1440-hangar",
+   "file": "res-3440x1440-hangar.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 62,
+    "geometries": 102,
+    "programs": 94
+   }
+  },
+  {
+   "group": "res",
+   "name": "3440x1440-camera-select",
+   "file": "res-3440x1440-camera-select.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 106,
+    "geometries": 221,
+    "programs": 91
+   }
+  },
+  {
+   "group": "res",
+   "name": "800x600-notice",
+   "file": "res-800x600-notice.png",
+   "info": {
+    "drawCalls": 117,
+    "triangles": 251759,
+    "textures": 57,
+    "geometries": 99,
+    "programs": 91
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "halcyon-livery0",
+   "file": "hangar-halcyon-livery0.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 67,
+    "geometries": 134,
+    "programs": 98
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "halcyon-livery3",
+   "file": "hangar-halcyon-livery3.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 67,
+    "geometries": 145,
+    "programs": 98
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "vesper-livery0",
+   "file": "hangar-vesper-livery0.png",
+   "info": {
+    "drawCalls": 97,
+    "triangles": 224496,
+    "textures": 63,
+    "geometries": 161,
+    "programs": 90
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "vesper-livery3",
+   "file": "hangar-vesper-livery3.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 224485,
+    "textures": 57,
+    "geometries": 162,
+    "programs": 82
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "basilisk-livery0",
+   "file": "hangar-basilisk-livery0.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 176,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "basilisk-livery3",
+   "file": "hangar-basilisk-livery3.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 176,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "nocturne-livery0",
+   "file": "hangar-nocturne-livery0.png",
+   "info": {
+    "drawCalls": 82,
+    "triangles": 171661,
+    "textures": 62,
+    "geometries": 188,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "nocturne-livery3",
+   "file": "hangar-nocturne-livery3.png",
+   "info": {
+    "drawCalls": 82,
+    "triangles": 171661,
+    "textures": 62,
+    "geometries": 188,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "tempest-livery0",
+   "file": "hangar-tempest-livery0.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 227837,
+    "textures": 62,
+    "geometries": 201,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "tempest-livery3",
+   "file": "hangar-tempest-livery3.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 227837,
+    "textures": 62,
+    "geometries": 201,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "obsidian-livery0",
+   "file": "hangar-obsidian-livery0.png",
+   "info": {
+    "drawCalls": 87,
+    "triangles": 227073,
+    "textures": 62,
+    "geometries": 216,
+    "programs": 81
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "obsidian-livery3",
+   "file": "hangar-obsidian-livery3.png",
+   "info": {
+    "drawCalls": 87,
+    "triangles": 227073,
+    "textures": 62,
+    "geometries": 216,
+    "programs": 81
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "swap-mid-dissolve",
+   "file": "hangar-swap-mid-dissolve.png",
+   "info": {
+    "drawCalls": 87,
+    "triangles": 230069,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "pilot-onyx",
+   "file": "hangar-pilot-onyx.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "pilot-ember",
+   "file": "hangar-pilot-ember.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "halcyon-front34",
+   "file": "hangar-halcyon-front34.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 243765,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "halcyon-side",
+   "file": "hangar-halcyon-side.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 243765,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "halcyon-rear34-high",
+   "file": "hangar-halcyon-rear34-high.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 243765,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "vesper-front34",
+   "file": "hangar-vesper-front34.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 224485,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "vesper-side",
+   "file": "hangar-vesper-side.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 224485,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "vesper-rear34-high",
+   "file": "hangar-vesper-rear34-high.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 224485,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "basilisk-front34",
+   "file": "hangar-basilisk-front34.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "basilisk-side",
+   "file": "hangar-basilisk-side.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "basilisk-rear34-high",
+   "file": "hangar-basilisk-rear34-high.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 229973,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "nocturne-front34",
+   "file": "hangar-nocturne-front34.png",
+   "info": {
+    "drawCalls": 82,
+    "triangles": 171661,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "nocturne-side",
+   "file": "hangar-nocturne-side.png",
+   "info": {
+    "drawCalls": 82,
+    "triangles": 171661,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "nocturne-rear34-high",
+   "file": "hangar-nocturne-rear34-high.png",
+   "info": {
+    "drawCalls": 82,
+    "triangles": 171661,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "tempest-front34",
+   "file": "hangar-tempest-front34.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 227837,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "tempest-side",
+   "file": "hangar-tempest-side.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 227837,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "tempest-rear34-high",
+   "file": "hangar-tempest-rear34-high.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 227837,
+    "textures": 62,
+    "geometries": 215,
+    "programs": 80
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "obsidian-front34",
+   "file": "hangar-obsidian-front34.png",
+   "info": {
+    "drawCalls": 87,
+    "triangles": 227073,
+    "textures": 62,
+    "geometries": 216,
+    "programs": 81
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "obsidian-side",
+   "file": "hangar-obsidian-side.png",
+   "info": {
+    "drawCalls": 87,
+    "triangles": 227073,
+    "textures": 62,
+    "geometries": 216,
+    "programs": 81
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "obsidian-rear34-high",
+   "file": "hangar-obsidian-rear34-high.png",
+   "info": {
+    "drawCalls": 87,
+    "triangles": 227073,
+    "textures": 62,
+    "geometries": 216,
+    "programs": 81
+   }
+  },
+  {
+   "group": "hangar",
+   "name": "locked-obsidian-hologram",
+   "file": "hangar-locked-obsidian-hologram.png",
+   "info": {
+    "drawCalls": 118,
+    "triangles": 230031,
+    "textures": 72,
+    "geometries": 132,
+    "programs": 94
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "1-doors-closing",
+   "file": "cockpit-1-doors-closing.png",
+   "info": {
+    "drawCalls": 119,
+    "triangles": 286920,
+    "textures": 67,
+    "geometries": 140,
+    "programs": 90
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "2-doors-sealed",
+   "file": "cockpit-2-doors-sealed.png",
+   "info": {
+    "drawCalls": 119,
+    "triangles": 286920,
+    "textures": 67,
+    "geometries": 143,
+    "programs": 90
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "3-reveal",
+   "file": "cockpit-3-reveal.png",
+   "info": {
+    "drawCalls": 121,
+    "triangles": 76133,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 82
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "4-systems-boot",
+   "file": "cockpit-4-systems-boot.png",
+   "info": {
+    "drawCalls": 99,
+    "triangles": 32459,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 80
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "5-briefing-typing",
+   "file": "cockpit-5-briefing-typing.png",
+   "info": {
+    "drawCalls": 99,
+    "triangles": 32459,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 80
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "6-briefing",
+   "file": "cockpit-6-briefing.png",
+   "info": {
+    "drawCalls": 100,
+    "triangles": 32635,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 80
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "7-camera-select",
+   "file": "cockpit-7-camera-select.png",
+   "info": {
+    "drawCalls": 99,
+    "triangles": 32459,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 80
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "8-standby",
+   "file": "cockpit-8-standby.png",
+   "info": {
+    "drawCalls": 100,
+    "triangles": 32635,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 80
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "9-mirror-centre",
+   "file": "cockpit-9-mirror-centre.png",
+   "info": {
+    "drawCalls": 100,
+    "triangles": 32635,
+    "textures": 83,
+    "geometries": 222,
+    "programs": 80
+   }
+  },
+  {
+   "group": "doors",
+   "name": "p0",
+   "file": "doors-p0.png",
+   "info": {
+    "drawCalls": 185,
+    "triangles": 294633,
+    "textures": 71,
+    "geometries": 106,
+    "programs": 76
+   }
+  },
+  {
+   "group": "doors",
+   "name": "p25",
+   "file": "doors-p25.png",
+   "info": {
+    "drawCalls": 187,
+    "triangles": 294637,
+    "textures": 71,
+    "geometries": 107,
+    "programs": 76
+   }
+  },
+  {
+   "group": "doors",
+   "name": "p50",
+   "file": "doors-p50.png",
+   "info": {
+    "drawCalls": 142,
+    "triangles": 286510,
+    "textures": 64,
+    "geometries": 108,
+    "programs": 75
+   }
+  },
+  {
+   "group": "doors",
+   "name": "p75",
+   "file": "doors-p75.png",
+   "info": {
+    "drawCalls": 141,
+    "triangles": 286508,
+    "textures": 64,
+    "geometries": 108,
+    "programs": 75
+   }
+  },
+  {
+   "group": "doors",
+   "name": "p100",
+   "file": "doors-p100.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 286497,
+    "textures": 58,
+    "geometries": 109,
+    "programs": 67
+   }
+  },
+  {
+   "group": "modals",
+   "name": "upgrades-empty",
+   "file": "modals-upgrades-empty.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 272297,
+    "textures": 77,
+    "geometries": 129,
+    "programs": 94
+   }
+  },
+  {
+   "group": "modals",
+   "name": "upgrades-mid-purchase",
+   "file": "modals-upgrades-mid-purchase.png",
+   "info": {
+    "drawCalls": 103,
+    "triangles": 264272,
+    "textures": 68,
+    "geometries": 131,
+    "programs": 90
+   }
+  },
+  {
+   "group": "modals",
+   "name": "upgrades-maxed",
+   "file": "modals-upgrades-maxed.png",
+   "info": {
+    "drawCalls": 103,
+    "triangles": 264272,
+    "textures": 68,
+    "geometries": 131,
+    "programs": 90
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-controls",
+   "file": "modals-settings-controls.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 72,
+    "geometries": 116,
+    "programs": 94
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-rebind-capture",
+   "file": "modals-settings-rebind-capture.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 70,
+    "geometries": 122,
+    "programs": 91
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-conflict",
+   "file": "modals-settings-conflict.png",
+   "info": {
+    "drawCalls": 97,
+    "triangles": 243776,
+    "textures": 63,
+    "geometries": 123,
+    "programs": 90
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-camera",
+   "file": "modals-settings-camera.png",
+   "info": {
+    "drawCalls": 97,
+    "triangles": 243776,
+    "textures": 63,
+    "geometries": 123,
+    "programs": 90
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-graphics",
+   "file": "modals-settings-graphics.png",
+   "info": {
+    "drawCalls": 97,
+    "triangles": 243776,
+    "textures": 63,
+    "geometries": 123,
+    "programs": 90
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-audio",
+   "file": "modals-settings-audio.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 243765,
+    "textures": 57,
+    "geometries": 124,
+    "programs": 82
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-accessibility",
+   "file": "modals-settings-accessibility.png",
+   "info": {
+    "drawCalls": 86,
+    "triangles": 243765,
+    "textures": 57,
+    "geometries": 124,
+    "programs": 82
+   }
+  }
+ ],
+ "checks": {
+  "lockedIsHologram": true,
+  "upgradesMaxed": {
+   "cannons": 5,
+   "capacitor": 5,
+   "hull": 5,
+   "shield": 5,
+   "thrusters": 5
+  },
+  "conflictPrompt": true,
+  "mirrorsIdleInHangar": true,
+  "layout": {
+   "1280x720": {
+    "scrollX": false,
+    "scrollY": false,
+    "outOfView": [],
+    "overlaps": []
+   },
+   "1366x768": {
+    "scrollX": false,
+    "scrollY": false,
+    "outOfView": [],
+    "overlaps": []
+   },
+   "1920x1080": {
+    "scrollX": false,
+    "scrollY": false,
+    "outOfView": [],
+    "overlaps": []
+   },
+   "2560x1440": {
+    "scrollX": false,
+    "scrollY": false,
+    "outOfView": [],
+    "overlaps": []
+   },
+   "3440x1440": {
+    "scrollX": false,
+    "scrollY": false,
+    "outOfView": [],
+    "overlaps": []
+   }
+  },
+  "smallNotice": true,
+  "cockpitTris": 29720,
+  "mirrorRefreshPerSecIGPU": 9
+ },
+ "logs": {
+  "boot": [],
+  "res": [],
+  "hangar": [],
+  "cockpit": [],
+  "perf": [],
+  "doors": [],
+  "modals": []
+ },
+ "errors": {},
+ "perf": {
+  "hangar": {
+   "fps": 60,
+   "fpsMin": 59.6,
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 60,
+    "geometries": 120,
+    "programs": 91
+   },
+   "heapMB": 22,
+   "gpu": "discrete"
+  },
+  "cockpit": {
+   "fps": 60,
+   "fpsMin": 59.9,
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 111,
+    "geometries": 223,
+    "programs": 91
+   },
+   "heapMB": 23.7,
+   "gpu": "discrete",
+   "mirrorRefreshPerSec": 28.6
+  }
+ },
+ "budgets": {
+  "maxDrawCalls": 187,
+  "maxTriangles": 294637,
+  "drawCallsOk": true,
+  "trianglesOk": true
+ },
+ "consoleClean": true
+}

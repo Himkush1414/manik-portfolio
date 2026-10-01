@@ -347,7 +347,13 @@
   gap: calc(var(--u) * 18);
 }
 .modalTitle { margin: 0; font: 900 calc(var(--u) * 40) / 1 var(--font-title); letter-spacing: 0.06em; }
-.modalKicker { font: 500 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: var(--track-wide); color: var(--hot); }
+.modalKicker {
+  font: 500 calc(var(--u) * 11) / 1 var(--font-mono);
+  letter-spacing: var(--track-wide);
+  color: var(--hot);
+  /* see-through modals sit over the live bay (lamps, glare): keep it separated */
+  text-shadow: 0 0 calc(var(--u) * 10) rgba(4, 5, 10, 0.95), 0 0 calc(var(--u) * 3) rgba(4, 5, 10, 0.9);
+}
 .modalSpacer { flex: 1; }
 
 /* ------------------------------------------------------------- slider */

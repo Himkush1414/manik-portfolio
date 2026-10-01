@@ -14,9 +14,10 @@ import { bootDoors, launchDoors } from '../scenes/sceneBridge';
 import { bulkhead } from '../scenes/cockpit/Bulkhead';
 import { stage } from '../scenes/Stage';
 import { bootFx } from '../scenes/boot/bootFxParams';
-import { registerDebug } from '../debug/debugApi';
+import { registerDebug, registerDebugFn } from '../debug/debugApi';
 import { shipThumbnail, type ThumbOptions } from '../render/thumbnails';
 import { isShipId, type ShipId } from '../data/ships';
+import { TRACK_IDS } from '../data/upgrades';
 import { useUi } from '../state/ui.store';
 import { useProfile } from '../state/profile.store';
 import { unlockState } from '../data/unlocks';
@@ -27,7 +28,7 @@ import { useLoader } from '../core/loader';
 import { DEBUG } from '../core/constants';
 import gsap from 'gsap';
 import { jumpTo, returnToHangar, type LaunchJump } from './choreo/launchTimeline';
-import { openModal } from '../ui/screens/hangar/hangarActions';
+import { openModal, closeModal, viewShip } from '../ui/screens/hangar/hangarActions';
 
 let applied = false;
 
@@ -79,11 +80,28 @@ export function applyStartParams(): void {
       root.traverse(o => void (o.name === name && (o.visible = !on)));
     },
   });
+  // brief §18 contract, top level: __G1__.setShip('vesper'), openScreen('cockpit'), ...
+  registerDebugFn('setShip', (id: ShipId) => viewShip(id));
+  registerDebugFn('setLivery', (i: number) => useProfile.getState().setLivery(useUi.getState().viewedShip ?? useProfile.getState().selectedShip, i));
+  registerDebugFn('setPilot', (p: 'onyx' | 'ember') => useProfile.getState().setPilot(p));
+  registerDebugFn('grantCredits', (n: number) => useProfile.getState().grantCredits(n));
+  registerDebugFn('unlockAll', () => useProfile.getState().unlockAll());
+  registerDebugFn('openScreen', (name: 'hangar' | 'upgrades' | 'settings' | LaunchJump) => {
+    if (name === 'hangar') return closeModal();
+    if (name === 'upgrades' || name === 'settings') return openModal(name);
+    return jumpTo(name);
+  });
   // DEV CHEATS (brief §14; only exist with ?debug=1)
   registerDebug('cheats', {
     credits: (n = 10000) => useProfile.getState().grantCredits(n),
     level: (n: number) => useProfile.getState().setLevelCleared(n),
     unlockAll: () => useProfile.getState().unlockAll(),
+    // every track to tier 5 through the REAL atomic purchase (QA: "maxed" state)
+    maxUpgrades: () => {
+      const pr = useProfile.getState();
+      pr.grantCredits(100000);
+      for (let tier = 0; tier < 5; tier++) for (const t of TRACK_IDS) useProfile.getState().purchaseUpgrade(t);
+    },
     reset: () => useProfile.getState().reset(),
   });
   registerDebug('thumbs', {
@@ -124,7 +142,9 @@ export function applyStartParams(): void {
     setView(VIEWS.hangar);
     bootDoors.set(1);
   }
-  flow.force('hangar.idle');
+  // the door view is the boot's door beat: in hangar.* the hangar camera rig and
+  // UI take over (this regressed once 1D/1E landed: ?screen=doors showed the hangar)
+  flow.force(mode === 'doors' ? 'boot.doors' : 'hangar.idle');
   const screen = QUERY.get('screen');
   if (screen === 'upgrades' || screen === 'settings' || screen === 'briefing' || screen === 'camera' || screen === 'cockpit') void openScreen(screen);
 }

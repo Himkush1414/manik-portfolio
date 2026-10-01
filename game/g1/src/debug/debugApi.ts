@@ -37,6 +37,11 @@ const api: Api = {
   },
 };
 
+/** Top-level QA functions (brief §18 contract: __G1__.setShip(...) etc.). */
+export function registerDebugFn(name: string, fn: (...args: never[]) => unknown): void {
+  if (debugEnabled) api[name] = fn;
+}
+
 export function installDebugApi(): void {
   if (!debugEnabled) return;
   (window as unknown as { __G1__: Api }).__G1__ = api;

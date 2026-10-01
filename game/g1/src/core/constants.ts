@@ -8,3 +8,5 @@ export const IS_DEV = import.meta.env.DEV;
 /** Query flags (QA harness + dev shortcuts). Parsed once at startup. */
 export const QUERY = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 export const DEBUG = QUERY.get('debug') === '1';
+/** ?seed=<n>: runtime randomisation (bay life) for reproducible QA; 0 = the shipped look. */
+export const SEED = Number.parseInt(QUERY.get('seed') ?? '0', 10) || 0;

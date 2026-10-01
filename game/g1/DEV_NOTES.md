@@ -17,7 +17,7 @@ this file alone. Updated after every slice.
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
 | 1G Cockpit + camera select | DONE | bulkhead, cockpit (interior, tub, tunnel + deep-space mouth, 3 live mirrors), body framing (fists, knees, kneeboard), systems boot, combiner briefing, camera selector, standby, ESC return; MirrorRig + BlurDissolve; light/heavy variants verified; 20-round-trip soak flat |
-| 1H QA / polish / perf | IN PROGRESS | §16 audio, §17 a11y/resilience DONE; next §18 qa:phase1 (full protocol + scores + perf), §19 handoff, §20 report |
+| 1H QA / polish / perf | DONE | §16 audio, §17 a11y/resilience, §18 full QA protocol + perf, §19 handoff contract |
 
 **Phase 1 step map** (the owner counts the brief's numbered sections §0-§20 as
 "the ~20 steps"; slices are how they were built):
@@ -33,9 +33,9 @@ this file alone. Updated after every slice.
 | 15 cockpit entry + camera select | 1G | DONE |
 | 16 audio | 1H | DONE (cockpit voices + bed, audio-map audit) |
 | 17 accessibility, resilience, pitfalls | 1H | DONE (axe 0 violations, focus rings, retry UI, context restore) |
-| 18 QA protocol (qa:phase1) | 1H | next |
-| 19 handoff contract | 1H | — |
-| 20 final report | 1H | — |
+| 18 QA protocol (qa:phase1) | 1H | DONE (84 shots scored >= 4, budgets met, console clean) |
+| 19 handoff contract | 1H | DONE (§7 below, exact signatures) |
+| 20 final report | 1H | next |
 
 **Next step:** the first step above not marked DONE; slice sub-steps are in §5.
 
@@ -194,16 +194,42 @@ six ships are built in code by the ShipFactory (lofted hulls, faceted wings,
 lathed engines, real groove panel lines, CSM paint). CC0 only for textures /
 HDRIs / kit parts if ever needed (none used so far).
 
-## 7. Phase 1 → Phase 2 handoff contract
+## 7. Phase 1 → Phase 2 handoff contract (brief §19 — STABLE; Phase 2 consumes, never edits)
 
-(Kept stable; filled in with exact signatures as slices land.)
-- `ShipFactory.build(shipId, { livery, lod })` → `{ group, hardpoints, dispose() }`
-- `BlastDoors { open(), close(), progress, seek(t), events }`
-- flow FSM events `START_MISSION`, `CAMERA_CHOSEN`, `LAUNCH`, `ABORT_TO_HANGAR`
-- `useSettings` / `useProfile`; `InputAction` + default bindings + conflicts
-- `AudioBus` + sfx names; `postfx.pulse / setTransitionBlur / setExposure`
-- `CameraShaker`, `BlurDissolve`, `MirrorRig`; `CameraMode` + `CameraRig`
-- `data/lore.ts, ships.ts, upgrades.ts, unlocks.ts, liveries.ts`
+Phase 1 is frozen: later phases feed these APIs data. Signatures are exact.
+
+**Ships** — `ships/ShipFactory.ts`
+- `ShipFactory.build(shipId: ShipId, { livery?: number; lod?: 0 | 1; hologram?: boolean }) -> BuiltShip`
+- `BuiltShip = { group: Group; hardpoints: Hardpoint[]; paint; tris; setLivery(i, animate?); setDissolve(0..1); setHologram(on); readonly hologram; setEngineLevel(0..1); update(t); dispose() }`
+- `Hardpoint = { id; kind: 'cannon' | 'engine' | 'shield' | 'thruster' | 'hull'; pos: [x, y, z] }` (ship-local, nose +z)
+- `preloadShipGeometry(id, lod)` (worker bake, cached), `mergedShipGeometry(id, lod)` (instancing), `SHIP_LAYER`
+- Specs (shape, stats, hardpoints) live ONLY in `ships/specs/*.ts`; stats/unlocks/cockpit variant in `data/ships.ts`.
+
+**Blast doors** — `scenes/shared/doors/DoorController.ts` (+ view `scenes/shared/BlastDoors.tsx`, mount-point agnostic)
+- `new DoorController(id)`: `open(duration = 1.65): Promise<void>`, `close(duration = 1.0): Promise<void>`, `seek(t, 'open' | 'close')`, `set(0 | 1)`, `progress`, `state`, `dispose()`
+- events on `core/bus`: `doors:unlock {id}`, `doors:move {id, velocity}`, `doors:slam {id}` (audio + shake hooks; `app/choreo/doorFeedback.ts`)
+- instances: `sceneBridge.bootDoors` (boot, in-world), `sceneBridge.launchDoors` (camera-attached bulkhead). ONE live tween per controller: start each move at its beat.
+
+**Flow FSM** — `app/flow.ts`
+- `flow.send(event): boolean` (false = not accepted here = double-trigger guard), `flow.state`, `useFlow(s => s.state)`
+- events incl. `START_MISSION`, `CAMERA_CHOSEN`, `LAUNCH`, `ABORT_TO_HANGAR` (+ `BRIEFING_ACK`, `RETURNED`, modal events); selectors `isBoot / isHangar / isLaunch`
+- Phase 2 entry: add mission states to `TRANSITIONS['launch.standby'].LAUNCH` and call `flow.send('LAUNCH')`.
+- choreography: `app/choreo/launchTimeline.ts` `launch() / briefingAck() / chooseCamera(mode) / returnToHangar() / jumpTo(target)`
+
+**Stores** — `state/*.store.ts` (zustand + persist, key `spacewar.darkedition.save.v1`, versioned migrations in `state/save.ts`)
+- `useSettings`: `controls { bindings, sensitivity, invertY, deadzone, smoothing }`, `camera { mode, fov, shake, helmetFrame }`, `graphics { preset, toggles, resScale, fpsCap, showFps }`, `audio`, `accessibility`, `bootSeen`, `briefingSeen`
+- `useProfile`: `credits, highestLevelCleared, bossesDefeated, unlockedShips, upgrades{track: tier}, selectedShip, liveryByShip, pilot`; atomic `purchaseShip(id)` / `purchaseUpgrade(track) -> TxResult`; `grantCredits`, `setLevelCleared`, `reset`
+
+**Input** — `input/actions.ts` `enum InputAction`; `input/bindings.ts` `DEFAULT_BINDINGS`, `findConflict(b, code, self)`, `assignBinding(b, target, code, 'swap' | 'clear')`, `actionsFor(b, code)`; `input/keyLabels.ts` `keyLabel(code)`. Bindings store `KeyboardEvent.code`; no key codes hard-coded elsewhere (Phase 2's InputManager reads these).
+
+**Audio** — `audio/AudioBus.ts` `AudioBus { init(), ctx, running, buses: { music, sfx, ui } }` (gains from settings, ducks when hidden); `audio/sfx.ts` `sfx.play(name: SfxName)`: hover, confirm, deny, locked, purchase, livery, materialise, sting, zing, whoosh, loaderTick, clunk, clunkHeavy, hiss, powerUp, mfdBlip0-2, hudOn. Beds: `startHangarAmbience/stop…`, `startCockpitBed/stop…`.
+
+**Post / camera** — `render/fxController.ts` `postfx.pulse({ ca, shake, vignette, duration })`, `postfx.setTransitionBlur(0..1)`, `postfx.setExposure(v, duration?)`; `render/CameraShaker.ts` `CameraShaker.addTrauma(0..1)`, `setRumble(level, hz)`; `render/BlurDissolve.ts` `dissolveEnterVars/ExitVars`, `dissolveIn/Out(el)`, `blurDissolve(swap)`; `render/MirrorRig.ts` `new MirrorRig(defs)`, `setSource(obj)` (Phase 2: the wormhole scene), `attach(parent)`, `render(gl, dt)`, `resize`, `fps`, `textures`.
+- `render/cameraRig.ts` `type CameraMode = 'third' | 'chase' | 'cockpit'`, `interface CameraRig { mode; attach(camera, target); update(dt); detach() }` — Phase 2 implements the three rigs; the selected mode is `useSettings().camera.mode`.
+
+**Data** — `data/lore.ts` (bible, MISSION_01, CODEX, PILOTS), `ships.ts` (stats, unlock reqs, cockpit variant), `upgrades.ts` (`TRACKS`, tier costs, `computeCombatRating(profile, ship)`, `recommendedRating(level)` — numbers provisional), `unlocks.ts` (`unlockState(ship, profile)`), `liveries.ts` (`liveriesFor(ship)`), `boot.config.ts`, `render.config.ts`.
+
+**QA surface** (`?debug=1`): `window.__G1__` — `boot.seek(t)`, `setShip`, `setLivery`, `setPilot`, `openScreen(hangar|upgrades|settings|briefing|camera|cockpit)`, `grantCredits`, `unlockAll`, `fps()`, `info()`, plus `doors`, `camera`, `launch`, `cheats`, `audio`, `mirrors`, `cockpit` namespaces. Query params: `?boot=0 ?screen= ?ship= ?livery= ?pilot= ?unlock=all ?credits= ?seed= ?debug=1`.
 
 ## 8. Engine notes (things a future session must know)
 
@@ -594,11 +620,47 @@ HDRIs / kit parts if ever needed (none used so far).
   busts fall back to the main thread) and KHR_parallel_shader_compile
   (optional).
 
+- **QA protocol (§18, 1H):** `npm run qa:phase1 -- [origin] [--only groups]
+  [--out qa/phase1] [--merge]` (`tools/qa-phase1.mjs`) — groups boot (15
+  seeked frames), doors (0/25/50/75/100 %), hangar (6 ships x 2 liveries, 3
+  turntable angles each, mid-dissolve swap, both pilots, locked hologram),
+  modals (Upgrades empty / mid-purchase / maxed; Settings tabs, rebinding
+  capture, conflict prompt), cockpit (every launch beat + live centre mirror;
+  choreography at 0.3x so 0.5 s beats are never missed), res (1280x720,
+  1366x768, 1920x1080, 2560x1440, 3440x1440 hangar + camera select, overlap /
+  overflow / out-of-view check; 800x600 notice), perf (discrete GPU).
+  `qa/phase1/manifest.json` = per-shot renderer info, checks, console logs.
+  PNGs are not versioned (qa/.gitignore) — regenerate with the command.
+  RESULT (2026-10-01): 84 shots, every one inspected and scored 1-5 on premium
+  feel / hierarchy / materials / lighting / motion intent; all >= 4 after
+  fixes. Fixed during the pass: `?screen=doors` showed the hangar (regressed
+  when 1D/1E landed; the door view now forces `boot.doors`); the 3-angle
+  captures used lookdev cameras outside the bay (scored 2-3; now the player's
+  turntable, frozen); Upgrades kicker over a bay lamp (text halo). Console:
+  ZERO errors/warnings in every group. Budgets over all frames: max 187 draw
+  calls (<= 220), max 295k triangles (<= 700k). Layout: no overflow / overlap
+  / clipping at any resolution. Checks: locked = hologram; maxed = 5/5 on all
+  tracks via the real atomic purchase; conflict prompt shown; mirrors idle in
+  the hangar, 28.6 refreshes/s in the cockpit (discrete GPU).
+- **Perf (discrete RTX 3050, 1080p, HIGH):** hangar 60 fps (min
+  59.6), cockpit 60 fps (min 59.9); heap 22 / 23.7 MB (GC'd); 20-trip soak
+  flat. Integrated UHD 770 (well under the brief's GTX 1660 target): ~16-23
+  fps with the runtime degrade (DPR -> AO -> DOF) engaging as designed.
+  Long tasks: launch on the discrete GPU = one 49 ms task (first-gesture
+  AudioContext creation, browser-inherent, only once per session); hangar
+  idle after the full boot = one ~55 ms task (~4 ms JS; the rest is the main
+  thread inside GL driver calls while the cockpit pre-warm's resources land).
+  Tools: `tools/prof-launch.mjs` (long tasks -> top self + first app frame).
+
 ## 9. Known issues
 
-- After boot, the first hangar seconds still show one 120-210 ms long task
-  (first thumbnail readback + a program link); brief budget is 50 ms. 1H.
-
-
-- Temporary deck under the ship reads lilac (Nebula rim light at grazing
-  angles on a plain rough plane) — replaced by the tuned reflector floor in 1D.
+- One ~55 ms main-thread task ~2 s after the hangar first settles (discrete
+  GPU; was 120-210 ms): ~4 ms JS, the rest inside GL driver calls as the
+  cockpit pre-warm's textures/programs land. Brief budget is 50 ms. Next
+  lever if it matters: spread the cockpit's canvas-texture uploads over
+  several idle frames (`renderer.initTexture` per frame).
+- First user gesture: ~49 ms creating the AudioContext (browser cost; it may
+  not be created before a gesture without a console autoplay warning).
+- Integrated GPUs (UHD 770 class) run the HIGH preset at ~16-23 fps; the
+  runtime degrade drops DPR/AO/DOF. The brief's target is GTX 1660 class.
+- Firefox / Safari not tested in this environment (no browsers installed).

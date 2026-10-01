@@ -32,6 +32,7 @@ import {
   Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { SEED } from '../../../core/constants';
 import { createRng } from '../../../core/rng';
 import { hdr } from '../../../render/palette';
 import { BAY } from './bayGeometry';
@@ -89,7 +90,7 @@ function holoTexture(seed: number): CanvasTexture {
 export function BayLife({ particles = 1, reduceMotion = false, reduceFlashing = false }: { particles?: number; reduceMotion?: boolean; reduceFlashing?: boolean }) {
   const cranes = useRef<Group[]>([]);
   const built = useMemo(() => {
-    const rng = createRng(3131);
+    const rng = createRng(3131 + SEED);
     const steel = new MeshStandardMaterial({ color: '#3b4252', metalness: 0.85, roughness: 0.45, envMapIntensity: 0.3 });
     const hazard = new MeshStandardMaterial({ color: '#8a3a18', metalness: 0.4, roughness: 0.6, envMapIntensity: 0.3 });
     const amber = new MeshBasicMaterial({ color: hdr('hot', 3.5), toneMapped: false });
