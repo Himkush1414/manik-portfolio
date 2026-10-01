@@ -17,9 +17,17 @@ import { hangarCam } from '../../scenes/hangar/hangarCamera';
 import { useSettings } from '../../state/settings.store';
 import { useUi } from '../../state/ui.store';
 import { sfx } from '../../audio/sfx';
+import { AudioBus } from '../../audio/AudioBus';
+import { startCockpitBed, stopCockpitBed } from '../../audio/synth/cockpit';
+import { bus } from '../../core/bus';
 import type { CameraMode } from '../../render/cameraRig';
 
 let tl: gsap.core.Timeline | null = null;
+
+// audio unlocked while already seated (powered cockpit): start its bed then
+bus.on('audio:unlocked', () => {
+  if (stage.cockpit >= 0.5 && cockpitFx.power.dash > 0) startCockpitBed();
+});
 const reduced = () => useSettings.getState().accessibility.reduceMotion;
 const lines = (l: string[]) => useUi.getState().setLaunchLines(l);
 
@@ -83,11 +91,15 @@ export function launch(): boolean {
   }, [], 3.55);
   // systems boot: dash lights, then MFDs and the HUD one by one (~1.5 s)
   const P = cockpitFx.power;
-  tl.to(P, { dash: 1, duration: 0.35, ease: 'power2.out', onStart: () => sfx.play('loaderTick') }, 3.6);
-  tl.to(P, { mfdL: 1, duration: 0.4, ease: 'steps(4)', onStart: () => sfx.play('loaderTick') }, 3.85);
-  tl.to(P, { mfdC: 1, duration: 0.4, ease: 'steps(4)', onStart: () => sfx.play('loaderTick') }, 4.1);
-  tl.to(P, { mfdR: 1, duration: 0.4, ease: 'steps(4)', onStart: () => sfx.play('loaderTick') }, 4.35);
-  tl.to(P, { hud: 1, duration: 0.5, ease: 'power2.out', onStart: () => sfx.play('confirm') }, 4.6);
+  tl.call(() => {
+    sfx.play('powerUp');
+    if (AudioBus.running) startCockpitBed();
+  }, [], 3.5);
+  tl.to(P, { dash: 1, duration: 0.35, ease: 'power2.out' }, 3.6);
+  tl.to(P, { mfdL: 1, duration: 0.4, ease: 'steps(4)', onStart: () => sfx.play('mfdBlip0') }, 3.85);
+  tl.to(P, { mfdC: 1, duration: 0.4, ease: 'steps(4)', onStart: () => sfx.play('mfdBlip1') }, 4.1);
+  tl.to(P, { mfdR: 1, duration: 0.4, ease: 'steps(4)', onStart: () => sfx.play('mfdBlip2') }, 4.35);
+  tl.to(P, { hud: 1, duration: 0.5, ease: 'power2.out', onStart: () => sfx.play('hudOn') }, 4.6);
   tl.call(() => {
     if (!flow.send('REVEAL_DONE')) return;
     cockpitFx.hudMode = 'briefing';
@@ -141,6 +153,7 @@ export function returnToHangar(): boolean {
   }, [], 1.25);
   // swap back while sealed
   tl.call(() => {
+    stopCockpitBed(0.5);
     powerDown();
     stage.cockpit = 0;
     postfx.aoRadius = 1;

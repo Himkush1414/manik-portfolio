@@ -126,6 +126,7 @@ function Controls() {
               className={s.resetSmall}
               aria-label={`Reset ${ACTION_LABEL[a]}`}
               title="Reset to default"
+              onPointerEnter={() => sfx.play('hover')}
               onClick={() => {
                 const next = cloneBindings(c.bindings);
                 next[a] = [...DEFAULT_BINDINGS[a]];

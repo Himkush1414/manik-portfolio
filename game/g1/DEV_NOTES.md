@@ -17,9 +17,27 @@ this file alone. Updated after every slice.
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
 | 1G Cockpit + camera select | DONE | bulkhead, cockpit (interior, tub, tunnel + deep-space mouth, 3 live mirrors), body framing (fists, knees, kneeboard), systems boot, combiner briefing, camera selector, standby, ESC return; MirrorRig + BlurDissolve; light/heavy variants verified; 20-round-trip soak flat |
-| 1H QA / polish / perf | — | |
+| 1H QA / polish / perf | IN PROGRESS | §16 audio DONE; next §17 a11y/resilience, §18 qa:phase1, §19 handoff, §20 report |
 
-**Next step:** see the first slice not marked DONE above; its sub-steps are in §5.
+**Phase 1 step map** (the owner counts the brief's numbered sections §0-§20 as
+"the ~20 steps"; slices are how they were built):
+
+| Step (brief §) | Slice | Status |
+|---|---|---|
+| 0-7 role, rules, stack, art + story bibles, architecture, budgets, build order | plan + 1A | DONE |
+| 8 boot sequence, 9 blast doors | 1B | DONE |
+| 10 ship pipeline + six ships | 1C | DONE |
+| 11 hangar scene | 1D | DONE |
+| 12 hangar UI, 13 pilot select | 1E | DONE |
+| 14 upgrades / settings / profile | 1F | DONE |
+| 15 cockpit entry + camera select | 1G | DONE |
+| 16 audio | 1H | DONE (cockpit voices + bed, audio-map audit) |
+| 17 accessibility, resilience, pitfalls | 1H | next |
+| 18 QA protocol (qa:phase1) | 1H | — |
+| 19 handoff contract | 1H | — |
+| 20 final report | 1H | — |
+
+**Next step:** the first step above not marked DONE; slice sub-steps are in §5.
 
 ---
 
@@ -526,6 +544,22 @@ HDRIs / kit parts if ever needed (none used so far).
   listed in `WSLENV` (e.g. `export WSLENV=G1_DGPU`). `node` in WSL is a shim to
   node.exe, so stopping a backgrounded `npx vite` can orphan the Windows
   process on :5199 — stop it by PID after checking its command line.
+
+- **Audio (§16, 1H):** `audio/synth/cockpit.ts` — `powerUp` (saw rise + sub
+  swell), `mfdBlip(i)` (per-display pitch), `hudOn` (glassy fifth) and the
+  cockpit bed (avionics hum + inverter whine + ventilation air + relay clicks
+  scheduled on the audio clock). Launch: power-up at 3.5 s, blips per MFD,
+  `hudOn` with the HUD; the hangar bed stops on START_MISSION (hangar effect),
+  the cockpit bed starts at power-up and stops at the sealed swap on return;
+  unlocking audio while seated starts the cockpit bed. QA (`?debug=1`):
+  `__G1__.audio.log()/clear()/state()/level(bus)` — sfx.play records names
+  even before unlock; `level` is an RMS meter on a bus (prime it once: a new
+  analyser reads 0). `tools/qa-audio.mjs`: hovers all 153 interactive
+  elements (hangar, Upgrades, 5 Settings tabs, camera select) -> 0 silent;
+  cockpit beat order verified (`qa/16-audio-map.json`). Measured RMS (music
+  bus): hangar 0.017 -> cockpit 0.011 -> hangar 0.016; slam 0.38 on sfx.
+  Headless audio needs a real CDP click (a relaxed autoplay flag alone does
+  not create the context: it is created on the first gesture).
 
 ## 9. Known issues
 

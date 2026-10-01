@@ -431,7 +431,7 @@ export function Slider({ value, min, max, step = 0.01, onChange, label, format, 
   const pct = ((value - min) / (max - min)) * 100;
   const last = useRef(0);
   return (
-    <div className={s.slider}>
+    <div className={s.slider} onPointerEnter={() => sfx.play('hover')}>
       <input
         type="range"
         min={min}

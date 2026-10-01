@@ -1,0 +1,55 @@
+{
+ "report": {
+  "hangar": {
+   "checked": 21,
+   "silent": []
+  },
+  "upgrades": {
+   "checked": 6,
+   "silent": []
+  },
+  "settings/CONTROLS›": {
+   "checked": 49,
+   "silent": []
+  },
+  "settings/CAMERA›": {
+   "checked": 19,
+   "silent": []
+  },
+  "settings/GRAPHICS›": {
+   "checked": 26,
+   "silent": []
+  },
+  "settings/AUDIO›": {
+   "checked": 15,
+   "silent": []
+  },
+  "settings/ACCESSIBILITY›": {
+   "checked": 13,
+   "silent": []
+  },
+  "camera-select": {
+   "checked": 4,
+   "silent": []
+  }
+ },
+ "cockpitBeats": [
+  "confirm",
+  "clunk",
+  "hiss",
+  "hiss",
+  "clunkHeavy",
+  "clunk",
+  "hiss",
+  "powerUp",
+  "mfdBlip0",
+  "clunkHeavy",
+  "mfdBlip1",
+  "mfdBlip2",
+  "hudOn",
+  "hover",
+  "confirm"
+ ],
+ "beatsOk": true,
+ "logs": []
+}
