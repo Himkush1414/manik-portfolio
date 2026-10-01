@@ -113,7 +113,7 @@ export function Hangar({ shipId, forceUnlocked = false, q, reduceMotion, reduceF
   const hall = useRef<Group>(null);
   useFrame((state, dt) => {
     // the hangar is hidden while the pilot is in the cockpit (swapped behind the bulkhead)
-    if (hall.current) hall.current.visible = stage.cockpit < 0.5;
+    if (hall.current) hall.current.visible = stage.cockpit < 0.5 && stage.mission < 0.5;
     updateTurntable(dt);
     if (spin.current) spin.current.rotation.y = turntable.yaw;
     if (bay.current) bay.current.visible = !hangarCam.manual;

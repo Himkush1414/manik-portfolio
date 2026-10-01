@@ -29,6 +29,9 @@ import { DEBUG } from '../core/constants';
 import gsap from 'gsap';
 import { jumpTo, returnToHangar, type LaunchJump } from './choreo/launchTimeline';
 import { openModal, closeModal, viewShip } from '../ui/screens/hangar/hangarActions';
+import { enterMission, pauseMission, resumeMission, missionToHangar, retryMission } from './mission/missionFlow';
+import { isBotSkill } from '../data/bot';
+import { mission } from '../scenes/mission/missionRuntime';
 
 let applied = false;
 
@@ -37,7 +40,7 @@ export type StartMode = 'boot' | 'hangar' | 'doors';
 export function startMode(): StartMode {
   const screen = QUERY.get('screen');
   if (screen === 'doors') return 'doors';
-  if (QUERY.get('boot') === '0' || (screen && screen !== 'boot')) return 'hangar';
+  if (QUERY.get('boot') === '0' || (screen && screen !== 'boot') || (DEBUG && QUERY.get('level'))) return 'hangar';
   return 'boot';
 }
 
@@ -66,6 +69,33 @@ export function applyStartParams(): void {
     turntableState: () => ({ yaw: turntable.yaw, pitch: turntable.pitch, zoom: turntable.zoom, zoomTarget: turntable.zoomTarget, vel: turntable.vel, enabled: turntable.enabled }),
   });
   registerDebug('flowState', { get: () => flow.state });
+  // Phase 2 (brief §21): mission + sim QA surface
+  registerDebug('mission', {
+    start: (levelId: string, opts: { bot?: string; god?: boolean; seed?: number } = {}) => {
+      flow.force('launch.standby');
+      return enterMission(levelId, { bot: isBotSkill(opts.bot) ? opts.bot : null, god: opts.god, seed: opts.seed });
+    },
+    pause: () => pauseMission(),
+    resume: () => resumeMission(),
+    retry: () => retryMission(),
+    hangar: () => missionToHangar(),
+    state: () => ({ flow: flow.state, prepared: mission.prepared, progress: mission.progress, level: mission.level?.id ?? null }),
+  });
+  registerDebug('sim', {
+    state: () => {
+      const s = mission.sim;
+      if (!s) return null;
+      const p = s.player;
+      return { tick: s.tick, s: p.s, x: p.x, y: p.y, speed: p.speed, hull: p.hull, shield: p.shield, alive: p.alive, score: s.score, kills: s.kills, shots: p.shotsFired, hits: p.shotsHit, enemies: s.enemies.aliveCount, done: s.done, dropped: mission.stepper.dropped };
+    },
+    /** advance N fixed steps immediately with the current input (QA) */
+    step: (n = 1) => {
+      const s = mission.sim;
+      if (!s) return 0;
+      for (let i = 0; i < n; i++) s.step(mission.input);
+      return s.tick;
+    },
+  });
   registerDebug('launch', {
     stage: () => stage,
     bulkhead: (patch?: Partial<typeof bulkhead>) => (patch ? Object.assign(bulkhead, patch) : bulkhead),
@@ -147,6 +177,17 @@ export function applyStartParams(): void {
   flow.force(mode === 'doors' ? 'boot.doors' : 'hangar.idle');
   const screen = QUERY.get('screen');
   if (screen === 'upgrades' || screen === 'settings' || screen === 'briefing' || screen === 'camera' || screen === 'cockpit') void openScreen(screen);
+  // Phase 2 QA (brief §21): ?level=<id>&debug=1 [&bot=novice|mid|expert &god=1 &seed=n] — straight into a mission
+  const level = QUERY.get('level');
+  if (DEBUG && level) void startLevel(level);
+}
+
+async function startLevel(level: string): Promise<void> {
+  await whenContentReady();
+  if (!useLoader.getState().finished) await new Promise<void>(r => { const u = useLoader.subscribe(s => s.finished && (u(), r())); });
+  const bot = QUERY.get('bot');
+  flow.force('launch.standby');
+  await enterMission(level, { bot: isBotSkill(bot) ? bot : null, god: QUERY.get('god') === '1', seed: Number(QUERY.get('seed')) || undefined });
 }
 
 /** Waits for the hangar (content + loader), then opens a modal or runs the launch flow. */

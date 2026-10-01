@@ -10,6 +10,7 @@ import { LookdevContent } from './LookdevContent';
 import { Hangar } from './hangar/Hangar';
 import { Bulkhead } from './cockpit/Bulkhead';
 import { Cockpit, CockpitLights } from './cockpit/Cockpit';
+import { MissionDriver } from './mission/MissionDriver';
 import { useUi } from '../state/ui.store';
 import { useProfile } from '../state/profile.store';
 import { QUERY, DEBUG } from '../core/constants';
@@ -52,6 +53,7 @@ export function World() {
       <BlastDoors controller={bootDoors} position={[0, 0, DOOR_Z]} particles={q.particles} reduceFlashing={reduceFlashing} reduceMotion={reduceMotion} />
       {!lookdev && <Bulkhead reduceMotion={reduceMotion} />}
       {!lookdev && cockpitOn && <Cockpit reduceMotion={reduceMotion} />}
+      {!lookdev && <MissionDriver />}
       <fog attach="fog" args={['#04050A', 40, 110]} />
     </>
   );

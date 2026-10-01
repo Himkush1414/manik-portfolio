@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c), 08a2298 (sim core), 2a78216 (flow + input), 53f3701 (bot) | carry-overs, sim core, FSM + input, bot skeleton, perf instrumentation DONE; next: empty mission scene + mission post chain + programs-constant test (closes 2A) |
+| 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, (this) | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -30,7 +30,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | 2I Level 10 + THE WARDEN | TODO | | |
 | 2J Audio, balance, soak, final QA | TODO | | |
 
-**Next step:** 2A (see P2.2).
+**Next step:** 2B — wormhole tunnel shader + quality tiers, launch catapult + Veil Gate + breach, speed FX (see P2.2). Before 2B's perf gate: run the 5-minute heap-trend check (an iGPU empty-mission run showed +6 MB over 20 s; dGPU +0.3 MB over 30 s).
 
 ## P2.1 Architecture (brief §3, decided)
 
@@ -207,6 +207,15 @@ Decisions (2026-10-01, before code):
    bump needed. Settings fields added (brief §9, rows ship in 2C):
    `controls.aimAssist` (low), `controls.autoFire`, `camera.rollCoupling`,
    `graphics.speedLines`, `accessibility.subtitles` / `subtitleSize`.
+   Pushed `2a78216`.
+5. **Mission frame hooks (2A, 2026-10-01).** `stage.mission` flag (Stage);
+   `MISSION_ORIGIN` (sceneBridge); Hangar hall hidden while a mission is
+   live; Cockpit stops writing fog and its lights while borrowed;
+   StudioLights + CockpitLights register with `render/lightRig.ts`; PostFX
+   yields to `MissionPostFX` while `stage.mission` is on (+ perfMon hooks);
+   launchTimeline `returnToHangar()` split into the flow guard +
+   exported `returnSequence(onSealed?)` (same choreography; the mission
+   exits through it). qa:phase1 cockpit group re-run on prod: clean.
 
 ### P2 perf table — hangar (prod build, 1920x1080)
 
@@ -226,6 +235,13 @@ Decisions (2026-10-01, before code):
   pre-gesture context (Chrome autoplay warning). It happens once, in the
   boot/hangar, never in a mission (a mission is always entered by clicks).
 - Thumbnails appear ~4 s later than Phase 1 (2-strip readback, fences).
+
+### P2 perf table — missions (prod build, 1920x1080, bot mid, ?drs=0)
+
+| scenario | GPU | preset | avg fps | p95 ms | sim ms avg/p95 | render ms avg/p95 | long tasks | calls | tris | programs const | heap delta |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| empty mission (2A), 30 s | RTX 3050 | HIGH | 60 | 16.8 | 0.04 / 0.1 | 1.7 / 2.9 | 0 | 34 | 48k | yes (93) | +0.3 MB |
+| empty mission (2A), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.05 / 0.1 | 2.4 / 3.6 | 0 | 28 | 48k | yes | +6 MB (check) |
 
 ## P2.8 Engine notes (Phase 2)
 
@@ -302,6 +318,26 @@ Decisions (2026-10-01, before code):
   (another process held ~12 % of its 3D engine during one re-measure: 0.72
   scale 38 -> 29 fps, 0.5 55 -> 45); the governor then settles one step
   lower and still holds >= 30 fps (36-43 fps measured).
+- **Empty mission scene (2A gate):** `scenes/mission/missionRuntime.ts`
+  (mission root at MISSION_ORIGIN, player attitude wrapper, stepper, rig),
+  `MissionLoader.prepare(level, opts)` (player ship, sliced compile of the
+  hidden mission root against the real lights + fog, mission composer warmed
+  off-screen, new Sim + optional Bot; `mission.progress` = SYSTEMS SYNC),
+  `MissionDriver` (useFrame -3: input -> fixed steps -> events -> flow ->
+  interpolated ship attitude: bank -k vx, pitch k vy, 30 % nose yaw to the
+  reticle, 2 pi barrel roll -> camera rig), `render/rigs/ThirdPersonRig.ts`
+  (CameraRig: offset (0, 3.2, 12), FOV 70 x settings/75, lags 0.08 / 0.12 s,
+  25 % look-ahead; writes the camera director), `render/MissionPostFX.tsx`
+  (separate composer: bloom at preset res, CA, exposure, AgX, vignette,
+  grain), `app/mission/missionFlow.ts` (LAUNCH -> prepare -> frame swap ->
+  playing; lights borrowed + fog + shadow auto-update off; pause on Esc /
+  blur / lock loss, click resumes; death / complete auto-continue until 2D /
+  2G screens; HANGAR via the bulkhead sequence with the mission torn down
+  while sealed). QA: `?level=<id>&debug=1[&bot=&god=1&seed=]`,
+  `__G1__.mission.start/pause/resume/retry/hangar/state`,
+  `__G1__.sim.state/step`, `tools/qa-mission.mjs` (programs / geometries /
+  textures identical after warm-up vs after the run, long tasks, perf table,
+  exit to the hangar).
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;

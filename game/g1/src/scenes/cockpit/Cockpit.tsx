@@ -27,6 +27,7 @@ import { runSliced } from '../../core/slicer';
 import { peekCockpit, releaseCockpit } from './cockpitPrebuild';
 import { registerDebug } from '../../debug/debugApi';
 import { QUALITY } from '../../render/quality';
+import { lightRig } from '../../render/lightRig';
 
 const ORIGIN = new Vector3(...COCKPIT_ORIGIN);
 const FOG_HANGAR = [40, 110] as const;
@@ -115,7 +116,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
     const on = stage.cockpit >= 0.5;
     g.visible = on;
     const fog = scene.fog as Fog | null;
-    if (fog) {
+    if (fog && stage.mission < 0.5) {
       fog.near = on ? FOG_COCKPIT[0] : FOG_HANGAR[0];
       fog.far = on ? FOG_COCKPIT[1] : FOG_HANGAR[1];
     }
@@ -173,8 +174,11 @@ export function CockpitLights() {
   }, []);
   useEffect(() => {
     if (key.current) key.current.target = target;
+    lightRig.register('cockpitKey', key.current);
+    lightRig.register('cockpitDash', dash.current);
   }, [target]);
   useFrame(() => {
+    if (lightRig.borrowed) return; // the mission drives them (render/lightRig.ts)
     const on = stage.cockpit >= 0.5 ? 1 : 0;
     const P = cockpitFx.power.dash;
     // also lights the bulkhead while it fills the view (hangar or cockpit)

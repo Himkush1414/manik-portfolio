@@ -15,6 +15,10 @@ export const COCKPIT_ORIGIN: [number, number, number] = [0, 0, -2600];
 export const MIRROR_LAYER = 3;
 export const MIRROR_SURFACE_LAYER = 4;
 
+/** Phase 2 mission frame: 3000 u below the hangar, ~4 km from the cockpit
+ *  (beyond both far planes). Render places entities at z = -(s - playerS). */
+export const MISSION_ORIGIN: [number, number, number] = [0, -3000, 0];
+
 import type { Camera, Scene, WebGLRenderer } from 'three';
 
 export type WorldHandles = { gl: WebGLRenderer; scene: Scene; camera: Camera };

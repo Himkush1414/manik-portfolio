@@ -134,6 +134,17 @@ export function chooseCamera(mode: CameraMode): void {
 /** ESC / HUD button: reverse door sequence back to the hangar, state intact. */
 export function returnToHangar(): boolean {
   if (!flow.send('ABORT_TO_HANGAR')) return false;
+  returnSequence();
+  return true;
+}
+
+/**
+ * The reverse bulkhead sequence (doors close over whatever is on screen,
+ * swap to the hangar while sealed, doors open). Phase 2: a mission leaves
+ * through it too (flow HANGAR -> launch.returning); `onSealed` tears the
+ * mission frame down at the swap.
+ */
+export function returnSequence(onSealed?: () => void): void {
   tl?.kill();
   gsap.killTweensOf(cockpitFx);
   sfx.play('deny');
@@ -154,6 +165,7 @@ export function returnToHangar(): boolean {
   }, [], 1.25);
   // swap back while sealed
   tl.call(() => {
+    onSealed?.();
     stopCockpitBed(0.5);
     powerDown();
     stage.cockpit = 0;
@@ -171,7 +183,6 @@ export function returnToHangar(): boolean {
     director.focus.set(...VIEWS.hangar.focus);
     flow.send('RETURNED');
   }, [], 3.2);
-  return true;
 }
 
 export type LaunchJump = 'briefing' | 'camera' | 'cockpit';

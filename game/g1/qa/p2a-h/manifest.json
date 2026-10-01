@@ -1,0 +1,129 @@
+{
+ "shots": [
+  {
+   "group": "cockpit",
+   "name": "1-doors-closing",
+   "file": "cockpit-1-doors-closing.png",
+   "info": {
+    "drawCalls": 119,
+    "triangles": 286920,
+    "textures": 88,
+    "geometries": 139,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "2-doors-sealed",
+   "file": "cockpit-2-doors-sealed.png",
+   "info": {
+    "drawCalls": 119,
+    "triangles": 286920,
+    "textures": 88,
+    "geometries": 142,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "3-reveal",
+   "file": "cockpit-3-reveal.png",
+   "info": {
+    "drawCalls": 156,
+    "triangles": 79275,
+    "textures": 96,
+    "geometries": 220,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "4-systems-boot",
+   "file": "cockpit-4-systems-boot.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 96,
+    "geometries": 220,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "5-briefing-typing",
+   "file": "cockpit-5-briefing-typing.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 101,
+    "geometries": 221,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "6-briefing",
+   "file": "cockpit-6-briefing.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 101,
+    "geometries": 221,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "7-camera-select",
+   "file": "cockpit-7-camera-select.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 106,
+    "geometries": 222,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "8-standby",
+   "file": "cockpit-8-standby.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 111,
+    "geometries": 223,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "9-mirror-centre",
+   "file": "cockpit-9-mirror-centre.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 111,
+    "geometries": 223,
+    "programs": 91
+   }
+  }
+ ],
+ "checks": {
+  "mirrorsIdleInHangar": true,
+  "mirrorRefreshPerSecIGPU": 6,
+  "cockpitTris": 29720
+ },
+ "logs": {
+  "cockpit": []
+ },
+ "errors": {},
+ "perf": {},
+ "budgets": {
+  "maxDrawCalls": 156,
+  "maxTriangles": 286920,
+  "drawCallsOk": true,
+  "trianglesOk": true
+ },
+ "consoleClean": true
+}

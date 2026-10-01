@@ -145,3 +145,28 @@ export const INPUT = {
   /** fine positioning (reticle steers the ship) only while the mouse moved this recently */
   steerActive: 0.8,
 } as const;
+
+/** Camera rigs (brief §8). Offsets in ship space (x right, y up, z = behind). */
+export const RIGS = {
+  third: { offset: [0, 3.2, 12] as const, fov: 70, posLag: 0.08, rotLag: 0.12, lookAhead: 0.25, lookDist: 60 },
+  chase: { offset: [0, 1.6, 6.5] as const, fov: 78, posLag: 0.04, rotLag: 0.07, lookAhead: 0.3, lookDist: 50, rollCoupling: 1.4 },
+  cockpit: { fov: 82 },
+  /** the settings FOV (default 75) scales every rig's base FOV */
+  fovBase: 75,
+  /** blend between rigs (s), never a hard cut */
+  blend: 0.6,
+  /** visual ship attitude from motion */
+  bankPerVx: 0.032,
+  pitchPerVy: 0.02,
+} as const;
+
+/** Borrowed light rig in the mission frame (brief §4 rule 3; render/lightRig.ts). Offsets from MISSION_ORIGIN. */
+export const MISSION_LIGHTS = {
+  key: { pos: [8, 34, 95] as const, color: '#ffe8d9', intensity: 3.4, angle: 0.5, penumbra: 0.6 },
+  target: [0, -2, -120] as const,
+  /** core backlight: far ahead, shining back at the play space (rims on every silhouette) */
+  rimA: { pos: [-34, 16, -430] as const, color: '#7B5BFF', intensity: 7, angle: 0.32, penumbra: 0.7 },
+  rimB: { pos: [36, -12, -430] as const, color: '#7FD1FF', intensity: 5.5, angle: 0.32, penumbra: 0.7 },
+  hemi: { sky: '#2a3168', ground: '#04050A', intensity: 0.4 },
+  fog: { color: '#1A1F5C', near: 150, far: 520 },
+} as const;

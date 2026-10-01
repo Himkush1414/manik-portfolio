@@ -30,6 +30,7 @@ import { ExposureEffect, TransitionBlurEffect, scaleBloom } from './effects';
 import { POST } from '../data/render.config';
 import { frameInfoBegin, frameInfoEnd, registerDebug } from '../debug/debugApi';
 import { perfMon } from './perfMon';
+import { stage } from '../scenes/Stage';
 
 export type PostFXProps = {
   /** scene allows AO (hangar, cockpit) */
@@ -142,6 +143,7 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
     const composer = composerRef.current;
     const chain = chainRef.current;
     if (!composer || !chain) return;
+    if (stage.mission >= 0.5) return; // the mission composer owns the frame (MissionPostFX)
 
     // FPS cap (Uncapped / 60 / 30): skip frames rather than fight rAF
     const cap = graphics.fpsCap;

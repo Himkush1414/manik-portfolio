@@ -5,6 +5,7 @@
 import { useFrame } from '@react-three/fiber';
 import { CameraDirector, director, BOOT_FX_POS } from '../render/cameraDirector';
 import { PostFX } from '../render/PostFX';
+import { MissionPostFX } from '../render/MissionPostFX';
 import { BootFX } from './boot/BootFX';
 import { BOOT_LAYER, bootFx } from './boot/bootFxParams';
 import { World } from './World';
@@ -17,8 +18,9 @@ import gsap from 'gsap';
 import { useFlow, isBoot } from '../app/flow';
 import { BOOT } from '../data/boot.config';
 
-/** world: 0 = boot FX only, 1 = full world. cockpit: 0 = hangar, 1 = cockpit (swapped while the bulkhead is sealed). */
-export const stage = { world: 0, cockpit: 0 };
+/** world: 0 = boot FX only, 1 = full world. cockpit: 0 = hangar, 1 = cockpit (swapped while the bulkhead is sealed).
+ *  mission (Phase 2): 1 = the mission frame is live (hangar hidden, mission post chain renders). */
+export const stage = { world: 0, cockpit: 0, mission: 0 };
 
 function LayerMask() {
   useFrame(({ camera }) => {
@@ -62,6 +64,7 @@ export function Stage() {
       <BootFX position={BOOT_FX_POS} particles={q.particles} reduceMotion={reduceMotion} />
       {geometryReady && worldAllowed && <World />}
       <PostFX ao dofTarget={director.focus} dofRange={12} />
+      <MissionPostFX />
     </>
   );
 }

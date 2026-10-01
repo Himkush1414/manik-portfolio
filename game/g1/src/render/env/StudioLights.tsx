@@ -3,15 +3,25 @@
 // low fill. The key is a SPOT cone aimed at the pad (not a directional light)
 // so it never lights the bay doors' outer face. Bias tuned against acne.
 import { useLayoutEffect, useRef } from 'react';
-import { Object3D, type SpotLight } from 'three';
+import { Object3D, type HemisphereLight, type SpotLight } from 'three';
 import { HEX } from '../palette';
+import { lightRig } from '../lightRig';
 
 type Props = { shadowMapSize?: number; keyIntensity?: number };
 
 export function StudioLights({ shadowMapSize = 2048, keyIntensity = 4.2 }: Props) {
   const key = useRef<SpotLight>(null);
   const target = useRef(new Object3D());
+  const rimA = useRef<SpotLight>(null);
+  const rimB = useRef<SpotLight>(null);
+  const hemi = useRef<HemisphereLight>(null);
   useLayoutEffect(() => {
+    // Phase 2: the mission borrows these (render/lightRig.ts; no new lights)
+    lightRig.register('key', key.current);
+    lightRig.register('rimA', rimA.current);
+    lightRig.register('rimB', rimB.current);
+    lightRig.register('hemi', hemi.current);
+    lightRig.register('target', target.current);
     const l = key.current;
     if (!l) return;
     target.current.position.set(0, 1, 0);
@@ -42,9 +52,9 @@ export function StudioLights({ shadowMapSize = 2048, keyIntensity = 4.2 }: Props
       {/* rims are narrow, STEEP spots on the pad (not directional): a
           directional rim grazed the whole deck + walls and tinted the bay
           lilac; steep cones spend what passes the ship on the dark pad */}
-      <spotLight position={[-15, 13, -15]} target={target.current} angle={0.26} penumbra={0.85} distance={0} decay={0} intensity={1.5} color={HEX.nebula} />
-      <spotLight position={[16, 12, -14]} target={target.current} angle={0.26} penumbra={0.85} distance={0} decay={0} intensity={1.3} color={HEX.ice} />
-      <hemisphereLight args={['#1a2040', '#04050A', 0.12]} />
+      <spotLight ref={rimA} position={[-15, 13, -15]} target={target.current} angle={0.26} penumbra={0.85} distance={0} decay={0} intensity={1.5} color={HEX.nebula} />
+      <spotLight ref={rimB} position={[16, 12, -14]} target={target.current} angle={0.26} penumbra={0.85} distance={0} decay={0} intensity={1.3} color={HEX.ice} />
+      <hemisphereLight ref={hemi} args={['#1a2040', '#04050A', 0.12]} />
     </>
   );
 }
