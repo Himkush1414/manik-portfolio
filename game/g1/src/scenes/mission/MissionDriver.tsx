@@ -13,6 +13,8 @@ import { perfMon } from '../../render/perfMon';
 import { rigAim } from '../../render/rigs/ThirdPersonRig';
 import { PLAYER, RIGS } from '../../data/mission';
 import type { EventReader } from '../../game/core/events';
+import { curveAt } from '../../game/rail';
+import { TUNNEL } from '../../data/tunnel';
 
 let reader: EventReader | null = null;
 let readerSim: unknown = null;
@@ -54,6 +56,14 @@ export function MissionDriver() {
     if (mission.ship) {
       mission.ship.setEngineLevel(p.boosting ? 1 : p.braking ? 0.25 : 0.6);
       mission.ship.update(state.clock.elapsedTime);
+    }
+
+    // ---- wormhole: rail-locked scroll from the interpolated rail position
+    mission.time += dt * mission.timeScale;
+    if (mission.tunnel) {
+      const ps = p.prevS + (p.s - p.prevS) * a;
+      const storm = mission.qa.storm >= 0 ? mission.qa.storm : curveAt(sim.level.mood.storm, ps);
+      mission.tunnel.update(ps, Math.min(1.5, p.speed / TUNNEL.speedRef), mission.time, storm);
     }
 
     // ---- camera: the reticle the HUD shows is the raw (late-latched) one

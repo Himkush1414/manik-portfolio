@@ -165,8 +165,8 @@ export const MISSION_LIGHTS = {
   key: { pos: [8, 34, 95] as const, color: '#ffe8d9', intensity: 3.4, angle: 0.5, penumbra: 0.6 },
   target: [0, -2, -120] as const,
   /** core backlight: far ahead, shining back at the play space (rims on every silhouette) */
-  rimA: { pos: [-34, 16, -430] as const, color: '#7B5BFF', intensity: 7, angle: 0.32, penumbra: 0.7 },
-  rimB: { pos: [36, -12, -430] as const, color: '#7FD1FF', intensity: 5.5, angle: 0.32, penumbra: 0.7 },
+  rimA: { pos: [-34, 16, -430] as const, color: '#7B5BFF', intensity: 2.6, angle: 0.32, penumbra: 0.7 },
+  rimB: { pos: [36, -12, -430] as const, color: '#7FD1FF', intensity: 2.0, angle: 0.32, penumbra: 0.7 },
   hemi: { sky: '#2a3168', ground: '#04050A', intensity: 0.4 },
   fog: { color: '#1A1F5C', near: 150, far: 520 },
 } as const;

@@ -46,7 +46,8 @@ async function beginFrame(): Promise<void> {
   lightRig.borrow();
   applyLights();
   if (fog) {
-    fog.color.set(MISSION_LIGHTS.fog.color);
+    // enemies emerge from haze the colour of the corridor's mid tones
+    fog.color.copy(mission.tunnel?.uniforms.uMid.value ?? fog.color.set(MISSION_LIGHTS.fog.color));
     fog.near = MISSION_LIGHTS.fog.near;
     fog.far = MISSION_LIGHTS.fog.far;
   }

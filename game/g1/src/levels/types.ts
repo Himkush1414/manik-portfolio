@@ -28,16 +28,12 @@ export type CommLine = { atM: number; speaker: Speaker; text: string; static?: b
 export type TutorialAction = 'move' | 'aim' | 'fire' | 'roll' | 'boost';
 export type TutorialHint = { atM: number; action: TutorialAction; /** auto-dismiss distance if never performed */ untilM?: number };
 
-/** Tunnel look (render side reads it; the sim ignores it). Colours = palette keys or hex. */
+/** Tunnel look (render side reads it; the sim ignores it): a mood preset
+ *  (data/tunnel.ts MOODS) + optional overrides (generator-friendly numbers /
+ *  colour strings) + the storm intensity curve. */
 export type TunnelMood = {
-  /** near, mid, far core */
-  palette: readonly [string, string, string];
-  accent: string;
-  twist: number;
-  flow: number;
-  ringDensity: number;
-  infestation: number;
-  turbulence: number;
+  preset: 'l1' | 'l22' | 'l10';
+  overrides?: Readonly<Partial<{ near: string; mid: string; far: string; core: string; filament: string; vein: string; pulse: number; twist: number; flow: number; ringDensity: number; infestation: number; turbulence: number; glow: number }>>;
   /** storm intensity curve [atM, 0..1] */
   storm: readonly (readonly [number, number])[];
 };

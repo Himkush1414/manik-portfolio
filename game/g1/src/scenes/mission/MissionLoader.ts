@@ -14,6 +14,7 @@ import { Sim } from '../../game/sim';
 import { Bot } from '../../game/bot/bot';
 import type { LevelDef } from '../../levels/types';
 import { whenWorldMounted } from '../sceneBridge';
+import { buildTunnelSteps } from '../../render/mission/tunnel/Tunnel';
 import { mission, type MissionOptions } from './missionRuntime';
 
 let inflight: Promise<void> | null = null;
@@ -44,7 +45,17 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
     mission.ship = ship;
     mission.shipKey = key;
   }
-  mission.progress = 0.2;
+  mission.progress = 0.15;
+  // the wormhole: built once (noise bake sliced), reused across launches
+  if (!mission.tunnel) {
+    mission.tunnel = await runSliced('mission:tunnel', buildTunnelSteps(level.seed));
+    mission.root.add(mission.tunnel.group);
+  }
+  const t = mission.tunnel;
+  t.setTier(useSettings.getState().graphics.preset);
+  t.setMood(mission.qa.mood ? { preset: mission.qa.mood, storm: level.mood.storm } : level.mood);
+  t.setPath(level.pathParams.amp, level.pathParams.freq);
+  mission.progress = 0.3;
   // every program of the mission frame, compiled in <= 4 ms slices (hidden root included)
   const vis = mission.root.visible;
   mission.root.visible = true;

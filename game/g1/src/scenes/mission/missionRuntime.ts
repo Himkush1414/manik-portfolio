@@ -8,6 +8,7 @@ import type { Sim } from '../../game/sim';
 import type { Bot } from '../../game/bot/bot';
 import type { LevelDef } from '../../levels/types';
 import type { BuiltShip } from '../../ships/ShipFactory';
+import type { Tunnel } from '../../render/mission/tunnel/Tunnel';
 import type { BotSkillId } from '../../data/bot';
 import { ThirdPersonRig } from '../../render/rigs/ThirdPersonRig';
 import { MISSION_ORIGIN } from '../sceneBridge';
@@ -31,6 +32,11 @@ export const mission = {
   sim: null as Sim | null,
   bot: null as Bot | null,
   ship: null as BuiltShip | null,
+  tunnel: null as Tunnel | null,
+  /** QA overrides (?mood= ?storm=) */
+  qa: { mood: null as null | 'l1' | 'l22' | 'l10', storm: -1 },
+  /** presentation clock for shaders (never the sim clock) */
+  time: 0,
   shipKey: '',
   opts: {} as MissionOptions,
   input: emptyInput(),

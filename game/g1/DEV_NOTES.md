@@ -19,8 +19,8 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, (this) | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
-| 2B Wormhole + launch | TODO | | |
+| 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
+| 2B Wormhole + launch | IN PROGRESS | (tunnel) | tunnel shell + tiers + 3 moods DONE; next: speed FX (streaks, FOV, radial blur/CA), launch catapult + Veil Gate + breach, set pieces, perf gate + heap trend |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
@@ -30,7 +30,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | 2I Level 10 + THE WARDEN | TODO | | |
 | 2J Audio, balance, soak, final QA | TODO | | |
 
-**Next step:** 2B — wormhole tunnel shader + quality tiers, launch catapult + Veil Gate + breach, speed FX (see P2.2). Before 2B's perf gate: run the 5-minute heap-trend check (an iGPU empty-mission run showed +6 MB over 20 s; dGPU +0.3 MB over 30 s).
+**Next step:** 2B continues — speed FX, launch sequence + Veil Gate, set pieces (see P2.2). Before 2B's perf gate: run the 5-minute heap-trend check (an iGPU empty-mission run showed +6 MB over 20 s; dGPU +0.3 MB over 30 s).
 
 ## P2.1 Architecture (brief §3, decided)
 
@@ -242,6 +242,10 @@ Decisions (2026-10-01, before code):
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | empty mission (2A), 30 s | RTX 3050 | HIGH | 60 | 16.8 | 0.04 / 0.1 | 1.7 / 2.9 | 0 | 34 | 48k | yes (93) | +0.3 MB |
 | empty mission (2A), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.05 / 0.1 | 2.4 / 3.6 | 0 | 28 | 48k | yes | +6 MB (check) |
+| tunnel L1 (2B), 20 s | RTX 3050 | HIGH | 60 | 16.8 | 0.03 | 1.4 / 2.7 | 0 | 37 | 79k | yes (99) | -7.9 MB (GC) |
+| tunnel L1 (2B), 20 s | RTX 3050 | MEDIUM | 60 | 16.8 | 0.03 | 1.3 / 2.6 | 0 | 32 | 72k | yes | +0.3 MB |
+| tunnel L1 (2B), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.04 | 2.0 / 3.5 | 0 | 30 | 72k | yes | -3.6 MB (GC) |
+| tunnel L1 (2B), 20 s | UHD 770 | MEDIUM (DRS frozen) | 41.9 | 33.6 | 0.05 | 1.7 / 3.3 | 0 | 32 | 72k | yes | -0.4 MB |
 
 ## P2.8 Engine notes (Phase 2)
 
@@ -338,6 +342,25 @@ Decisions (2026-10-01, before code):
   `__G1__.sim.state/step`, `tools/qa-mission.mjs` (programs / geometries /
   textures identical after warm-up vs after the run, long tasks, perf table,
   exit to the hangar).
+- **Wormhole (2B):** `render/mission/tunnel/` — `tunnelNoise.ts` (seamless
+  periodic-fbm RGBA 256^2, 4 channel frequencies, baked in idle slices),
+  `tunnelMaterial.ts` (shell: depth grade near -> mid -> far, big swirl banks
+  for volume + indigo/violet gas by depth, 1-4 layers of THIN ISO-LINE
+  threads masked into patches, storm arcs (ARCS define), rail-locked
+  travelling rings fading in with distance, infestation veins (iso-lines in
+  patches) over darker tissue ridges + Danger heartbeat, HDR core haze,
+  limb darkening, IGN dither; veil shell (HIGH+, additive wisps); core disc
+  (HDR glow + analytic rays, same path offset as the tube end)),
+  `Tunnel.ts` (tier materials share ONE uniform object; hidden warm-up
+  holders make every tier compile in prepare; rail phases fract-ed / mod-ed
+  in double on the CPU; cosmetic path offset relative to the player).
+  `data/tunnel.ts`: geometry, tiers, MOODS l1 / l22 / l10. LevelDef mood =
+  `{ preset, overrides?, storm }`. LESSONS: (1) a ridged transform of fbm
+  lights the whole wall (fbm clusters at 0.5) -> threads are iso-lines
+  `1 - |n - 0.5| * W`, cubed, W 18-40; (2) isotropic texture = marble ->
+  stretch along the rail (220 m per repeat, 8 around) so it reads as flow;
+  (3) uv.x from the geometry (duplicated seam column), never atan: no seam.
+  QA: `&mood=l1|l22|l10&storm=0..1` with `?level=`.
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;
