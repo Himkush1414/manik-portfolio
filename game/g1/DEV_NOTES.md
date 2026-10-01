@@ -35,9 +35,9 @@ this file alone. Updated after every slice.
 | 17 accessibility, resilience, pitfalls | 1H | DONE (axe 0 violations, focus rings, retry UI, context restore) |
 | 18 QA protocol (qa:phase1) | 1H | DONE (84 shots scored >= 4, budgets met, console clean) |
 | 19 handoff contract | 1H | DONE (§7 below, exact signatures) |
-| 20 final report | 1H | next |
+| 20 final report | — | DONE (§10 below) — PHASE 1 COMPLETE |
 
-**Next step:** the first step above not marked DONE; slice sub-steps are in §5.
+**Next step:** Phase 1 is complete and frozen. Wait for the Phase 2 brief; Phase 2 starts from the §7 contract (see §10 "Next step for Phase 2").
 
 ---
 
@@ -664,3 +664,50 @@ Phase 1 is frozen: later phases feed these APIs data. Signatures are exact.
 - Integrated GPUs (UHD 770 class) run the HIGH preset at ~16-23 fps; the
   runtime degrade drops DPR/AO/DOF. The brief's target is GTX 1660 class.
 - Firefox / Safari not tested in this environment (no browsers installed).
+
+## 10. Phase 1 final report (brief §20) — 2026-10-01
+
+**Live:** `/game/g1/` (dev: `npx vite` at the portfolio root; prod: `npm run
+build` -> `dist/game/g1/`, a separate build graph, portfolio bundle unchanged).
+Boot (12.15 s, skippable, reduced-motion 5.7 s) -> blast doors -> hangar (six
+ships, liveries, pilots, purchase, upgrades, settings) -> START MISSION ->
+bulkhead -> cockpit (systems boot, combiner briefing, camera select, standby,
+ESC back). **Test:** `?boot=0` skip boot; `?screen=doors|upgrades|settings|
+briefing|camera|cockpit`; `?ship=<id>`, `?livery=n`, `?pilot=onyx|ember`;
+with `?debug=1`: `?unlock=all`, `?credits=n`, `window.__G1__` (§7). Full QA:
+`npm run qa:phase1` (+ `qa-a11y`, `qa-resilience`, `qa-soak`, `qa-audio`).
+
+**Slices:** 1A-1H all DONE (table at the top). Brief steps §0-§20 all DONE.
+
+**QA scores:** 84 captures across all six §18 groups, each inspected and
+scored; all >= 4 after fixes (boot 4-5, doors 5, ships x liveries 4-5,
+angles 4-5, swap / pilots / locked 5, modals 4-5, cockpit 4-5, resolutions
+4-5). Console: zero errors / warnings in every group, dev and prod. axe WCAG
+2 A/AA: 0 violations. Unit tests: 41 passing (save migration, unlocks,
+atomic purchase, combat rating, binding conflicts, FSM guards, ShipSpec,
+LOD budgets, loader retry).
+
+**Perf vs budgets (brief §6):** draw calls max 187 (<= 220); triangles max
+295k incl. reflection pass (<= 700k); ships 10-45k LOD0 (HALCYON 44.9k <=
+60k); cockpit 29.7k (<= 220k); 60 fps hangar + cockpit at 1080p HIGH on an
+RTX 3050; heap 22-24 MB, flat over 20 hangar <-> cockpit round trips. Over
+budget: one ~55 ms post-boot task and the one-off ~49 ms AudioContext
+creation (§9).
+
+**Assets:** none downloaded — fonts only (SIL OFL 1.1, @fontsource; ASSETS.md).
+
+**Deviations from the brief (and why):** git checkpoint pushes despite "no
+git" (owner's later Direction Guide, §1.1); nested package + peer-shared
+React/three (§1.2); `vite.config.js` touched for the separate game build +
+dev route (§1.3, the only file outside game/g1/); R3F 8 / drei 9 instead of
+latest (React 18.3.1 match, §1.4); TypeScript 5.9 (§1.5); ships fully
+procedural (§6b); no shoulder-harness / headrest geometry (outside the eye's
+frustum, §8 1G polish); Firefox / Safari untested here.
+
+**Known issues:** §9.
+
+**Next step for Phase 2:** implement the three `CameraRig`s (third / chase /
+cockpit) against `render/cameraRig.ts`, add the mission states behind
+`flow.send('LAUNCH')` from `launch.standby`, feed `MirrorRig.setSource()` the
+wormhole scene, and build L1 / mid / L10 on the frozen Phase 1 APIs (§7).
+

@@ -13,4 +13,9 @@ audio) are original work and not listed.
 | Mr Dafoe 400 | npm `@fontsource/mr-dafoe` (https://fontsource.org/fonts/mr-dafoe) | Sudtipos | SIL OFL 1.1 | 2026-09-30 | signature script |
 | Unbounded, Archivo (variable) | npm `@fontsource/unbounded`, `@fontsource-variable/archivo` | NaN / Omnibus-Type | SIL OFL 1.1 | 2026-09-30 | title-face A/B candidates only (not loaded unless chosen) |
 
-Downloaded textures / HDRIs / models: none yet (see DEV_NOTES §1B+ asset decision log).
+Downloaded textures / HDRIs / models / audio: **none** — final for Phase 1
+(2026-10-01). Ships, doors, hangar, cockpit and pilots are built in code; every
+texture is baked at runtime (canvas / bake worker); every sound is Web Audio
+synthesis. CC0 sources reviewed and rejected for the ships: DEV_NOTES §6b.
+QA-only tools (not shipped, not dependencies): axe-core (MPL-2.0), passed to
+`tools/qa-a11y.mjs` by path.

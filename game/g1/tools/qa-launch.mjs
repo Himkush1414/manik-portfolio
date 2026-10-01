@@ -20,9 +20,11 @@ const flow = () => p.evaluate(() => window.__G1__.flowState.get());
 const shot = n => p.screenshot({ path: `qa/1g-${tag}-${n}.png` });
 const trace = [];
 const t0 = await p.evaluate(() => performance.now());
+// 0.5 s beats (sealed) can fall between polls during the swap's main-thread work: run at 0.3x
+await p.evaluate(() => window.__G1__.launch.rate(0.3));
 await p.click('button[aria-label^="Start mission"]');
 const at = async (name, cond) => {
-  await p.waitForFunction(cond, null, { timeout: 15000, polling: 16 });
+  await p.waitForFunction(cond, null, { timeout: 40000, polling: 16 });
   trace.push({ at: name, state: await flow(), ms: Math.round((await p.evaluate(() => performance.now())) - t0) });
   await shot(name);
 };
@@ -31,6 +33,7 @@ await at('sealed', () => window.__G1__.launch.doorsP() < 0.001 && window.__G1__.
 await at('reveal', () => window.__G1__.launch.stage().cockpit === 1 && window.__G1__.launch.doorsP() > 0.4);
 await at('boot', () => window.__G1__.flowState.get() === 'launch.reveal' && !window.__G1__.launch.bulkhead().active);
 await at('briefing-typing', () => window.__G1__.flowState.get() === 'launch.briefing');
+await p.evaluate(() => window.__G1__.launch.rate(1));
 await p.waitForTimeout(9000);
 await shot('briefing-done');
 trace.push({ state: await flow() });
