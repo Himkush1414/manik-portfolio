@@ -20,8 +20,8 @@ production build, QA script with 0 console errors/warnings, then commit
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
-| 2B Wormhole + launch | IN PROGRESS (nearly done) | 6c06350, b6ef2fe, 80f637d, (set pieces) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes DONE; LEFT: 5-min heap trend run, storm-bolt readability (judge in 2H), close 2B |
-| 2C Flight + rigs + HUD | TODO | | |
+| 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
+| 2C Flight + rigs + HUD | IN PROGRESS | | weapon VFX, flight feel, rigs + blend, cockpit rig + live mirrors, HUD, MFDs, settings rows, production launch path |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -30,37 +30,28 @@ production build, QA script with 0 console errors/warnings, then commit
 | 2I Level 10 + THE WARDEN | TODO | | |
 | 2J Audio, balance, soak, final QA | TODO | | |
 
-**HANDOFF (2026-10-01, session cut short by usage limit) — read this first.**
-- Brief steps are the sections §0-§23. Build slices (§20) group them. Done +
-  pushed: slice **2A complete** (§3 sim/architecture, §4 carry-overs + perf
-  instrumentation + DRS, §5 rail/sim core, §7 input, §15 bot skeleton +
-  balance CLI, §17 flow states) and most of **2B (§6 wormhole + §14 launch
-  sequence)**. Current step: **§6 (slice 2B), final checks.** Fully complete
-  brief steps: §3, §4 (carry-overs, DRS, instrumentation), §5 (core), §17
-  (flow states); §0-§2 are rules/scope. Everything else is partial or not
-  started (§7 flight-feel/weapons VFX/rigs = 2C, §8 rigs = 2C, §9 HUD/UI =
-  2C/2D/2G, §10 combat = 2D/2E, §11-§13 = 2E/2F, §14 levels/boss = 2G-2I,
-  §15 balance = 2J, §16 audio = 2J, §18-§23 = ongoing / final).
-- Phase 2 pushes this session (in order): 562274a, c9dd224, ceb9559,
-  08a2298, 2a78216, 53f3701, 4fd4243, 76946db, 6c06350, b6ef2fe, 80f637d,
-  + the set-pieces push that carries this handoff.
-- **Do first when resuming:** (1) `npm run build` at the repo root, start
-  dev (5199) + preview (5198) servers; (2) run `G1_DGPU=1 node
-  tools/qa-mission.mjs --seconds 300 --heapEvery 10 --preset high` (prod)
-  for the 5-minute heap trend (brief §4 rule 8: sawtooth < 8 MB, no upward
-  slope) — record it in the mission perf table, then close 2B (status table,
-  push). (3) Start **2C**: player flight feel review, chase + cockpit rigs
-  (cockpit rig must re-use the Phase 1 cockpit in the mission frame: today
-  the mission always uses ThirdPersonRig after the breach), live mirrors in
-  missions (MirrorRig source = mission root, reduced layer set), reticle +
-  HUD (DOM overlay + combiner), weapon VFX (tracers, muzzle flash, impact
-  sparks), live MFDs, settings rows for the §9 fields (already in the
-  schema), standby auto-LAUNCH wiring (production path; today only the QA
-  `?level=` path launches).
+**HANDOFF (2026-10-01, resumed session) — read this first.**
+- Brief steps are the sections §0-§23; build slices (§20) group them. Done +
+  pushed: slice **2A** (§3, §4 carry-overs + perf instrumentation + DRS, §5,
+  §7 input core, §15 bot skeleton, §17 flow) and slice **2B** (§6 wormhole,
+  §14 launch sequence) — closed after the 5-min in-mission heap trend.
+- **Current: slice 2C** (§7 flight feel / weapons VFX, §8 rigs + mirrors, §9
+  HUD + MFDs + settings rows, production launch path). Sub-checkpoints, each
+  pushed once gated: (1) weapon VFX: tracers, orbs, muzzle flash, GPU
+  particles (impact / wall / graze / boost), wing-tip ribbons, per-ship
+  muzzles; (2) flight feel: spring attitude (data FEEL), camera follow
+  fraction + roll coupling + tunnel sway; (3) rig switcher: third / chase /
+  cockpit with the 0.6 s blend, Cycle Camera, director quaternion path;
+  (4) cockpit rig in the mission frame (Phase 1 interior on the ship's eye)
+  + live mirrors (reduced layers, cheapest tunnel variant, cost measured);
+  (5) DOM HUD (reticle late-latched, bars, combo, progress) + combiner;
+  (6) live MFDs; (7) settings rows; (8) standby auto-LAUNCH (production
+  path) + Level 1 skeleton; (9) flight-feel review + input robustness re-run
+  + perf tables + 2C close.
 - Known open items: storm bolts subtle (L22, revisit in 2H); test level's
   chamber shows as a bright "doorway" from the narrow tube (expected);
   iGPU numbers vary with the owner's editor using the iGPU (see notes);
-  ghost-echo silhouettes / Meridian fragments planned for 2G (L1 content). Before 2B's perf gate: run the 5-minute heap-trend check (an iGPU empty-mission run showed +6 MB over 20 s; dGPU +0.3 MB over 30 s).
+  ghost-echo silhouettes / Meridian fragments planned for 2G (L1 content).
 
 ## P2.1 Architecture (brief §3, decided)
 
@@ -278,6 +269,7 @@ Decisions (2026-10-01, before code):
 | tunnel L1 (2B), 20 s | UHD 770 | MEDIUM (DRS frozen) | 41.9 | 33.6 | 0.05 | 1.7 / 3.3 | 0 | 32 | 72k | yes | -0.4 MB |
 | + speed FX (2B), 20 s | RTX 3050 | HIGH / ULTRA | 60 / 60 | 16.8 | 0.03 | 0.73 / 1.4 | 0 | 38 | 79k | yes (101) | — |
 | + speed FX (2B), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.04 | 1.1 / 1.8 | 0 | 31 | 73k | yes (81) | — |
+| 2B close: 5-min soak (test corridor looped x5, bot mid), 300 s | RTX 3050 | HIGH | 60 (every 14 s window 59.6-60) | 16.8-16.9 | 0.03 / 0.1 | 1.6 / 3.9 | 0 | 38 | 79k | yes (104) | +0.09 MB/min, sawtooth 1.45 MB (rule 8: < 8 MB, flat) |
 
 ## P2.8 Engine notes (Phase 2)
 
@@ -444,6 +436,20 @@ Decisions (2026-10-01, before code):
   180-900 m (`coreHdr` 3.6): a short ramp tone-mapped into a hard white
   disc. QA: `__G1__.mission.jump(m)` warps the sim to rail position m;
   `qa-mission.mjs --heapEvery n` samples heap + slope.
+- **2B close-out (2026-10-01, resumed session):** the first 5-min heap run
+  was invalid — the 4 km test corridor completes in ~69 s, so the run spent
+  4 min in the hangar. `qa-mission.mjs --loopAt <m>` now warps the sim back
+  to 0 past rail m so a soak stays IN the mission. Result (prod, dGPU, HIGH,
+  `--seconds 300 --heapEvery 10 --loopAt 3000`): 5 loops, heap 79.6-81.0 MB,
+  slope +0.09 MB/min, sawtooth 1.45 MB, programs / geometries / textures
+  identical, console clean. A per-14 s fps probe over another 5 min: 60 fps in
+  every window (max frame <= 18 ms, 0 long tasks). UNREPRODUCED: two long
+  runs showed slow tails (hangar 8 fps after 4 min idle; mission 22 fps in
+  the last 54 s, render submit still ~2 ms = not JS). Neither reproduced in
+  a 3-min idle-hangar soak, the 5-min fps probe, a level-complete -> hangar
+  probe, or a screenshot-mid-run probe; the second coincided with heavy
+  tsc / vitest runs on the same machine. Treated as external contention;
+  the 2C round-trip soak re-checks it.
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;
