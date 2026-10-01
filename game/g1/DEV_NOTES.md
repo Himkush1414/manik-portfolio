@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b) | (a)(b)(c) carry-overs DONE; next: sim core push, then input / FSM / perf / bot / empty mission scene as separate pushes |
+| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c) | carry-overs DONE; sim core DONE (this push); next: InputManager, FSM mission states, perf instrumentation, bot skeleton, empty mission scene + programs-constant test |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -212,6 +212,41 @@ Decisions (2026-10-01, before code):
   pre-gesture context (Chrome autoplay warning). It happens once, in the
   boot/hangar, never in a mission (a mission is always entered by clicks).
 - Thumbnails appear ~4 s later than Phase 1 (2-strip readback, fences).
+
+## P2.8 Engine notes (Phase 2)
+
+- **Sim core (2A):** `src/game/core/` — `step.ts` FixedStepper (1/60 s,
+  max 5 steps/frame, 0.1 s frame clamp, epsilon so 0.5 + 0.5 steps = 1;
+  time scale stretches REAL time, presentation only), `rng.ts` (mulberry32
+  with snapshot-able state; `createStreams(seed)` -> independent sim / ai /
+  spawn streams; the renderer owns its own vfx stream), `events.ts`
+  (EventRing: typed arrays, per-consumer readers, lost-count when a reader
+  falls a ring behind, `Ev` codes), `pool.ts` (ProjectilePool SoA with
+  swap-remove — render position = pos - vel * (1 - alpha) * STEP, no
+  previous arrays; SlotPool for enemies/hazards: stable slots for instance
+  mapping + dense alive list). `game/collide.ts`: allocation-free swept
+  segment vs sphere / capsule / box (slab state at module scope — no
+  closures). `game/rail.ts`: curve lookup, ellipse radius, envelope segments.
+  `game/sim.ts` Sim: player flight (velocity command, accel 120 / decel =
+  lateralSpeed / 0.18 s, soft ellipse spring + graze events, mouse fine
+  positioning = 15 % of the reticle offset at 120 u over tau 0.25 s), roll
+  (linearly decaying impulse integrating to 6 u, i-frames 0.10-0.40 s vs
+  projectiles only), boost / brake / energy / lockout, shields + regen
+  delay, twin alternating cannons converging at 120 u, aim assist (3 deg
+  cone, steer capped at 4-6 deg, lead), swept bolt-vs-enemy with an
+  s-sorted broadphase + binary search, damage model (shield first, 0.6 s
+  hull immunity, combo reset, death event, ?god=1), combo scoring, 20 Hz HUD
+  bus (`game/hud.ts`). `data/mission.ts` (every sim tunable), `data/stats.ts`
+  (brief §7 stat formulas), `levels/types.ts` (LevelDef / SpawnEvent / ...),
+  `levels/testLevel.ts`. Tests: simcore, collide (a 380 u/s bolt cannot
+  tunnel through a 1 u target), sim (3000-step determinism, envelope, stop
+  time, roll, boost, fire rate, kill, damage, god), gameBoundary (transitive
+  import scan of src/game + src/levels: no three/React/DOM/stores, no
+  window/document/performance.now/Date.now/Math.random).
+- **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
+  debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
+  vs target drones, top + front views, HUD values, event counts;
+  `__G1__.simlab.state()`.
 
 ## P2.5 Design intent — Phase 2 assets (written before modelling)
 

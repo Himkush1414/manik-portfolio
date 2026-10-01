@@ -1,6 +1,6 @@
 // App shell: DOM overlay above the single WebGL canvas. The flow FSM decides
 // which overlay screens show; the World mounts once its geometry is built.
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { CanvasRoot, hasWebGL2 } from '../render/CanvasRoot';
 import { Stage } from '../scenes/Stage';
@@ -17,8 +17,24 @@ import { HangarUI } from '../ui/screens/hangar/HangarUI';
 import { FpsOverlay } from '../ui/screens/FpsOverlay';
 import { LaunchHUD } from '../ui/screens/launch/LaunchHUD';
 import { FaultPanel } from '../ui/screens/FaultPanel';
+import { QUERY } from '../core/constants';
+import { debugEnabled } from '../debug/debugApi';
+
+// QA lab screens (debug only, code-split out of the game bundle)
+const SimLab = lazy(() => import('../debug/SimLab').then(m => ({ default: m.SimLab })));
+const LAB = debugEnabled ? QUERY.get('screen') : null;
 
 export function App() {
+  if (LAB === 'simlab')
+    return (
+      <Suspense fallback={null}>
+        <SimLab />
+      </Suspense>
+    );
+  return <Game />;
+}
+
+function Game() {
   useEffect(() => {
     registerBootTasks();
     applyStartParams();
