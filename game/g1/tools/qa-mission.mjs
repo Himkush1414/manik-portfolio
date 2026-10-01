@@ -23,9 +23,20 @@ const tPlaying = (Date.now() - t0) / 1000;
 await p.waitForTimeout(3000); // warm-up
 const before = await p.evaluate(() => { window.__G1__.perf.reset('mission'); return window.__G1__.info(); });
 await p.screenshot({ path: `${out}/mission-${level}-start.png` });
-await p.waitForTimeout((seconds / 2) * 1000);
-await p.screenshot({ path: `${out}/mission-${level}-mid.png` });
-await p.waitForTimeout((seconds / 2) * 1000);
+// heap trend (brief §4 rule 8): sample every --heapEvery s (Chrome --enable-precise-memory-info)
+const heapEvery = +opt('heapEvery', 0);
+const heap = [];
+const tStart = Date.now();
+let midShot = false;
+while (Date.now() - tStart < seconds * 1000) {
+  const step = heapEvery > 0 ? heapEvery * 1000 : (seconds / 2) * 1000;
+  await p.waitForTimeout(Math.min(step, seconds * 1000 - (Date.now() - tStart)));
+  if (heapEvery > 0) heap.push(await p.evaluate(() => +(performance.memory.usedJSHeapSize / 1048576).toFixed(2)));
+  if (!midShot && Date.now() - tStart >= (seconds / 2) * 1000) {
+    midShot = true;
+    await p.screenshot({ path: `${out}/mission-${level}-mid.png` });
+  }
+}
 const after = await p.evaluate(() => window.__G1__.info());
 const table = await p.evaluate(() => window.__G1__.perf.table());
 const sim = await p.evaluate(() => window.__G1__.sim.state());
@@ -39,7 +50,9 @@ await p.waitForTimeout(1500);
 await p.screenshot({ path: `${out}/mission-${level}-back-in-hangar.png` });
 const hangarInfo = await p.evaluate(() => window.__G1__.info());
 const same = ['programs', 'geometries', 'textures'].every(k => before[k] === after[k]);
-const res = { level, bot, preset, gpu: process.env.G1_DGPU ? 'discrete' : 'integrated', secondsToPlaying: tPlaying, programsConstant: same, before, after, table, sim, flowAtEnd, hangarInfo, logs };
+// heap trend: least-squares slope (MB/min) + sawtooth amplitude
+const slope = heap.length > 2 ? (() => { const n = heap.length, xs = heap.map((_, i) => i * heapEvery / 60); const mx = xs.reduce((a, b) => a + b) / n, my = heap.reduce((a, b) => a + b) / n; let num = 0, den = 0; for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (heap[i] - my); den += (xs[i] - mx) ** 2; } return +(num / den).toFixed(3); })() : null;
+const res = { heap, heapSlopeMBperMin: slope, heapSawMB: heap.length ? +(Math.max(...heap) - Math.min(...heap)).toFixed(2) : null, level, bot, preset, gpu: process.env.G1_DGPU ? 'discrete' : 'integrated', secondsToPlaying: tPlaying, programsConstant: same, before, after, table, sim, flowAtEnd, hangarInfo, logs };
 console.log(JSON.stringify(res, null, 1));
 await b.close();
 process.exit(same && logs.length === 0 && table.longTasks.length === 0 ? 0 : 1);

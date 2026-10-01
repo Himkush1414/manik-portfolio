@@ -66,6 +66,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   t.setTier(useSettings.getState().graphics.preset);
   t.setMood(mission.qa.mood ? { preset: mission.qa.mood, storm: level.mood.storm } : level.mood);
   t.setPath(level.pathParams.amp, level.pathParams.freq);
+  t.setRadiusKeys(level.radius ?? []);
   // the Veil Gate (launch set piece): shares the corridor's noise + mood colours
   if (!mission.gate) {
     const u = t.uniforms;

@@ -17,16 +17,17 @@ export const TUNNEL = {
   repeatsU: 8,
   /** texture metres per repeat along the rail (stretched: reads as flow) */
   metresPerV: 220,
-  /** where the core haze starts / saturates (d, u) */
-  coreStart: 260,
-  coreEnd: 860,
+  /** core haze ramp (d, u): a LONG ramp — a short one tone-mapped into a flat
+   *  white disc with a hard edge (L22's pink core) */
+  coreStart: 180,
+  coreEnd: 900,
   /** limb darkening near the camera (d) */
   limb: 34,
   /** travelling rings: spacing (u) and how far they stay visible */
   ringSpacing: 70,
   ringFade: 520,
   /** core disc at the far end: HDR glow + streak rays */
-  coreHdr: 5.0,
+  coreHdr: 3.6,
   rays: 14,
   /** player speed (u/s) that maps to 1.0 in the speed-coupled effects */
   speedRef: 100,
@@ -97,4 +98,15 @@ export const SPEED_FX = {
   /** turbulence micro-shake: rumble level per (turbulence x speed) */
   rumble: 0.22,
   rumbleHz: 11,
+} as const;
+
+/** Storm lightning flashes (brief §6 storms; §9 flash budget <= 3/s). */
+export const STORM_FX = {
+  /** expected flashes per second at storm 1.0 */
+  rate: 0.7,
+  /** flash envelope decay (1/s) and peak */
+  decay: 7,
+  peak: 1,
+  /** never closer together than this (flash budget) */
+  minGap: 0.34,
 } as const;

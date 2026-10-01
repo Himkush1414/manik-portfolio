@@ -3,7 +3,7 @@
 // on 10 km levels). Variants per quality tier are compiled up front (defines
 // LAYERS 1..4, ARCS) and swapped — a tier change never compiles.
 // NaN rule (DEV_NOTES §8): every pow() base is clamped to [0, 1].
-import { AdditiveBlending, BackSide, Color, DoubleSide, ShaderMaterial, Vector3, Vector4, type Texture } from 'three';
+import { AdditiveBlending, BackSide, Color, DoubleSide, ShaderMaterial, Vector4, type Texture } from 'three';
 import { TUNNEL } from '../../../data/tunnel';
 
 export type TunnelUniforms = ReturnType<typeof createTunnelUniforms>;
@@ -32,14 +32,19 @@ export function createTunnelUniforms(noise: Texture) {
     uCore: { value: new Color() },
     uFil: { value: new Color() },
     uVein: { value: new Color() },
-    /** radius scale (chamber widening set piece) */
-    uRadius: { value: new Vector3(1, 0, 1) },
+    /** radius ramp ahead: scale at the player, scale after the ramp, ramp start d, ramp end d (chamber / collapse) */
+    uRadius: { value: new Vector4(1, 1, 1e5, 1e5 + 1) },
+    /** storm lightning flash 0..1 (0 under reduce-flashing) */
+    uFlash: { value: 0 },
   };
 }
 
 const PATH_GLSL = /* glsl */ `
   uniform vec4 uPathA;
   uniform vec4 uPathPh;
+  uniform vec4 uRadius;
+  // radius scale at distance d: the next ramp ahead (set pieces: chamber / collapse)
+  float radiusAt(float d) { return mix(uRadius.x, uRadius.y, smoothstep(uRadius.z, max(uRadius.w, uRadius.z + 1.0), d)); }
   // cosmetic curvature, relative to the player's own position (0 at d = 0)
   vec2 pathOffset(float d) {
     float ox = uPathA.x * (sin(uPathPh.x + d * uPathA.z) - sin(uPathPh.x)) + uPathA.x * 0.45 * (sin(uPathPh.y + d * uPathA.w) - sin(uPathPh.y));
@@ -50,15 +55,12 @@ const PATH_GLSL = /* glsl */ `
 
 const VERT = /* glsl */ `
   ${PATH_GLSL}
-  uniform vec3 uRadius; // x = scale, y = widen start d, z = widen length (chamber)
   varying vec2 vUv;
   varying float vD;
   void main() {
     vec3 p = position;
     float d = -p.z;
-    // chamber widening (set piece): radius grows from 1 to uRadius.x over [y, y + z]
-    float w = mix(1.0, uRadius.x, smoothstep(uRadius.y, uRadius.y + max(uRadius.z, 1.0), d));
-    p.xy *= w;
+    p.xy *= radiusAt(max(d, 0.0));
     p.xy += pathOffset(max(d, 0.0));
     vUv = uv;
     vD = d;
@@ -68,7 +70,7 @@ const VERT = /* glsl */ `
 
 const FRAG = /* glsl */ `
   uniform sampler2D tNoise;
-  uniform float uTime, uScrollV, uRingScroll, uSpeed, uStorm, uInfest, uPulse, uTwist, uFlow, uRingDensity, uGlow;
+  uniform float uTime, uScrollV, uRingScroll, uSpeed, uStorm, uInfest, uPulse, uTwist, uFlow, uRingDensity, uGlow, uFlash;
   uniform vec3 uNear, uMid, uFar, uCore, uFil, uVein;
   varying vec2 vUv;
   varying float vD;
@@ -131,11 +133,14 @@ const FRAG = /* glsl */ `
     col += uVein * vein * (0.9 + beat * 2.5) * (0.4 + 0.6 * fade);
 
     #if ARCS
-      // ---- storm arcs: thin flickering ridged lightning bands
-      float an = texture2D(tNoise, vec2(u * 0.7 + floor(t * 9.0) * 0.137, v * 0.35)).a;
+      // ---- storm arcs: thin flickering lightning iso-lines, in patches, re-rolled ~9x/s
+      vec4 na = texture2D(tNoise, vec2(u * 0.7 + floor(t * 9.0) * 0.137, v * 0.35));
       float flick = step(0.55, fract(sin(floor(t * 13.0) * 12.9898) * 43758.5453));
-      col += uFil * pow(ridged(an), 40.0) * uStorm * flick * 6.0 * fade;
+      float bolt = thread(na.a, 38.0) * smoothstep(0.5, 0.8, na.r);
+      col += uFil * bolt * uStorm * flick * 12.0 * (0.25 + 0.75 * fade);
     #endif
+    // storm lightning lights the whole throat for a beat (driven on the CPU; off under reduce-flashing)
+    col *= 1.0 + uFlash * 0.7;
 
     // ---- travelling rings (rail-locked, brighter with speed)
     float rd = fract((d + uRingScroll) / ${TUNNEL.ringSpacing.toFixed(1)} * uRingDensity);
@@ -145,7 +150,7 @@ const FRAG = /* glsl */ `
 
     // ---- vanishing-point core haze (HDR: bloom lights it)
     float core = smoothstep(${TUNNEL.coreStart.toFixed(1)}, ${TUNNEL.coreEnd.toFixed(1)}, d);
-    col = mix(col, uCore * ${TUNNEL.coreHdr.toFixed(1)} * (0.8 + 0.2 * bank), core * core);
+    col = mix(col, uCore * ${TUNNEL.coreHdr.toFixed(1)} * (0.8 + 0.2 * bank), core * sqrt(core));
 
     // ---- limb darkening near the camera (the eye goes forward)
     col *= 0.35 + 0.65 * smoothstep(0.0, ${TUNNEL.limb.toFixed(1)}, d);
@@ -206,17 +211,18 @@ export function createCoreMaterial(u: TunnelUniforms, rays: number): ShaderMater
     // the disc sits at the far end of the curved corridor: same path offset as the tube there
     vertexShader: /* glsl */ `${PATH_GLSL}
       varying vec2 vP;
-      void main(){ vP = position.xy; vec3 p = position; p.xy += pathOffset(max(-p.z, 0.0)); gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }`,
+      void main(){ vP = position.xy; vec3 p = position; p.xy *= radiusAt(max(-p.z, 0.0)); p.xy += pathOffset(max(-p.z, 0.0)); gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }`,
     fragmentShader: /* glsl */ `
       uniform float uTime;
-      uniform vec3 uCore, uFar;
+      uniform vec3 uCore;
       varying vec2 vP;
       void main() {
         float r = length(vP) / ${TUNNEL.radius.toFixed(1)};
         float a = atan(vP.y, vP.x);
         float glow = exp(-r * r * 2.2);
         float rays = pow(clamp(abs(sin(a * ${(rays / 2).toFixed(1)} + uTime * 0.07)), 0.0, 1.0), 18.0) * exp(-r * 1.6);
-        vec3 col = mix(uFar, uCore * ${TUNNEL.coreHdr.toFixed(1)}, clamp(glow + rays * 0.6, 0.0, 1.0)) + uCore * rays * 2.0;
+        // the base matches the tube's far end (full core haze) so no rim shows, even widened (chamber)
+        vec3 col = uCore * ${TUNNEL.coreHdr.toFixed(1)} * (0.9 + 0.5 * exp(-r * r * 10.0)) + uCore * rays * 2.0;
         gl_FragColor = vec4(col, 1.0);
       }`,
     side: DoubleSide,

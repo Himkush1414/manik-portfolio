@@ -14,12 +14,16 @@ import { rigAim, rigFlight } from '../../render/rigs/ThirdPersonRig';
 import { PLAYER, RIGS } from '../../data/mission';
 import type { EventReader } from '../../game/core/events';
 import { curveAt } from '../../game/rail';
-import { TUNNEL, SPEED_FX } from '../../data/tunnel';
+import { TUNNEL, SPEED_FX, STORM_FX } from '../../data/tunnel';
+import { Rng } from '../../game/core/rng';
 import { useSettings } from '../../state/settings.store';
 import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
 
 let reader: EventReader | null = null;
+/** presentation-only randomness (brief §3: VFX never draw from the sim streams) */
+const vfxRng = new Rng(0x7f4a7c15);
+let stormFlash = 0, stormGap = 0;
 let readerSim: unknown = null;
 
 export function MissionDriver() {
@@ -70,7 +74,14 @@ export function MissionDriver() {
     const speed01 = Math.min(1.5, p.speed / TUNNEL.speedRef);
     if (mission.tunnel) {
       const storm = mission.qa.storm >= 0 ? mission.qa.storm : curveAt(sim.level.mood.storm, ps);
-      mission.tunnel.update(ps, speed01, mission.time, reduce ? storm * 0.5 : storm);
+      // storm lightning: a vfx-RNG flash envelope (never the sim streams), inside the flash budget
+      stormGap -= dt;
+      if (!st.accessibility.reduceFlashing && storm > 0.05 && stormGap <= 0 && vfxRng.next() < storm * STORM_FX.rate * dt) {
+        stormFlash = STORM_FX.peak;
+        stormGap = STORM_FX.minGap;
+      }
+      stormFlash = Math.max(0, stormFlash - STORM_FX.decay * dt * stormFlash - dt);
+      mission.tunnel.update(ps, speed01, mission.time, reduce ? storm * 0.5 : storm, st.accessibility.reduceFlashing ? 0 : stormFlash);
       // ---- speed sensation: streaks, radial blur + edge CA, FOV, turbulence rumble
       const cruise = curveAt(sim.level.speedCurve, p.s) || sim.level.cruiseSpeed;
       const ratio = p.speed / Math.max(1, cruise);

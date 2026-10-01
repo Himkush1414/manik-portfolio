@@ -64,6 +64,9 @@ export type LevelDef = {
   envelope: readonly (readonly [number, number, number])[];
   /** cosmetic path curvature (render only) */
   pathParams: { amp: number; freq: number; seed: number };
+  /** tunnel radius scale profile [atM, scale] (render: chamber widening, collapse narrowing; the
+   *  gameplay envelope is `envelope`) */
+  radius?: readonly (readonly [number, number])[];
   timeline: readonly SpawnEvent[];
   /** atM of each checkpoint, sorted */
   checkpoints: readonly number[];

@@ -20,7 +20,7 @@ production build, QA script with 0 console errors/warnings, then commit
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
-| 2B Wormhole + launch | IN PROGRESS | 6c06350 (tunnel), b6ef2fe (speed FX), (launch) | tunnel + tiers + moods, speed FX, launch sequence + Veil Gate DONE; next: set pieces (chamber, collapse, wreck field), storms check, perf gate + 5-min heap trend |
+| 2B Wormhole + launch | IN PROGRESS (nearly done) | 6c06350, b6ef2fe, 80f637d, (set pieces) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes DONE; LEFT: 5-min heap trend run, storm-bolt readability (judge in 2H), close 2B |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
@@ -30,7 +30,37 @@ production build, QA script with 0 console errors/warnings, then commit
 | 2I Level 10 + THE WARDEN | TODO | | |
 | 2J Audio, balance, soak, final QA | TODO | | |
 
-**Next step:** 2B continues — speed FX, launch sequence + Veil Gate, set pieces (see P2.2). Before 2B's perf gate: run the 5-minute heap-trend check (an iGPU empty-mission run showed +6 MB over 20 s; dGPU +0.3 MB over 30 s).
+**HANDOFF (2026-10-01, session cut short by usage limit) — read this first.**
+- Brief steps are the sections §0-§23. Build slices (§20) group them. Done +
+  pushed: slice **2A complete** (§3 sim/architecture, §4 carry-overs + perf
+  instrumentation + DRS, §5 rail/sim core, §7 input, §15 bot skeleton +
+  balance CLI, §17 flow states) and most of **2B (§6 wormhole + §14 launch
+  sequence)**. Current step: **§6 (slice 2B), final checks.** Fully complete
+  brief steps: §3, §4 (carry-overs, DRS, instrumentation), §5 (core), §17
+  (flow states); §0-§2 are rules/scope. Everything else is partial or not
+  started (§7 flight-feel/weapons VFX/rigs = 2C, §8 rigs = 2C, §9 HUD/UI =
+  2C/2D/2G, §10 combat = 2D/2E, §11-§13 = 2E/2F, §14 levels/boss = 2G-2I,
+  §15 balance = 2J, §16 audio = 2J, §18-§23 = ongoing / final).
+- Phase 2 pushes this session (in order): 562274a, c9dd224, ceb9559,
+  08a2298, 2a78216, 53f3701, 4fd4243, 76946db, 6c06350, b6ef2fe, 80f637d,
+  + the set-pieces push that carries this handoff.
+- **Do first when resuming:** (1) `npm run build` at the repo root, start
+  dev (5199) + preview (5198) servers; (2) run `G1_DGPU=1 node
+  tools/qa-mission.mjs --seconds 300 --heapEvery 10 --preset high` (prod)
+  for the 5-minute heap trend (brief §4 rule 8: sawtooth < 8 MB, no upward
+  slope) — record it in the mission perf table, then close 2B (status table,
+  push). (3) Start **2C**: player flight feel review, chase + cockpit rigs
+  (cockpit rig must re-use the Phase 1 cockpit in the mission frame: today
+  the mission always uses ThirdPersonRig after the breach), live mirrors in
+  missions (MirrorRig source = mission root, reduced layer set), reticle +
+  HUD (DOM overlay + combiner), weapon VFX (tracers, muzzle flash, impact
+  sparks), live MFDs, settings rows for the §9 fields (already in the
+  schema), standby auto-LAUNCH wiring (production path; today only the QA
+  `?level=` path launches).
+- Known open items: storm bolts subtle (L22, revisit in 2H); test level's
+  chamber shows as a bright "doorway" from the narrow tube (expected);
+  iGPU numbers vary with the owner's editor using the iGPU (see notes);
+  ghost-echo silhouettes / Meridian fragments planned for 2G (L1 content). Before 2B's perf gate: run the 5-minute heap-trend check (an iGPU empty-mission run showed +6 MB over 20 s; dGPU +0.3 MB over 30 s).
 
 ## P2.1 Architecture (brief §3, decided)
 
@@ -405,6 +435,15 @@ Decisions (2026-10-01, before code):
   owner's editor (Cursor) renders heavily it took ~88 % of a 3D engine and
   every iGPU number dropped ~25 % (mission LOW 60 -> 44 fps, both launch
   paths identical). iGPU tables are only comparable within one session.
+- **Set pieces + storms (2B):** LevelDef `radius` keys [atM, scale] -> the
+  shell / veil / core disc follow the NEXT ramp ahead (`uRadius` = scale at
+  the player, scale after, ramp start/end d): chamber 46 -> 110 u, collapse
+  narrowing. Storm: lightning iso-line bolts (ARCS tiers) + a CPU flash
+  envelope from a render-side vfx RNG (`STORM_FX`: rate x storm, >= 0.34 s
+  apart = flash budget, off under reduce-flashing). Core haze ramps over
+  180-900 m (`coreHdr` 3.6): a short ramp tone-mapped into a hard white
+  disc. QA: `__G1__.mission.jump(m)` warps the sim to rail position m;
+  `qa-mission.mjs --heapEvery n` samples heap + slope.
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;

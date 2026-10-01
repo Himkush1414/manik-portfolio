@@ -15,6 +15,8 @@ export const TEST_LEVEL: LevelDef = {
   mood: { preset: 'l1', storm: [[0, 0]] },
   envelope: [[0, RAIL.envelope.a, RAIL.envelope.b]],
   pathParams: { amp: 9, freq: 0.0016, seed: 1 },
+  // QA set pieces: a chamber (46 -> 110 u over 150 m) and a collapse
+  radius: [[0, 1], [700, 1], [850, 110 / 46], [1500, 110 / 46], [1650, 0.65], [2100, 0.65], [2250, 1]],
   timeline: [],
   checkpoints: [],
   comms: [],

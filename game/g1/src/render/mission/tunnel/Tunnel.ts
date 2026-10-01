@@ -9,6 +9,7 @@ import type { Preset } from '../../quality';
 import type { TunnelMood } from '../../../levels/types';
 import { bakeTunnelNoise } from './tunnelNoise';
 import { createTunnelUniforms, createTunnelMaterial, createVeilMaterial, createCoreMaterial, type TunnelUniforms } from './tunnelMaterial';
+import { curveAt } from '../../../game/rail';
 
 const TAU = Math.PI * 2;
 
@@ -21,6 +22,7 @@ export class Tunnel {
   readonly core: Mesh;
   private tier: Preset = 'high';
   private mood: TunnelMoodDef = { ...MOODS.l1 };
+  private radiusKeys: readonly (readonly [number, number])[] = [];
   private dispose_: (() => void)[] = [];
 
   constructor(uniforms: TunnelUniforms, tiers: Record<Preset, ShaderMaterial>, shellGeo: CylinderGeometry, veilGeo: CylinderGeometry, coreGeo: CircleGeometry, veilMat: ShaderMaterial, coreMat: ShaderMaterial) {
@@ -96,9 +98,28 @@ export class Tunnel {
     this.uniforms.uPathA.value.set(a, a * 0.7, freq, freq * 1.55);
   }
 
-  /** per frame: rail position (double), speed 0..~1.5, presentation time, storm 0..1 */
-  update(playerS: number, speed01: number, time: number, storm: number): void {
+  /** radius profile [atM, scale] (sorted; empty = constant). Set per level. */
+  setRadiusKeys(keys: readonly (readonly [number, number])[]): void {
+    this.radiusKeys = keys;
+  }
+
+  /** per frame: rail position (double), speed 0..~1.5, presentation time, storm 0..1, lightning flash 0..1 */
+  update(playerS: number, speed01: number, time: number, storm: number, flash = 0): void {
     const u = this.uniforms;
+    u.uFlash.value = flash;
+    // radius: scale at the player + the next ramp ahead (one ramp at a time is enough on screen)
+    const k = this.radiusKeys;
+    const r0 = k.length ? curveAt(k, playerS) : 1;
+    let r1 = r0, a = 1e5, b = 1e5 + 1;
+    for (let i = 0; i < k.length - 1; i++) {
+      // the first CHANGING segment that ends ahead of the player
+      if (k[i + 1][0] <= playerS || k[i][1] === k[i + 1][1]) continue;
+      r1 = k[i + 1][1];
+      a = Math.max(0, k[i][0] - playerS);
+      b = Math.max(a + 1, k[i + 1][0] - playerS);
+      break;
+    }
+    u.uRadius.value.set(r0, r1, a, b);
     u.uTime.value = time;
     u.uScrollV.value = fract(playerS / TUNNEL.metresPerV);
     const ringPeriod = TUNNEL.ringSpacing / Math.max(0.05, u.uRingDensity.value);

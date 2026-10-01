@@ -78,6 +78,12 @@ export function applyStartParams(): void {
     pause: () => pauseMission(),
     resume: () => resumeMission(),
     retry: () => retryMission(),
+    /** warp the sim to rail position m (QA: set pieces, late beats) */
+    jump: (m: number) => {
+      mission.sim?.reset(m);
+      mission.stepper.resync();
+      return mission.sim?.player.s ?? null;
+    },
     hangar: () => missionToHangar(),
     state: () => ({ flow: flow.state, prepared: mission.prepared, progress: mission.progress, level: mission.level?.id ?? null }),
   });
