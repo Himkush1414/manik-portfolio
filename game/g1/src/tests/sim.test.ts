@@ -150,3 +150,21 @@ describe('damage model (brief §10)', () => {
     expect(sim.player.hull).toBe(sim.stats.maxHull);
   });
 });
+
+describe('enemy projectiles vs the player (brief §5 layers)', () => {
+  it('a fast orb cannot tunnel through the hurtbox; a roll in its i-frame window lets it pass', () => {
+    const sim = make();
+    const p = sim.player;
+    sim.enemyShots.spawn(p.s + 30, 0, 0, p.speed - 140, 0, 0, 3, 12, 0.6, 2);
+    for (let t = 0; t < 30; t++) sim.step(emptyInput());
+    expect(sim.player.shield).toBeCloseTo(sim.stats.maxShield - 12);
+    expect(sim.enemyShots.count).toBe(0);
+    const s2 = make();
+    s2.step({ ...emptyInput(), roll: 1 });
+    for (let t = 0; t < 8; t++) s2.step(emptyInput()); // ~0.15 s into the roll
+    const q = s2.player;
+    s2.enemyShots.spawn(q.s + 4, q.x, q.y, q.speed - 140, 0, 0, 3, 12, 0.6, 2); // arrives inside the window
+    for (let t = 0; t < 4; t++) s2.step(emptyInput());
+    expect(s2.player.shield).toBe(s2.stats.maxShield);
+  });
+});

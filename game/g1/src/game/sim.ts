@@ -173,6 +173,7 @@ export class Sim {
     this.updateShots(this.playerShots);
     this.updateShots(this.enemyShots);
     this.collidePlayerShots();
+    this.collideEnemyShots();
     this.updateScoring();
     if (this.player.s >= this.level.lengthM && this.player.alive) {
       this.done = true;
@@ -454,6 +455,27 @@ export class Sim {
         this.damageEnemy(e, pool.dmg[i], x0 + (x1 - x0) * hitT, y0 + (y1 - y0) * hitT, s0 + (s1 - s0) * hitT, 0);
         pool.kill(i);
       }
+    }
+  }
+
+  /** enemy projectiles vs the player hurtbox (r 1.6: smaller than the model — fair, brief §5) */
+  private collideEnemyShots(): void {
+    const p = this.player;
+    if (!p.alive) return;
+    const pool = this.enemyShots;
+    for (let i = pool.count - 1; i >= 0; i--) {
+      const s1 = pool.s[i], s0 = s1 - pool.vs[i] * STEP;
+      // cheap reject: not near the player's rail position this step
+      if (Math.abs(s1 - p.s) > 12 && Math.abs(s0 - p.prevS) > 12) continue;
+      const x1 = pool.x[i], x0 = x1 - pool.vx[i] * STEP;
+      const y1 = pool.y[i], y0 = y1 - pool.vy[i] * STEP;
+      const px = x0 - p.prevX, py = y0 - p.prevY, pz = s0 - p.prevS;
+      const t = segSphere(px, py, pz, x1 - p.x - px, y1 - p.y - py, s1 - p.s - pz, PLAYER.hurtRadius + pool.radius[i]);
+      if (t < 0) continue;
+      const hx = x0 + (x1 - x0) * t, hy = y0 + (y1 - y0) * t, hs = s0 + (s1 - s0) * t;
+      const dmg = pool.dmg[i];
+      pool.kill(i);
+      this.damagePlayer(dmg, 0, hx, hy, hs);
     }
   }
 

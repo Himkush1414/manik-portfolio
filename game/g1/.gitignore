@@ -1,2 +1,4 @@
 # local scratch probes (session tooling, never versioned)
 .scratch/
+# build output of tools (balance harness bundle)
+.cache/

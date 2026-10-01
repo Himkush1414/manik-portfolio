@@ -17,9 +17,15 @@ import { registerDebug } from './debugApi';
 import { InputManager } from '../input/InputManager';
 import { InputAction } from '../input/actions';
 import { QUERY } from '../core/constants';
+import { Bot } from '../game/bot/bot';
+import { isBotSkill } from '../data/bot';
 
 /** &manual=1: the real InputManager drives the sim (keyboard / mouse / pointer lock) */
 const MANUAL = QUERY.get('manual') === '1';
+/** &bot=novice|mid|expert: the balance bot flies instead of the scripted pilot */
+const BOT_SKILL = QUERY.get('bot');
+/** lab-only threat script until the Umbra AI lands (2E): drones fire an orb at the player now and then */
+const ORB = { every: 1.4, speed: 90, damage: 8, radius: 0.6 } as const;
 
 const VIEW = { ahead: 320, behind: 20 } as const;
 const DRONE = { type: 1, hp: 40, radius: 2, score: 100, every: 1.6 } as const;
@@ -35,6 +41,8 @@ export function SimLab() {
     const counts = new Map<number, number>();
     const rng = new Rng(3);
     const inp = emptyInput();
+    const bot = isBotSkill(BOT_SKILL) ? new Bot(BOT_SKILL, 7) : null;
+    let orbT = ORB.every;
     let spawnT = 0, last = performance.now(), raf = 0, paused = false, pauses = 0;
     if (MANUAL) {
       InputManager.attach(cv);
@@ -42,7 +50,7 @@ export function SimLab() {
       InputManager.hooks = { pause: () => void ((paused = !paused), pauses++) };
     }
     const flashes: { x: number; y: number; s: number; t: number }[] = [];
-    registerDebug('simlab', { state: () => ({ tick: sim.tick, s: sim.player.s, x: sim.player.x, y: sim.player.y, kills: sim.kills, score: sim.score, shots: sim.player.shotsFired, hits: sim.player.shotsHit, events: Object.fromEntries(counts), dropped: stepper.dropped, paused, pauses, locked: InputManager.locked, absolute: InputManager.state.absolute, fireHeld: InputManager.state.isHeld(InputAction.Fire), yaw: InputManager.state.yaw }) });
+    registerDebug('simlab', { state: () => ({ bot: bot ? { ...bot.stats } : null, shieldHits: counts.get(Ev.PlayerShield) ?? 0, hullHits: counts.get(Ev.PlayerHull) ?? 0, tick: sim.tick, s: sim.player.s, x: sim.player.x, y: sim.player.y, kills: sim.kills, score: sim.score, shots: sim.player.shotsFired, hits: sim.player.shotsHit, events: Object.fromEntries(counts), dropped: stepper.dropped, paused, pauses, locked: InputManager.locked, absolute: InputManager.state.absolute, fireHeld: InputManager.state.isHeld(InputAction.Fire), yaw: InputManager.state.yaw }) });
 
     const pilot = () => {
       // scripted pilot: weave, aim at the nearest drone, roll now and then
@@ -81,7 +89,15 @@ export function SimLab() {
           const hold = rng.range(140, 260);
           sim.spawnEnemy(DRONE.type, sim.player.s + hold, rng.range(-14, 14), rng.range(-8, 8), DRONE.hp, DRONE.radius, DRONE.score, hold);
         }
+        orbT -= 1 / 60;
+        if (orbT <= 0 && sim.enemies.aliveCount) {
+          orbT = ORB.every;
+          const e = sim.enemies.items[sim.enemies.alive[0]];
+          const pl = sim.player, d = Math.max(1, e.s - pl.s), tt = d / ORB.speed;
+          sim.enemyShots.spawn(e.s, e.x, e.y, pl.speed - ORB.speed, (pl.x - e.x) / tt, (pl.y - e.y) / tt, 6, ORB.damage, ORB.radius, 2, e.slot);
+        }
         if (MANUAL) InputManager.state.sample(inp, now / 1000);
+        else if (bot) bot.think(sim, inp);
         else pilot();
         sim.step(inp);
         inp.roll = 0;
@@ -134,6 +150,22 @@ export function SimLab() {
         g.lineTo(sx(s1 - bp.vs[i] * 0.012), sy(x1 - bp.vx[i] * 0.012));
       }
       g.stroke();
+      // enemy orbs (round, Danger with a white core)
+      const eo = sim.enemyShots;
+      for (let i = 0; i < eo.count; i++) {
+        const s1 = eo.s[i] - eo.vs[i] * (1 - a) / 60, x1 = eo.x[i] - eo.vx[i] * (1 - a) / 60, y1 = eo.y[i] - eo.vy[i] * (1 - a) / 60;
+        g.fillStyle = HEX.danger;
+        g.beginPath();
+        g.arc(sx(s1), sy(x1), 5 * k, 0, Math.PI * 2);
+        g.fill();
+        g.beginPath();
+        g.arc(fr.cx + x1 * fr.sc, fr.cy - y1 * fr.sc, 4 * k, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = HEX.frost;
+        g.beginPath();
+        g.arc(sx(s1), sy(x1), 2 * k, 0, Math.PI * 2);
+        g.fill();
+      }
       // drones
       for (let kk = 0; kk < sim.enemies.aliveCount; kk++) {
         const e = sim.enemies.items[sim.enemies.alive[kk]];
@@ -183,13 +215,14 @@ export function SimLab() {
       const h = sim.hud;
       g.fillStyle = HEX.frost;
       g.font = `${14 * k}px "JetBrains Mono", monospace`;
-      g.fillText(`SIM LAB // src/game, fixed 60 Hz, ${MANUAL ? 'MANUAL (InputManager)' : 'scripted pilot'}${paused ? '  // PAUSED' : ''}`, 40 * k, 40 * k);
+      g.fillText(`SIM LAB // src/game, fixed 60 Hz, ${MANUAL ? 'MANUAL (InputManager)' : bot ? `BOT (${bot.skillId})` : 'scripted pilot'}${paused ? '  // PAUSED' : ''}`, 40 * k, 40 * k);
       const lines = [
         `tick ${sim.tick}  s ${p.s.toFixed(1)} m  speed ${p.speed.toFixed(1)} u/s  alpha ${a.toFixed(2)}  dropped ${stepper.dropped}`,
         `hull ${h.hull.toFixed(0)}/${h.maxHull.toFixed(0)}  shield ${h.shield.toFixed(0)}/${h.maxShield.toFixed(0)}  energy ${(h.energy * 100).toFixed(0)}%  roll cd ${(h.rollCd * 100).toFixed(0)}%`,
         `score ${sim.score}  combo x${sim.combo.toFixed(2)}  kills ${sim.kills}  shots ${p.shotsFired}  hits ${p.shotsHit}  acc ${p.shotsFired ? ((p.shotsHit / p.shotsFired) * 100).toFixed(0) : 0}%`,
-        `bolts ${bp.count}/${bp.cap}  enemies ${sim.enemies.aliveCount}/${sim.enemies.cap}  events ${sim.events.head}`,
+        `bolts ${bp.count}/${bp.cap}  orbs ${sim.enemyShots.count}/${sim.enemyShots.cap}  enemies ${sim.enemies.aliveCount}/${sim.enemies.cap}  events ${sim.events.head}  damage taken ${p.damageTaken.toFixed(0)}`,
       ];
+      if (bot) lines.push(`bot ${bot.skillId}: targets ${bot.stats.targets}  dodges ${bot.stats.dodges}  rolls ${bot.stats.rolls}`);
       if (MANUAL) {
         const st = InputManager.state;
         const held = [InputAction.MoveUp, InputAction.MoveDown, InputAction.MoveLeft, InputAction.MoveRight, InputAction.Fire, InputAction.Boost, InputAction.Brake].filter(x => st.isHeld(x));

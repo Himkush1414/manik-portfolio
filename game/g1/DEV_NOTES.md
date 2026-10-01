@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c), 08a2298 (sim core) | carry-overs, sim core, FSM + input DONE; next: bot skeleton, perf instrumentation, empty mission scene + programs-constant test |
+| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c), 08a2298 (sim core), 2a78216 (flow + input) | carry-overs, sim core, FSM + input, bot skeleton DONE; next: perf instrumentation + empty mission scene + programs-constant test (closes 2A) |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -270,10 +270,23 @@ Decisions (2026-10-01, before code):
   touched). `tools/qa-input.mjs`: 8 checks on prod via page-level input
   (held key moves, lock, mouse fire, reticle, blur clears fire + pauses,
   wheel prevented, Ctrl+W untouched) — all pass.
+- **Bot + balance harness (2A skeleton):** `data/bot.ts` tiers (reaction,
+  aim error with correction toward a residual + periodic re-roll, dodge
+  probability, roll use, boost use, wander); `game/bot/bot.ts` (own RNG
+  stream; sticky target, under-leading by tier, threat scan of enemy
+  projectiles inside a 1.2 s horizon after the perception delay, roll vs
+  strafe dodges, envelope margin); `game/bot/run.ts` headless runLevel;
+  `levels/registry.ts`; `src/cli/balance.ts` + `tools/balance.mjs`
+  (bundles with Vite's esbuild into `.cache/`, git-ignored; ms per run).
+  Strafing-drone gallery (4 seeds x 40 s): novice 24 kills / 48 % acc, mid
+  30.8 / 59 %, expert 33 / 63 % (unit-tested ordering). Sim gained the
+  enemy-projectile vs player hurtbox layer (swept, r 1.6, roll i-frames).
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;
-  `__G1__.simlab.state()`. `&manual=1`: the real InputManager drives it.
+  `__G1__.simlab.state()`. `&manual=1`: the real InputManager drives it;
+  `&bot=novice|mid|expert`: the balance bot flies, drones fire lab-scripted
+  orbs (until the Umbra AI in 2E).
 
 ## P2.5 Design intent — Phase 2 assets (written before modelling)
 
