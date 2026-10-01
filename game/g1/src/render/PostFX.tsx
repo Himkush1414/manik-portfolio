@@ -29,6 +29,7 @@ import { CameraShaker } from './CameraShaker';
 import { ExposureEffect, TransitionBlurEffect, scaleBloom } from './effects';
 import { POST } from '../data/render.config';
 import { frameInfoBegin, frameInfoEnd, registerDebug } from '../debug/debugApi';
+import { perfMon } from './perfMon';
 
 export type PostFXProps = {
   /** scene allows AO (hangar, cockpit) */
@@ -173,8 +174,11 @@ export function PostFX({ ao = false, dofTarget = null, dofRange = POST.dof.range
     CameraShaker.update(dt);
     CameraShaker.apply(camera);
     frameInfoBegin(gl);
+    perfMon.begin('render');
     composer.render(dt);
+    perfMon.end('render');
     frameInfoEnd(gl);
+    perfMon.frameEnd();
     CameraShaker.restore(camera);
   }, 1);
 

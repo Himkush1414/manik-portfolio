@@ -8,6 +8,7 @@ import { Color, PCFSoftShadowMap, type WebGLRenderer } from 'three';
 import { useSettings } from '../state/settings.store';
 import { usePerf, resolveQuality } from './perf';
 import { DrsDriver } from './DrsDriver';
+import { perfMon } from './perfMon';
 import { CLEAR_COLOR } from '../data/render.config';
 import { registerRenderer } from '../debug/debugApi';
 import { watchShaderLinks } from '../debug/shaderCheck';
@@ -49,6 +50,7 @@ export function CanvasRoot({ children }: Props) {
           scene.background = new Color(CLEAR_COLOR);
           installShaderErrorFilter(gl);
           registerRenderer(gl);
+          perfMon.install(gl);
           const canvas = gl.domElement;
           canvas.addEventListener('webglcontextlost', e => {
             e.preventDefault();

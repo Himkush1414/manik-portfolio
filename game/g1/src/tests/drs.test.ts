@@ -70,11 +70,17 @@ describe('DRS governor (brief §4 rule 9)', () => {
     expect(run(g, 33.3, 20, 0).events).toEqual([]); // capped frames are not "slow"
   });
 
-  it('menu profile holds a steady 30 fps and only reacts below it', () => {
+  it('menu profile (mean metric) holds a mixed 16.7 / 33.3 / 50 ms stream averaging > 33 fps', () => {
     const g = new DrsGovernor(drsConfigForCap(0, 0, 'menu'));
-    expect(run(g, 33.3, 30, 0).events).toEqual([]);
-    expect(run(g, 50, 30, 30).events).toEqual([]); // a quantised 20-30 fps menu holds its scale
-    const slow = run(g, 66.7, 14, 60).events;
+    let t = 0, ev = 0;
+    const pattern = [16.7, 33.3, 16.7, 33.3, 50, 16.7, 33.3, 16.7]; // mean 27 ms = 37 fps, p95 50
+    for (let i = 0; i < 3000; i++) {
+      const ms = pattern[i % pattern.length];
+      t += ms / 1000;
+      if (g.sample(ms, t)) ev++;
+    }
+    expect(ev).toBe(0);
+    const slow = run(g, 45, 14, t + 1).events;
     expect(slow[0]).toBe(-1);
     expect(slow.every(e => e === -1)).toBe(true);
   });

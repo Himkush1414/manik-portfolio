@@ -14,6 +14,8 @@ export type DrsProfile = 'mission' | 'menu';
 
 export type DrsConfig = {
   window: number;
+  /** p95 (missions: brief §4) or mean (menus: an average-fps target) */
+  metric: 'p95' | 'mean';
   downMs: number;
   upMs: number;
   downHold: number;
@@ -79,6 +81,14 @@ export class DrsGovernor {
     this.lastChange = Math.max(this.lastChange, now - this.cfg.minInterval + 1); // short grace
   }
 
+  /** mean of a FULL window */
+  mean(): number {
+    if (this.n < this.cfg.window) return 0;
+    let s = 0;
+    for (let i = 0; i < this.cfg.window; i++) s += this.ring[i];
+    return s / this.cfg.window;
+  }
+
   /** p95 of a FULL window (allocation-free: typed-array copy + in-place sort). */
   p95(): number {
     if (this.n < this.cfg.window) return 0;
@@ -96,8 +106,8 @@ export class DrsGovernor {
     this.head = (this.head + 1) % this.cfg.window;
     if (this.n < this.cfg.window) this.n++;
     if (this.n < this.cfg.window) return 0;
-    const p = this.p95();
     const c = this.cfg;
+    const p = c.metric === 'mean' ? this.mean() : this.p95();
     if (p > c.downMs) {
       if (this.overSince < 0) this.overSince = now;
       this.underSince = -1;

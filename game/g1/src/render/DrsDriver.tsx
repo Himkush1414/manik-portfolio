@@ -18,6 +18,7 @@ import { useUi } from '../state/ui.store';
 import { useFlow, isBoot } from '../app/flow';
 import { registerDebug } from '../debug/debugApi';
 import { QUERY } from '../core/constants';
+import { perfMon } from './perfMon';
 
 /** first-run pick: settle after the hangar is up, then measure */
 const AUTO_PICK = { settleMs: 3000, measureMs: 2000 } as const;
@@ -25,7 +26,6 @@ const INTEGRATED = /\b(intel|uhd|iris)\b|radeon\(tm\) graphics|radeon graphics|v
 const GPU_HINT =
   'Integrated graphics detected. For full quality, set your browser to use the high-performance GPU (Windows: Settings › System › Display › Graphics).';
 
-let lastFrame = 0;
 // ?drs=0 (QA): the governor never moves (scored captures at a fixed resolution)
 let frozen = QUERY.get('drs') === '0';
 
@@ -68,9 +68,9 @@ export function DrsDriver() {
   }, [gov]);
 
   useFrame(() => {
+    // rAF-timestamp cadence (perfMon): vsync-aligned, not inflated by render cost
+    const ms = perfMon.frameMs;
     const now = performance.now();
-    const ms = now - lastFrame;
-    lastFrame = now;
     if (frozen || document.hidden || isBoot(useFlow.getState().state) || ms > 1000) return;
     if (gov.sample(ms, now / 1000) !== 0) usePerf.getState().setDegrade(gov.level);
   });

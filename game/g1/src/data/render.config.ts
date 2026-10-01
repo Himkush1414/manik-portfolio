@@ -25,11 +25,12 @@ export const CLEAR_COLOR = '#04050A';
 export const DRS = {
   scales: [1, 0.85, 0.72, 0.6, 0.5],
   window: 90,
-  mission: { downMs: 19, upMs: 12.5, downHold: 2, upHold: 6, minInterval: 3 },
-  // menu thresholds straddle the vsync quanta (16.7 / 33.3 / 50 / 66.7 ms):
-  // step down when > 5 % of frames take >= 66.7 ms, up when nearly all take
-  // 16.7 ms. Measured integrated-GPU hangar at LOW (prod, 1080p): scale 1.0
-  // 25 fps / 0.85 28 / 0.72 38 (p95 50) / 0.6 47 / 0.5 55 -> it settles at
-  // 0.72, the sharpest scale that holds >= 30 fps (0.5 was visibly jaggy)
-  menu: { downMs: 55, upMs: 26, downHold: 3, upHold: 8, minInterval: 5 },
+  mission: { metric: 'p95', downMs: 19, upMs: 12.5, downHold: 2, upHold: 6, minInterval: 3 },
+  // menus target an AVERAGE >= 30 fps: a p95 sits on the vsync quanta
+  // (16.7 / 33.3 / 50 / 66.7 ms) and flipped between scales. Mean frame
+  // time: down above 30 ms (< 33 fps), up below 20 ms (> 50 fps). Measured
+  // integrated-GPU hangar at LOW (prod, 1080p): scale 1.0 25 fps / 0.85 28 /
+  // 0.72 38 / 0.6 47 / 0.5 55 -> settles at 0.72, the sharpest scale that
+  // holds >= 30 fps (0.5 was visibly jaggy)
+  menu: { metric: 'mean', downMs: 30, upMs: 20, downHold: 3, upHold: 8, minInterval: 5 },
 } as const;

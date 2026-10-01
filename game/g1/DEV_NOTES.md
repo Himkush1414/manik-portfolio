@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c), 08a2298 (sim core), 2a78216 (flow + input) | carry-overs, sim core, FSM + input, bot skeleton DONE; next: perf instrumentation + empty mission scene + programs-constant test (closes 2A) |
+| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c), 08a2298 (sim core), 2a78216 (flow + input), 53f3701 (bot) | carry-overs, sim core, FSM + input, bot skeleton, perf instrumentation DONE; next: empty mission scene + mission post chain + programs-constant test (closes 2A) |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -281,6 +281,27 @@ Decisions (2026-10-01, before code):
   Strafing-drone gallery (4 seeds x 40 s): novice 24 kills / 48 % acc, mid
   30.8 / 59 %, expert 33 / 63 % (unit-tested ordering). Sim gained the
   enemy-projectile vs player hurtbox layer (swept, r 1.6, roll i-frames).
+- **Perf instrumentation (2A):** `render/perfMon.ts` — section timers
+  (`sim`, `render` = composer submit, `hud`, `audio`) and frame cadence in
+  fixed Float32 rings (no per-frame allocation), long-task observer,
+  renderer.info + heap once a second; `__G1__.perf.reset(label)` /
+  `perf.table()` -> scenario, seconds, avgFps, p95, p99, maxFrame,
+  longTasks, per-section stats, draw calls, triangles, programs,
+  geometries, textures, heapMB, heapDeltaMB. FRAME TIME = rAF timestamp
+  deltas (frame START, vsync-aligned): end-of-frame performance.now()
+  folded the varying render cost into every delta (p95 19-24 ms at a steady
+  60 fps) — the DRS driver reads the same clock. `performance.mark/measure`
+  only with `?trace=1` (they allocate an entry per call); stats-gl overlay
+  (CPU + GPU timer panels) with `?debug=1&stats=1` (not plain debug=1, so
+  scored captures stay clean). Hangar idle, RTX 3050 1080p HIGH: 60 fps, p95
+  16.8, render submit 3.4-3.6 ms avg / 6.2-6.7 p95, GPU ~7 ms (stats-gl),
+  124 calls, 0 long tasks.
+- **DRS menu profile = mean frame time** (down > 30 ms, up < 20 ms): a p95
+  sits on the vsync quanta and flipped scales. Missions keep the brief's p95
+  rule. iGPU note: UHD 770 timings vary +-20 % with other load on the iGPU
+  (another process held ~12 % of its 3D engine during one re-measure: 0.72
+  scale 38 -> 29 fps, 0.5 55 -> 45); the governor then settles one step
+  lower and still holds >= 30 fps (36-43 fps measured).
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;
