@@ -17,9 +17,20 @@ function useThumb(id: ShipId, livery: number, locked: boolean): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
+    let retry = 0;
     // thumbnails render one per idle slot, never on a click (DEV_NOTES)
     const idle = (window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 120))) as (cb: () => void, o?: { timeout: number }) => number;
-    idle(() => void shipThumbnail(id, { livery, locked }).then(u => live && setUrl(u)), { timeout: 2000 });
+    const request = () =>
+      idle(
+        () =>
+          void shipThumbnail(id, { livery, locked }).then(
+            u => live && setUrl(u),
+            // e.g. the context was lost mid-readback: try again shortly (it restores in place)
+            () => live && retry++ < 4 && window.setTimeout(request, 1500),
+          ),
+        { timeout: 2000 },
+      );
+    request();
     return () => {
       live = false;
     };

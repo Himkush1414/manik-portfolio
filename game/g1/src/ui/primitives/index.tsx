@@ -263,7 +263,9 @@ export function ScrambleText({ text, trigger, duration = 520, className }: { tex
     return () => cancelAnimationFrame(raf);
   }, [text, trigger, duration, reduce]);
   return (
-    <span className={className} aria-label={text}>
+    <span className={className}>
+      {/* aria-label is not allowed on a role-less span: real text for AT, scramble hidden */}
+      <span className={s.srOnly}>{text}</span>
       <span aria-hidden>{out}</span>
     </span>
   );

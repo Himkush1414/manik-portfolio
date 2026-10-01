@@ -97,7 +97,9 @@ function Briefing() {
         <small>Mission {m.number}</small>
         {m.title}
       </h3>
-      <div className={s.body} aria-label={[m.salutation, ...m.body].join(' ')}>
+      <div className={s.body}>
+        {/* the full text for screen readers; the typewriter copy is hidden from them */}
+        <p className={s.sr}>{[m.salutation, ...m.body].join(' ')}</p>
         <p aria-hidden>{m.salutation}</p>
         {shown.map((p, i) =>
           p.length ? (
@@ -134,7 +136,7 @@ function Briefing() {
           <span>
             THREAT <b>{m.threat}</b>
           </span>
-          <span className={s.gauge} aria-label={`Threat ${m.threat}`}>
+          <span className={s.gauge} role="img" aria-label={`Threat ${m.threat}`}>
             {Array.from({ length: 5 }, (_, i) => (
               <i key={i} className={i < gauge ? s.on : ''} />
             ))}

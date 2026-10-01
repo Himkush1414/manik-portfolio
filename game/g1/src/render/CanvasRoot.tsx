@@ -21,7 +21,6 @@ export function CanvasRoot({ children }: Props) {
   const setDegrade = usePerf(s => s.setDegrade);
   const q = resolveQuality(graphics, degrade);
   const [hidden, setHidden] = useState(document.hidden);
-  const [generation, setGeneration] = useState(0);
   const [lost, setLost] = useState(false);
 
   useEffect(() => {
@@ -33,7 +32,6 @@ export function CanvasRoot({ children }: Props) {
   return (
     <div className={styles.root}>
       <Canvas
-        key={generation}
         className={styles.canvas}
         dpr={q.dpr}
         flat
@@ -57,10 +55,12 @@ export function CanvasRoot({ children }: Props) {
             e.preventDefault();
             setLost(true);
           });
-          canvas.addEventListener('webglcontextrestored', () => {
-            setLost(false);
-            setGeneration(g => g + 1); // full re-init: scenes rebuild their GPU resources
-          });
+          // restore IN PLACE: three's renderer rebuilds its GL state on
+          // 'webglcontextrestored' and re-uploads every geometry / texture /
+          // program lazily. (Remounting the Canvas instead created a second
+          // renderer while module caches still held the first one's objects:
+          // "object does not belong to this context".)
+          canvas.addEventListener('webglcontextrestored', () => setLost(false));
         }}
       >
         <PerformanceMonitor

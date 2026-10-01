@@ -17,7 +17,7 @@ this file alone. Updated after every slice.
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
 | 1G Cockpit + camera select | DONE | bulkhead, cockpit (interior, tub, tunnel + deep-space mouth, 3 live mirrors), body framing (fists, knees, kneeboard), systems boot, combiner briefing, camera selector, standby, ESC return; MirrorRig + BlurDissolve; light/heavy variants verified; 20-round-trip soak flat |
-| 1H QA / polish / perf | IN PROGRESS | §16 audio DONE; next §17 a11y/resilience, §18 qa:phase1, §19 handoff, §20 report |
+| 1H QA / polish / perf | IN PROGRESS | §16 audio, §17 a11y/resilience DONE; next §18 qa:phase1 (full protocol + scores + perf), §19 handoff, §20 report |
 
 **Phase 1 step map** (the owner counts the brief's numbered sections §0-§20 as
 "the ~20 steps"; slices are how they were built):
@@ -32,8 +32,8 @@ this file alone. Updated after every slice.
 | 14 upgrades / settings / profile | 1F | DONE |
 | 15 cockpit entry + camera select | 1G | DONE |
 | 16 audio | 1H | DONE (cockpit voices + bed, audio-map audit) |
-| 17 accessibility, resilience, pitfalls | 1H | next |
-| 18 QA protocol (qa:phase1) | 1H | — |
+| 17 accessibility, resilience, pitfalls | 1H | DONE (axe 0 violations, focus rings, retry UI, context restore) |
+| 18 QA protocol (qa:phase1) | 1H | next |
 | 19 handoff contract | 1H | — |
 | 20 final report | 1H | — |
 
@@ -560,6 +560,39 @@ HDRIs / kit parts if ever needed (none used so far).
   bus): hangar 0.017 -> cockpit 0.011 -> hangar 0.016; slam 0.38 on sfx.
   Headless audio needs a real CDP click (a relaxed autoplay flag alone does
   not create the context: it is created on the first gesture).
+
+- **Resilience (§17, 1H):** `tools/qa-resilience.mjs [origin] [outDir] [--only n]`.
+  (1) Loader faults: a failed task is NO LONGER counted as done (dependents
+  wait in `whenDone`); `ui/screens/FaultPanel.tsx` (alertdialog, RETRY
+  focused, RELOAD) -> `retryFailed()` re-runs only failed tasks. The bake
+  client drops a dead worker on `onerror` (a retry used to post into it and
+  hang). Verified: worker blocked once -> panel -> Enter -> full hangar.
+  (2) Storage throwing -> boots on the in-memory save. (3) No WebGL -> styled
+  fallback. (4) Context loss: restore IN PLACE (three rebuilds its GL state
+  and re-uploads lazily); remounting the Canvas created a second renderer
+  while module caches held the first one's objects. The shader watchdog skips
+  while the context is lost (every query returns null).
+- **Thumbnail queue (bug, fixed):** `queue = queue.then(render)` meant ONE
+  failed render rejected the chain and every later thumbnail was skipped for
+  the session; failures were also cached. Now the queue never rejects, failures
+  are not cached, the inventory retries (x4), and three's reason-less fence
+  rejection becomes a real Error.
+- **Accessibility (§17):** `tools/qa-a11y.mjs [origin] --axe <axe.min.js>`
+  (axe-core is QA-only, not a dependency): WCAG 2 A/AA on hangar, Upgrades,
+  every Settings tab, briefing, camera select -> 0 violations
+  (`qa/17-a11y.json`); focus trapped in both modals, Esc closes both; every Tab
+  stop shows a visible focus change (styles compared focused vs blurred
+  AFTER transitions settle — reading mid-transition gave false positives).
+  Fixed: aria-label on role-less spans/divs (ScrambleText, briefing body ->
+  visually-hidden text; threat gauge -> role=img); Settings tablist held
+  non-tab buttons; livery swatch focus hidden by the later equal-specificity
+  `[aria-checked]` rule (roving radio = the focused swatch IS the checked one);
+  range sliders get a track outline, not only a thumb colour.
+  NOT TESTED: Firefox / Safari (no browsers here; downloading Playwright's
+  would write to the user's cache — out of scope). Code uses no
+  Chromium-only APIs on the critical path except OffscreenCanvas (pilot
+  busts fall back to the main thread) and KHR_parallel_shader_compile
+  (optional).
 
 ## 9. Known issues
 

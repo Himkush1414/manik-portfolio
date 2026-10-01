@@ -13,6 +13,11 @@ export function watchShaderLinks(renderer: WebGLRenderer): void {
   const gl = renderer.getContext();
   const ext = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
   const tick = () => {
+    if (gl.isContextLost()) {
+      // every query answers null while lost: not a link failure
+      requestAnimationFrame(tick);
+      return;
+    }
     const programs = (renderer.info.programs ?? []) as unknown as ProgramInfo[];
     for (const p of programs) {
       if (!p.program || checked.has(p.program)) continue;

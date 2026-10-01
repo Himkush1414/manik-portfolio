@@ -366,24 +366,27 @@ export function SettingsModal() {
   return (
     <Modal title="SETTINGS" kicker="SYSTEM // CONFIG" onClose={closeModal}>
       <div className={s.body}>
-        <nav className={s.nav} role="tablist" aria-orientation="vertical" aria-label="Settings sections">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              className={s.navBtn}
-              onPointerEnter={() => sfx.play('hover')}
-              onClick={() => {
-                if (tab !== t.id) sfx.play('confirm');
-                setTab(t.id);
-              }}
-            >
-              {t.label}
-              <span aria-hidden>›</span>
-            </button>
-          ))}
+        <nav className={s.nav} aria-label="Settings sections">
+          {/* the tablist holds ONLY tabs (reset / cheats live in the nav, outside it) */}
+          <div className={s.navTabs} role="tablist" aria-orientation="vertical" aria-label="Settings sections">
+            {TABS.map(t => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.id}
+                className={s.navBtn}
+                onPointerEnter={() => sfx.play('hover')}
+                onClick={() => {
+                  if (tab !== t.id) sfx.play('confirm');
+                  setTab(t.id);
+                }}
+              >
+                {t.label}
+                <span aria-hidden>›</span>
+              </button>
+            ))}
+          </div>
           <div className={s.navFoot}>
             <small>Profile · {profile.credits.toLocaleString('en-US')} CR · level {profile.highestLevelCleared}</small>
             {confirmReset ? (

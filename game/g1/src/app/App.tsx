@@ -16,6 +16,7 @@ import { AudioHint } from '../ui/screens/AudioHint';
 import { HangarUI } from '../ui/screens/hangar/HangarUI';
 import { FpsOverlay } from '../ui/screens/FpsOverlay';
 import { LaunchHUD } from '../ui/screens/launch/LaunchHUD';
+import { FaultPanel } from '../ui/screens/FaultPanel';
 
 export function App() {
   useEffect(() => {
@@ -40,6 +41,7 @@ export function App() {
       <LaunchHUD />
       <FpsOverlay />
       <AudioHint />
+      <FaultPanel />
     </ErrorBoundary>
   );
 }

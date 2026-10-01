@@ -1,0 +1,27 @@
+{
+ "total": 0,
+ "report": {
+  "hangar": [],
+  "upgrades": [],
+  "settings/CONTROLS": [],
+  "settings/CAMERA": [],
+  "settings/GRAPHICS": [],
+  "settings/AUDIO": [],
+  "settings/ACCESSIBILITY": [],
+  "cockpit-briefing": [],
+  "camera-select": []
+ },
+ "keyboard": {
+  "trapUpg": true,
+  "escUpg": true,
+  "trapSet": true,
+  "escSet": true
+ },
+ "noRing": {
+  "hangar": [],
+  "upgrades": [],
+  "settings": [],
+  "camera-select": []
+ },
+ "logs": []
+}

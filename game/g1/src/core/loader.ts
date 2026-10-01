@@ -40,6 +40,35 @@ export function progress(): number {
   return s.total === 0 ? 0 : s.done / s.total;
 }
 
+let resolveFinished: (() => void) | null = null;
+
+/** Runs one task. A failure is NOT counted as done: dependents keep waiting
+ *  (whenDone) and the fault panel offers a retry (brief §17: asset failure ->
+ *  retry UI, never a white screen). */
+async function runTask(t: Task): Promise<void> {
+  try {
+    performance.mark(`task:${t.id}:start`);
+    await t.run();
+    performance.mark(`task:${t.id}:end`);
+    useLoader.setState(s => ({
+      done: s.done + t.weight,
+      completed: [...s.completed, t.id],
+      running: s.running.filter(r => r !== t.id),
+    }));
+  } catch (err) {
+    console.error(`[loader] task ${t.id} failed`, err);
+    useLoader.setState(s => ({
+      failed: [...s.failed, { id: t.id, error: err instanceof Error ? err.message : String(err) }],
+      running: s.running.filter(r => r !== t.id),
+    }));
+  }
+  const s = useLoader.getState();
+  if (!s.finished && s.completed.length === registry.size) {
+    useLoader.setState({ finished: true });
+    resolveFinished?.();
+  }
+}
+
 /** Runs every task (in parallel unless it awaits another). Idempotent. */
 export function startLoading(): Promise<void> {
   if (started && finishedPromise) return finishedPromise;
@@ -47,28 +76,21 @@ export function startLoading(): Promise<void> {
   const tasks = Array.from(registry.values());
   const total = tasks.reduce((a, t) => a + t.weight, 0);
   useLoader.setState({ total, done: 0, completed: [], running: tasks.map(t => t.id), failed: [], finished: false });
-  finishedPromise = Promise.all(
-    tasks.map(async t => {
-      try {
-        performance.mark(`task:${t.id}:start`);
-        await t.run();
-        performance.mark(`task:${t.id}:end`);
-      } catch (err) {
-        // a failed task never blocks boot forever: it is reported (retry UI in
-        // the loader) and counted so the sequence can still complete
-        useLoader.setState(s => ({ failed: [...s.failed, { id: t.id, error: String(err) }] }));
-        console.error(`[loader] task ${t.id} failed`, err);
-      }
-      useLoader.setState(s => ({
-        done: s.done + t.weight,
-        completed: [...s.completed, t.id],
-        running: s.running.filter(r => r !== t.id),
-      }));
-    }),
-  ).then(() => {
-    useLoader.setState({ finished: true });
-  });
+  finishedPromise = new Promise<void>(r => (resolveFinished = r));
+  tasks.forEach(t => void runTask(t));
   return finishedPromise;
+}
+
+/** Re-runs every failed task (the fault panel's RETRY). Tasks are retry-safe:
+ *  their caches only ever store successes. */
+export function retryFailed(): void {
+  const failed = useLoader.getState().failed;
+  if (!failed.length) return;
+  useLoader.setState(s => ({ failed: [], running: [...s.running, ...failed.map(f => f.id)] }));
+  failed.forEach(f => {
+    const t = registry.get(f.id);
+    if (t) void runTask(t);
+  });
 }
 
 /** Resolves when a specific task is complete (tasks may depend on each other). */

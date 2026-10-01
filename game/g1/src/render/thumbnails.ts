@@ -64,14 +64,23 @@ export function shipThumbnail(id: ShipId, opts: ThumbOptions = {}): Promise<stri
   const key = `${id}:${opts.livery ?? 0}:${opts.locked ? 1 : 0}:${opts.silhouette ? 1 : 0}`;
   let p = cache.get(key);
   if (!p) {
-    p = (queue = queue.then(() => render(id, opts))) as Promise<string>;
+    // the queue itself never rejects (one failed render must not skip every
+    // later one); a failure is not cached, so the next request retries. three's
+    // async readback rejects with NO reason when its fence fails (context
+    // lost): give callers a real Error.
+    const job = queue.then(() => render(id, opts));
+    queue = job.catch(() => undefined);
+    p = job.catch(err => {
+      cache.delete(key);
+      throw err instanceof Error ? err : new Error('thumbnail render failed (graphics context lost?)');
+    });
     cache.set(key, p);
   }
   return p;
 }
 
 export function clearThumbnails(): void {
-  for (const p of cache.values()) void p.then(url => URL.revokeObjectURL(url));
+  for (const p of cache.values()) void p.then(url => URL.revokeObjectURL(url), () => undefined);
   cache.clear();
 }
 

@@ -11,6 +11,7 @@
   gap: calc(var(--u) * 24);
 }
 .nav { display: flex; flex-direction: column; gap: calc(var(--u) * 6); }
+.navTabs { display: flex; flex-direction: column; gap: calc(var(--u) * 6); }
 .navBtn {
   --c: calc(var(--u) * 8);
   display: flex;

@@ -20,8 +20,12 @@ function getWorker(): Worker {
     else p.reject(new Error(e.data.error));
   };
   worker.onerror = e => {
-    for (const p of pending.values()) p.reject(new Error(e.message));
+    // script failed to load, or crashed: fail what is pending and drop this
+    // instance so a retry spawns a fresh worker (a dead one never answers)
+    for (const p of pending.values()) p.reject(new Error(e.message || 'bake worker unavailable'));
     pending.clear();
+    worker?.terminate();
+    worker = null;
   };
   return worker;
 }
