@@ -19,7 +19,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Slice | Status | Push | Notes |
 |---|---|---|---|
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
-| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c) | carry-overs DONE; sim core DONE (this push); next: InputManager, FSM mission states, perf instrumentation, bot skeleton, empty mission scene + programs-constant test |
+| 2A Foundation | IN PROGRESS | 562274a (a), c9dd224 (b), ceb9559 (c), 08a2298 (sim core) | carry-overs, sim core, FSM + input DONE; next: bot skeleton, perf instrumentation, empty mission scene + programs-constant test |
 | 2B Wormhole + launch | TODO | | |
 | 2C Flight + rigs + HUD | TODO | | |
 | 2D Hazards + damage + pause/fail | TODO | | |
@@ -193,6 +193,20 @@ Decisions (2026-10-01, before code):
    prod: 84 shots, console clean, layout clean, dGPU hangar 60 / cockpit 59.8.
    Unreproduced once: one iGPU run logged 36 console messages (not captured);
    10 reruns incl. forced HIGH were clean — the QA console gate remains.
+   Pushed `ceb9559`.
+4. **Flow + input (2A, 2026-10-01).** `app/flow.ts` gains the brief §17
+   mission states (`mission.preparing|launching|playing|paused|bossIntro|
+   dying|failed|completing|results`) and events (PREPARED, LAUNCHED, PAUSE,
+   RESUME, BOSS_INTRO(_DONE), PLAYER_DIED, DEATH_DONE, RETRY, RESTART,
+   LEVEL_COMPLETE, COMPLETE_DONE, NEXT, HANGAR); `launch.standby` accepts
+   LAUNCH; HANGAR exits through `launch.returning`; `isMission`, `isSimLive`
+   selectors. HangarUI stays retracted in mission.*. Bindings: **Brake
+   ControlLeft -> KeyF** (Ctrl+W = brake + move up closed the tab); Ctrl /
+   Alt / Meta added to RESERVED_CODES; the settings sanitizer repairs a
+   saved modifier binding (default if free, else cleared) — no save version
+   bump needed. Settings fields added (brief §9, rows ship in 2C):
+   `controls.aimAssist` (low), `controls.autoFire`, `camera.rollCoupling`,
+   `graphics.speedLines`, `accessibility.subtitles` / `subtitleSize`.
 
 ### P2 perf table — hangar (prod build, 1920x1080)
 
@@ -243,10 +257,23 @@ Decisions (2026-10-01, before code):
   time, roll, boost, fire rate, kill, damage, god), gameBoundary (transitive
   import scan of src/game + src/levels: no three/React/DOM/stores, no
   window/document/performance.now/Date.now/Math.random).
+- **Input (2A):** `input/inputState.ts` (pure, unit-tested: bindings ->
+  actions with per-action hold counts, repeat + modifiers ignored, clear-all,
+  roll / camera / pause edges, reticle in the aim cone at
+  `INPUT.radPerCount` x sensitivity, invert-Y, idle recentre after 0.8 s,
+  smoothing for the sim while the HUD reads the raw value = late latching,
+  fine positioning only while the mouse is active and outside the deadzone)
+  + `input/InputManager.ts` (DOM: pointer lock with unadjustedMovement ->
+  plain -> absolute-cursor fallback; clear + pause on blur / hidden /
+  pointer-lock loss; while playing preventDefault game keys, Tab, Enter,
+  Space, wheel (passive: false), context menu; Ctrl/Meta combos never
+  touched). `tools/qa-input.mjs`: 8 checks on prod via page-level input
+  (held key moves, lock, mouse fire, reticle, blur clears fire + pauses,
+  wheel prevented, Ctrl+W untouched) — all pass.
 - **QA screen `?screen=simlab&debug=1`** (`debug/SimLab.tsx`, lazy chunk,
   debug builds/flag only): the real Sim + FixedStepper with a scripted pilot
   vs target drones, top + front views, HUD values, event counts;
-  `__G1__.simlab.state()`.
+  `__G1__.simlab.state()`. `&manual=1`: the real InputManager drives it.
 
 ## P2.5 Design intent — Phase 2 assets (written before modelling)
 

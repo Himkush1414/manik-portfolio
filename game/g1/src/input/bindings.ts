@@ -14,13 +14,17 @@ export const DEFAULT_BINDINGS: Bindings = {
   [InputAction.RollRight]: ['KeyE', null],
   [InputAction.Fire]: ['Space', 'Mouse0'],
   [InputAction.Boost]: ['ShiftLeft', null],
-  [InputAction.Brake]: ['ControlLeft', null],
+  // not Ctrl: Ctrl+W (brake + move up) closes the tab and cannot be prevented
+  [InputAction.Brake]: ['KeyF', null],
   [InputAction.CycleCamera]: ['KeyC', null],
   [InputAction.Pause]: ['Escape', null],
 };
 
-/** Codes that can never be rebound (browser/OS reserved). */
-export const RESERVED_CODES = new Set(['MetaLeft', 'MetaRight', 'F5', 'F11', 'F12']);
+/** Codes that can never be rebound (browser/OS reserved). Ctrl / Alt / Meta are
+ *  never gameplay keys (brief §7: they combine into browser shortcuts). */
+export const RESERVED_CODES = new Set(['MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'F5', 'F11', 'F12']);
+
+export const isModifierCode = (code: string | null): boolean => !!code && /^(Control|Alt|Meta|OS)(Left|Right)?$/.test(code);
 
 export function cloneBindings(b: Bindings): Bindings {
   const out = {} as Bindings;

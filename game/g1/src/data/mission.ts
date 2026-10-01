@@ -131,3 +131,17 @@ export const FAIRNESS = {
   /** enemies never fire from closer than this (d) or from behind */
   minFireDepth: 18,
 } as const;
+
+/** Input feel (brief §7). */
+export const INPUT = {
+  /** reticle radians per mouse count at sensitivity 1 (full cone width ~ 600 counts) */
+  radPerCount: 0.00065,
+  /** mouse idle this long -> the reticle eases back to centre (keyboard play) */
+  idleRecenter: 0.8,
+  /** recentre rate (1/s, exponential) */
+  recenterRate: 3.2,
+  /** settings smoothing 0..1 maps to this aim time constant (s) */
+  smoothingTau: 0.09,
+  /** fine positioning (reticle steers the ship) only while the mouse moved this recently */
+  steerActive: 0.8,
+} as const;

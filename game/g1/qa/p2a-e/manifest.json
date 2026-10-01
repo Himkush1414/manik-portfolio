@@ -1,0 +1,258 @@
+{
+ "shots": [
+  {
+   "group": "modals",
+   "name": "upgrades-empty",
+   "file": "modals-upgrades-empty.png",
+   "info": {
+    "drawCalls": 133,
+    "triangles": 272385,
+    "textures": 91,
+    "geometries": 125,
+    "programs": 94
+   }
+  },
+  {
+   "group": "modals",
+   "name": "upgrades-mid-purchase",
+   "file": "modals-upgrades-mid-purchase.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 272297,
+    "textures": 91,
+    "geometries": 131,
+    "programs": 94
+   }
+  },
+  {
+   "group": "modals",
+   "name": "upgrades-maxed",
+   "file": "modals-upgrades-maxed.png",
+   "info": {
+    "drawCalls": 132,
+    "triangles": 272345,
+    "textures": 89,
+    "geometries": 131,
+    "programs": 91
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-controls",
+   "file": "modals-settings-controls.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 86,
+    "geometries": 116,
+    "programs": 94
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-rebind-capture",
+   "file": "modals-settings-rebind-capture.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 86,
+    "geometries": 122,
+    "programs": 94
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-conflict",
+   "file": "modals-settings-conflict.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 84,
+    "geometries": 122,
+    "programs": 91
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-camera",
+   "file": "modals-settings-camera.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 84,
+    "geometries": 122,
+    "programs": 91
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-graphics",
+   "file": "modals-settings-graphics.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 84,
+    "geometries": 122,
+    "programs": 91
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-audio",
+   "file": "modals-settings-audio.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 84,
+    "geometries": 122,
+    "programs": 91
+   }
+  },
+  {
+   "group": "modals",
+   "name": "settings-accessibility",
+   "file": "modals-settings-accessibility.png",
+   "info": {
+    "drawCalls": 124,
+    "triangles": 251823,
+    "textures": 84,
+    "geometries": 122,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "1-doors-closing",
+   "file": "cockpit-1-doors-closing.png",
+   "info": {
+    "drawCalls": 121,
+    "triangles": 287064,
+    "textures": 88,
+    "geometries": 139,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "2-doors-sealed",
+   "file": "cockpit-2-doors-sealed.png",
+   "info": {
+    "drawCalls": 119,
+    "triangles": 286920,
+    "textures": 88,
+    "geometries": 141,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "3-reveal",
+   "file": "cockpit-3-reveal.png",
+   "info": {
+    "drawCalls": 156,
+    "triangles": 79275,
+    "textures": 96,
+    "geometries": 220,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "4-systems-boot",
+   "file": "cockpit-4-systems-boot.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 96,
+    "geometries": 220,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "5-briefing-typing",
+   "file": "cockpit-5-briefing-typing.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 101,
+    "geometries": 221,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "6-briefing",
+   "file": "cockpit-6-briefing.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 101,
+    "geometries": 221,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "7-camera-select",
+   "file": "cockpit-7-camera-select.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 106,
+    "geometries": 222,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "8-standby",
+   "file": "cockpit-8-standby.png",
+   "info": {
+    "drawCalls": 129,
+    "triangles": 35593,
+    "textures": 111,
+    "geometries": 223,
+    "programs": 91
+   }
+  },
+  {
+   "group": "cockpit",
+   "name": "9-mirror-centre",
+   "file": "cockpit-9-mirror-centre.png",
+   "info": {
+    "drawCalls": 130,
+    "triangles": 35769,
+    "textures": 111,
+    "geometries": 223,
+    "programs": 91
+   }
+  }
+ ],
+ "checks": {
+  "upgradesMaxed": {
+   "cannons": 5,
+   "capacitor": 5,
+   "hull": 5,
+   "shield": 5,
+   "thrusters": 5
+  },
+  "conflictPrompt": true,
+  "mirrorsIdleInHangar": true,
+  "mirrorRefreshPerSecIGPU": 6,
+  "cockpitTris": 29720
+ },
+ "logs": {
+  "modals": [],
+  "cockpit": []
+ },
+ "errors": {},
+ "perf": {},
+ "budgets": {
+  "maxDrawCalls": 156,
+  "maxTriangles": 287064,
+  "drawCallsOk": true,
+  "trianglesOk": true
+ },
+ "consoleClean": true
+}

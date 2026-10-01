@@ -14,6 +14,12 @@ import { EMPTY_TIERS } from '../data/upgrades';
 import { PLAYER, RAIL } from '../data/mission';
 import { HEX } from '../render/palette';
 import { registerDebug } from './debugApi';
+import { InputManager } from '../input/InputManager';
+import { InputAction } from '../input/actions';
+import { QUERY } from '../core/constants';
+
+/** &manual=1: the real InputManager drives the sim (keyboard / mouse / pointer lock) */
+const MANUAL = QUERY.get('manual') === '1';
 
 const VIEW = { ahead: 320, behind: 20 } as const;
 const DRONE = { type: 1, hp: 40, radius: 2, score: 100, every: 1.6 } as const;
@@ -29,9 +35,14 @@ export function SimLab() {
     const counts = new Map<number, number>();
     const rng = new Rng(3);
     const inp = emptyInput();
-    let spawnT = 0, last = performance.now(), raf = 0;
+    let spawnT = 0, last = performance.now(), raf = 0, paused = false, pauses = 0;
+    if (MANUAL) {
+      InputManager.attach(cv);
+      InputManager.playing = true;
+      InputManager.hooks = { pause: () => void ((paused = !paused), pauses++) };
+    }
     const flashes: { x: number; y: number; s: number; t: number }[] = [];
-    registerDebug('simlab', { state: () => ({ tick: sim.tick, s: sim.player.s, kills: sim.kills, score: sim.score, shots: sim.player.shotsFired, hits: sim.player.shotsHit, events: Object.fromEntries(counts), dropped: stepper.dropped }) });
+    registerDebug('simlab', { state: () => ({ tick: sim.tick, s: sim.player.s, x: sim.player.x, y: sim.player.y, kills: sim.kills, score: sim.score, shots: sim.player.shotsFired, hits: sim.player.shotsHit, events: Object.fromEntries(counts), dropped: stepper.dropped, paused, pauses, locked: InputManager.locked, absolute: InputManager.state.absolute, fireHeld: InputManager.state.isHeld(InputAction.Fire), yaw: InputManager.state.yaw }) });
 
     const pilot = () => {
       // scripted pilot: weave, aim at the nearest drone, roll now and then
@@ -60,7 +71,9 @@ export function SimLab() {
     const frame = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
-      const n = stepper.advance(dt);
+      if (MANUAL) InputManager.state.update(dt, now / 1000);
+      const n = paused ? 0 : stepper.advance(dt);
+      if (paused) stepper.resync();
       for (let i = 0; i < n; i++) {
         spawnT -= 1 / 60;
         if (spawnT <= 0 && sim.enemies.aliveCount < 8) {
@@ -68,7 +81,8 @@ export function SimLab() {
           const hold = rng.range(140, 260);
           sim.spawnEnemy(DRONE.type, sim.player.s + hold, rng.range(-14, 14), rng.range(-8, 8), DRONE.hp, DRONE.radius, DRONE.score, hold);
         }
-        pilot();
+        if (MANUAL) InputManager.state.sample(inp, now / 1000);
+        else pilot();
         sim.step(inp);
         inp.roll = 0;
       }
@@ -169,18 +183,26 @@ export function SimLab() {
       const h = sim.hud;
       g.fillStyle = HEX.frost;
       g.font = `${14 * k}px "JetBrains Mono", monospace`;
-      g.fillText('SIM LAB // src/game, fixed 60 Hz, scripted pilot', 40 * k, 40 * k);
+      g.fillText(`SIM LAB // src/game, fixed 60 Hz, ${MANUAL ? 'MANUAL (InputManager)' : 'scripted pilot'}${paused ? '  // PAUSED' : ''}`, 40 * k, 40 * k);
       const lines = [
         `tick ${sim.tick}  s ${p.s.toFixed(1)} m  speed ${p.speed.toFixed(1)} u/s  alpha ${a.toFixed(2)}  dropped ${stepper.dropped}`,
         `hull ${h.hull.toFixed(0)}/${h.maxHull.toFixed(0)}  shield ${h.shield.toFixed(0)}/${h.maxShield.toFixed(0)}  energy ${(h.energy * 100).toFixed(0)}%  roll cd ${(h.rollCd * 100).toFixed(0)}%`,
         `score ${sim.score}  combo x${sim.combo.toFixed(2)}  kills ${sim.kills}  shots ${p.shotsFired}  hits ${p.shotsHit}  acc ${p.shotsFired ? ((p.shotsHit / p.shotsFired) * 100).toFixed(0) : 0}%`,
         `bolts ${bp.count}/${bp.cap}  enemies ${sim.enemies.aliveCount}/${sim.enemies.cap}  events ${sim.events.head}`,
       ];
+      if (MANUAL) {
+        const st = InputManager.state;
+        const held = [InputAction.MoveUp, InputAction.MoveDown, InputAction.MoveLeft, InputAction.MoveRight, InputAction.Fire, InputAction.Boost, InputAction.Brake].filter(x => st.isHeld(x));
+        lines.push(`input: ${InputManager.locked ? 'POINTER LOCKED' : st.absolute ? 'ABSOLUTE CURSOR' : 'click to lock'}  held [${held.join(' ')}]  reticle ${(st.yaw * 57.3).toFixed(1)} / ${(st.pitch * 57.3).toFixed(1)} deg  pauses ${pauses}`);
+      }
       g.fillStyle = HEX.steel;
       lines.forEach((l, i) => g.fillText(l, W * 0.45, H * 0.66 + i * 22 * k));
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (MANUAL) InputManager.detach();
+    };
   }, []);
   return <canvas ref={ref} style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', display: 'block' }} aria-label="Simulation lab" />;
 }

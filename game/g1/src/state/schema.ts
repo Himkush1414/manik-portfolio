@@ -1,7 +1,7 @@
 // Save schema + defaults + pure migrations (unit-tested). Stores import these;
 // nothing here imports React or the renderer.
 import { SAVE_VERSION } from '../core/constants';
-import { DEFAULT_BINDINGS, cloneBindings, type Bindings } from '../input/bindings';
+import { DEFAULT_BINDINGS, cloneBindings, isModifierCode, type Bindings } from '../input/bindings';
 import { ACTION_ORDER } from '../input/actions';
 import { isShipId, type ShipId, SHIP_IDS } from '../data/ships';
 import { EMPTY_TIERS, TRACK_IDS, MAX_TIER, type UpgradeTiers } from '../data/upgrades';
@@ -24,10 +24,12 @@ export type ProfileData = {
 };
 
 export type HelmetFrame = 'off' | 'subtle' | 'full';
+export type AimAssistLevel = 'off' | 'low' | 'med' | 'high';
+export type SubtitleSize = 'small' | 'medium' | 'large';
 
 export type SettingsData = {
-  controls: { bindings: Bindings; sensitivity: number; invertY: boolean; deadzone: number; smoothing: number };
-  camera: { mode: CameraMode; fov: number; shake: number; helmetFrame: HelmetFrame };
+  controls: { bindings: Bindings; sensitivity: number; invertY: boolean; deadzone: number; smoothing: number; aimAssist: AimAssistLevel; autoFire: boolean };
+  camera: { mode: CameraMode; fov: number; shake: number; helmetFrame: HelmetFrame; rollCoupling: number };
   graphics: {
     preset: Preset;
     autoPicked: boolean;
@@ -41,9 +43,11 @@ export type SettingsData = {
     resScale: number;
     fpsCap: 0 | 60 | 30;
     showFps: boolean;
+    /** speed streak intensity 0..1 (brief §9) */
+    speedLines: number;
   };
   audio: { master: number; music: number; sfx: number; ui: number; mute: boolean };
-  accessibility: { reduceMotion: boolean; reduceFlashing: boolean; uiScale: number };
+  accessibility: { reduceMotion: boolean; reduceFlashing: boolean; uiScale: number; subtitles: boolean; subtitleSize: SubtitleSize };
   bootSeen: boolean;
   /** the briefing typewriter plays on first view only */
   briefingSeen: boolean;
@@ -66,8 +70,8 @@ export const DEFAULT_PROFILE: ProfileData = {
 
 export function defaultSettings(prefersReducedMotion = false): SettingsData {
   return {
-    controls: { bindings: cloneBindings(DEFAULT_BINDINGS), sensitivity: 1, invertY: false, deadzone: 0.08, smoothing: 0.35 },
-    camera: { mode: 'cockpit', fov: 75, shake: 0.8, helmetFrame: 'subtle' },
+    controls: { bindings: cloneBindings(DEFAULT_BINDINGS), sensitivity: 1, invertY: false, deadzone: 0.08, smoothing: 0.35, aimAssist: 'low', autoFire: false },
+    camera: { mode: 'cockpit', fov: 75, shake: 0.8, helmetFrame: 'subtle', rollCoupling: 1 },
     graphics: {
       preset: 'high',
       autoPicked: false,
@@ -81,9 +85,10 @@ export function defaultSettings(prefersReducedMotion = false): SettingsData {
       resScale: 1,
       fpsCap: 0,
       showFps: false,
+      speedLines: 1,
     },
     audio: { master: 0.8, music: 0.7, sfx: 0.85, ui: 0.7, mute: false },
-    accessibility: { reduceMotion: prefersReducedMotion, reduceFlashing: false, uiScale: 1 },
+    accessibility: { reduceMotion: prefersReducedMotion, reduceFlashing: false, uiScale: 1, subtitles: true, subtitleSize: 'medium' },
     bootSeen: false,
     briefingSeen: false,
     gpuHintShown: false,
@@ -132,6 +137,17 @@ function sanitizeSettings(raw: unknown): SettingsData {
       bindings[a] = [typeof b[0] === 'string' ? b[0] : null, typeof b[1] === 'string' ? b[1] : null];
     }
   }
+  // Phase 2: modifier keys are no longer bindable (Phase 1 shipped Brake on
+  // ControlLeft). A slot holding one falls back to its default when that code
+  // is free, else it is cleared.
+  for (const a of ACTION_ORDER) {
+    for (const slot of [0, 1] as const) {
+      if (!isModifierCode(bindings[a][slot])) continue;
+      const def = DEFAULT_BINDINGS[a][slot];
+      const used = ACTION_ORDER.some(o => bindings[o][0] === def || bindings[o][1] === def);
+      bindings[a][slot] = def && !isModifierCode(def) && !used ? def : null;
+    }
+  }
   const cam = obj(r.camera);
   const g = obj(r.graphics);
   const au = obj(r.audio);
@@ -145,12 +161,15 @@ function sanitizeSettings(raw: unknown): SettingsData {
       invertY: bool(c.invertY, false),
       deadzone: num(c.deadzone, 0, 0.5, d.controls.deadzone),
       smoothing: num(c.smoothing, 0, 1, d.controls.smoothing),
+      aimAssist: c.aimAssist === 'off' || c.aimAssist === 'low' || c.aimAssist === 'med' || c.aimAssist === 'high' ? c.aimAssist : d.controls.aimAssist,
+      autoFire: bool(c.autoFire, false),
     },
     camera: {
       mode: isCameraMode(cam.mode) ? cam.mode : d.camera.mode,
       fov: num(cam.fov, 60, 100, d.camera.fov),
       shake: num(cam.shake, 0, 1, d.camera.shake),
       helmetFrame: helmet,
+      rollCoupling: num(cam.rollCoupling, 0, 1.4, d.camera.rollCoupling),
     },
     graphics: {
       preset: isPreset(g.preset) ? g.preset : d.graphics.preset,
@@ -165,6 +184,7 @@ function sanitizeSettings(raw: unknown): SettingsData {
       resScale: num(g.resScale, 0.5, 1, 1),
       fpsCap,
       showFps: bool(g.showFps, false),
+      speedLines: num(g.speedLines, 0, 1, 1),
     },
     audio: {
       master: num(au.master, 0, 1, d.audio.master),
@@ -177,6 +197,8 @@ function sanitizeSettings(raw: unknown): SettingsData {
       reduceMotion: bool(ac.reduceMotion, false),
       reduceFlashing: bool(ac.reduceFlashing, false),
       uiScale: num(ac.uiScale, 0.8, 1.3, 1),
+      subtitles: bool(ac.subtitles, true),
+      subtitleSize: ac.subtitleSize === 'small' || ac.subtitleSize === 'large' || ac.subtitleSize === 'medium' ? ac.subtitleSize : 'medium',
     },
     bootSeen: bool(r.bootSeen, false),
     briefingSeen: bool(r.briefingSeen, false),
