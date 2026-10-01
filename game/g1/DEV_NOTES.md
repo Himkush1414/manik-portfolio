@@ -16,7 +16,7 @@ this file alone. Updated after every slice.
 | 1D Hangar scene | DONE | bay, reflective deck, vista, pad, turntable + camera, bay life, parked fighters, contact shadow; six ships verified on the pad (`?ship=` deep link) |
 | 1E Hangar UI + pilots + story | DONE | lore, HUD primitives, hangar overlay, purchase flow, live pilot busts (worker), hangar ambience, keyboard/a11y pass |
 | 1F Upgrades / Settings / Save | DONE | Upgrades modal (hold-to-install, callouts, rating gauge), Settings (5 tabs, rebinding w/ conflicts, live + persisted), reset progress, debug cheats, FPS overlay |
-| 1G Cockpit + camera select | IN PROGRESS | bulkhead, cockpit (interior, tunnel, 3 live mirrors), systems boot, combiner briefing, camera selector, standby, ESC return DONE; next: polish pass (hands/body framing, tunnel mouth), light/heavy variant check, 20-round-trip leak check |
+| 1G Cockpit + camera select | IN PROGRESS | bulkhead, cockpit (interior, tunnel, 3 live mirrors), systems boot, combiner briefing, camera selector, standby, ESC return DONE; MirrorRig + BlurDissolve handoff primitives DONE; next: polish pass (body framing, tunnel mouth, dash labels, select-screen legibility), light/heavy variant check, 20-round-trip leak check |
 | 1H QA / polish / perf | — | |
 
 **Next step:** see the first slice not marked DONE above; its sub-steps are in §5.
@@ -467,6 +467,13 @@ HDRIs / kit parts if ever needed (none used so far).
   compiles hidden (force-visible) and reports ready; START MISSION waits on
   it behind the sealed doors. Cockpit post: `postfx.ao/aoRadius/dof` (AO
   near-field scale, DOF ~off so the combiner text stays crisp).
+- **Handoff primitives (1G):** `render/MirrorRig.ts` — N cameras + HalfFloat
+  targets, capped refresh (`fps`, LOW preset 20), `setSource(obj)` = what the
+  mirrors see (Phase 2: the wormhole scene), `attach(parent)`, `render(gl,dt)`;
+  `Mirrors.tsx` only owns the convex surfaces + bezels. `render/BlurDissolve.ts`
+  — the §8 dissolve tokens in one place: `dissolveEnterVars/ExitVars` (seek-safe
+  vars for master timelines; the boot beats use them), `dissolveIn/Out(el)`,
+  and `blurDissolve(swap)` (WebGL twin: blur + dim, swap at the peak).
 - **1G pitfalls (measured):** (1) N8AO intensity 0 => NaN => black frame:
   disable the pass instead. (2) DoorController keeps ONE live tween: building
   the open tween up front killed the close tween (doors never closed) —

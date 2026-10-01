@@ -24,6 +24,7 @@ import { stage } from '../Stage';
 import { director } from '../../render/cameraDirector';
 import { compileHdr } from '../../render/compile';
 import { registerDebug } from '../../debug/debugApi';
+import { QUALITY } from '../../render/quality';
 
 const ORIGIN = new Vector3(...COCKPIT_ORIGIN);
 const FOG_HANGAR = [40, 110] as const;
@@ -37,6 +38,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
   const shipId = useProfile(p => p.selectedShip);
   const pilot = useProfile(p => p.pilot);
   const livery = useProfile(p => clampLivery(p.selectedShip, p.liveryByShip[p.selectedShip] ?? 0));
+  const mirrorQ = QUALITY[useSettings(s => s.graphics.preset)].mirror;
   const root = useRef<Group | null>(null);
   const [rootObj, setRootObj] = useState<Group | null>(null);
 
@@ -134,7 +136,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
       <primitive object={built.group} />
       <primitive object={own.group} />
       <LaunchTunnel reduceMotion={reduceMotion} />
-      <Mirrors parent={rootObj} />
+      <Mirrors parent={rootObj} quality={mirrorQ} />
     </group>
   );
 }

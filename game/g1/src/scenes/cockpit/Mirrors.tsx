@@ -1,39 +1,43 @@
 // Three cockpit mirrors with REAL render targets (brief §15): a larger centre
-// mirror above the dash (512x256) and two canopy-bow mirrors (256x160), each
-// a rear-facing camera rendered at 30 fps only while in the cockpit. The
-// cameras see the world + the own ship (MIRROR_LAYER); the mirror surfaces
-// live on their own layer so no mirror ever samples a target it writes.
-// Look: slight convex barrel + fresnel + vignette + faint scanlines, bezel.
-import { useEffect, useMemo, useRef } from 'react';
+// mirror above the dash (512x256) and two canopy-bow mirrors (256x160), fed
+// by a MirrorRig (render/MirrorRig.ts: rear-facing cameras, 30 fps, pluggable
+// source) only while in the cockpit. The cameras see the world + the own ship
+// (MIRROR_LAYER); the mirror surfaces live on their own layer so no mirror
+// ever samples a target it writes. Look: slight convex barrel + fresnel +
+// vignette + faint scanlines, in a bezel.
+import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { BoxGeometry, Group, HalfFloatType, Mesh, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, ShaderMaterial, WebGLRenderTarget } from 'three';
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry, ShaderMaterial } from 'three';
 import { MIRRORS } from './cockpitSpec';
 import { MIRROR_LAYER, MIRROR_SURFACE_LAYER } from '../sceneBridge';
 import { stage } from '../Stage';
 import { cockpitFx } from './displays';
+import { MirrorRig } from '../../render/MirrorRig';
+import { registerDebug } from '../../debug/debugApi';
 
-const LOOK_BACK: Record<string, [number, number, number]> = {
-  centre: [0, 0.3, 0.02],
-  left: [-0.55, 0.12, -0.45],
-  right: [0.55, 0.12, -0.45],
+/** Rear-facing camera per mirror (cockpit-local): position + look target. */
+const CAMS: Record<string, { pos: [number, number, number]; look: [number, number, number]; fov: number }> = {
+  centre: { pos: [0, 0.3, 0.02], look: [0, 0.22, 1.02], fov: 34 },
+  left: { pos: [-0.55, 0.12, -0.45], look: [-0.9, 0.04, 0.55], fov: 40 },
+  right: { pos: [0.55, 0.12, -0.45], look: [0.9, 0.04, 0.55], fov: 40 },
 };
 
-export function Mirrors({ parent }: { parent: Group | null }) {
+/** Quality-preset mirror budget: the centre target's size + refresh rate;
+ *  the side mirrors keep their 256x160 : 512x256 proportion. */
+export type MirrorQuality = { w: number; h: number; fps: number };
+
+export function Mirrors({ parent, quality }: { parent: Group | null; quality: MirrorQuality }) {
   const gl = useThree(s => s.gl);
   const scene = useThree(s => s.scene);
   const m = useMemo(() => {
+    const rig = new MirrorRig(
+      MIRRORS.map(def => ({ size: def.rt, fov: CAMS[def.id].fov, aspect: def.w / def.h, pos: CAMS[def.id].pos, look: CAMS[def.id].look, layers: [MIRROR_LAYER] })),
+    );
     const bezelMat = new MeshStandardMaterial({ color: '#1c2029', roughness: 0.5, metalness: 0.7 });
-    return MIRRORS.map(def => {
-      const rt = new WebGLRenderTarget(def.rt[0], def.rt[1], { type: HalfFloatType, samples: 2 });
-      const cam = new PerspectiveCamera(def.id === 'centre' ? 34 : 40, def.w / def.h, 0.1, 900);
-      cam.layers.set(0);
-      cam.layers.enable(MIRROR_LAYER);
-      const [x, y, z] = LOOK_BACK[def.id];
-      cam.position.set(x, y, z);
-      // rear-facing: look along +z (behind the pilot), outward for the side mirrors
-      cam.lookAt(x + (def.id === 'left' ? -0.35 : def.id === 'right' ? 0.35 : 0), y - 0.08, z + 1);
+    const bezelGeos: BoxGeometry[] = [];
+    const surfaces = MIRRORS.map((def, i) => {
       const mat = new ShaderMaterial({
-        uniforms: { tMap: { value: rt.texture }, uTime: { value: 0 }, uPower: { value: 0 } },
+        uniforms: { tMap: { value: rig.textures[i] }, uTime: { value: 0 }, uPower: { value: 0 } },
         vertexShader: /* glsl */ `varying vec2 vUv; varying vec3 vN; varying vec3 vV;
           void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix)*normal); vV = normalize(cameraPosition - w.xyz); gl_Position = projectionMatrix * viewMatrix * w; }`,
         fragmentShader: /* glsl */ `
@@ -53,52 +57,55 @@ export function Mirrors({ parent }: { parent: Group | null }) {
       });
       const surface = new Mesh(new PlaneGeometry(def.w, def.h), mat);
       surface.layers.set(MIRROR_SURFACE_LAYER);
-      const bezel = new Mesh(new BoxGeometry(def.w + 0.018, def.h + 0.018, 0.012), bezelMat);
+      const bg = new BoxGeometry(def.w + 0.018, def.h + 0.018, 0.012);
+      bezelGeos.push(bg);
+      const bezel = new Mesh(bg, bezelMat);
       bezel.position.z = -0.008;
       const holder = new Group();
       holder.position.set(def.pos[0], def.pos[1], def.pos[2]);
       holder.lookAt(0, 0, 0);
       holder.add(surface, bezel);
-      return { def, rt, cam, mat, surface, bezel, holder };
+      return { mat, surface, holder };
     });
+    return { rig, surfaces, bezelMat, bezelGeos };
   }, []);
 
   useEffect(() => {
     if (!parent) return;
-    m.forEach(x => parent.add(x.holder, x.cam));
+    m.rig.attach(parent);
+    m.rig.setSource(scene);
+    m.surfaces.forEach(s => parent.add(s.holder));
+    registerDebug('mirrors', { rig: () => m.rig });
     return () => {
-      m.forEach(x => {
-        parent.remove(x.holder, x.cam);
-        x.rt.dispose();
-        x.mat.dispose();
-        x.surface.geometry.dispose();
-        x.bezel.geometry.dispose();
+      m.surfaces.forEach(s => {
+        parent.remove(s.holder);
+        s.mat.dispose();
+        s.surface.geometry.dispose();
       });
-      (m[0].bezel.material as MeshStandardMaterial).dispose();
+      m.bezelGeos.forEach(g => g.dispose());
+      m.bezelMat.dispose();
+      m.rig.dispose();
     };
-  }, [parent, m]);
+  }, [parent, scene, m]);
 
-  const frame = useRef(0);
-  useFrame(state => {
-    if (stage.cockpit < 0.5 || !parent) return;
-    const t = state.clock.elapsedTime;
+  useEffect(() => {
+    m.rig.fps = quality.fps;
+    m.rig.resize(
+      MIRRORS.map(def => {
+        const k = quality.w / MIRRORS[0].rt[0];
+        return [Math.round(def.rt[0] * k), Math.round(def.rt[1] * (quality.h / MIRRORS[0].rt[1]))] as const;
+      }),
+    );
+  }, [m, quality]);
+
+  useFrame((state, dt) => {
+    if (stage.cockpit < 0.5 || !parent) return; // skipped entirely outside the cockpit
     const power = Math.min(1, cockpitFx.power.dash * 1.2);
-    m.forEach(x => {
-      x.mat.uniforms.uTime.value = t;
-      x.mat.uniforms.uPower.value = power;
+    m.surfaces.forEach(s => {
+      s.mat.uniforms.uTime.value = state.clock.elapsedTime;
+      s.mat.uniforms.uPower.value = power;
     });
-    if (frame.current++ % 2) return; // 30 fps
-    const prevTarget = gl.getRenderTarget();
-    const prevShadow = gl.shadowMap.autoUpdate;
-    gl.shadowMap.autoUpdate = false;
-    for (const x of m) {
-      x.cam.updateMatrixWorld();
-      gl.setRenderTarget(x.rt);
-      gl.clear();
-      gl.render(scene, x.cam);
-    }
-    gl.setRenderTarget(prevTarget);
-    gl.shadowMap.autoUpdate = prevShadow;
+    m.rig.render(gl, dt);
   }, 0.5);
 
   return null;

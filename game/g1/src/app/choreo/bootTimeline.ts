@@ -13,6 +13,7 @@ import { stage } from '../../scenes/Stage';
 import { bootDoors } from '../../scenes/sceneBridge';
 import { director, setView, VIEWS, BOOT_FX_POS } from '../../render/cameraDirector';
 import { postfx } from '../../render/fxController';
+import { dissolveEnterVars, dissolveExitVars } from '../../render/BlurDissolve';
 import { flow, type FlowState } from '../flow';
 import { sfx } from '../../audio/sfx';
 import { useLoader } from '../../core/loader';
@@ -58,19 +59,9 @@ export function runBoot(refs: BootRefs, opts: BootOptions): BootHandle {
   gsap.set(refs.lbTop, { yPercent: -100 });
   gsap.set(refs.lbBottom, { yPercent: 100 });
 
-  const enter = (el: Element, at: number, dur: number = B.dissolve.in.dur) =>
-    tl.fromTo(
-      el,
-      { autoAlpha: 0, filter: `blur(${R ? 0 : B.dissolve.in.blur}px)`, scale: R ? 1 : B.dissolve.in.scale, willChange: 'filter, transform, opacity' },
-      { autoAlpha: 1, filter: 'blur(0px)', scale: 1, duration: R ? B.reduced.fade : dur, ease: 'expo.out', clearProps: 'willChange' },
-      at,
-    );
-  const exit = (el: Element, at: number, dur: number = B.dissolve.out.dur) =>
-    tl.to(
-      el,
-      { autoAlpha: 0, filter: `blur(${R ? 0 : B.dissolve.out.blur}px)`, scale: R ? 1 : B.dissolve.out.scale, duration: R ? B.reduced.fade : dur, ease: 'power2.in' },
-      at,
-    );
+  // the shared blur-dissolve primitive (render/BlurDissolve.ts)
+  const enter = (el: Element, at: number, duration: number = B.dissolve.in.dur) => tl.fromTo(el, ...dissolveEnterVars({ reduced: R, duration }), at);
+  const exit = (el: Element, at: number, duration: number = B.dissolve.out.dur) => tl.to(el, dissolveExitVars({ reduced: R, duration }), at);
   const beat = (at: number, fn: () => void) => tl.call(fn, [], at);
 
   // ------------------------------------------------------------------ times
