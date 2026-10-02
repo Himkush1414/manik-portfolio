@@ -138,46 +138,60 @@ export class TerrainField {
   private compose(u: number, out: TerrainSample | null): number {
     const d = this.def, f = this.f;
     const wx = f.px + f.rx * u, wz = f.pz + f.rz * u;
-    const W = this.halfW;
     const du = u - this.centre, ad = Math.abs(du);
-    const wallH = du < 0 ? this.wallL : this.wallR;
-    // ---- floor: rolling floodplain rising gently to the banks, river channel carved in
-    const roll = fbm(this.n1, wx / 220, wz / 220, 3) * 3.5 * sstep(this.riverHalf, W * 0.7, ad);
-    const bank = (ad / W) * (ad / W) * 10;
+    const side = du < 0 ? 0 : 1;
+    const wallH = side === 0 ? this.wallL : this.wallR;
+    // ---- valley edge, perturbed in WORLD space per side: spurs jut in, bays recede
+    const edgeN = fbm(this.n2, wx / 520 + side * 41.3, wz / 520, 3);
+    const W = Math.max(this.riverHalf + 30, this.halfW * (1 + 0.32 * edgeN));
+    // ---- floor: rolling floodplain rising gently to the edge, river channel carved in
+    // floor relief: low world-space hills, rising toward the valley sides (no distance-based benches:
+    // anything that is a pure function of the distance to the river draws stripes along it)
+    const away = sstep(this.riverHalf, W * 0.75, ad);
+    const roll = (fbm(this.n1, wx / 380, wz / 380, 4) * 7 + fbm(this.n2, wx / 120, wz / 120, 2) * 1.6) * away;
+    const q = Math.min(1, ad / W);
+    const bank = q * q * 9;
     const rv = d.river;
     const channel = rv && this.riverHalf > 0 ? rv.depth * (1 - sstep(this.riverHalf * 0.55, this.riverHalf * 1.25, ad)) : 0;
-    let h = roll + Math.min(bank, 14) - channel;
-    // ---- walls: scree apron -> steep face -> shoulder
-    const apron = d.cliffs.screeApron;
-    const faceLen = Math.max(25, wallH * (0.95 - 0.7 * d.cliffs.sharpen));
-    const a = sstep(W, W + apron, ad) * 0.12;
-    const fx = Math.min(1, Math.max(0, (ad - W - apron * 0.55) / faceLen));
-    const face = smoother(fx);
-    // wall height wobbles along the face (buttresses, re-entrants) in world space
-    const wob = 1 + 0.18 * fbm(this.n3, wx / 260, wz / 260, 3);
-    let wall = wallH * wob * (a + 0.88 * face);
-    if (this.strata) {
-      const tilt = this.strata.tilt * fbm(this.n2, wx / 3000, wz / 3000, 1) * wallH;
-      const step = wallH / Math.max(1, this.strata.bands);
-      wall = terrace(wall + tilt, step, this.strata.sharpness) - tilt;
-    }
-    if (this.terraces) wall = terrace(wall, this.terraces.step, 1 - this.terraces.smooth);
-    h += wall;
-    // ---- mountain massing beyond the walls, growing with distance
-    const wallTop = W + apron + faceLen;
-    const reach = sstep(wallTop * 0.85, wallTop + 700, ad);
-    if (reach > 0) {
+    let h = roll + bank - channel;
+    // ---- the valley sides (skipped on the floor: everything below is zero there, and the floor is
+    // where the dense 2 u columns sit)
+    const beyond = Math.max(0, ad - W);
+    let prof = 0, rockMask = 0, far = 0, t = 0;
+    if (beyond > 0) {
+      // the mountain field the valley is carved into (world space, ridged + warped)
       const R = d.ridges;
       warp(this.n2, wx / R.wavelength, wz / R.wavelength, R.warp, this.w);
       const rx = wx / R.wavelength + this.w.dx, rz = wz / R.wavelength + this.w.dy;
-      const rid = ridged(this.n1, rx, rz, R.octaves);
-      const far = sstep(wallTop + 300, wallTop + 1800, ad);
-      const peak = d.peaks.height[0] + (d.peaks.height[1] - d.peaks.height[0]) * (0.5 + 0.5 * fbm(this.n3, wx / 2500, wz / 2500, 2));
-      h += reach * (R.amplitude * rid + far * peak * rid * 0.6);
+      // massive shoulders (smooth) + sharp crests (ridged): raw ridged noise alone reads as needles
+      const rid = 0.62 * ridged(this.n1, rx, rz, R.octaves) + 0.38 * (0.5 + 0.5 * fbm(this.n3, rx * 0.8 + 3.3, rz * 0.8, 4));
+      const broad = 0.5 + 0.5 * fbm(this.n3, wx / (R.wavelength * 1.7), wz / (R.wavelength * 1.7), 3);
+      // amplitude grows from the valley-side hills (wallH) to the high peaks toward the ribbon edge
+      far = sstep(150, 900, beyond);
+      const peakH = d.peaks.height[0] + (d.peaks.height[1] - d.peaks.height[0]) * broad;
+      const amp = wallH * (0.55 + 0.6 * broad) * (1 - far) + peakH * far;
+      const field = amp * (0.25 + 0.75 * rid);
+      // side profile: slope steepness varies (gentle hillsides vs cliff bands from a rock mask);
+      // narrows (half-width near the gorge range) turn the sides into steep rock
+      const gorge = 1 - sstep(d.gorgeHalfWidth[1], d.floorHalfWidth[0], this.halfW);
+      rockMask = Math.max(gorge, sstep(0.05, 0.45, fbm(this.n3, wx / 700 + 9.1, wz / 700, 3) + (d.cliffs.sharpen - 0.5) * 0.6));
+      // in a gorge the apron vanishes and the rock rises almost vertically from the floor edge
+      const run = (wallH * (1.25 - 0.85 * rockMask) + d.cliffs.screeApron) * (1 - gorge) + (wallH * 0.16 + 6) * gorge;
+      t = Math.min(1, beyond / run);
+      // concave foot (scree / colluvium), steepening, then the field takes over
+      prof = t * t * (3 - 2 * t) * (0.65 + 0.35 * t);
+      let sideH = field * prof;
+      // limestone bands: strata only where the rock mask exposes the face
+      if (this.strata && rockMask > 0.01 && sideH > 1) {
+        const step = Math.max(8, wallH / Math.max(1, this.strata.bands));
+        sideH = sideH + (terrace(sideH, step, this.strata.sharpness) - sideH) * rockMask * sstep(0, 0.25, t);
+      }
+      if (this.terraces && sideH > 1) sideH = sideH + (terrace(sideH, this.terraces.step, 1 - this.terraces.smooth) - sideH) * 0.5 * sstep(0, 0.2, t);
+      h += sideH;
+      // erosion gullies / spurs on the slopes (derivative-damped, warped so they do not comb)
+      const slopeZone = sstep(0, run * 0.4, beyond);
+      if (slopeZone > 0) h += slopeZone * erodedFbm(this.n1, wx / 170 + this.w.dx * 0.6, wz / 170 + this.w.dy * 0.6, 5) * (14 + 46 * d.erosion) * (0.6 + 0.4 * prof);
     }
-    // ---- erosion gullies / spurs on the slopes (derivative-damped), fading on the floor
-    const slopeZone = sstep(W, W + apron + faceLen * 0.5, ad);
-    if (slopeZone > 0) h += slopeZone * erodedFbm(this.n1, wx / 150, wz / 150, 5) * (18 + 40 * d.erosion);
     const y = this.floorY + h;
     if (out) {
       const waterY = this.floorY - 0.6;
@@ -185,8 +199,8 @@ export class TerrainField {
       out.waterY = wet ? waterY : NaN;
       out.depth = wet ? waterY - y : 0;
       out.riverDist = ad;
-      out.wall = Math.min(1, wall / Math.max(1, wallH));
-      out.rock = Math.min(1, face * 1.2 + (reach > 0 ? reach * 0.5 : 0));
+      out.wall = prof;
+      out.rock = Math.min(1, rockMask * sstep(0.05, 0.4, t) + far * 0.4);
       out.moisture = Math.max(0, Math.min(1, 1 - ad / (W * 1.6) + 0.25 * fbm(this.n3, wx / 400, wz / 400, 2)));
     }
     return y;

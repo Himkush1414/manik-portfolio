@@ -28,7 +28,7 @@ look (§19 founder test, side-by-side stills).
 | Slice | Scope (brief §17) | Status | Push |
 |---|---|---|---|
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
-| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | IN PROGRESS (W1a path, W1b terrain field) | ec5fc39, (W1b) |
+| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | IN PROGRESS (W1a path, W1b terrain field, W1c tiles + streamer + worldlab) | ec5fc39, 5c58aac, (W1c) |
 | W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
 | W3 | water, rocks/cliffs, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
@@ -93,6 +93,66 @@ look (§19 founder test, side-by-side stills).
   direct eval -> deterministic regardless of cache). Tests: determinism
   hash, valley property, river wet / walls dry, envelope >= 3 u on a test
   path, grid == uncached, < 6 us per height. LOOK NOT YET JUDGED (W1c).
+- W1c terrain on screen + look-dev:
+  * `src/game/world/tiles.ts` (pure): tile = 128 u x +-900 u, columns 2 u
+    to +-120 then x1.06 per column up to 24 u (243 cols LOD0; LOD1/2 keep
+    every 2nd / 4th), rows 2 / 4 / 8 u; positions relative to the tile
+    origin (path point at s0, floor height), normals from world-space
+    central differences over a 1-sample apron (edges bit-identical with the
+    neighbour tile, tested), skirt ring dropped 24 u, attrib RGBA8 = rock,
+    moisture, wet, wall. Vertex-vs-field parity < 0.05 u (tested).
+  * `src/levels/paths/arden01.ts`: the Level 1 path (17 waypoints, straight
+    lead-in / lead-out, skim at 12 u with envB 7.5, two vista climbs to
+    120 / 140 u) + valley half-width keys (gorge 66-95 at s 4100-5400,
+    basin 300). Passes the validator incl. envelope vs ARDEN terrain.
+  * `src/render/world/terrain.worker.ts` + `TerrainStreamer.ts`: RENDER
+    DECISION — pooled BufferGeometry per LOD (fixed vertex count, shared
+    index), worker buffers copied into the attributes (<= 1 upload / frame,
+    measured <= 0.6 ms) instead of vertex-texture fetch: it meets the upload
+    + triangle budgets, so the VTF prototype was not needed (revisit only if
+    a budget fails). Buffers recycled to the worker as Transferables, old LOD
+    kept until the new one lands (no holes), floating origin per frame,
+    `stats.lateTiles` (wanted within 640 u, not resident).
+  * `src/render/world/terrainMaterial.ts`: MeshStandardMaterial +
+    onBeforeCompile (keeps the light rig + fog): grass / meadow by moisture
+    + macro noise, soil on steeper grass, limestone + strata bands (world-y
+    bands) on rock exposure / steep slopes, scree aprons, snow above
+    snowLine (altitude over the floor), wet banks; all colours uniforms;
+    world-space noise via `uOrigin` (floating origin). No texture yet —
+    DEVIATION (sequencing): CC0 detail layers come with the rock kit in W3.
+  * `?screen=worldlab` (`src/scenes/worldlab/WorldLab.tsx`): streamed world
+    on its own, sun on the borrowed cockpit-key DirectionalLight (decision 5
+    validated: no new light), hemisphere fill, fog, mission post chain,
+    camera on the path (s, u, alt, yaw, pitch; keys W/S A/D R/F arrows,
+    SPACE). `__G1__.worldlab.{set, fly, cam, stats, settled}`. App/World
+    skip hangar / launch / mission UI in this mode.
+  * `tools/qa-worldlab.mjs`: 6 ARDEN beauty shots (river skim, valley,
+    gorge, panorama, wall side, look back) after streaming settles + a
+    cruise fly measuring fps / tiles.
+  * LOOK-DEV LOG: clay1 = two parallel near-vertical walls of constant
+    height (a trench — the founder's "pipe" again: rubric depth 1, skyline
+    1). Root cause: floor + wall-function + mountains-behind gives every
+    cross-section the same shape. Rewrote: a world-space mountain field
+    (ridged + warped, amplitude growing to the peaks) with the valley CARVED
+    into it, valley edge perturbed per side in world space (spurs / bays),
+    slope steepness from a rock mask (gentle hillsides vs cliff bands),
+    strata only on cliff bands. clay2 good massing; clay3 removed needle
+    peaks (62 % ridged + 38 % smooth shoulders) and comb gullies (warped
+    domain) but distance-from-river "benches" drew ploughed stripes ->
+    removed (rule: never make anything a pure function of the distance to
+    the river). clay4/5: gorge factor from the half-width -> steep rock
+    rising from the floor edge in the narrows. col1/col2: colour pass.
+    OPEN (later passes): near ground lacks surface detail (W3 textures, W4
+    vegetation); shadow side too dark (W2 env probe + sky ambient); vista
+    climbs stay below the ridgelines -> author PASSES (saddles) for vista
+    beats in W6; the world beyond the ribbon is empty fog (W2 horizon
+    layers + far ridges).
+  * PERF (RTX 3050, HIGH, worldlab cruise 58 u/s): 60 fps, p95 16.9,
+    terrain 178k tris (budget 180k, LOD0 <= 150 u, LOD1 <= 700 u, ahead
+    2600, behind 800), 40-42 calls, lateTiles 0, tile gen avg 5.7 ms / max
+    35.7 ms (target 25 ms: max likely the JIT-cold first tiles — measure
+    steady state in W1d; 2nd worker if needed), upload <= 0.6 ms,
+    programs / geometries / textures constant, console clean.
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

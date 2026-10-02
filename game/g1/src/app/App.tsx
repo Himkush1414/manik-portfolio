@@ -19,9 +19,13 @@ import { LaunchHUD } from '../ui/screens/launch/LaunchHUD';
 import { LaunchOverlay } from '../ui/screens/mission/LaunchOverlay';
 import { MissionHUD } from '../ui/screens/mission/MissionHUD';
 import { installAutoLaunch } from './mission/autoLaunch';
+
 import { FaultPanel } from '../ui/screens/FaultPanel';
 import { QUERY } from '../core/constants';
 import { debugEnabled } from '../debug/debugApi';
+
+/** ?screen=worldlab: the world look-dev screen only (no hangar / launch / mission UI) */
+const WORLDLAB = QUERY.get('screen') === 'worldlab';
 
 // QA lab screens (debug only, code-split out of the game bundle)
 const SimLab = lazy(() => import('../debug/SimLab').then(m => ({ default: m.SimLab })));
@@ -57,10 +61,10 @@ function Game() {
       </CanvasRoot>
       {/* t=0 waits for fonts (brief §8): SplitText must measure the real face */}
       {bootMounted && fontsReady && isBoot(flowState) && <BootController onDone={() => setBootMounted(false)} />}
-      <HangarUI />
-      <LaunchHUD />
+      {!WORLDLAB && <HangarUI />}
+      {!WORLDLAB && <LaunchHUD />}
       <LaunchOverlay />
-      <MissionHUD />
+      {!WORLDLAB && <MissionHUD />}
       <FpsOverlay />
       <AudioHint />
       <FaultPanel />

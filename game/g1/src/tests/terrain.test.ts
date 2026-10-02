@@ -22,13 +22,16 @@ describe('TerrainField (Phase 2R §5)', () => {
 
   it('the path flies a valley: floor near the path, walls rise, far relief in range', () => {
     const t = field();
+    let rise = 0, n = 0;
     for (let s = 200; s < 6000; s += 400) {
       const floor = path.floorAt(s);
       const under = t.height(s, 0);
       expect(Math.abs(under - floor), `floor at s=${s}`).toBeLessThan(16);
-      const side = Math.max(t.height(s, 500), t.height(s, -500));
-      expect(side - floor, `walls at s=${s}`).toBeGreaterThan(150);
+      // the valley sides rise on both sides (averaged: spurs and bays vary it along the valley)
+      rise += Math.min(t.height(s, 700), t.height(s, -700)) - floor;
+      n++;
     }
+    expect(rise / n).toBeGreaterThan(150);
     let hi = -Infinity;
     for (let s = 0; s < 6000; s += 50) for (const u of [-900, -700, 700, 900]) hi = Math.max(hi, t.height(s, u) - path.floorAt(s));
     expect(hi).toBeGreaterThan(ARDEN.terrain.relief[0]);

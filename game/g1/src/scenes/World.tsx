@@ -12,6 +12,7 @@ import { Bulkhead } from './cockpit/Bulkhead';
 import { Cockpit, CockpitLights } from './cockpit/Cockpit';
 import { MissionDriver } from './mission/MissionDriver';
 import { MissionHudDriver } from './mission/MissionHudDriver';
+import { WorldLab } from './worldlab/WorldLab';
 import { useUi } from '../state/ui.store';
 import { useProfile } from '../state/profile.store';
 import { QUERY, DEBUG } from '../core/constants';
@@ -37,14 +38,24 @@ export function World() {
   const scene = useThree(s => s.scene);
   const camera = useThree(s => s.camera);
   const lookdev = QUERY.get('screen') === 'lookdev';
+  // Phase 2R look-dev: a world on its own (no hangar / cockpit / mission)
+  const worldlab = QUERY.get('screen') === 'worldlab';
   const [cockpitOn, setCockpitOn] = useState(cockpitMount.wanted);
   useEffect(() => cockpitMount.subscribe(() => setCockpitOn(true)), []);
   useEffect(() => {
     performance.mark('world:mounted');
     markWorldMounted({ gl, scene, camera });
-    if (lookdev) markContentReady(); // no staged hangar there
+    if (lookdev || worldlab) markContentReady(); // no staged hangar there
     registerDebug('world', { scene: () => scene });
-  }, [gl, scene, camera, lookdev]);
+  }, [gl, scene, camera, lookdev, worldlab]);
+  if (worldlab)
+    return (
+      <>
+        <StudioLights shadowMapSize={q.shadowMap} />
+        <CockpitLights />
+        <WorldLab />
+      </>
+    );
   return (
     <>
       <StudioEnvironment />
