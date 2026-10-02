@@ -26,6 +26,8 @@ const _env = { a: 0, b: 0 };
 const _p1 = { x: 0, y: 0 }, _p2 = { x: 0, y: 0 };
 let stormFlash = 0, stormGap = 0;
 let readerSim: unknown = null;
+/** speed-line gain eased toward the active view's (follows the rig blend) */
+let streakGain = 1;
 
 export function MissionDriver() {
   useFrame((state, dt) => {
@@ -97,7 +99,8 @@ export function MissionDriver() {
       // ---- speed sensation: streaks, radial blur + edge CA, FOV, turbulence rumble
       const cruise = curveAt(sim.level.speedCurve, p.s) || sim.level.cruiseSpeed;
       const ratio = p.speed / Math.max(1, cruise);
-      mission.streaks?.update(ps, speed01, st.graphics.speedLines * (reduce ? 0.5 : 1), mission.tunnel.uniforms.uFil.value, state.camera.position.z - mission.root.position.z);
+      streakGain += (RIGS.streakGain[mission.rig.mode] - streakGain) * Math.min(1, dt / RIGS.blend * 3);
+      mission.streaks?.update(ps, speed01, st.graphics.speedLines * streakGain * (reduce ? 0.5 : 1), mission.tunnel.uniforms.uFil.value, state.camera.position.z - mission.root.position.z);
       missionPost.blur = reduce ? 0 : SPEED_FX.blur * Math.min(1, Math.max(0, (ratio - 1.05) / 0.4) + Math.max(0, speed01 - 0.85));
       missionPost.ca = SPEED_FX.caPerSpeed * speed01 * (reduce ? 0.3 : 1);
       rigFlight.speedRatio = ratio;

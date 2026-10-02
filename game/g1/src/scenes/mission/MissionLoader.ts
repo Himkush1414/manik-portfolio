@@ -24,6 +24,7 @@ import { MissionVfx } from '../../render/mission/vfx/MissionVfx';
 import { SPECS } from '../../ships/specs';
 import { cannonMuzzles } from './shipMounts';
 import { registerDebug } from '../../debug/debugApi';
+import { setCockpitEye } from './missionCamera';
 
 let inflight: Promise<void> | null = null;
 
@@ -62,6 +63,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
     }
     mission.vfx.setShip(ship.group, SPECS[p.selectedShip]);
     mission.rig.setShipLength(SPECS[p.selectedShip].length);
+    setCockpitEye(p.selectedShip);
   }
   mission.progress = 0.15;
   // the wormhole: built once (noise bake sliced), reused across launches

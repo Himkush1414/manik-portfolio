@@ -4,17 +4,19 @@
 // starts so each beat is caught, and saves frames for each camera mode.
 //   node tools/qa-launch-seq.mjs [origin] [--modes cockpit,third] [--out qa/p2b] [--rate 0.25]
 import { chromium } from 'playwright';
+import { gpuArgs, assertGpu } from './gpu.mjs';
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 ? argv[i + 1] : d; };
 const origin = argv[0]?.startsWith('http') ? argv[0] : 'http://localhost:5198';
 const modes = opt('modes', 'cockpit,third').split(',');
 const out = opt('out', 'qa/p2b');
 const rate = +opt('rate', 0.25);
-const args = ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11', ...(process.env.G1_DGPU ? ['--force_high_performance_gpu'] : [])];
+const args = [...gpuArgs];
 const result = {};
 for (const mode of modes) {
   const b = await chromium.launch({ channel: 'chrome', headless: true, args });
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+  const gpu = await assertGpu(p);
   const logs = [];
   p.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(m.text().slice(0, 160)); });
   p.on('pageerror', e => logs.push('pageerror ' + e.message));

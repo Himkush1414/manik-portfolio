@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (checkpoint 1 of 9 done) | ba206d5 | cp1 weapon VFX + flight feel DONE; cp2-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3 done) | ba206d5, (cp3) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp2, cp4-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -85,7 +85,18 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   watch `qa/p2c/flight-third-*.png`; consider tracer presence vs the busy
   tunnel (data/vfx.ts TRACER), muzzle size, chase framing. Optional; can fold
   into cp9.
-- **cp3** rig switching: in `missionFlow.beginFrame` attach with
+- **cp3 DONE (2026-10-02)** rig switching: `missionCamera.ts` / `hudView.ts`
+  committed and wired. `missionMode()` maps `cockpit` -> `third` while
+  `cockpitInMission.root` is null (cp4 registers it, which enables the view).
+  `followCameraSetting()` subscribes to `camera.mode` (Cycle Camera = KeyC,
+  Settings) -> `rig.set()` 0.6 s blend; unsubscribed in `endFrame`.
+  `RIGS.streakGain` (chase x1.3) eased in MissionDriver. `__G1__.mission.rig()`
+  debug read. QA: `tools/qa-camera.mjs` (real KeyC presses, blend frames,
+  programs constant) — RTX 3050: 60 fps, p95 16.8, 0 long tasks, logs [].
+  NOTE: with `launch=skip` the first key press is the page's first gesture
+  and carries the P2.7 AudioContext init (traced: `createContext` 194 ms);
+  qa-camera primes with an unbound key (KeyJ) before measuring.
+  Original plan for reference: in `missionFlow.beginFrame` attach with
   `useSettings.getState().camera.mode` instead of the hard-coded `'third'`;
   set `mission.rig.onView = applyCockpitView` (missionCamera.ts) BEFORE
   attach; call `setCockpitEye(shipId)` in MissionLoader when the ship
@@ -152,9 +163,13 @@ awardMission/save v2), 2H (Level 22 + BULWARK + storms/collapse), 2I (Level 10
    killed while the Windows node keeps serving — record its Windows PID via
    `Get-NetTCPConnection -LocalPort 5198` and stop exactly that at the end).
    Port 5173 belongs to the owner's own dev server — never touch it.
-4. GPU: `export WSLENV=G1_DGPU G1_DGPU=1` before every `node tools/...`
-   (verify with `node -e "console.log(process.env.G1_DGPU)"`), else the run
-   is on the integrated GPU.
+4. GPU: `export WSLENV=G1_DGPU G1_DGPU=1` before every `node tools/...`,
+   else the run is on the integrated GPU (re-confirmed 2026-10-02: without
+   WSLENV the renderer is the UHD 770 even with G1_DGPU=1 set).
+   `node tools/gpu.mjs` prints the renderer. `tools/gpu.mjs` `assertGpu(page)`
+   (wired into qa-flight, qa-mission, qa-camera, qa-launch-seq,
+   trace-window) reads WEBGL_debug_renderer_info in the page and THROWS when
+   the GPU does not match G1_DGPU; perf rows carry the verified `gpu` label.
 5. Sanity: `node tools/qa-flight.mjs --modes third --out qa/p2c` -> 60 fps,
    programs constant, logs []; open a few `qa/p2c/flight-third-*.png`.
 6. Continue with **cp3** above.

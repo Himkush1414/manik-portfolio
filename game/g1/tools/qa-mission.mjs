@@ -7,13 +7,15 @@
 //     [--heapEvery s] [--loopAt m]   (--loopAt: warp the sim back to 0 past rail m, so a
 //     long soak / heap trend stays IN the mission instead of completing it)
 import { chromium } from 'playwright';
+import { gpuArgs, assertGpu } from './gpu.mjs';
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 ? argv[i + 1] : d; };
 const origin = argv[0]?.startsWith('http') ? argv[0] : 'http://localhost:5198';
 const level = opt('level', 'test'), bot = opt('bot', 'mid'), seconds = +opt('seconds', 40), out = opt('out', 'qa/p2a'), preset = opt('preset', 'high');
-const args = ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11', '--enable-precise-memory-info', ...(process.env.G1_DGPU ? ['--force_high_performance_gpu'] : [])];
+const args = [...gpuArgs, '--enable-precise-memory-info'];
 const b = await chromium.launch({ channel: 'chrome', headless: true, args });
 const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+const gpu = await assertGpu(p);
 const logs = [];
 p.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(m.text().slice(0, 200)); });
 p.on('pageerror', e => logs.push('pageerror ' + e.message));
@@ -57,7 +59,7 @@ const hangarInfo = await p.evaluate(() => window.__G1__.info());
 const same = ['programs', 'geometries', 'textures'].every(k => before[k] === after[k]);
 // heap trend: least-squares slope (MB/min) + sawtooth amplitude
 const slope = heap.length > 2 ? (() => { const n = heap.length, xs = heap.map((_, i) => i * heapEvery / 60); const mx = xs.reduce((a, b) => a + b) / n, my = heap.reduce((a, b) => a + b) / n; let num = 0, den = 0; for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (heap[i] - my); den += (xs[i] - mx) ** 2; } return +(num / den).toFixed(3); })() : null;
-const res = { loops, heap, heapSlopeMBperMin: slope, heapSawMB: heap.length ? +(Math.max(...heap) - Math.min(...heap)).toFixed(2) : null, level, bot, preset, gpu: process.env.G1_DGPU ? 'discrete' : 'integrated', secondsToPlaying: tPlaying, programsConstant: same, before, after, table, sim, flowAtEnd, hangarInfo, logs };
+const res = { loops, heap, heapSlopeMBperMin: slope, heapSawMB: heap.length ? +(Math.max(...heap) - Math.min(...heap)).toFixed(2) : null, level, bot, preset, gpu, secondsToPlaying: tPlaying, programsConstant: same, before, after, table, sim, flowAtEnd, hangarInfo, logs };
 console.log(JSON.stringify(res, null, 1));
 await b.close();
 process.exit(same && logs.length === 0 && table.longTasks.length === 0 ? 0 : 1);

@@ -18,6 +18,8 @@ import { perfMon } from '../../render/perfMon';
 import { CameraShaker } from '../../render/CameraShaker';
 import { MISSION_LIGHTS } from '../../data/mission';
 import { returnSequence } from '../choreo/launchTimeline';
+import { useSettings } from '../../state/settings.store';
+import { applyCockpitView, cycleCamera, followCameraSetting, missionMode } from '../../scenes/mission/missionCamera';
 import { runLaunch, runFastLaunch, resetLaunchRig } from './launchSequence';
 import type { SpotLight, HemisphereLight, Light, Object3D } from 'three';
 
@@ -26,6 +28,7 @@ const BEAT = { death: 1.4, failedAutoRetry: 1.2, complete: 1.0, resultsAutoExit:
 
 let saved: { fog: [number, number, number]; shadowAuto: boolean } | null = null;
 let gl: WebGLRenderer | null = null;
+let unfollowCamera: (() => void) | null = null;
 
 /** standby -> LAUNCH -> prepare -> launch sequence -> playing. Resolves true once playing.
  *  `skipLaunch` (QA): cut straight into the corridor. */
@@ -66,14 +69,17 @@ function beginFrame(): void {
   stage.cockpit = 0;
   stage.mission = 1;
   mission.root.visible = true;
-  // 2C step 3 wires the saved camera mode + Cycle Camera; until then the mission flies third person
-  mission.rig.attach(w.camera, mission.player, 'third');
+  // the saved camera mode; Cycle Camera / Settings blend between rigs while flying
+  mission.rig.onView = applyCockpitView;
+  mission.rig.attach(w.camera, mission.player, missionMode(useSettings.getState().camera.mode));
+  unfollowCamera?.();
+  unfollowCamera = followCameraSetting();
   mission.vfx?.reset();
   mission.attitude.reset();
   mission.stepper.resync();
   InputManager.attach(w.gl.domElement);
   InputManager.playing = true;
-  InputManager.hooks = { pause: pauseMission };
+  InputManager.hooks = { pause: pauseMission, cycleCamera };
   perfMon.reset(`mission:${mission.level?.id ?? '?'}`);
 }
 
@@ -84,6 +90,8 @@ function endFrame(): void {
   InputManager.hooks = {};
   stage.mission = 0;
   mission.root.visible = false;
+  unfollowCamera?.();
+  unfollowCamera = null;
   mission.rig.detach();
   lightRig.restore();
   if (gl && saved) {

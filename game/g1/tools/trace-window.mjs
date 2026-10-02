@@ -3,18 +3,20 @@
 // main-thread task longer than --min ms prints its heaviest descendant events
 // (self time per event name) so native/GPU stalls are visible (a JS CPU
 // profile shows those as "(program)" / "(idle)").
-//   node tools/trace-window.mjs [origin] [--query 'debug=1'] [--from 12000] [--to 17000] [--min 40] [--click ms] [--save trace.json]
+//   node tools/trace-window.mjs [origin] [--query 'debug=1'] [--from 12000] [--to 17000] [--min 40] [--click ms] [--press KeyC@20000,KeyC@22000] [--save trace.json]
 import { chromium } from 'playwright';
 import { writeFileSync } from 'fs';
+import { gpuArgs, assertGpu } from './gpu.mjs';
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 ? argv[i + 1] : d; };
 const origin = argv[0]?.startsWith('http') ? argv[0] : 'http://localhost:5198';
 const query = opt('query', 'debug=1');
 const from = +opt('from', 12000), to = +opt('to', 17000), minMs = +opt('min', 40);
 const clickAt = opt('click', null);
-const args = ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11', ...(process.env.G1_DGPU ? ['--force_high_performance_gpu'] : [])];
+const args = gpuArgs;
 const b = await chromium.launch({ channel: 'chrome', headless: true, args });
 const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+await assertGpu(p);
 const t0 = Date.now();
 await p.goto(`${origin}/game/g1/?${query}`);
 const wait = ms => p.waitForTimeout(Math.max(0, ms - (Date.now() - t0)));
@@ -25,6 +27,12 @@ await b.startTracing(p, {
 if (clickAt) {
   await wait(+clickAt);
   await p.mouse.click(960, 540);
+}
+// key presses at absolute times (ms after navigation), in order
+for (const k of (opt('press', '') || '').split(',').filter(Boolean)) {
+  const [code, at] = k.split('@');
+  await wait(+at);
+  await p.keyboard.press(code);
 }
 await wait(to);
 const buf = await b.stopTracing();

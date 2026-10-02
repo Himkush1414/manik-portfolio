@@ -154,6 +154,8 @@ export const RIGS = {
   third: { offset: [0, 3.2, 12] as const, fov: 70, posLag: 0.08, rotLag: 0.12, lookAhead: 0.25, lookDist: 60, follow: [0.84, 0.8] as const, roll: 0.2 },
   chase: { offset: [0, 1.6, 6.5] as const, fov: 78, posLag: 0.04, rotLag: 0.07, lookAhead: 0.3, lookDist: 50, follow: [0.93, 0.9] as const, roll: 0.2 * 1.4 },
   cockpit: { fov: 82 },
+  /** speed-line amount per view: the close chase camera reads speed harder (brief §8) */
+  streakGain: { third: 1, chase: 1.3, cockpit: 1 },
   /** the settings FOV (default 75) scales every rig's base FOV */
   fovBase: 75,
   /** blend between rigs (s), never a hard cut */

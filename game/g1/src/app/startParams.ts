@@ -10,7 +10,7 @@
 import { QUERY } from '../core/constants';
 import { flow } from './flow';
 import { setView, VIEWS } from '../render/cameraDirector';
-import { bootDoors, launchDoors } from '../scenes/sceneBridge';
+import { bootDoors, launchDoors, cockpitInMission } from '../scenes/sceneBridge';
 import { bulkhead } from '../scenes/cockpit/Bulkhead';
 import { stage } from '../scenes/Stage';
 import { bootFx } from '../scenes/boot/bootFxParams';
@@ -86,6 +86,8 @@ export function applyStartParams(): void {
     },
     hangar: () => missionToHangar(),
     state: () => ({ flow: flow.state, prepared: mission.prepared, progress: mission.progress, level: mission.level?.id ?? null }),
+    /** camera rig: active mode, blend in progress, cockpit interior shown */
+    rig: () => ({ mode: mission.rig.mode, blending: mission.rig.blending, interior: cockpitInMission.on }),
   });
   registerDebug('sim', {
     state: () => {
