@@ -179,6 +179,18 @@ export const COCKPIT_RIG = {
   fovKickShare: 0.6,
 } as const;
 
+/** Mission DOM HUD (brief §9): danger threshold for the shield / hull pulse, hit / kill marker life (s),
+ *  threat chevron ring radius (u = 1/1080 of the design height), reticle / pipper projection distance
+ *  (the guns' convergence, PLAYER.aim.convergence). */
+export const HUD = {
+  danger: 0.25,
+  hitLife: 0.12,
+  killLife: 0.4,
+  threatRing: 150,
+  /** speed readout: u/s x this = the displayed number */
+  speedScale: 10,
+} as const;
+
 /** Cockpit hands (brief §8 COCKPIT): stick tilt with the stick input (rad at full deflection), throttle
  *  lever travel for boost / brake, recoil kick per shot, smoothing (s). Reduce-motion scales the recoil. */
 export const COCKPIT_HANDS = {

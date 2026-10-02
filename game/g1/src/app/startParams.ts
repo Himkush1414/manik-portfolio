@@ -31,6 +31,8 @@ import { jumpTo, returnToHangar, type LaunchJump } from './choreo/launchTimeline
 import { openModal, closeModal, viewShip } from '../ui/screens/hangar/hangarActions';
 import { enterMission, prewarmMission, pauseMission, resumeMission, missionToHangar, retryMission } from './mission/missionFlow';
 import { isBotSkill } from '../data/bot';
+import { Ev } from '../game/core/events';
+import { PLAYER } from '../data/mission';
 import { mission } from '../scenes/mission/missionRuntime';
 
 let applied = false;
@@ -98,6 +100,24 @@ export function applyStartParams(): void {
     },
     /** force input fields on top of the pilot (QA: boost, fire, roll...); null clears */
     force: (patch: Record<string, unknown> | null) => void (mission.qaForce = patch as never),
+    /** QA: set player vitals (fractions of max) — HUD danger states without a damage source */
+    vitals: (v: { hull?: number; shield?: number; energy?: number }) => {
+      const s = mission.sim;
+      if (!s) return;
+      if (v.hull !== undefined) s.player.hull = v.hull * s.stats.maxHull;
+      if (v.shield !== undefined) s.player.shield = v.shield * s.stats.maxShield;
+      if (v.energy !== undefined) s.player.energy = v.energy * PLAYER.boost.energy;
+    },
+    /** QA: a HUD threat chevron (until 2E's AI writes them) */
+    threat: (i: number, t: { active: boolean; angle?: number; urgency?: number } ) => {
+      const h = mission.sim?.hud.threats[i];
+      if (h) Object.assign(h, t);
+    },
+    /** QA: emit a hit (1) or kill (2) event at the player (HUD markers) */
+    event: (kind: 1 | 2) => {
+      const s = mission.sim;
+      if (s) s.emit(kind === 1 ? Ev.Hit : Ev.Kill, -1, s.player.x, s.player.y, s.player.s + 100, 0, 0);
+    },
     /** advance N fixed steps immediately with the current input (QA) */
     step: (n = 1) => {
       const s = mission.sim;

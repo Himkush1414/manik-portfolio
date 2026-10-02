@@ -1,0 +1,131 @@
+/* Mission HUD (brief §9). Phase 1 tokens + shape language (angular cuts,
+   mono labels); no backdrop-filter; everything that moves animates through
+   transform / opacity only (written by MissionHudDriver). */
+.hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; color: var(--frost); }
+
+/* ---- reticle + pipper: positioned by transform (top-left = 0,0) ---- */
+.reticle, .pipper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+.reticle {
+  width: calc(var(--u) * 46);
+  height: calc(var(--u) * 46);
+  margin: calc(var(--u) * -23) 0 0 calc(var(--u) * -23);
+  border: 2px solid var(--frost-a85);
+  border-radius: 50%;
+  box-shadow: 0 0 calc(var(--u) * 6) rgba(0, 0, 0, 0.6);
+}
+.reticle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--frost);
+}
+.pipper {
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 14);
+  margin: calc(var(--u) * -7) 0 0 calc(var(--u) * -7);
+  opacity: 0.75;
+}
+/* the diamond turns on a pseudo-element: an individual `rotate` on the element itself would apply
+   BEFORE its transform and swing the translate around the origin */
+.pipper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--ice);
+  rotate: 45deg;
+}
+.hit, .kill {
+  position: absolute;
+  inset: calc(var(--u) * -10);
+  opacity: 0;
+}
+/* hit: an X of four ticks around the ring */
+.hit {
+  background:
+    linear-gradient(45deg, transparent 46%, var(--frost) 46%, var(--frost) 54%, transparent 54%) center / 100% 100% no-repeat;
+  mask: radial-gradient(circle, transparent 58%, #000 60%, #000 72%, transparent 74%);
+}
+.kill {
+  inset: calc(var(--u) * -18);
+  border: 2px solid var(--hot);
+  rotate: 45deg;
+}
+
+/* ---- threat chevrons: placed on a ring around the reticle by transform ---- */
+.threats { position: absolute; left: 0; top: 0; }
+.chev {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  margin: calc(var(--u) * -9) 0 0 calc(var(--u) * -7);
+  border-left: calc(var(--u) * 7) solid transparent;
+  border-right: calc(var(--u) * 7) solid transparent;
+  border-bottom: calc(var(--u) * 18) solid var(--danger);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* ---- panels ---- */
+.panel {
+  --c: calc(var(--u) * 8);
+  position: absolute;
+  display: grid;
+  gap: calc(var(--u) * 6);
+  padding: calc(var(--u) * 10) calc(var(--u) * 14);
+  background: rgba(4, 5, 10, 0.55);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.tl { left: calc(var(--u) * 36); top: calc(var(--u) * 32); grid-template-columns: auto auto; align-items: center; column-gap: calc(var(--u) * 16); }
+.tl .label { grid-column: 1 / -1; }
+.tc { left: 50%; top: calc(var(--u) * 24); width: calc(var(--u) * 420); translate: -50% 0; grid-template-columns: auto 1fr auto; align-items: center; column-gap: calc(var(--u) * 12); }
+.tr { right: calc(var(--u) * 36); top: calc(var(--u) * 32); justify-items: end; }
+.bl { left: calc(var(--u) * 36); bottom: calc(var(--u) * 32); width: calc(var(--u) * 300); }
+.br { right: calc(var(--u) * 36); bottom: calc(var(--u) * 32); width: calc(var(--u) * 260); }
+.target { right: calc(var(--u) * 36); top: 42%; width: calc(var(--u) * 240); opacity: 0; transition: opacity 0.15s; }
+.target[data-on='true'] { opacity: 1; }
+
+.label { font: 600 calc(var(--u) * 11) / 1 var(--font-mono); letter-spacing: var(--track-label); color: var(--steel); }
+.small { font: 600 calc(var(--u) * 12) / 1 var(--font-mono); color: var(--frost-a85); font-variant-numeric: tabular-nums; }
+.value { font: 700 calc(var(--u) * 22) / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
+.score { font: 800 calc(var(--u) * 34) / 1 var(--font-title); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.speed { font: 800 calc(var(--u) * 30) / 1 var(--font-title); font-variant-numeric: tabular-nums; }
+
+.bar { display: grid; grid-template-columns: 1fr auto; row-gap: calc(var(--u) * 5); align-items: end; }
+.bar .track { grid-column: 1 / -1; }
+.track { position: relative; height: calc(var(--u) * 8); background: var(--steel-a12); overflow: hidden; }
+.fill { position: absolute; inset: 0; transform-origin: 0 50%; will-change: transform; }
+.fillIce { background: var(--ice); }
+.fillHot { background: var(--hot); }
+.fillDanger { background: var(--danger); }
+/* 10 segments: gaps cut by a mask over the whole track */
+.seg { height: calc(var(--u) * 10); mask: repeating-linear-gradient(90deg, #000 0 calc(10% - 3px), transparent calc(10% - 3px) 10%); }
+
+.bar[data-danger='true'] .label { color: var(--danger); }
+.bar[data-danger='true'] .fill { background: var(--danger); animation: pulse 0.7s ease-in-out infinite alternate; }
+.hud[data-reduce-flash='true'] .bar[data-danger='true'] .fill { animation: none; }
+.bar[data-locked='true'] .fill { background: var(--steel-a60); }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.45; } }
+
+.combo { position: relative; display: grid; place-items: center; width: calc(var(--u) * 44); height: calc(var(--u) * 44); font: 700 calc(var(--u) * 13) / 1 var(--font-mono); color: var(--hot); }
+.combo .ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.speedRow { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; column-gap: calc(var(--u) * 8); margin-top: calc(var(--u) * 4); }
+.speedRow .ring { width: calc(var(--u) * 28); height: calc(var(--u) * 28); align-self: center; }
+.ring { rotate: -90deg; }
+.ringTrack { fill: none; stroke: var(--steel-a30); stroke-width: 3; }
+.ringFill { fill: none; stroke: var(--hot); stroke-width: 3; }
+
+/* cockpit view: the MFDs + combiner carry the gauges; keep aim + warnings */
+.hud[data-view='cockpit'] .panel { display: none; }
+.hud[data-view='cockpit'] .reticle { border-color: rgba(255, 176, 122, 0.85); }

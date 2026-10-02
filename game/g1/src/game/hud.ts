@@ -3,6 +3,7 @@
 // never React state per frame). Fixed shape, allocated once.
 import { CAPS } from '../data/mission';
 
+/** off-screen / approaching threat: `angle` = screen direction from the reticle (rad, 0 = up, clockwise), urgency 0..1 */
 export type HudThreat = { active: boolean; angle: number; kind: number; urgency: number };
 
 export type HudState = {

@@ -11,6 +11,7 @@ import { Hangar } from './hangar/Hangar';
 import { Bulkhead } from './cockpit/Bulkhead';
 import { Cockpit, CockpitLights } from './cockpit/Cockpit';
 import { MissionDriver } from './mission/MissionDriver';
+import { MissionHudDriver } from './mission/MissionHudDriver';
 import { useUi } from '../state/ui.store';
 import { useProfile } from '../state/profile.store';
 import { QUERY, DEBUG } from '../core/constants';
@@ -54,6 +55,7 @@ export function World() {
       {!lookdev && <Bulkhead reduceMotion={reduceMotion} />}
       {!lookdev && cockpitOn && <Cockpit reduceMotion={reduceMotion} />}
       {!lookdev && <MissionDriver />}
+      {!lookdev && <MissionHudDriver />}
       <fog attach="fog" args={['#04050A', 40, 110]} />
     </>
   );

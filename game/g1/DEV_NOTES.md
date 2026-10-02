@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4 done) | ba206d5, 06054d8, d1d5d93, 6601722, (cp4b-2) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4, cp5 done) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, (cp5) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -48,7 +48,7 @@ the slice plan below + P2.2 are enough to continue). **Current step: §7
 | 6 | wormhole + speed FX + set pieces | DONE + pushed (2B) |
 | 7 | player ship, input, weapons | IN PROGRESS: sim + input (2A), weapon VFX + attitude feel (cp1), cockpit hands/recoil (cp4b-2) done; LEFT: shield-hit ripple + low-hull smoke/decals (2D), flight-feel review write-up (cp9) |
 | 8 | 3 camera rigs + live mirrors | DONE (2C cp3 + cp4, 2026-10-02): third / chase / cockpit wired with 0.6 s blends, Cycle Camera, live mirrors (shared render), hands |
-| 9 | HUD + in-mission UI | TODO in 2C: overlay HUD, combiner, MFDs, settings rows (cp5-cp7); pause menu / failed (2D); results, sortie select, comms, tutorial (2G) |
+| 9 | HUD + in-mission UI | IN PROGRESS: overlay HUD DONE (cp5); combiner + MFDs (cp6), settings rows (cp7); pause menu / failed (2D); results, sortie select, comms, tutorial (2G) |
 | 10 | combat systems (damage, pickups, hazards, scoring, juice) | partial (sim damage/scoring 2A); rest 2D |
 | 11 | Umbra ships + AI + PatternLib + health bars | TODO 2E |
 | 12 | Voidspawn monsters | TODO 2F |
@@ -170,7 +170,23 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   throttle groups from buildCockpit (additive), tilt with input, recoil on
   PlayerFire. Draw-call budget <= 150 (cockpit alone ~111 in Phase 1: merge
   static meshes by material if over). Check no clipping at envelope corners.
-- **cp5** DOM HUD (brief §9, <= 120 nodes, 20 Hz from `sim.hud`, reticle via
+- **cp5 DONE (2026-10-02)** DOM HUD: `ui/screens/mission/MissionHUD.tsx` (static
+  DOM, 57 nodes) + `hud.module.css` + `hudDom.ts` refs; written by
+  `scenes/mission/MissionHudDriver.tsx` (useFrame 0.5: after the director,
+  before the shaken render): reticle = guns' convergence point (aim
+  rigAim, C = 120) projected, pipper = C along the nose; transforms only
+  when moved > 0.25 px; 20 Hz data on `hud.seq` change (scaleX bars, cached
+  text, danger / locked flags, SVG rings); Hit / Kill markers from its own
+  event reader; 8 pooled threat chevrons (HudThreat.angle documented: screen
+  direction from the reticle, 0 = up, clockwise). Cockpit view = light
+  overlay (panels hidden; the MFDs carry them in cp6). Data `HUD`. QA hooks
+  `__G1__.sim.vitals/threat/event`; `tools/qa-hud.mjs` (nodes <= 120,
+  reticle tracks aim, pipper sane, danger flags, programs, perf, console).
+  RTX 3050 both views: 60 fps, 0 long tasks. GOTCHA fixed: an individual CSS
+  `rotate` applies BEFORE `transform` -> the pipper's translate was swung
+  45 deg; rotate a pseudo-element instead. Target panel + real hit/kill
+  markers: verify with enemies in 2E.
+  Original plan: DOM HUD (brief §9, <= 120 nodes, 20 Hz from `sim.hud`, reticle via
   rAF transform only, late-latched `InputManager.state.yaw/pitch`; bars via
   transform scaleX; no backdrop-filter): reticle ring + dot + ship pipper +
   hit/kill markers (Ev.Hit/Ev.Kill), SHIELD/HULL segbars (Danger pulse < 25 %),
