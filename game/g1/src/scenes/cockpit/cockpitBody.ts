@@ -145,7 +145,7 @@ function kneeboardTexture(): CanvasTexture {
   g.fillRect(30, 128, 140, 5);
   g.fillStyle = '#14171f';
   g.font = '500 22px "JetBrains Mono", monospace';
-  const rows = [`CORRIDOR  ${MISSION_01.corridor}`, `SORTIE    ${MISSION_01.sortie}`, `THREAT    ${MISSION_01.threat}`, 'TGT       KESTREL-9', 'WINDOW    09:00', ''];
+  const rows = [`WORLD     ${MISSION_01.world}`, `SORTIE    ${MISSION_01.sortie}`, `THREAT    ${MISSION_01.threat}`, 'TGT       KESTREL-9', 'WINDOW    09:00', ''];
   rows.forEach((t, i) => g.fillText(t, 30, 176 + i * 34));
   g.font = '600 20px "JetBrains Mono", monospace';
   MISSION_01.objectives.forEach((o, i) => {

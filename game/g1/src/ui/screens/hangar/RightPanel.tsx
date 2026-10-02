@@ -144,9 +144,9 @@ function Briefing() {
         </div>
         <span className={s.reward}>+{m.reward} CR</span>
         <span className={s.corr}>
-          CORRIDOR
+          {m.worldName.split(' — ')[0]} · {m.world}
           <br />
-          {m.corridor}
+          {m.worldName.split(' — ')[1] ?? ''}
         </span>
       </div>
     </div>

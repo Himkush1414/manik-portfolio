@@ -6,7 +6,7 @@ import { RAIL } from '../data/mission';
 export const TEST_LEVEL: LevelDef = {
   id: 'test',
   levelNumber: 0,
-  name: 'TEST CORRIDOR',
+  name: 'TEST VALLEY',
   corridor: 1,
   seed: 1234,
   lengthM: 4000,

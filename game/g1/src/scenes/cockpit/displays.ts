@@ -23,6 +23,8 @@ export const cockpitFx = {
   /** briefing characters revealed (typewriter) */
   typed: 0,
   shipName: 'HALCYON',
+  /** the sortie's world (NAV MFD title) */
+  worldName: 'ARDEN',
   callsign: 'HALCYON-7',
 };
 
@@ -201,7 +203,7 @@ export function createDisplays(): Displays {
           ['HULL', M.hull],
           [M.boostLocked ? 'BOOST  LOCKED' : 'BOOST', M.energy],
           ['ROLL', 1 - M.rollCd],
-          ['VEIL TRANSIT', M.progress],
+          ['ROUTE', M.progress],
         ]
       : [
           ['PULSE L', 1],
@@ -227,7 +229,7 @@ export function createDisplays(): Displays {
 
   const drawR = (t: number, p: number) => {
     const { g, c } = R;
-    frame(g, c.width, c.height, 'NAV // VEIL 01', MFD_COL);
+    frame(g, c.width, c.height, `NAV // ${cockpitFx.worldName}`, MFD_COL);
     if (p <= 0.02) return;
     g.save();
     g.globalAlpha = p;
@@ -257,7 +259,7 @@ export function createDisplays(): Displays {
     }
     const M = cockpitFx.mission;
     if (cockpitFx.hudMode === 'mission') {
-      // the corridor as a route up the scope: travelled solid, ahead dashed, the ship on it
+      // the route as a line up the scope: travelled solid, ahead dashed, the ship on it
       const y0 = cy + r * 0.9, y1 = cy - r * 0.9, yp = y0 + (y1 - y0) * M.progress;
       g.strokeStyle = HOT;
       g.beginPath();

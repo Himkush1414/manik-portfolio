@@ -64,7 +64,7 @@ function holoTexture(seed: number): CanvasTexture {
   g.fillRect(0, 0, 256, 512);
   g.font = '500 13px "JetBrains Mono", "IBM Plex Mono", monospace';
   g.fillStyle = '#9fe0ff';
-  const words = ['HULL', 'SHLD', 'FUEL', 'REPULS', 'NAV', 'LINK', 'CORR', 'BAY07', 'VEIL', 'PWR', 'TEMP', 'SYNC'];
+  const words = ['HULL', 'SHLD', 'FUEL', 'REPULS', 'NAV', 'LINK', 'GATE', 'BAY07', 'WRLD', 'PWR', 'TEMP', 'SYNC'];
   for (let y = 16; y < 512; y += 18) {
     if (rng.next() < 0.18) {
       // a sparkline row

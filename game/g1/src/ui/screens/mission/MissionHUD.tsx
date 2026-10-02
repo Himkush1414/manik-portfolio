@@ -47,7 +47,7 @@ export function MissionHUD() {
       </div>
 
       <div className={`${s.panel} ${s.tc}`}>
-        <span className={s.label}>VEIL TRANSIT</span>
+        <span className={s.label}>ROUTE</span>
         <div className={s.track}>
           <div className={`${s.fill} ${s.fillIce}`} ref={set('progress')} />
         </div>

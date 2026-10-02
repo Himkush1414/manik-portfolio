@@ -26,7 +26,7 @@ export function TopBar() {
         <span>/ DARK EDITION</span>
       </div>
       <div className={s.mission}>
-        SORTIE <b>{MISSION_01.sortie}</b> — BAY <b>07</b> — CORRIDOR <b>{MISSION_01.corridor}</b>
+        SORTIE <b>{MISSION_01.sortie}</b> — BAY <b>07</b> — WORLD <b>{MISSION_01.world}</b>
       </div>
       <div className={s.topRight}>
         <CurrencyChip value={credits} />

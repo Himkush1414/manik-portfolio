@@ -27,7 +27,7 @@ look (§19 founder test, side-by-side stills).
 
 | Slice | Scope (brief §17) | Status | Push |
 |---|---|---|---|
-| W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | IN PROGRESS | (W0a) |
+| W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, (W0b) |
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | TODO | |
 | W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
 | W3 | water, rocks/cliffs, set-piece framework | TODO | |
@@ -37,6 +37,29 @@ look (§19 founder test, side-by-side stills).
 | W7 | KHARAN + SANDWYRM + SAND SKIMMERS + canal/colonnade/arena + L10 + boss | TODO | |
 | W8 | STORMWARD + sea + rain/lightning + L22 + kraken/manta/eels + BULWARK stack | TODO | |
 | W9 | creature/installation polish, infestation, audio per world, balance, soak, final QA, docs, Phase 3 handoff | TODO | |
+
+### P2R.0a W0 log (2026-10-02)
+- W0a `407b0fb`: this plan, baseline, `src/data/worlds/` (types, ARDEN /
+  KHARAN / STORMWARD in full, 9 designed worlds, registry with
+  world = ceil(level*12/50), validator), `src/game/world/pathDef.ts`.
+- W0b: canon (§2) — `lore.ts`: MISSION_01 verbatim (dashes typeset as em
+  dashes), MISSION_10 THE WARDEN + MISSION_22 STORMFRONT briefings (80-110
+  words, tested), `MISSIONS` by level id, codex rewritten (the Veil = a chain
+  of twelve gates above worlds; Umbra seeds worlds with hive-spires; the
+  Meridian holds orbit and drops fighters into the atmosphere), `COMMS`
+  scripts l01 / l10 / l22 (Sato + STATIC, atM from the §12 beat sheets at
+  cruise speed; wired into the LevelDefs in W6-W8), launch lines release /
+  retry. `Mission.corridor` -> `world` ('01/12') + `worldName`. UI: hangar
+  top bar "WORLD 01/12", mission panel "ARDEN · 01/12 / MARROW VALLEY",
+  kneeboard "WORLD", HUD progress "ROUTE", MFDs "ROUTE" + "NAV // <WORLD>"
+  (`cockpitFx.worldName`), test level "TEST VALLEY", hangar ambient screen
+  words. Deferred to W1 (still on screen until then): LAUNCH_LINES.gate
+  ("Veil Gate ahead") — the gate itself is deleted in W1. Kept: the ship
+  tagline "Forged from the Veil itself" (the Veil survives as lore).
+  Phase 1 amendment (strings only): TopBar / RightPanel / kneeboard /
+  BayLife words. qa:phase1 res + cockpit groups: layout clean at 5 sizes,
+  console clean.
+- NEXT: W1 (see P2R.3 / P2R.4).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 
