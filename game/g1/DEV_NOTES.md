@@ -28,7 +28,7 @@ look (§19 founder test, side-by-side stills).
 | Slice | Scope (brief §17) | Status | Push |
 |---|---|---|---|
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
-| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | IN PROGRESS (W1a path) | (W1a) |
+| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | IN PROGRESS (W1a path, W1b terrain field) | ec5fc39, (W1b) |
 | W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
 | W3 | water, rocks/cliffs, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
@@ -78,6 +78,21 @@ look (§19 founder test, side-by-side stills).
   Authoring note: an arc that ENDS on a waypoint bends harder in its last
   segment (reflected end condition) — give paths straight lead-in / lead-out
   waypoints. 21 km path builds in < 400 ms (test).
+- W1b `src/game/world/noise.ts` (seeded simplex with analytic
+  derivatives, fBm, ridged multifractal, domain warp, derivative-damped
+  "erosion" fBm) + `terrain.ts` TerrainField: WORLD Y at (s, u); per-row
+  cache (frame, floor, half-width from widthKeys or noise, valley centre
+  meander <= min(0.15 W, 28), wall heights per side, river half-width);
+  cross-section = rolling floodplain + bank rise - river channel ->
+  scree apron -> wall face (length from cliffs.sharpen) with world-space
+  buttress wobble -> strata / terrace modifiers -> ridged mountain massing
+  beyond the wall top (+ far peaks) -> eroded gullies on slopes. Detail
+  noise in WORLD (x, z) (isotropic around bends). `sample()` adds water
+  (surface = floor - 0.6), depth, river distance, rock, moisture, wall.
+  `HeightGrid` (5 u, ring of rows, bilinear of corner heights, miss =
+  direct eval -> deterministic regardless of cache). Tests: determinism
+  hash, valley property, river wet / walls dry, envelope >= 3 u on a test
+  path, grid == uncached, < 6 us per height. LOOK NOT YET JUDGED (W1c).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 
