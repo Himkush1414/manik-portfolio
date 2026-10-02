@@ -132,6 +132,7 @@ export function MissionDriver() {
     mission.rig.update(dt);
     // cockpit view: the borrowed cockpit key + dash lights follow the eye (after the rig placed the root)
     updateCockpitLights(cockpitFx.power.dash);
+    mission.hands.update(dt * mission.timeScale, mission.input, p.shotsFired, reduce);
   }, -3);
   return null;
 }

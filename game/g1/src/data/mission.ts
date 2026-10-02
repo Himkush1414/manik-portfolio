@@ -179,6 +179,19 @@ export const COCKPIT_RIG = {
   fovKickShare: 0.6,
 } as const;
 
+/** Cockpit hands (brief §8 COCKPIT): stick tilt with the stick input (rad at full deflection), throttle
+ *  lever travel for boost / brake, recoil kick per shot, smoothing (s). Reduce-motion scales the recoil. */
+export const COCKPIT_HANDS = {
+  stickPitch: 0.2,
+  stickRoll: 0.24,
+  throttleBoost: 0.16,
+  throttleBrake: 0.12,
+  tau: 0.07,
+  recoil: 0.035,
+  recoilTau: 0.05,
+  reduceRecoil: 0.3,
+} as const;
+
 /** Cockpit lights in the mission (the Phase 1 cockpit key + dash point, placed on the eye each
  *  frame while the interior shows): positions in cockpit-root space, intensities as in Phase 1. */
 export const COCKPIT_LIGHTS = {

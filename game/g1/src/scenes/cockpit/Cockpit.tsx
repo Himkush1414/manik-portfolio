@@ -94,6 +94,10 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
     cockpitFx.shipName = SHIPS[shipId].name;
   }, [displays, shipId]);
   useEffect(() => built.setGloveTrim(pilot === 'ember' ? '#ff5a1f' : '#8c9ac0'), [built, pilot]);
+  useEffect(() => {
+    cockpitInMission.hands = { stick: built.stick, throttle: built.throttle };
+    return () => void (cockpitInMission.hands = null);
+  }, [built]);
 
   // pre-warm: compile every cockpit program + upload its textures in idle
   // slices (render/compileSliced.ts; one compileHdr was a ~45 ms task), then
@@ -110,7 +114,7 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
         );
       }),
     );
-    registerDebug('cockpit', { tris: () => built.tris, variant: () => variant });
+    registerDebug('cockpit', { tris: () => built.tris, variant: () => variant, hands: () => ({ stick: [built.stick.rotation.x, built.stick.rotation.z], throttle: built.throttle.rotation.x }) });
     return () => {
       live = false;
     };

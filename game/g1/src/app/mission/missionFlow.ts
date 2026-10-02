@@ -79,6 +79,7 @@ function beginFrame(): void {
   unfollowCamera = followCameraSetting();
   mission.vfx?.reset();
   mission.attitude.reset();
+  mission.hands.reset();
   mission.stepper.resync();
   InputManager.attach(w.gl.domElement);
   InputManager.playing = true;
@@ -96,6 +97,7 @@ function endFrame(): void {
   unfollowCamera?.();
   unfollowCamera = null;
   mission.rig.detach();
+  mission.hands.reset(); // the driver stops with the frame: hands back at rest for the Phase 1 cockpit
   lightRig.restore();
   if (gl && saved) {
     gl.shadowMap.autoUpdate = saved.shadowAuto;

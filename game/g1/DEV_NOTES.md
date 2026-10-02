@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4a, cp4b-1 done) | ba206d5, 06054d8, d1d5d93, (cp4b-1) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4 done) | ba206d5, 06054d8, d1d5d93, 6601722, (cp4b-2) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -46,8 +46,8 @@ the slice plan below + P2.2 are enough to continue). **Current step: §7
 | 4 | zero-hitch contract: carry-overs, DRS, instrumentation, heap | DONE + pushed (2A; 5-min heap 2B close) |
 | 5 | world, rail, sim core | DONE + pushed (2A) |
 | 6 | wormhole + speed FX + set pieces | DONE + pushed (2B) |
-| 7 | player ship, input, weapons | IN PROGRESS: sim + input (2A) and weapon VFX + attitude feel (2C cp1, ba206d5) done; LEFT: cockpit hands/recoil (cp4), shield-hit ripple + low-hull smoke/decals (2D), flight-feel review write-up (cp9) |
-| 8 | 3 camera rigs + live mirrors | IN PROGRESS: FollowRig (third/chase), CockpitRig, RigSwitcher written + pushed but only third person is wired; LEFT: cp3, cp4 |
+| 7 | player ship, input, weapons | IN PROGRESS: sim + input (2A), weapon VFX + attitude feel (cp1), cockpit hands/recoil (cp4b-2) done; LEFT: shield-hit ripple + low-hull smoke/decals (2D), flight-feel review write-up (cp9) |
+| 8 | 3 camera rigs + live mirrors | DONE (2C cp3 + cp4, 2026-10-02): third / chase / cockpit wired with 0.6 s blends, Cycle Camera, live mirrors (shared render), hands |
 | 9 | HUD + in-mission UI | TODO in 2C: overlay HUD, combiner, MFDs, settings rows (cp5-cp7); pause menu / failed (2D); results, sortie select, comms, tutorial (2G) |
 | 10 | combat systems (damage, pickups, hazards, scoring, juice) | partial (sim damage/scoring 2A); rest 2D |
 | 11 | Umbra ships + AI + PatternLib + health bars | TODO 2E |
@@ -144,8 +144,16 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   keeps its 3 multisampled cameras. Phase 1 cockpit A/B on the iGPU (old
   build 06054d8 vs new, back to back): new 10.5-13.6 fps vs old 7.7-10.3 —
   no regression (absolute numbers below the Phase 1 record = machine load).
-  REMAINING (cp4b-2): hands (stick/throttle tilt with input, recoil on
-  PlayerFire); envelope-corner clipping check.
+- **cp4b-2 DONE (2026-10-02)** hands: `BuiltCockpit.stick` / `.throttle`
+  (additive) registered as `cockpitInMission.hands`; `scenes/mission/
+  cockpitHands.ts` (data `COCKPIT_HANDS`) tilts the stick with the input the
+  sim consumed (pitch moveY, roll moveX; bot / QA input shows too), throttle
+  rides boost / brake, recoil kick per shot (shotsFired delta; x0.3 with
+  reduce-motion); reset when the view ends AND in `endFrame` (the driver stops
+  with the frame). `__G1__.cockpit.hands()`; qa-camera --hangar checks the
+  hands deflect in flight and are at rest in the hangar. Envelope corners in
+  the cockpit view: no clipping (qa-flight cockpit corner beats).
+  **cp4 COMPLETE.**
   Original plan for reference: in `scenes/cockpit/Cockpit.tsx`
   register `cockpitInMission.root = root.current`; visible when
   `stage.cockpit >= 0.5 || cockpitInMission.on`; while on: force

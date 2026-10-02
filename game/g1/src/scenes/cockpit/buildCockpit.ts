@@ -41,6 +41,10 @@ import { runNow } from '../../core/slicer';
 export type BuiltCockpit = {
   group: Group;
   needles: Mesh[];
+  /** flight stick (pivot at its base) and throttle quadrant groups, fists included: the mission
+   *  cockpit view tilts them with the pilot's input (scenes/mission/cockpitHands.ts) */
+  stick: Group;
+  throttle: Group;
   ledMat: MeshStandardMaterial;
   ledAmberMat: MeshStandardMaterial;
   screenMats: MeshBasicMaterial[];
@@ -483,6 +487,8 @@ export function* buildCockpitSteps(variant: CockpitVariant, displays: Displays):
   return {
     group,
     needles,
+    stick,
+    throttle: thr,
     ledMat,
     ledAmberMat,
     screenMats,

@@ -55,6 +55,9 @@ const table = await p.evaluate(() => window.__G1__.perf.table());
 const after = await p.evaluate(() => window.__G1__.info());
 let hangar = null;
 if (argv.includes('--hangar')) {
+  await p.evaluate(() => window.__G1__.sim.force({ moveX: 1, moveY: 1, boost: true, fire: true })); // hands deflected at exit
+  await p.waitForTimeout(600);
+  const handsFlying = await p.evaluate(() => window.__G1__.cockpit.hands());
   await p.evaluate(() => window.__G1__.mission.pause()); // HANGAR leaves from pause / failed / results
   await p.waitForTimeout(300);
   await p.evaluate(() => window.__G1__.mission.hangar());
@@ -62,10 +65,11 @@ if (argv.includes('--hangar')) {
   await p.waitForTimeout(2500);
   hangar = await p.evaluate(() => {
     const r = window.__G1__.world.scene().getObjectByName('cockpit-root');
-    return { flow: window.__G1__.flowState.get(), rig: window.__G1__.mission.rig(), rootPos: r.position.toArray().map(v => +v.toFixed(3)), rootQuat: r.quaternion.toArray().map(v => +v.toFixed(3)), rootVisible: r.visible };
+    return { flow: window.__G1__.flowState.get(), rig: window.__G1__.mission.rig(), rootPos: r.position.toArray().map(v => +v.toFixed(3)), rootQuat: r.quaternion.toArray().map(v => +v.toFixed(3)), rootVisible: r.visible, hands: window.__G1__.cockpit.hands() };
   });
+  hangar.handsFlying = handsFlying;
   await p.screenshot({ path: `${out}/cam-hangar-after.png` });
-  if (hangar.rig.interior || hangar.rootVisible || hangar.rootPos[2] !== -2600) ok = false;
+  if (hangar.rig.interior || hangar.rootVisible || hangar.rootPos[2] !== -2600 || hangar.hands.stick.some(v => v !== 0) || hangar.hands.throttle !== 0) ok = false;
 }
 const same = ['programs', 'geometries', 'textures'].every(k => atPlaying[k] === before[k] && before[k] === after[k]);
 if (!same || logs.length || table.longTasks.length) ok = false;

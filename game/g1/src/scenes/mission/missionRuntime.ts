@@ -16,6 +16,7 @@ import type { WorldHandles } from '../sceneBridge';
 import type { BotSkillId } from '../../data/bot';
 import { RigSwitcher } from '../../render/rigs/RigSwitcher';
 import { ShipAttitude } from '../../render/mission/shipAttitude';
+import { CockpitHands } from './cockpitHands';
 import { MISSION_ORIGIN } from '../sceneBridge';
 
 export type MissionOptions = { bot?: BotSkillId | null; god?: boolean; seed?: number };
@@ -65,4 +66,6 @@ export const mission = {
   rollVis: 0,
   /** the flown ship's visual attitude springs (presentation only) */
   attitude: new ShipAttitude(),
+  /** cockpit view: stick / throttle follow the pilot's input */
+  hands: new CockpitHands(),
 };
