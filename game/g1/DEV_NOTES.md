@@ -3,9 +3,151 @@
 Source of truth for `/game/g1/`. A fresh session must be able to resume from
 this file alone. Updated after every slice.
 
-**Layout:** Phase 2 lives in the `P2.*` sections directly below; the frozen
+**Layout:** Phase 2R (current) lives in the `P2R.*` sections directly below, then Phase 2 in `P2.*`; the frozen
 Phase 1 record follows (sections 0-10, unchanged except where a "Phase 1
 amendment" is logged in P2.4).
+
+---
+
+## P2R PHASE 2R — WORLD OVERHAUL (current phase; read this first)
+
+Brief "PHASE 2R - WORLD OVERHAUL: REAL PLANETS, REAL VALLEYS (REPLACES THE
+WORMHOLE)", sections §0-§21, received 2026-10-02 from the owner after the
+founder test of the wormhole ("it looks like I'm going through a pipe").
+The brief text is not in the repo: it is in the session transcript
+`~/.claude/projects/-mnt-d-Manik-Work-Portfolio/e39902c3-a346-417d-a75b-80bac953a50a.jsonl`
+(search "PHASE 2R"). Everything after the launch tunnel is rebuilt as
+fly-throughs of real-looking alien planet valleys. The wormhole is DELETED
+in W1. Unfinished Phase 2 work (2C cp9, 2D-2J) is finished INSIDE this plan
+on the new worlds (merge rule). Phase 1 stays frozen (amendments logged in
+P2.4). A passed perf gate is NOT a visual sign-off: the founder judges the
+look (§19 founder test, side-by-side stills).
+
+### P2R.0 Status (update every slice)
+
+| Slice | Scope (brief §17) | Status | Push |
+|---|---|---|---|
+| W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | IN PROGRESS | (W0a) |
+| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | TODO | |
+| W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
+| W3 | water, rocks/cliffs, set-piece framework | TODO | |
+| W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
+| W5 | launch + orbit dive + cloud break + planet generator + cockpit bay tweak | TODO | |
+| W6 | remaining Phase 2 systems on W1 (hazards, HUD additions, Sortie Select planet cards), LEVEL 1 re-authored, full playthrough | TODO | |
+| W7 | KHARAN + SANDWYRM + SAND SKIMMERS + canal/colonnade/arena + L10 + boss | TODO | |
+| W8 | STORMWARD + sea + rain/lightning + L22 + kraken/manta/eels + BULWARK stack | TODO | |
+| W9 | creature/installation polish, infestation, audio per world, balance, soak, final QA, docs, Phase 3 handoff | TODO | |
+
+### P2R.1 State at handover (2026-10-02, before any 2R code)
+
+Phase 2 pushed: 2A (foundation, sim core, input, DRS, perf), 2B (wormhole —
+now being deleted), 2C cp1 (weapon VFX + flight feel), cp3-cp8 (camera
+rigs + blends, cockpit view + live mirrors + hands, DOM HUD, live MFDs +
+combiner, settings rows, production launch path to Level 1 with auto
+launch) — SHAs in P2.0. NOT done (merged into 2R): 2C cp9 close-out (flight
+feel review, 20 hangar<->mission round trips, perf rows) -> W6/W9; 2D
+(hazards, damage feedback, pause menu, fail/retry screens) -> W3/W6; 2E
+(Umbra ships, AI, PatternLib, health bars, explosions, bestiary) -> W6/W7;
+2F (voidspawn) -> W7/W8; 2G (Level 1 content, tutorial, KESTREL-9,
+results, Sortie Select, save v2) -> W6; 2H (L22 + BULWARK) -> W8; 2I (L10 +
+WARDEN + difficulty gate) -> W7; 2J (audio, balance, soak, qa:phase2,
+handoff) -> W9.
+
+Survives unchanged (environment-agnostic): src/game sim core (rail space,
+pools, collision, events, HUD bus, bot), FSM, InputManager, DRS governor +
+presets, perf instrumentation, camera rig switcher + 3 rigs (adapted in W1
+to the path frame), cockpit view + mirrors (shared render), DOM HUD + MFDs
++ combiner, launch catapult + launch tunnel (Phase 1/2B), weapon VFX,
+settings, QA tools (gpu.mjs guard, qa-flight/-camera/-hud/-mission/
+-prodlaunch/-settings-p2/-launch-seq).
+
+**Baseline** (prod build 35d854c, Level 1 = straight wormhole corridor,
+bot mid, cockpit view, qa-mission 25 s, DRS frozen):
+| GPU | preset | fps | p95 ms | p99 | calls | tris | programs | long tasks |
+|---|---|---|---|---|---|---|---|---|
+| RTX 3050 | HIGH | 60 | 16.9 | 17.0 | 101 | 98k | 111 (constant) | 0 |
+| UHD 770 | LOW | 26.9 | 50.2 | 66.6 | 93 | 82k | 91 (constant) | 0 |
+(UHD 770 LOW with DRS live: 59 fps at scale 0.85, P2 table.)
+
+### P2R.2 Step map (brief §0-§21)
+§0 directive | §1 hard rules (followed every push) | §2 canon -> W0b | §3
+world bible -> W0a (data), worlds built W1-W8 | §4 path + world space -> W1
+| §5 terrain -> W1 (+ dressing W3/W4) | §6 sky/atmosphere -> W2 | §7 water
+-> W3 | §8 vegetation/rocks -> W3/W4 | §9 life/set pieces/weather -> W3-W8
+| §10 creatures/enemies -> W6-W8 | §11 launch + arrival -> W5 | §12 three
+levels -> W6/W7/W8 | §13 sim/camera/HUD/mirror/hazard adaptation -> W1,
+W6 | §14 perf contract v2 -> every slice | §15 assets/licences -> ASSETS.md
+every slice | §16 audio -> W9 (+ per world) | §17 workflow + build order |
+§18 pitfalls | §19 QA protocol (qa:phase2) -> every slice, aggregate W9 |
+§20 Phase 3 handoff -> W9 | §21 final report -> end.
+
+### P2R.3 Architecture decisions (2026-10-02, before code)
+1. **Sim stays in rail space** (s double, x right, y up); gameplay, AI,
+   collision, determinism unchanged. The PATH (src/game/world/path.ts, pure
+   TS) maps rail space to world: centripetal Catmull-Rom through authored
+   waypoints {x, z, clearance, envA, envB, bank} -> 1 u arc-length LUT ->
+   parallel-transport frame (T, R = norm(T x worldUp), U = R x T); world =
+   P(s) + R x + U y. Visual bank (camera/ship) from curvature + lateral
+   velocity; the sim envelope uses the unbanked frame.
+2. **TerrainField is path-relative**: height(s, u) where u is the lateral
+   offset along R(s) ("unrolled ribbon", +-900 u). Pure deterministic TS in
+   src/game/world/terrain.ts (import-boundary test covers it), shared by
+   sim, bot, workers, tests. World Y of a ground point = P(s).y_datum + h.
+   The path's own altitude is datum + clearance profile, so the path always
+   flies the valley. Ribbon self-overlap is prevented by the curvature rule
+   (radius >= 1.25 x ribbon half-width = 1125 u); tighter visual meanders
+   come from the valley/river meandering INSIDE the ribbon.
+3. **Terrain render (to be measured in W1)**: worker pool (1-2) generates
+   per-tile vertex data (positions relative to the tile origin + packed
+   normals + splat weights + baked shadow/AO) into Transferable buffers
+   recycled back; the main thread uploads into POOLED float textures by
+   sub-image (<= 1 tile / frame, 0.6 ms budget); shared static ribbon grid
+   meshes (3 LODs) fetch positions in the vertex shader. Prototype vs
+   pooled BufferGeometry, keep what measures best (log both).
+4. **Floating origin**: the mission root is re-centred on the player's path
+   point each frame (world objects are placed relative to it); per-tile
+   origins are uploaded as uniforms relative to that centre.
+5. **Light rig unchanged in count/type** (Phase 2 rule): the world sun =
+   a DIRECTIONAL light already in the rig (cockpit key DirectionalLight is
+   the only directional; W2 decides between borrowing it for the sun —
+   cockpit interior then lit by the sun, physically right — or keeping it
+   and driving the sun through the studio key spot at a far distance). Sky
+   ambient = the hemisphere. Shadow maps stay OFF in missions; terrain
+   shadow is baked per tile (heightfield march toward the sun).
+6. **Two depth ranges** (W1/W2): world pass near 1 / far 6000; cockpit +
+   own-ship pass near 0.05 / far 40 after a depth clear.
+7. **Programs**: every terrain / vegetation / water / sky / cloud variant
+   compiled in prepare (existing compileSteps + uploadSteps + screen-variant
+   link); LOD / preset changes are uniform-driven.
+8. **Determinism of queries**: sim/bot/camera/creatures read terrain via
+   CPU height grids (5 u, bilinear) filled from the same pure function; a
+   miss evaluates directly (identical); never GPU tiles.
+
+### P2R.4 Tunnel removal plan (W1, after the fly-through exists)
+DELETE: src/render/mission/tunnel/ (Tunnel.ts, tunnelMaterial.ts,
+tunnelNoise.ts), src/data/tunnel.ts (TUNNEL, TUNNEL_TIERS, MOODS, SPEED_FX
+tunnel parts, STORM_FX), src/render/mission/launch/VeilGate.ts (+ its
+launchSequence beats), Tunnel.mirrorShell + MIRROR_WORLD_LAYER content
+(replaced by the reduced world pass), LevelDef.mood / pathParams / radius,
+RAIL.tunnelRadius (bolt-vs-wall -> TerrainField), testLevel radius set
+pieces, MissionDriver tunnel/storm block, qa-mission --loopAt corridor
+specifics, tunnel references in rigState (swayX/Y from pathAt), SpeedStreaks
+coupling to the tunnel filament colour (streaks stay, coloured per world).
+KEEP: launch tunnel (Phase 1 cockpit bay), LaunchSky (until W5 replaces
+the deep-space view with the planet), speed FX post (radial blur / CA).
+
+### P2R.5 Risk register (2R)
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Terrain looks like noise ("rubber hills") | founder test fails | look-dev workflow (§17) with clay/colour/dress/atmosphere passes, 5 beauty shots per world, critique rubric >= 4; valley composition + strata + cliff sharpening, not raw fBm |
+| Worker tile generation > 25 ms or late tiles | hitch / holes | look-ahead 1800 u, priority queue, coarse LOD + fog cover, lateTiles metric = 0 gate |
+| Texture creation per tile / GC churn | hitches | pooled textures + sub-image upload, Transferable recycling |
+| CPU/GPU height mismatch | ships clip terrain | one pure function; sample-vs-vertex parity test < 0.05 u |
+| Vegetation overdraw / tri budget on iGPU | < 40 fps LOW | LOD0 off on LOW, impostors, density lever in DRS |
+| Light rig change -> recompiles | hitches | sun on an existing directional, uniforms only |
+| Scope (3 full worlds + 3 levels + Phase 2 remainder) | unfinished P0 | cut order P2 -> TITANS -> dam flood -> volumetric extras; never cut terrain/sky/atmosphere/water/vegetation/dive/identity/zero-hitch |
+| Asset licences | cannot ship | procedural first; CC0 only (Poly Haven / ambientCG) logged in ASSETS.md |
+| iGPU noise in measurements (owner's desktop shares it) | wrong conclusions | GPU timer queries for pass costs; alternate A/B windows; medians |
 
 ---
 

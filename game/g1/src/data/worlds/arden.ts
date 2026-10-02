@@ -1,0 +1,107 @@
+// WORLD 01 ARDEN — "MARROW VALLEY" (Phase 2R §3). Temperate highlands at
+// sunrise golden hour: river valleys, limestone cliffs, waterfalls, conifer +
+// broadleaf forest, meadows, stone bridges, ruined colony farms. Ringed gas
+// giant ORRIN upper-left, pale moon LUNE opposite. Levels 1-4.
+import type { WorldDef } from './types';
+
+export const ARDEN: WorldDef = {
+  id: 'arden',
+  number: 1,
+  name: 'ARDEN',
+  region: 'MARROW VALLEY',
+  climate: ['TEMPERATE', 'HIGHLANDS', 'RIVERS'],
+  levels: [1, 4],
+  terrain: {
+    floorHalfWidth: [140, 260],
+    gorgeHalfWidth: [60, 90],
+    wallHeight: [250, 500],
+    meander: { amplitude: 120, wavelength: 1400 },
+    ridges: { amplitude: 520, wavelength: 2600, octaves: 6, warp: 0.35 },
+    peaks: { height: [800, 1100], distance: [2400, 5000], snowLine: 760 },
+    erosion: 0.55,
+    cliffs: { sharpen: 0.6, screeApron: 40 },
+    river: { width: [16, 30], depth: 4, meander: 0.6 },
+    relief: [600, 1100],
+    modifiers: [
+      { kind: 'strata', bands: 14, sharpness: 0.65, tilt: 0.08 },
+      { kind: 'terraces', step: 18, smooth: 0.7 },
+    ],
+    surfaces: [
+      { id: 'grass', color: '#4F7A3A', roughness: 0.9 },
+      { id: 'meadow', color: '#8C9A45', roughness: 0.9 },
+      { id: 'soil', color: '#6B5238', roughness: 0.95 },
+      { id: 'limestone', color: '#C9BFA8', roughness: 0.8, triplanarSlope: 0.55 },
+      { id: 'scree', color: '#9C9384', roughness: 0.9 },
+      { id: 'snow', color: '#EEF2F6', roughness: 0.6 },
+    ],
+    infestation: { color: '#2A1E3A', vein: '#7B5BFF' },
+  },
+  sky: {
+    zenith: '#1E4F9A',
+    mid: '#5E9BD6',
+    horizon: '#F2C58C',
+    suns: [{ name: 'ARDEN SUN', elevation: 14, azimuth: 78, color: '#FFD9A0', discDeg: 0.9, glow: 0.8, intensity: 3.2 }],
+    haze: '#C9B8A8',
+    groundBounce: '#6E7A52',
+    stars: { density: 0.15, milkyWay: 0 },
+    bodies: [
+      { id: 'orrin', name: 'ORRIN', kind: 'gasGiant', angularDeg: 15, elevation: 31, azimuth: -38, palette: ['#E9D2A6', '#C99A5C', '#8A5E3A'], surface: 'banded', atmosphere: { color: '#F6E3C0', thickness: 0.05 }, rings: { inner: 1.35, outer: 2.25, tilt: 14, color: '#E8D7B4', opacity: 0.7 }, rotation: 0.4 },
+      { id: 'lune', name: 'LUNE', kind: 'moon', angularDeg: 5, elevation: 22, azimuth: 132, palette: ['#D9DCE2', '#A7ADB8', '#7A808C'], surface: 'cratered', rotation: 0 },
+    ],
+    clouds: [
+      { kind: 'cumulus', coverage: 0.42, altitude: 1400, color: '#FFF1DE', shadow: 0.35 },
+      { kind: 'cirrus', coverage: 0.3, altitude: 6000, color: '#FFE6C8', shadow: 0 },
+    ],
+  },
+  atmosphere: {
+    hazeNear: '#C9B8A8',
+    hazeFar: '#8FA6C8',
+    density: 0.00042,
+    heightFalloff: 0.0012,
+    inscatter: { color: '#FFD9A0', strength: 0.55 },
+    emergeAt: 300,
+    grade: { exposure: 1.05, contrast: 1.06, saturation: 1.08, shadowTint: '#3A4E7A', highlightTint: '#FFE2B8', split: 0.18 },
+  },
+  water: { kind: 'river', shallow: '#3E8A93', deep: '#2B6F7E', foam: '#E8F1F4', flowSpeed: 2.2, waves: { amplitude: 0.15, wavelength: 6, choppiness: 0.3 }, waterfalls: 3 },
+  flora: [
+    { id: 'arden-pine', name: 'Highland pine', kind: 'conifer', generator: 'eztree', variants: 6, height: [14, 26], bark: '#4A3626', leaf: '#264A33', leafAlt: '#33573C', density: 0.9, slopeMax: 38, altitude: [0, 760], moisture: [0.25, 1] },
+    { id: 'arden-spruce', name: 'Dark spruce', kind: 'conifer', generator: 'eztree', variants: 6, height: [18, 32], bark: '#3D2D22', leaf: '#1F3F2C', leafAlt: '#2A4A34', density: 0.6, slopeMax: 42, altitude: [120, 820], moisture: [0.35, 1] },
+    { id: 'arden-larch', name: 'Gold larch', kind: 'conifer', generator: 'eztree', variants: 6, height: [12, 22], bark: '#5A4030', leaf: '#6E8C3A', leafAlt: '#A88F3E', density: 0.35, slopeMax: 35, altitude: [200, 700], moisture: [0.3, 0.9] },
+    { id: 'arden-oak', name: 'River oak', kind: 'broadleaf', generator: 'eztree', variants: 6, height: [10, 18], bark: '#4E3B2C', leaf: '#5B8C3A', leafAlt: '#6F9A40', density: 0.7, slopeMax: 25, altitude: [0, 300], moisture: [0.5, 1] },
+    { id: 'arden-ash', name: 'Field ash', kind: 'broadleaf', generator: 'eztree', variants: 6, height: [9, 16], bark: '#6A5A48', leaf: '#6C9A48', leafAlt: '#8AA850', density: 0.45, slopeMax: 22, altitude: [0, 260], moisture: [0.4, 0.9] },
+    { id: 'arden-maple', name: 'Ember maple', kind: 'broadleaf', generator: 'eztree', variants: 6, height: [8, 14], bark: '#4A382A', leaf: '#B4632E', leafAlt: '#C98A3A', density: 0.2, slopeMax: 25, altitude: [0, 350], moisture: [0.35, 0.8] },
+    { id: 'arden-birch', name: 'Silver birch', kind: 'birch', generator: 'eztree', variants: 6, height: [9, 17], bark: '#E4E0D6', leaf: '#A9C7B5', leafAlt: '#8FB59C', density: 0.4, slopeMax: 30, altitude: [0, 500], moisture: [0.45, 1] },
+    { id: 'arden-aspen', name: 'Tremble aspen', kind: 'birch', generator: 'eztree', variants: 6, height: [8, 14], bark: '#D8D4C6', leaf: '#B5C46A', leafAlt: '#D4C45A', density: 0.25, slopeMax: 28, altitude: [80, 520], moisture: [0.4, 0.9] },
+    { id: 'arden-bush', name: 'Hazel scrub', kind: 'bush', generator: 'procedural', variants: 6, height: [1.5, 3.5], bark: '#4A3A2A', leaf: '#4F7A3A', leafAlt: '#6B8A3E', density: 1.2, slopeMax: 40, altitude: [0, 600], moisture: [0.2, 1] },
+  ],
+  rocks: { base: '#C9BFA8', strata: '#A89C84', varnish: '#5E584C', variants: 8, scatter: 0.6, heroes: ['stone-arch-bridge', 'stone-arch-bridge', 'ruined-bridge', 'colony-dam', 'colony-silo', 'power-pylon'] },
+  groundCover: [
+    { id: 'arden-grass', kind: 'grass', color: '#5E8A40', density: 1, height: [0.4, 0.9] },
+    { id: 'arden-meadow', kind: 'meadow', color: '#9AA850', density: 0.7, height: [0.3, 0.7] },
+    { id: 'arden-flowers', kind: 'flowers', color: '#E8D46A', density: 0.25, height: [0.3, 0.6] },
+    { id: 'arden-reeds', kind: 'reeds', color: '#7E8A4A', density: 0.6, height: [1, 2] },
+  ],
+  life: [
+    { id: 'sky-kites', name: 'Sky-kite flocks', kind: 'flock', count: [20, 60], reacts: 'scatter', color: '#3A2E2A' },
+    { id: 'grazers', name: 'Highland grazers', kind: 'herd', count: [12, 40], reacts: 'stampede', color: '#8A6E52' },
+    { id: 'river-fish', name: 'Leaping silverfin', kind: 'fish', count: [4, 10], reacts: 'dive', color: '#C8D8E0' },
+    { id: 'pollen', name: 'Pollen + insect motes', kind: 'motes', count: [200, 600], reacts: 'ignore', color: '#FFE9B0' },
+  ],
+  weather: { base: 'mist', intensity: 0.35, wind: 0.3, gusts: 0.1, events: ['valley-mist', 'god-rays', 'cloud-shadows'] },
+  strains: [
+    { id: 'arden-reaver', family: 'REAVER', name: 'REAVER', context: 'sky', palette: ['#2A2236', '#4B2A9E'], vein: '#7B5BFF', scale: 1, finish: 'pollen-dusted hull, dew streaks', phase: 2 },
+    { id: 'arden-lancer', family: 'LANCER', name: 'LANCER', context: 'sky', palette: ['#241E30', '#4B2A9E'], vein: '#9A7BFF', scale: 1, finish: 'pollen-dusted hull', phase: 2 },
+    { id: 'leaf-bat', family: 'SKITTERLING', name: 'LEAF-BAT SKITTERLING', context: 'ground', palette: ['#2E3A22', '#5B2A6E'], vein: '#FF2D55', scale: 0.9, finish: 'leaf-scale wings, bark chitin', phase: 2 },
+    { id: 'river-wyrm', family: 'WYRM', name: 'RIVER WYRM', context: 'water', palette: ['#1E3A3E', '#3A2A5E'], vein: '#7B5BFF', scale: 1, finish: 'wet chitin, river weed', phase: 3 },
+  ],
+  ambience: { beds: ['wind-highland', 'river', 'birds-dawn', 'colony-horns'], music: { key: 'D major (lydian lift)', tempo: 92, mood: 'hopeful dawn' } },
+  lighting: { key: '#FFD9A0', keyIntensity: 3.2, fillSky: '#7FA8E0', fillGround: '#6E7A52', fillIntensity: 0.55, rim: '#FFC88A', rimIntensity: 1.4 },
+  landmarks: [
+    { id: 'marrow-falls', name: 'Marrow Falls', kind: 'waterfall', distance: [3000, 5000], note: 'triple-tier waterfall mountain at the valley head' },
+    { id: 'arden-peaks', name: 'Greyhorn range', kind: 'mountain', distance: [4000, 8000], note: 'snow-capped peaks catching the dawn' },
+    { id: 'landing-basin', name: 'Meridian landing basin', kind: 'city', distance: [3000, 6000], note: 'plateau with colony lights, the level 1 finish' },
+    { id: 'arden-spire', name: 'Hive-spire', kind: 'spire', distance: [5000, 8000], note: 'distant Umbra spire belching spores on the far ridge' },
+  ],
+  planet: { seed: 1101, ocean: '#1F4E7A', land: ['#4F7A3A', '#8C9A45', '#C9BFA8', '#6B5238'], ice: 0.18, clouds: { coverage: 0.55, color: '#F4F1EA' }, cityLights: 0.15, atmosphere: '#8FC0FF' },
+  implemented: false,
+};
