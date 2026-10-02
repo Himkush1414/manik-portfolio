@@ -69,8 +69,8 @@ function beginFrame(): void {
   }
   stage.cockpit = 0;
   stage.mission = 1;
-  // the combiner's launch / standby symbology ends at the breach
-  cockpitFx.hudMode = 'off';
+  // the combiner + MFDs switch from launch / standby to live flight data at the breach
+  cockpitFx.hudMode = 'mission';
   mission.root.visible = true;
   // the saved camera mode; Cycle Camera / Settings blend between rigs while flying
   mission.rig.onView = applyCockpitView;
@@ -98,6 +98,7 @@ function endFrame(): void {
   unfollowCamera = null;
   mission.rig.detach();
   mission.hands.reset(); // the driver stops with the frame: hands back at rest for the Phase 1 cockpit
+  cockpitFx.hudMode = 'off'; // MFDs / combiner leave live flight data
   lightRig.restore();
   if (gl && saved) {
     gl.shadowMap.autoUpdate = saved.shadowAuto;

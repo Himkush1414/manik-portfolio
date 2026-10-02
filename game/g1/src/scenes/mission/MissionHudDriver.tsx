@@ -12,10 +12,12 @@ import { stage } from '../Stage';
 import { mission } from './missionRuntime';
 import { hudDom, RING_C } from '../../ui/screens/mission/hudDom';
 import { hudView } from '../../ui/screens/mission/hudView';
-import { rigAim } from '../../render/rigs/rigState';
-import { HUD, PLAYER } from '../../data/mission';
+import { rigAim, rigFlight } from '../../render/rigs/rigState';
+import { HUD, PLAYER, RIGS } from '../../data/mission';
 import { Ev, type EventReader } from '../../game/core/events';
 import type { HudState } from '../../game/hud';
+import { cockpitFx } from '../cockpit/displays';
+import { useSettings } from '../../state/settings.store';
 
 const _v = new Vector3();
 const pos = { x: 0, y: 0, on: false };
@@ -55,9 +57,27 @@ function flag(el: HTMLElement | null, name: string, on: boolean): void {
   if (el && (el.dataset[name] === 'true') !== on) el.dataset[name] = String(on);
 }
 
+/** the cockpit MFDs + combiner read the same refresh (hudMode 'mission') */
+function cockpitData(h: HudState, sh: number, hu: number): void {
+  const M = cockpitFx.mission;
+  M.shield = sh;
+  M.hull = hu;
+  M.energy = Math.max(0, Math.min(1, h.energy));
+  M.boostLocked = h.boostLocked;
+  M.rollCd = h.rollCd;
+  M.progress = h.progress;
+  M.speed = Math.round(h.speed * HUD.speedScale);
+  M.score = h.score;
+  M.combo = h.combo;
+  M.target = h.targetSlot >= 0;
+  M.targetHp = h.targetHp;
+  M.reduceFlash = useSettings.getState().accessibility.reduceFlashing;
+}
+
 function bars(h: HudState): void {
   const d = hudDom;
   const sh = h.shield / Math.max(1, h.maxShield), hu = h.hull / Math.max(1, h.maxHull);
+  cockpitData(h, sh, hu);
   if (d.shield) d.shield.style.transform = `scaleX(${sh.toFixed(3)})`;
   if (d.hull) d.hull.style.transform = `scaleX(${hu.toFixed(3)})`;
   if (d.boost) d.boost.style.transform = `scaleX(${Math.max(0, Math.min(1, h.energy)).toFixed(3)})`;
@@ -96,6 +116,11 @@ export function MissionHudDriver() {
       for (const k in last) last[k as keyof typeof last] = -2;
       lastXY.fill(-1e4);
     }
+    // combiner attitude, per frame: the camera's roll / pitch relative to the rail (the cockpit rig
+    // rides the ship; reduce-motion rolls the view only RIGS.reduceRoll of the bank, no barrel roll)
+    const att = mission.attitude;
+    cockpitFx.mission.bank = rigFlight.reduceMotion ? att.bank * RIGS.reduceRoll : att.bank + att.roll;
+    cockpitFx.mission.pitch = att.pitch;
     const view = hudView.cockpit ? 'cockpit' : 'overlay';
     if (view !== lastView) d.root.dataset.view = lastView = view;
     if (readerSim !== sim) {

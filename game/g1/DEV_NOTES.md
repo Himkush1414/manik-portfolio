@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4, cp5 done) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, (cp5) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3-cp6 done) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, a4e2a48, (cp6) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -194,7 +194,20 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   credits, target panel (when `hud.targetSlot >= 0`), 8 pooled threat
   chevrons. Phase 1 primitives/tokens (ui/primitives, ui/tokens.css).
   Cockpit: light overlay + combiner (`hudView.cockpit`).
-- **cp6** live MFDs + combiner: `scenes/cockpit/displays.ts` new
+- **cp6 DONE (2026-10-02)** live MFDs + combiner: `cockpitFx.hudMode 'mission'`
+  (set at the breach, 'off' in endFrame) + `cockpitFx.mission` data written by
+  MissionHudDriver at the 20 Hz refresh (attitude per frame). Left MFD SYS //
+  VITALS (shield / hull red < 25 %, boost + LOCKED, roll ready, transit);
+  centre: ship wireframe + live HULL / SHLD / combo, or TGT // CONTACT +
+  health when targeting (2E verifies); right: radar + transit route with the
+  ship marker. Combiner: world-level pitch ladder (rotates +camera roll,
+  reduce-motion = RIGS.reduceRoll share), live speed box, boost bar, score
+  + combo, HULL CRITICAL / SHIELD LOW (blink unless reduce-flashing). The
+  mission combiner redraws + uploads ONLY when its quantised content
+  signature changes. UHD 770 LOW cockpit, bot mid, DRS live: 59 fps at
+  scale 0.85 (cp4a: 50.8 at 0.5); main-thread render ~5.5 ms avg (software
+  canvases while the bot manoeuvres) — fits; revisit only if 2E's load
+  pushes it. Original plan: live MFDs + combiner: `scenes/cockpit/displays.ts` new
   `hudMode 'mission'`: left shield/hull/energy/roll cd, right radar + progress,
   centre target wireframe/health or ship status; combiner flight symbology.
 - **cp7** settings rows (fields already in `state/schema.ts`):
@@ -491,6 +504,7 @@ Decisions (2026-10-01, before code):
 | 2C cp4a cockpit view, bot mid, DRS live (before -> after fixes) | UHD 770 | LOW | 20.7 -> 50.8 | 33.4 | — | 5.5 / 11 | 0 | 93 | — | — | — |
 | 2C cp4a third view, bot mid, DRS live (before -> after DRS fix) | UHD 770 | LOW | 54.1 -> 57.3 | 17.3 | — | 1.8 / 3.2 | 0 | 36 | — | — | — |
 | 2C cp4a cockpit view, DRS live (settling at 0.6) | UHD 770 | MEDIUM | 26.8 | 66.6 | — | 5.0 / 11 | 0 | 95 | — | — | — |
+| 2C cp6 cockpit view (live MFDs, gated combiner), bot mid, DRS live (0.85) | UHD 770 | LOW | 59.0 | 17 | — | 5.6 / 14.8 | 0 | 93 | — | — | — |
 | 2B close: 5-min soak (test corridor looped x5, bot mid), 300 s | RTX 3050 | HIGH | 60 (every 14 s window 59.6-60) | 16.8-16.9 | 0.03 / 0.1 | 1.6 / 3.9 | 0 | 38 | 79k | yes (104) | +0.09 MB/min, sawtooth 1.45 MB (rule 8: < 8 MB, flat) |
 
 ## P2.8 Engine notes (Phase 2)

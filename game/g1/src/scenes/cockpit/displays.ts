@@ -11,7 +11,10 @@ import { MISSION_01 } from '../../data/lore';
 export const cockpitFx = {
   /** per-system power 0..1 (systems boot staggers these) */
   power: { dash: 0, mfdL: 0, mfdC: 0, mfdR: 0, hud: 0 },
-  hudMode: 'off' as 'off' | 'boot' | 'briefing' | 'select' | 'standby' | 'launch',
+  hudMode: 'off' as 'off' | 'boot' | 'briefing' | 'select' | 'standby' | 'launch' | 'mission',
+  /** Phase 2 mission (hudMode 'mission'): live data for the MFDs + combiner, written by the mission
+   *  HUD driver (fractions 0..1 unless noted); the displays never import mission code */
+  mission: { shield: 1, hull: 1, energy: 1, boostLocked: false, rollCd: 0, progress: 0, speed: 0, score: 0, combo: 1, target: false, targetHp: 0, bank: 0, pitch: 0, reduceFlash: false },
   /** Phase 2 launch: countdown digit (3, 2, 1; 0 = LAUNCH), catapult speed (u/s), FOV kick (deg), camera view */
   count: 3,
   launchSpeed: 0,
@@ -29,6 +32,7 @@ export const BRIEFING_CHARS = BRIEFING_TEXT.reduce((a, l) => a + l.length, 0);
 const HUD_COL = '#ffb07a';
 const MFD_COL = '#9fe0ff';
 const HOT = '#ff8a3d';
+const DANGER = '#ff5a6e';
 
 type Pt = [number, number, number];
 
@@ -105,8 +109,14 @@ export function createDisplays(): Displays {
   let wire: Pt[][] = [];
   // last redraw per canvas (combiner, MFD L / C / R): at most ONE canvas redraws + uploads per
   // frame (each upload is a synchronous copy), the combiner first, then the most overdue MFD
-  let lastHud = -1;
+  let lastHud = -1, lastSig = '';
   const lastMfd = [-1, -1, -1];
+  /** what the mission combiner shows, quantised (0.5 deg attitude, whole speed / score, warning blink) */
+  const hudSig = (t: number): string => {
+    const M = cockpitFx.mission;
+    const warn = M.hull < 0.25 || M.shield < 0.25 ? (M.reduceFlash ? 2 : Math.sin(t * 8) > -0.3 ? 1 : 0) : 0;
+    return `${Math.round(M.bank * 114.6)}|${Math.round(M.pitch * 114.6)}|${Math.round(M.speed)}|${M.score}|${M.combo}|${Math.round(M.energy * 40)}|${M.boostLocked ? 1 : 0}|${warn}|${cockpitFx.power.hud.toFixed(2)}`;
+  };
 
   const frame = (g: CanvasRenderingContext2D, w: number, h: number, title: string, col: string) => {
     g.fillStyle = '#02060a';
@@ -122,6 +132,33 @@ export function createDisplays(): Displays {
 
   const drawC = (t: number, p: number) => {
     const { g, c } = C;
+    const M = cockpitFx.mission, live = cockpitFx.hudMode === 'mission';
+    if (live && M.target) {
+      // target: a turning contact diamond + its health
+      frame(g, c.width, c.height, 'TGT // CONTACT', HOT);
+      if (p <= 0.02) return;
+      g.save();
+      g.globalAlpha = p;
+      const cx = c.width / 2, cy = c.height / 2 - 4, a = t * 1.4, r = 52;
+      g.strokeStyle = HOT;
+      g.lineWidth = 1.5;
+      g.beginPath();
+      for (let k = 0; k <= 4; k++) {
+        const ang = a + (k * Math.PI) / 2;
+        const x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r * 0.55;
+        if (k) g.lineTo(x, y);
+        else g.moveTo(x, y);
+      }
+      g.stroke();
+      g.strokeStyle = 'rgba(255,138,61,0.45)';
+      g.strokeRect(18, c.height - 44, c.width - 36, 14);
+      g.fillStyle = HOT;
+      g.fillRect(21, c.height - 41, (c.width - 42) * Math.max(0, M.targetHp), 8);
+      g.font = '500 13px "JetBrains Mono", monospace';
+      g.fillText(`HP ${Math.ceil(M.targetHp * 100)}%`, 18, c.height - 54);
+      g.restore();
+      return;
+    }
     frame(g, c.width, c.height, `${cockpitFx.shipName} // STATUS`, MFD_COL);
     if (p <= 0.02) return;
     g.save();
@@ -144,34 +181,45 @@ export function createDisplays(): Displays {
     }
     g.fillStyle = MFD_COL;
     g.font = '500 13px "JetBrains Mono", monospace';
-    ['HULL 100%', 'SHLD 100%', 'PWR NOMINAL'].forEach((s, i) => g.fillText(s, 16, c.height - 52 + i * 17));
+    const lines = live ? [`HULL ${Math.ceil(M.hull * 100)}%`, `SHLD ${Math.ceil(M.shield * 100)}%`, M.hull < 0.25 ? 'PWR CRITICAL' : 'PWR NOMINAL'] : ['HULL 100%', 'SHLD 100%', 'PWR NOMINAL'];
+    lines.forEach((s, i) => g.fillText(s, 16, c.height - 52 + i * 17));
     g.fillStyle = HOT;
-    g.fillText('RAIL LOCK', c.width - 110, c.height - 18);
+    g.fillText(live ? `x${M.combo}` : 'RAIL LOCK', c.width - 110, c.height - 18);
     g.restore();
   };
 
   const drawL = (t: number, p: number) => {
     const { g, c } = L;
-    frame(g, c.width, c.height, 'WPN // ENERGY', MFD_COL);
+    const M = cockpitFx.mission, live = cockpitFx.hudMode === 'mission';
+    frame(g, c.width, c.height, live ? 'SYS // VITALS' : 'WPN // ENERGY', MFD_COL);
     if (p <= 0.02) return;
     g.save();
     g.globalAlpha = p;
-    const bars = [
-      ['PULSE L', 1],
-      ['PULSE R', 1],
-      ['CAPACITOR', 0.62 + Math.sin(t * 1.3) * 0.06],
-      ['SHIELD', 1],
-      ['BOOST', 0.8],
-    ] as const;
+    const bars: readonly (readonly [string, number])[] = live
+      ? [
+          ['SHIELD', M.shield],
+          ['HULL', M.hull],
+          [M.boostLocked ? 'BOOST  LOCKED' : 'BOOST', M.energy],
+          ['ROLL', 1 - M.rollCd],
+          ['VEIL TRANSIT', M.progress],
+        ]
+      : [
+          ['PULSE L', 1],
+          ['PULSE R', 1],
+          ['CAPACITOR', 0.62 + Math.sin(t * 1.3) * 0.06],
+          ['SHIELD', 1],
+          ['BOOST', 0.8],
+        ];
     bars.forEach(([name, v], i) => {
       const y = 62 + i * 42;
-      g.fillStyle = MFD_COL;
+      const low = live && i < 2 && v < 0.25;
+      g.fillStyle = low ? DANGER : MFD_COL;
       g.font = '500 13px "JetBrains Mono", monospace';
       g.fillText(name, 18, y);
       g.strokeStyle = 'rgba(159,224,255,0.4)';
       g.strokeRect(18, y + 8, c.width - 36, 14);
-      g.fillStyle = i === 2 ? HOT : MFD_COL;
-      const segs = 20, filled = Math.round(v * segs);
+      g.fillStyle = low ? DANGER : i === 2 ? HOT : MFD_COL;
+      const segs = 20, filled = Math.round(Math.max(0, Math.min(1, v)) * segs);
       for (let k = 0; k < filled; k++) g.fillRect(21 + k * ((c.width - 42) / segs), y + 11, (c.width - 42) / segs - 3, 8);
     });
     g.restore();
@@ -207,21 +255,47 @@ export function createDisplays(): Displays {
       g.arc(cx, cy, r, 0, Math.PI * 2);
       g.fill();
     }
-    // convoy beacon + route
-    g.fillStyle = HOT;
-    g.beginPath();
-    g.arc(cx + 30, cy - 70, 4, 0, Math.PI * 2);
-    g.fill();
-    g.setLineDash([4, 4]);
-    g.strokeStyle = HOT;
-    g.beginPath();
-    g.moveTo(cx, cy);
-    g.lineTo(cx + 30, cy - 70);
-    g.stroke();
-    g.setLineDash([]);
-    g.fillStyle = MFD_COL;
-    g.font = '500 12px "JetBrains Mono", monospace';
-    g.fillText('KESTREL-9  RNG 9.4', 16, c.height - 18);
+    const M = cockpitFx.mission;
+    if (cockpitFx.hudMode === 'mission') {
+      // the corridor as a route up the scope: travelled solid, ahead dashed, the ship on it
+      const y0 = cy + r * 0.9, y1 = cy - r * 0.9, yp = y0 + (y1 - y0) * M.progress;
+      g.strokeStyle = HOT;
+      g.beginPath();
+      g.moveTo(cx, y0);
+      g.lineTo(cx, yp);
+      g.stroke();
+      g.setLineDash([4, 4]);
+      g.beginPath();
+      g.moveTo(cx, yp);
+      g.lineTo(cx, y1);
+      g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = HOT;
+      g.beginPath();
+      g.moveTo(cx, yp - 7);
+      g.lineTo(cx - 5, yp + 5);
+      g.lineTo(cx + 5, yp + 5);
+      g.fill();
+      g.fillStyle = MFD_COL;
+      g.font = '500 12px "JetBrains Mono", monospace';
+      g.fillText(`TRANSIT ${Math.floor(M.progress * 100)}%`, 16, c.height - 18);
+    } else {
+      // convoy beacon + route
+      g.fillStyle = HOT;
+      g.beginPath();
+      g.arc(cx + 30, cy - 70, 4, 0, Math.PI * 2);
+      g.fill();
+      g.setLineDash([4, 4]);
+      g.strokeStyle = HOT;
+      g.beginPath();
+      g.moveTo(cx, cy);
+      g.lineTo(cx + 30, cy - 70);
+      g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = MFD_COL;
+      g.font = '500 12px "JetBrains Mono", monospace';
+      g.fillText('KESTREL-9  RNG 9.4', 16, c.height - 18);
+    }
     g.restore();
   };
 
@@ -260,6 +334,15 @@ export function createDisplays(): Displays {
     g.lineTo(w / 2, h / 2 + 8);
     g.stroke();
     g.font = '500 18px "JetBrains Mono", monospace';
+    const mode = cockpitFx.hudMode, M = cockpitFx.mission, live = mode === 'mission';
+    // pitch ladder: in the mission it stays world-level — the view rolls with the ship (+bank = CCW from
+    // behind), so the ladder turns the other way on screen (+ = clockwise on a canvas); 70 px per 5 deg
+    g.save();
+    if (live) {
+      g.translate(w / 2, h / 2);
+      g.rotate(M.bank);
+      g.translate(-w / 2, -h / 2 + (M.pitch * 180) / Math.PI * 14);
+    }
     for (let k = -2; k <= 2; k++) {
       if (!k) continue;
       const y = h / 2 - k * 70;
@@ -272,13 +355,31 @@ export function createDisplays(): Displays {
       g.stroke();
       g.fillText(`${k * 5}`, w / 2 + 160, y + 6);
     }
+    g.restore();
     g.globalAlpha = p;
     g.strokeRect(w / 2 - 44, 20, 88, 30);
     g.textAlign = 'center';
-    g.fillText(String(Math.round(cockpitFx.launchSpeed)).padStart(3, '0'), w / 2, 43);
+    g.fillText(String(Math.round(live ? M.speed : cockpitFx.launchSpeed)).padStart(3, '0'), w / 2, 43);
     g.textAlign = 'left';
-    // mode text
-    const mode = cockpitFx.hudMode;
+    if (live) {
+      // boost energy under the speed box, score + combo low left, warnings centre low
+      g.strokeRect(w / 2 - 80, 60, 160, 8);
+      g.fillStyle = M.boostLocked ? 'rgba(255,176,122,0.4)' : HUD_COL;
+      g.fillRect(w / 2 - 78, 62, 156 * Math.max(0, Math.min(1, M.energy)), 4);
+      g.fillStyle = HUD_COL;
+      g.font = '600 22px "JetBrains Mono", monospace';
+      g.fillText(M.score.toLocaleString('en-US'), 60, h - 70);
+      g.font = '500 18px "JetBrains Mono", monospace';
+      g.fillText(`x${M.combo}`, 60, h - 44);
+      const warn = M.hull < 0.25 ? 'HULL CRITICAL' : M.shield < 0.25 ? 'SHIELD LOW' : '';
+      if (warn && (M.reduceFlash || Math.sin(t * 8) > -0.3)) {
+        g.fillStyle = '#ff5a6e';
+        g.font = '700 30px "JetBrains Mono", monospace';
+        g.textAlign = 'center';
+        g.fillText(warn, w / 2, h - 90);
+        g.textAlign = 'left';
+      }
+    }
     if (mode === 'boot') {
       g.font = '600 26px "JetBrains Mono", monospace';
       g.textAlign = 'center';
@@ -337,9 +438,15 @@ export function createDisplays(): Displays {
       const P = cockpitFx.power;
       if (t - lastHud >= 1 / 30) {
         lastHud = t;
-        drawHud(t);
-        H.t.needsUpdate = true;
-        return;
+        // in the mission the combiner redraws + uploads only when what it shows changed (level flight:
+        // rarely; the upload is the cost, ~5 ms main thread per 1024x720 on the integrated GPU)
+        const sig = cockpitFx.hudMode === 'mission' ? hudSig(t) : '';
+        if (!sig || sig !== lastSig) {
+          lastSig = sig;
+          drawHud(t);
+          H.t.needsUpdate = true;
+          return;
+        }
       }
       let k = -1;
       for (let i = 0; i < 3; i++) if (t - lastMfd[i] >= 1 / 15 && (k < 0 || lastMfd[i] < lastMfd[k])) k = i;
