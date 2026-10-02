@@ -27,14 +27,27 @@ import { registerDebug } from '../../debug/debugApi';
 import { setCockpitEye } from './missionCamera';
 
 let inflight: Promise<void> | null = null;
+let inflightLevel = '';
 
 export const MissionLoader = {
+  /** A prepare already running for the SAME level is shared; one for another level (a briefing
+   *  prewarm vs the launch that follows) runs first, then this one. */
   prepare(level: LevelDef, opts: MissionOptions = {}): Promise<void> {
-    if (inflight) return inflight;
-    mission.prepared = false;
-    mission.progress = 0;
-    inflight = run(level, opts).finally(() => (inflight = null));
-    return inflight;
+    if (inflight && inflightLevel === level.id) return inflight;
+    const before = inflight ?? Promise.resolve();
+    const p: Promise<void> = before
+      .catch(() => undefined)
+      .then(() => {
+        mission.prepared = false;
+        mission.progress = 0;
+        return run(level, opts);
+      })
+      .finally(() => {
+        if (inflight === p) inflight = null;
+      });
+    inflight = p;
+    inflightLevel = level.id;
+    return p;
   },
 };
 

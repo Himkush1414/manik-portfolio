@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3-cp7 done) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, a4e2a48, 5b33c80, (cp7) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3-cp8 done; cp2 + cp9 left) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, a4e2a48, 5b33c80, 838d28b, (cp8) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -220,7 +220,25 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   controls.aimAssist, controls.autoFire, accessibility.subtitles +
   subtitleSize, camera.rollCoupling (0-1.4), graphics.speedLines — in
   `ui/screens/settings/SettingsModal.tsx` with the existing row components.
-- **cp8** production launch path: standby auto-LAUNCH after a beat (today only
+- **cp8 DONE (2026-10-02)** production launch path: `levels/level01.ts`
+  (`l01` FIRST LIGHT skeleton: corridor 1, 58 u/s, 9300 m, mood l1,
+  checkpoints 3100 / 6200, empty timeline until 2G) + `DEFAULT_LEVEL` in the
+  registry; `app/mission/autoLaunch.ts` (installed by App, off when a QA
+  `?level=` drives): briefing -> `prewarmMission(l01)`, standby ->
+  `enterMission(l01)` after `LAUNCH.standbyBeat` 2.4 s unless the flow left
+  standby (Esc) or `__G1__.launch.holdStandby(true)` (QA). MissionLoader:
+  an in-flight prepare is shared only for the SAME level (a different one
+  queues behind it). `tools/qa-prodlaunch.mjs`: page-level clicks only
+  (START MISSION -> LET'S GO x2 -> camera card -> standby -> auto launch ->
+  playing on l01), then REAL keyboard flight (D / A / W move the ship, no
+  bot), GL allocation trace after play start; x3 cameras on the RTX 3050:
+  60 fps, 0 long tasks, 0 allocations after play start, console clean.
+  Found + fixed on the way (Phase 1 amendment 8): the hangar floor's
+  reflector leaked 4 render targets on every Floor re-render (inline
+  `blur` array -> drei rebuilt its FBOs, never disposed) and, like the
+  pad contact shadow, re-rendered the WHOLE scene every frame in the
+  cockpit + missions (UHD 770 MEDIUM mission: 41.1 -> 44.1 fps without it).
+  Original plan: production launch path: standby auto-LAUNCH after a beat (today only
   QA `?level=` launches) + `levels/level01.ts` skeleton LevelDef (corridor 1,
   58 u/s, ~9300 m, mood l1, empty timeline until 2G) in `levels/registry.ts`;
   prewarm at briefing start. Verify hangar -> START MISSION -> cockpit ->
@@ -464,6 +482,17 @@ Decisions (2026-10-01, before code):
    `windows`) and the mirror surface shader a `uWin` window (whole texture
    in the bay = unchanged look). Phase 1
    cockpit QA group re-run: clean, mirrors 28.6 refresh/s, 60 fps.
+8. **Hangar floor + pad shadow + standby (2C cp8, 2026-10-02).**
+   `bay/FloorReflector.tsx` replaces drei's MeshReflectorMaterial wrapper
+   (same material + BlurPass classes, same defines / look): `active` gate
+   (no reflection render while the hall is hidden: cockpit, missions) and
+   disposal of its targets on unmount; `blur` is a module constant (the
+   inline array rebuilt + leaked 4 render targets per re-render).
+   ContactShadow skips its capture while the hall is hidden. Verified: in
+   the hangar the reflector + shadow still render (1 + 5 blur, 3 shadow
+   passes per frame), in a mission 0; Phase 1 hangar + cockpit groups
+   clean. STANDBY now auto-launches after 2.4 s (P2.1 decision 6); the
+   Phase 1 cockpit QA group calls `launch.holdStandby(true)` first.
 5. **Mission frame hooks (2A, 2026-10-01).** `stage.mission` flag (Stage);
    `MISSION_ORIGIN` (sceneBridge); Hangar hall hidden while a mission is
    live; Cockpit stops writing fog and its lights while borrowed;
@@ -511,6 +540,8 @@ Decisions (2026-10-01, before code):
 | 2C cp4a third view, bot mid, DRS live (before -> after DRS fix) | UHD 770 | LOW | 54.1 -> 57.3 | 17.3 | — | 1.8 / 3.2 | 0 | 36 | — | — | — |
 | 2C cp4a cockpit view, DRS live (settling at 0.6) | UHD 770 | MEDIUM | 26.8 | 66.6 | — | 5.0 / 11 | 0 | 95 | — | — | — |
 | 2C cp6 cockpit view (live MFDs, gated combiner), bot mid, DRS live (0.85) | UHD 770 | LOW | 59.0 | 17 | — | 5.6 / 14.8 | 0 | 93 | — | — | — |
+| 2C cp8 third view, bot mid, DRS frozen: floor reflector rendering (before) vs gated (after) | UHD 770 | MEDIUM | 41.1 -> 44.1 | — | — | — | — | — | — | — | — |
+| 2C cp8 production path (clicks, auto launch, l01, keyboard flight) x3 cameras | RTX 3050 | HIGH | 60 | 16.8 | — | — | 0 | 43 / 100 | 116k | yes, 0 GL allocations after play start | — |
 | 2B close: 5-min soak (test corridor looped x5, bot mid), 300 s | RTX 3050 | HIGH | 60 (every 14 s window 59.6-60) | 16.8-16.9 | 0.03 / 0.1 | 1.6 / 3.9 | 0 | 38 | 79k | yes (104) | +0.09 MB/min, sawtooth 1.45 MB (rule 8: < 8 MB, flat) |
 
 ## P2.8 Engine notes (Phase 2)

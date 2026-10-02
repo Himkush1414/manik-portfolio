@@ -6,6 +6,7 @@
 // via padFx.shadow.
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { stage } from '../Stage';
 import { Color, Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, Vector2, WebGLRenderTarget, type Fog, type FogExp2, type Material, type Texture } from 'three';
 import { SHIP_LAYER } from '../../ships/ShipFactory';
 import { padFx } from './padFx';
@@ -92,6 +93,8 @@ export function ContactShadow({ y = 0.27, opacity = 0.85 }: { y?: number; opacit
 
   const clear = useMemo(() => new Color(), []);
   useFrame(() => {
+    // the hall is hidden in the cockpit and in missions: no capture of the whole scene there
+    if (stage.cockpit >= 0.5 || stage.mission >= 0.5) return;
     const strength = padFx.shadow;
     r.show.uniforms.uOpacity.value = strength * opacity;
     if (strength < 0.01 || frame.current++ % 2) return;

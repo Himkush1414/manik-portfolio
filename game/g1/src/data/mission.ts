@@ -262,6 +262,8 @@ export const LAUNCH = {
   flashOut: 0.7,
   /** retries: the fast relaunch inside the corridor */
   fast: 1.6,
+  /** standby -> automatic LAUNCH after this beat (s); Esc / RETURN TO HANGAR cancels it */
+  standbyBeat: 2.4,
   stripStretch: 0.09,
   /** sky sphere radius (inside the 1000 u far plane) and the bay mouth (travel at which the window plane hides) */
   skyRadius: 860,

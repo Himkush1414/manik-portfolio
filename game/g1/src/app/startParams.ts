@@ -32,6 +32,7 @@ import { openModal, closeModal, viewShip } from '../ui/screens/hangar/hangarActi
 import { enterMission, prewarmMission, pauseMission, resumeMission, missionToHangar, retryMission } from './mission/missionFlow';
 import { isBotSkill } from '../data/bot';
 import { Ev } from '../game/core/events';
+import { autoLaunch } from './mission/autoLaunch';
 import { PLAYER } from '../data/mission';
 import { mission } from '../scenes/mission/missionRuntime';
 
@@ -135,6 +136,8 @@ export function applyStartParams(): void {
     jump: (target: LaunchJump) => jumpTo(target),
     back: () => returnToHangar(),
     rate: (r: number) => void gsap.globalTimeline.timeScale(r),
+    /** QA: STANDBY stays a resting state (no automatic LAUNCH) */
+    holdStandby: (on = true) => void (autoLaunch.hold = on),
     hide: (name: string, on = true) => {
       const root = (window as unknown as { __G1__: { world: { scene(): import('three').Scene } } }).__G1__.world.scene();
       root.traverse(o => void (o.name === name && (o.visible = !on)));

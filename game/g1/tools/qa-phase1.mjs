@@ -198,6 +198,8 @@ await section('cockpit', async () => {
   // beats like "sealed" last ~0.5 s and the swap's main-thread work can
   // swallow a poll: run the launch choreography at 0.3x (GSAP global clock)
   await ev(() => window.__G1__.launch.rate(0.3));
+  // Phase 2: STANDBY auto-launches after a beat; these captures treat it as a resting state
+  await ev(() => window.__G1__.launch.holdStandby?.(true));
   await p.click('button[aria-label^="Start mission"]');
   const at = async (name, cond) => {
     await p.waitForFunction(cond, null, { timeout: 40000, polling: 16 });

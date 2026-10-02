@@ -3,9 +3,17 @@
 // (reflections 'off'). Painted markings + panel normals from deck.ts.
 import { useEffect, useMemo } from 'react';
 import { Vector2 } from 'three';
-import { MeshReflectorMaterial } from '@react-three/drei';
+import { FloorReflector } from './FloorReflector';
+import { stage } from '../../Stage';
 import { createDeckTextures, DECK } from './deck';
 import { useLoader } from '../../../core/loader';
+
+/** module constant: the reflector rebuilds its FBOs + blur pass when `blur` changes identity (with
+ *  drei's wrapper an inline array leaked 4 render targets on every Floor re-render, e.g. a DRS step
+ *  re-rendering the Hangar at mission start) */
+const BLUR: [number, number] = [380, 110];
+/** the hall is hidden in the cockpit and in missions: no reflection render there */
+const hallShown = () => stage.cockpit < 0.5 && stage.mission < 0.5;
 
 export function Floor({ reflections: wanted }: { reflections: 'off' | 'half' | 'full' }) {
   // The reflector re-renders the WHOLE scene with its own camera every frame,
@@ -24,24 +32,7 @@ export function Floor({ reflections: wanted }: { reflections: 'off' | 'half' | '
       {reflections === 'off' ? (
         <meshStandardMaterial map={tex.map} roughnessMap={tex.rough} normalMap={tex.normal} normalScale={ns} metalness={0.4} roughness={1} envMapIntensity={0.3} />
       ) : (
-        <MeshReflectorMaterial
-          map={tex.map}
-          roughnessMap={tex.rough}
-          normalMap={tex.normal}
-          normalScale={ns}
-          metalness={0.4}
-          roughness={1}
-          envMapIntensity={0.3}
-          resolution={reflections === 'full' ? 1024 : 512}
-          blur={[380, 110]}
-          mixBlur={1}
-          mixStrength={0.9}
-          mixContrast={1}
-          mirror={0.45}
-          depthScale={1.1}
-          minDepthThreshold={0.35}
-          maxDepthThreshold={1.3}
-        />
+        <FloorReflector map={tex.map} roughnessMap={tex.rough} normalMap={tex.normal} normalScale={ns} resolution={reflections === 'full' ? 1024 : 512} blur={BLUR} active={hallShown} />
       )}
     </mesh>
   );
