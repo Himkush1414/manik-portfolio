@@ -1,5 +1,6 @@
 // Handles shared between the 3D world and choreography/UI layers without
 // either importing the other's components.
+import { detectGpuClass } from '../render/gpuClass';
 import { DoorController } from './shared/doors/DoorController';
 
 export const bootDoors = new DoorController('boot');
@@ -14,6 +15,9 @@ export const COCKPIT_ORIGIN: [number, number, number] = [0, 0, -2600];
  *  cockpit mirrors (own ship), 4 = the mirror surfaces (never in a mirror). */
 export const MIRROR_LAYER = 3;
 export const MIRROR_SURFACE_LAYER = 4;
+/** 5 = the mission world as the cockpit mirrors see it (the cheapest tunnel variant); in a
+ *  mission the mirror cameras see only this + MIRROR_LAYER (no interior, no VFX). */
+export const MIRROR_WORLD_LAYER = 5;
 
 /** Phase 2 mission frame: 3000 u below the hangar, ~4 km from the cockpit
  *  (beyond both far planes). Render places entities at z = -(s - playerS). */
@@ -34,6 +38,7 @@ const worldPromise = new Promise<WorldHandles>(r => (resolveWorld = r));
 /** Called by <World/> once it is mounted (loader's shader/warm-up tasks wait on it). */
 export function markWorldMounted(w: WorldHandles): void {
   world = w;
+  detectGpuClass(w.gl);
   resolveWorld?.(w);
 }
 

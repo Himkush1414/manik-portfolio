@@ -9,7 +9,7 @@ import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry, ShaderMaterial } from 'three';
 import { MIRRORS } from './cockpitSpec';
-import { MIRROR_LAYER, MIRROR_SURFACE_LAYER } from '../sceneBridge';
+import { MIRROR_LAYER, MIRROR_SURFACE_LAYER, MIRROR_WORLD_LAYER, cockpitInMission } from '../sceneBridge';
 import { stage } from '../Stage';
 import { cockpitFx } from './displays';
 import { MirrorRig } from '../../render/MirrorRig';
@@ -67,7 +67,7 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
       holder.add(surface, bezel);
       return { mat, surface, holder };
     });
-    return { rig, surfaces, bezelMat, bezelGeos };
+    return { rig, surfaces, bezelMat, bezelGeos, inMission: false };
   }, []);
 
   // attach / detach only: re-parenting must never dispose (the materials are
@@ -110,7 +110,12 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
   }, [m, quality]);
 
   useFrame((state, dt) => {
-    if (stage.cockpit < 0.5 || !parent) return; // skipped entirely outside the cockpit
+    if ((stage.cockpit < 0.5 && !cockpitInMission.on) || !parent) return; // skipped entirely outside the cockpit
+    // in a mission the mirrors see the reduced set: own ship + the cheapest tunnel (MIRROR_WORLD_LAYER)
+    if (m.inMission !== cockpitInMission.on) {
+      m.inMission = cockpitInMission.on;
+      m.rig.setLayers(m.inMission ? [MIRROR_LAYER, MIRROR_WORLD_LAYER] : [0, MIRROR_LAYER]);
+    }
     const power = Math.min(1, cockpitFx.power.dash * 1.2);
     m.surfaces.forEach(s => {
       s.mat.uniforms.uTime.value = state.clock.elapsedTime;

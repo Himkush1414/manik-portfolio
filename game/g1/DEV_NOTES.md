@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3 done) | ba206d5, (cp3) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp2, cp4-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4a done) | ba206d5, 06054d8, (cp4a) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -105,7 +105,37 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   `endFrame` -> `mission.rig.detach()` already clears `director.quat`. Chase
   rig: `RIGS.chase`, streak amount x1.3 in chase. Capture with
   `tools/qa-flight.mjs --modes third,chase` + a blend sequence.
-- **cp4** cockpit rig + live mirrors: in `scenes/cockpit/Cockpit.tsx`
+- **cp4a DONE (2026-10-02)** cockpit view in the mission: `<Cockpit/>` registers
+  `cockpitInMission.root`; while `cockpitInMission.on` the interior shows, the
+  own ship + launch bay hide, the root is restored to COCKPIT_ORIGIN on exit.
+  `CockpitRig.placeRoot()` is called by the switcher ONLY while the interior
+  shows (the outgoing rig used to drag the root during a blend-out -> root
+  stranded at the mission frame). Cockpit key/dash lights follow the eye
+  (`updateCockpitLights`). Combiner `hudMode = 'off'` at the breach (cp6 adds
+  'mission'). Mirrors in mission: `MirrorRig.setLayers` -> MIRROR_LAYER +
+  MIRROR_WORLD_LAYER (5) where `Tunnel.mirrorShell` (LOW variant, same
+  geometry/program) lives; every scene light enables layer 5 (three only
+  collects lights sharing a camera layer: without it every lit material
+  compiled a no-light variant on the first cockpit switch = 1.1 s task).
+  Perf fixes found on the way (all measured, see perf table): (1) mission
+  composer now resizes on DPR change — DRS never reduced mission fill
+  before; (2) display canvases software-backed on integrated GPUs
+  (`render/gpuClass.ts`; accelerated 2D -> texImage2D synced two contexts:
+  ~15 fps lost on the UHD 770), accelerated on discrete (software cost ~3 ms
+  main thread on the RTX); (3) one canvas redraw+upload per frame (combiner
+  first, then the most overdue MFD; MFDs ~10 Hz each); (4) `uploadSteps`
+  (compileSliced.ts) uploads every mission/cockpit geometry in the prepare
+  (compile() uploads none; the cockpit eye framed a cone mid-flight); (5) the
+  mission post's on-screen EffectMaterial variant is linked in the prepare
+  (`gl.compile` with the screen bound) — it used to compile on the first
+  mission frame = the breach (pre-existing since 2B).
+  QA: `qa-flight`/`qa-camera` now snapshot resources AT `mission.playing`
+  (the old snapshot 2.5 s later hid start-of-mission compiles).
+  REMAINING (cp4b): mirror cost still above the 1.2 ms rule on the iGPU
+  (MEDIUM ~4.9 ms/frame, LOW ~2 ms) -> one shared wide rear render through 3
+  UV windows; hands (stick/throttle tilt with input, recoil on PlayerFire);
+  envelope-corner clipping check.
+  Original plan for reference: in `scenes/cockpit/Cockpit.tsx`
   register `cockpitInMission.root = root.current`; visible when
   `stage.cockpit >= 0.5 || cockpitInMission.on`; while on: force
   `built.group.visible = true`, hide `own.group` and the LaunchTunnel group,
@@ -369,6 +399,14 @@ Decisions (2026-10-01, before code):
    same orientation, no swimming); `RigSwitcher.detach()` clears it, so the
    hangar / cockpit / launch paths are untouched. Cockpit launch third /
    chase views scale their offsets by ship length like the mission rigs.
+7. **Cockpit in the mission (2C cp4a, 2026-10-02).** `Cockpit.tsx` registers
+   its root in `cockpitInMission` and shows/hides the interior for the mission
+   cockpit view (root restored to COCKPIT_ORIGIN after); `Mirrors.tsx` runs
+   while `cockpitInMission.on` and switches its cameras' layers (`MirrorRig.
+   setLayers`, additive); `displays.ts` canvases are software-backed on
+   integrated GPUs and redraw at most one canvas per frame (MFDs ~10 Hz
+   instead of 15 — visually equivalent; the combiner keeps 30 Hz). Phase 1
+   cockpit QA group re-run: clean, mirrors 28.6 refresh/s, 60 fps.
 5. **Mission frame hooks (2A, 2026-10-01).** `stage.mission` flag (Stage);
    `MISSION_ORIGIN` (sceneBridge); Hangar hall hidden while a mission is
    live; Cockpit stops writing fog and its lights while borrowed;
@@ -410,6 +448,11 @@ Decisions (2026-10-01, before code):
 | + speed FX (2B), 20 s | RTX 3050 | HIGH / ULTRA | 60 / 60 | 16.8 | 0.03 | 0.73 / 1.4 | 0 | 38 | 79k | yes (101) | — |
 | + speed FX (2B), 20 s | UHD 770 | LOW | 60 | 16.8 | 0.04 | 1.1 / 1.8 | 0 | 31 | 73k | yes (81) | — |
 | 2C cp1 weapons + feel: qa-flight, sustained fire 6 s | RTX 3050 | HIGH | 60 | 16.9 (p99 17.1) | 0.05 | 1.75 / 3.1 | 0 | 43 | 91k | yes (109) | — |
+| 2C cp4a cockpit view: qa-flight, sustained fire | RTX 3050 | HIGH | 60 | 16.9 | 0.05 | 1.97 / 3.4 | 0 | 101 | 98k | yes from play start (111) | — |
+| 2C cp4a camera cycle third>chase>cockpit>third>chase + hangar | RTX 3050 | HIGH | 60 | 16.9 | — | — | 0 | 100 | — | yes (111) | — |
+| 2C cp4a cockpit view, bot mid, DRS live (before -> after fixes) | UHD 770 | LOW | 20.7 -> 50.8 | 33.4 | — | 5.5 / 11 | 0 | 93 | — | — | — |
+| 2C cp4a third view, bot mid, DRS live (before -> after DRS fix) | UHD 770 | LOW | 54.1 -> 57.3 | 17.3 | — | 1.8 / 3.2 | 0 | 36 | — | — | — |
+| 2C cp4a cockpit view, DRS live (settling at 0.6) | UHD 770 | MEDIUM | 26.8 | 66.6 | — | 5.0 / 11 | 0 | 95 | — | — | — |
 | 2B close: 5-min soak (test corridor looped x5, bot mid), 300 s | RTX 3050 | HIGH | 60 (every 14 s window 59.6-60) | 16.8-16.9 | 0.03 / 0.1 | 1.6 / 3.9 | 0 | 38 | 79k | yes (104) | +0.09 MB/min, sawtooth 1.45 MB (rule 8: < 8 MB, flat) |
 
 ## P2.8 Engine notes (Phase 2)

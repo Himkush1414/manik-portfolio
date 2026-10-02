@@ -3,7 +3,8 @@
 // blend (never a hard cut), the settled view, and the mode reached. Checks
 // programs / geometries / textures constant across switches, perf while
 // switching, console clean.
-//   node tools/qa-camera.mjs [origin] [--start third] [--cycles 3] [--out qa/p2c] [--preset high]
+//   node tools/qa-camera.mjs [origin] [--start third] [--cycles 3] [--out qa/p2c] [--preset high] [--noshots] [--hangar]
+// --hangar: then leave through the bulkhead and check the cockpit root is back at its origin
 import { chromium } from 'playwright';
 import { gpuArgs, assertGpu } from './gpu.mjs';
 const argv = process.argv.slice(2);
@@ -20,6 +21,8 @@ p.on('pageerror', e => logs.push('pageerror ' + e.message));
 await p.addInitScript(([m, pr]) => localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: pr, autoPicked: true }, gpuHintShown: true, camera: { mode: m } } })), [start, preset]);
 await p.goto(`${origin}/game/g1/?level=test&debug=1&drs=0&god=1&launch=skip`);
 await p.waitForFunction(() => window.__G1__?.flowState?.get() === 'mission.playing', null, { timeout: 120000, polling: 100 });
+// resource snapshot AT the start of play: nothing may compile / upload after this
+const atPlaying = await p.evaluate(() => window.__G1__.info());
 // a real mission is entered by clicks, so audio is already up; with launch=skip the first
 // gesture here would carry the one-off AudioContext init (P2.7) into the measured window
 await p.keyboard.press('KeyJ');
@@ -50,8 +53,22 @@ for (let c = 0; c < cycles; c++) {
 }
 const table = await p.evaluate(() => window.__G1__.perf.table());
 const after = await p.evaluate(() => window.__G1__.info());
-const same = ['programs', 'geometries', 'textures'].every(k => before[k] === after[k]);
+let hangar = null;
+if (argv.includes('--hangar')) {
+  await p.evaluate(() => window.__G1__.mission.pause()); // HANGAR leaves from pause / failed / results
+  await p.waitForTimeout(300);
+  await p.evaluate(() => window.__G1__.mission.hangar());
+  await p.waitForFunction(() => window.__G1__.flowState.get().startsWith('hangar'), null, { timeout: 30000, polling: 100 });
+  await p.waitForTimeout(2500);
+  hangar = await p.evaluate(() => {
+    const r = window.__G1__.world.scene().getObjectByName('cockpit-root');
+    return { flow: window.__G1__.flowState.get(), rig: window.__G1__.mission.rig(), rootPos: r.position.toArray().map(v => +v.toFixed(3)), rootQuat: r.quaternion.toArray().map(v => +v.toFixed(3)), rootVisible: r.visible };
+  });
+  await p.screenshot({ path: `${out}/cam-hangar-after.png` });
+  if (hangar.rig.interior || hangar.rootVisible || hangar.rootPos[2] !== -2600) ok = false;
+}
+const same = ['programs', 'geometries', 'textures'].every(k => atPlaying[k] === before[k] && before[k] === after[k]);
 if (!same || logs.length || table.longTasks.length) ok = false;
-console.log(JSON.stringify({ gpu, start, steps, programsConstant: same, before: { programs: before.programs, geometries: before.geometries, textures: before.textures }, after: { programs: after.programs, geometries: after.geometries, textures: after.textures }, perf: { avgFps: table.avgFps, p95: table.p95, p99: table.p99, calls: table.drawCalls, longTasks: table.longTasks }, logs }, null, 1));
+console.log(JSON.stringify({ gpu, start, steps, hangar, programsConstant: same, atPlaying: { programs: atPlaying.programs, geometries: atPlaying.geometries, textures: atPlaying.textures }, before: { programs: before.programs, geometries: before.geometries, textures: before.textures }, after: { programs: after.programs, geometries: after.geometries, textures: after.textures }, perf: { avgFps: table.avgFps, p95: table.p95, p99: table.p99, calls: table.drawCalls, longTasks: table.longTasks }, logs }, null, 1));
 await b.close();
 process.exit(ok ? 0 : 1);

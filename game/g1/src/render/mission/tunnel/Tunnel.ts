@@ -3,6 +3,7 @@
 // them compile during prepare (a quality change swaps materials, never
 // compiles). Rail phases are computed here in double precision and passed
 // fract-ed / mod-ed, so 10 km+ levels lose nothing in float32.
+import { MIRROR_WORLD_LAYER } from '../../../scenes/sceneBridge';
 import { CircleGeometry, CylinderGeometry, Group, Mesh, PlaneGeometry, type ShaderMaterial } from 'three';
 import { TUNNEL, TUNNEL_TIERS, MOODS, type TunnelMoodDef } from '../../../data/tunnel';
 import type { Preset } from '../../quality';
@@ -20,6 +21,8 @@ export class Tunnel {
   readonly shell: Mesh;
   readonly veil: Mesh;
   readonly core: Mesh;
+  /** the cockpit mirrors' copy of the shell: the LOW variant, on the mirror-world layer only */
+  readonly mirrorShell: Mesh;
   private tier: Preset = 'high';
   private mood: TunnelMoodDef = { ...MOODS.l1 };
   private radiusKeys: readonly (readonly [number, number])[] = [];
@@ -36,6 +39,12 @@ export class Tunnel {
       m.frustumCulled = false;
       this.group.add(m);
     }
+    this.mirrorShell = new Mesh(shellGeo, tiers.low);
+    this.mirrorShell.frustumCulled = false;
+    this.mirrorShell.layers.set(MIRROR_WORLD_LAYER);
+    this.mirrorShell.renderOrder = -10;
+    this.mirrorShell.name = 'tunnel-mirror';
+    this.group.add(this.mirrorShell);
     this.shell.renderOrder = -10;
     this.core.renderOrder = -11;
     this.veil.renderOrder = 5;

@@ -9,7 +9,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { DirectionalLight, Fog, Object3D, PointLight, Vector3, type Group } from 'three';
 import { buildCockpit } from './buildCockpit';
 import { createDisplays, cockpitFx } from './displays';
-import { LaunchTunnel } from './LaunchTunnel';
+import { LaunchTunnel, launchTunnelRef } from './LaunchTunnel';
 import { Mirrors } from './Mirrors';
 import { bulkhead } from './Bulkhead';
 import { EYE_PITCH } from './cockpitSpec';
@@ -19,7 +19,7 @@ import { SHIPS } from '../../data/ships';
 import { liveriesFor, clampLivery } from '../../data/liveries';
 import { useProfile } from '../../state/profile.store';
 import { useSettings } from '../../state/settings.store';
-import { COCKPIT_ORIGIN, MIRROR_LAYER, cockpitMount } from '../sceneBridge';
+import { COCKPIT_ORIGIN, MIRROR_LAYER, cockpitMount, cockpitInMission } from '../sceneBridge';
 import { stage } from '../Stage';
 import { director } from '../../render/cameraDirector';
 import { compileSteps } from '../../render/compileSliced';
@@ -51,7 +51,11 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
   const setRoot = useCallback((el: Group | null) => {
     root.current = el;
     setRootObj(el);
+    // the mission's cockpit view flies this root on the ship's eye (render/rigs/CockpitRig.ts)
+    cockpitInMission.root = el;
   }, []);
+  /** the interior is shown inside the mission frame (applied / restored once per change) */
+  const inMission = useRef(false);
 
   const variant = SHIPS[shipId].cockpit;
   // the hangar pre-warm builds these in idle slices (cockpitPrebuild.ts);
@@ -115,7 +119,21 @@ export function Cockpit({ reduceMotion }: { reduceMotion: boolean }) {
   useFrame(state => {
     const g = root.current;
     if (!g) return;
-    const on = stage.cockpit >= 0.5;
+    // mission cockpit view: interior on the flown ship's eye; the mission ship (mirror layer) replaces
+    // the own ship, the launch bay stays behind. Leaving puts the root back at the cockpit origin.
+    const mv = cockpitInMission.on;
+    if (mv !== inMission.current) {
+      inMission.current = mv;
+      own.group.visible = !mv;
+      if (launchTunnelRef.group) launchTunnelRef.group.visible = !mv;
+      if (mv) built.group.visible = true;
+      else {
+        g.position.copy(ORIGIN);
+        g.quaternion.identity();
+        viewApplied.current = ''; // re-apply the launch view state next time the cockpit shows
+      }
+    }
+    const on = stage.cockpit >= 0.5 || mv;
     g.visible = on;
     const fog = scene.fog as Fog | null;
     if (fog && stage.mission < 0.5) {

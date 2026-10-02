@@ -20,6 +20,8 @@ import { vfxRng } from '../../render/mission/vfx/gpu';
 import { useSettings } from '../../state/settings.store';
 import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
+import { updateCockpitLights } from './missionCamera';
+import { cockpitFx } from '../cockpit/displays';
 
 let reader: EventReader | null = null;
 const _env = { a: 0, b: 0 };
@@ -128,6 +130,8 @@ export function MissionDriver() {
     rigFlight.ay = att.ay;
     rigFlight.rollCoupling = useSettings.getState().camera.rollCoupling;
     mission.rig.update(dt);
+    // cockpit view: the borrowed cockpit key + dash lights follow the eye (after the rig placed the root)
+    updateCockpitLights(cockpitFx.power.dash);
   }, -3);
   return null;
 }

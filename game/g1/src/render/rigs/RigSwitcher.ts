@@ -86,6 +86,7 @@ export class RigSwitcher implements CameraRig {
       o.focus.copy(cur.pose.focus);
       o.fov = cur.pose.fov;
     }
+    if (this.interior) this.cockpit.placeRoot();
     director.pos.copy(o.pos);
     director.focus.copy(o.focus);
     // keep `look` meaningful for anything that reads it (forward, 10 u ahead)

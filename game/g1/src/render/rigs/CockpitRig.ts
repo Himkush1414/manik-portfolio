@@ -56,17 +56,6 @@ export class CockpitRig implements CameraRig {
     } else _q.copy(t.quaternion);
     t.updateWorldMatrix(true, false);
     _e.copy(this.eye).applyMatrix4(t.matrixWorld);
-    const root = cockpitInMission.root;
-    if (root) {
-      const parent = root.parent;
-      if (parent) {
-        parent.updateWorldMatrix(true, false);
-        root.position.copy(_e);
-        parent.worldToLocal(root.position);
-      } else root.position.copy(_e);
-      root.quaternion.copy(_q);
-      root.updateMatrixWorld();
-    }
     // head inertia: the head lags lateral acceleration (ship-local), critically smoothed
     const C = COCKPIT_RIG;
     const k = 1 - Math.exp(-dt / C.headTau);
@@ -85,6 +74,21 @@ export class CockpitRig implements CameraRig {
     _fwd.set(0, 0, -1).applyQuaternion(P.quat);
     P.focus.copy(P.pos).addScaledVector(_fwd, C.focusDist);
     P.fov = RIGS.cockpit.fov * (useSettings.getState().camera.fov / RIGS.fovBase) + fovKick.value * C.fovKickShare;
+  }
+
+  /** Put the cockpit root on this frame's eye (the switcher calls it only while the interior shows:
+   *  during a blend out, the outgoing rig still updates but must not drag the root along). */
+  placeRoot(): void {
+    const root = cockpitInMission.root;
+    if (!root || !this.target) return;
+    const parent = root.parent;
+    root.position.copy(_e);
+    if (parent) {
+      parent.updateWorldMatrix(true, false);
+      parent.worldToLocal(root.position);
+    }
+    root.quaternion.copy(_q);
+    root.updateMatrixWorld();
   }
 
   detach(): void {

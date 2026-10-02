@@ -6,7 +6,7 @@
 // space — DEV_NOTES §8), then the parallel link is awaited by polling, then
 // every texture the materials reference is uploaded one per step.
 import { WAIT } from '../core/slicer';
-import { HalfFloatType, WebGLRenderTarget, type Camera, type Material, type Mesh, type Object3D, type Scene, type Texture, type WebGLRenderer } from 'three';
+import { HalfFloatType, MeshBasicMaterial, PerspectiveCamera, Scene, WebGLRenderTarget, type Camera, type Material, type Mesh, type Object3D, type Texture, type WebGLRenderer } from 'three';
 
 type Props = { get(m: object): { currentProgram?: { isReady(): boolean } } };
 
@@ -83,5 +83,53 @@ export function* compileSteps(gl: WebGLRenderer, roots: Object3D[], camera: Came
     }
   } finally {
     probe.dispose();
+  }
+}
+
+/** shared by every upload pass: its few program variants (mesh / instanced / points / lines) compile once */
+let uploadMat: MeshBasicMaterial | null = null;
+
+/**
+ * Geometry buffer upload as steps (compile() uploads none). Each root is drawn
+ * once into a 1x1 target with frustum culling off, every layer enabled and an
+ * override material, so a mesh first framed mid-mission (a mirror camera, the
+ * cockpit eye's head inertia) never uploads its buffers then. Roots are lent
+ * to a scratch scene for the draw and handed straight back.
+ */
+export function* uploadSteps(gl: WebGLRenderer, roots: (Object3D | null)[]): Generator<unknown, void, void> {
+  uploadMat ??= new MeshBasicMaterial();
+  const warm = new Scene();
+  warm.overrideMaterial = uploadMat;
+  const cam = new PerspectiveCamera();
+  cam.layers.enableAll();
+  const target = new WebGLRenderTarget(1, 1, { type: HalfFloatType });
+  try {
+    for (const root of roots) {
+      if (!root) continue;
+      const parent = root.parent, vis = root.visible;
+      const culled: Object3D[] = [];
+      root.traverse(o => {
+        if (o.frustumCulled) {
+          o.frustumCulled = false;
+          culled.push(o);
+        }
+      });
+      root.visible = true;
+      warm.add(root);
+      const prev = gl.getRenderTarget();
+      try {
+        gl.setRenderTarget(target);
+        gl.render(warm, cam);
+      } finally {
+        gl.setRenderTarget(prev);
+        warm.remove(root);
+        parent?.add(root);
+        root.visible = vis;
+        for (const o of culled) o.frustumCulled = true;
+      }
+      yield;
+    }
+  } finally {
+    target.dispose();
   }
 }

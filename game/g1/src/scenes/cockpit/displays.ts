@@ -4,6 +4,7 @@
 // canvases at 15 fps (MFD) / 30 fps (HUD) with scanlines and a boot flicker
 // driven by `cockpitFx.power`.
 import { CanvasTexture, LinearFilter, SRGBColorSpace } from 'three';
+import { gpuClass } from '../../render/gpuClass';
 import type { ShipSpec } from '../../ships/types';
 import { MISSION_01 } from '../../data/lore';
 
@@ -68,7 +69,11 @@ function mk(w: number, h: number) {
   t.generateMipmaps = false;
   t.minFilter = LinearFilter;
   t.anisotropy = 8;
-  return { c, g: c.getContext('2d')!, t };
+  // these re-upload every few frames. Integrated GPU: software-backed — an accelerated 2D canvas
+  // makes each texImage2D sync two GPU contexts (UHD 770: ~15 fps lost in the mission cockpit
+  // view). Discrete GPU: accelerated — the GPU-side copy is cheap there, a software raster +
+  // upload cost ~3 ms of main thread per frame (RTX 3050).
+  return { c, g: c.getContext('2d', { willReadFrequently: gpuClass.integrated })!, t };
 }
 
 function scanlines(g: CanvasRenderingContext2D, w: number, h: number, power: number, t: number) {
@@ -98,7 +103,10 @@ export type Displays = {
 export function createDisplays(): Displays {
   const L = mk(384, 288), C = mk(384, 288), R = mk(384, 288), H = mk(1024, 720);
   let wire: Pt[][] = [];
-  let lastMfd = -1, lastHud = -1;
+  // last redraw per canvas (combiner, MFD L / C / R): at most ONE canvas redraws + uploads per
+  // frame (each upload is a synchronous copy), the combiner first, then the most overdue MFD
+  let lastHud = -1;
+  const lastMfd = [-1, -1, -1];
 
   const frame = (g: CanvasRenderingContext2D, w: number, h: number, title: string, col: string) => {
     g.fillStyle = '#02060a';
@@ -327,21 +335,28 @@ export function createDisplays(): Displays {
     },
     update(t) {
       const P = cockpitFx.power;
-      if (t - lastMfd >= 1 / 15) {
-        lastMfd = t;
-        drawL(t, P.mfdL);
-        scanlines(L.g, L.c.width, L.c.height, P.mfdL, t);
-        drawC(t, P.mfdC);
-        scanlines(C.g, C.c.width, C.c.height, P.mfdC, t + 1);
-        drawR(t, P.mfdR);
-        scanlines(R.g, R.c.width, R.c.height, P.mfdR, t + 2);
-        L.t.needsUpdate = C.t.needsUpdate = R.t.needsUpdate = true;
-      }
       if (t - lastHud >= 1 / 30) {
         lastHud = t;
         drawHud(t);
         H.t.needsUpdate = true;
+        return;
       }
+      let k = -1;
+      for (let i = 0; i < 3; i++) if (t - lastMfd[i] >= 1 / 15 && (k < 0 || lastMfd[i] < lastMfd[k])) k = i;
+      if (k === 0) {
+        drawL(t, P.mfdL);
+        scanlines(L.g, L.c.width, L.c.height, P.mfdL, t);
+        L.t.needsUpdate = true;
+      } else if (k === 1) {
+        drawC(t, P.mfdC);
+        scanlines(C.g, C.c.width, C.c.height, P.mfdC, t + 1);
+        C.t.needsUpdate = true;
+      } else if (k === 2) {
+        drawR(t, P.mfdR);
+        scanlines(R.g, R.c.width, R.c.height, P.mfdR, t + 2);
+        R.t.needsUpdate = true;
+      }
+      if (k >= 0) lastMfd[k] = t;
     },
     dispose() {
       [L.t, C.t, R.t, H.t].forEach(x => x.dispose());

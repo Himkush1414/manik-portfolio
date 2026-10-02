@@ -85,6 +85,14 @@ export function prepareMissionPost(gl: WebGLRenderer, scene: Scene, camera: Came
   composer.render(0);
   main.renderToScreen = true;
   exposure.exposure = exp;
+  // the on-screen variant of the last pass differs (three keys programs on the output colour
+  // space: sRGB to the canvas, linear into any target), so link it with the screen bound —
+  // compile() draws nothing. Without this it compiled on the first mission frame (the breach).
+  const prev = gl.getRenderTarget();
+  gl.setRenderTarget(null);
+  const fs = main as unknown as { scene: Scene; camera: Camera }; // the pass's fullscreen quad (protected)
+  gl.compile(fs.scene, fs.camera);
+  gl.setRenderTarget(prev);
   chain = { composer, exposure, ca, caOffset, vignette, radial, radialPass, key };
 }
 
@@ -101,11 +109,14 @@ export function missionPostReady(): boolean {
 export function MissionPostFX() {
   const gl = useThree(s => s.gl);
   const size = useThree(s => s.size);
+  // the DRS governor changes the DPR, not the CSS size: the chain's targets must follow both
+  // (sized from the CSS size alone, DRS never reduced the scene fill in a mission)
+  const dpr = useThree(s => s.viewport.dpr);
   const reduceMotion = useSettings(s => s.accessibility.reduceMotion);
   const shake = useSettings(s => s.camera.shake);
   useEffect(() => {
     chain?.composer.setSize(size.width, size.height);
-  }, [size.width, size.height]);
+  }, [size.width, size.height, dpr]);
   useFrame(({ camera }, dt) => {
     if (stage.mission < 0.5 || !chain) return;
     const c = chain;

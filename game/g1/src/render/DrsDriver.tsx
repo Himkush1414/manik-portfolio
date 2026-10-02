@@ -19,10 +19,10 @@ import { useFlow, isBoot } from '../app/flow';
 import { registerDebug } from '../debug/debugApi';
 import { QUERY } from '../core/constants';
 import { perfMon } from './perfMon';
+import { INTEGRATED_GPU } from './gpuClass';
 
 /** first-run pick: settle after the hangar is up, then measure */
 const AUTO_PICK = { settleMs: 3000, measureMs: 2000 } as const;
-const INTEGRATED = /\b(intel|uhd|iris)\b|radeon\(tm\) graphics|radeon graphics|vega \d+ graphics/i;
 const GPU_HINT =
   'Integrated graphics detected. For full quality, set your browser to use the high-performance GPU (Windows: Settings › System › Display › Graphics).';
 
@@ -120,7 +120,7 @@ async function measureAndPick(): Promise<void> {
   const st = useSettings.getState();
   // only the untouched default is replaced (a Phase 1 save never recorded who picked it)
   if (!st.graphics.autoPicked && st.graphics.preset === 'high') st.setPreset(preset, true);
-  if (!st.gpuHintShown && gpu && INTEGRATED.test(gpu)) {
+  if (!st.gpuHintShown && gpu && INTEGRATED_GPU.test(gpu)) {
     useUi.getState().toast(GPU_HINT, 'info', 9000);
     st.setGpuHintShown();
   } else if (!st.gpuHintShown) st.setGpuHintShown();

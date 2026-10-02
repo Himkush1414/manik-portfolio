@@ -18,6 +18,7 @@ import { perfMon } from '../../render/perfMon';
 import { CameraShaker } from '../../render/CameraShaker';
 import { MISSION_LIGHTS } from '../../data/mission';
 import { returnSequence } from '../choreo/launchTimeline';
+import { cockpitFx } from '../../scenes/cockpit/displays';
 import { useSettings } from '../../state/settings.store';
 import { applyCockpitView, cycleCamera, followCameraSetting, missionMode } from '../../scenes/mission/missionCamera';
 import { runLaunch, runFastLaunch, resetLaunchRig } from './launchSequence';
@@ -68,6 +69,8 @@ function beginFrame(): void {
   }
   stage.cockpit = 0;
   stage.mission = 1;
+  // the combiner's launch / standby symbology ends at the breach
+  cockpitFx.hudMode = 'off';
   mission.root.visible = true;
   // the saved camera mode; Cycle Camera / Settings blend between rigs while flying
   mission.rig.onView = applyCockpitView;

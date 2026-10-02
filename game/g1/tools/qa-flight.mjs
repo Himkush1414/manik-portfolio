@@ -44,6 +44,8 @@ for (const mode of modes) {
   await p.addInitScript(([m, pr]) => localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: pr, autoPicked: true }, gpuHintShown: true, camera: { mode: m } } })), [mode, preset]);
   await p.goto(`${origin}/game/g1/?level=test&debug=1&drs=0&god=1&launch=skip`);
   await p.waitForFunction(() => window.__G1__?.flowState?.get() === 'mission.playing', null, { timeout: 120000, polling: 100 });
+  // resource snapshot AT the start of play: nothing may compile / upload after this
+  const atPlaying = await p.evaluate(() => window.__G1__.info());
   await p.waitForTimeout(2500);
   const before = await p.evaluate(() => window.__G1__.info());
   const shots = [];
@@ -78,9 +80,9 @@ for (const mode of modes) {
   await p.evaluate(() => window.__G1__.sim.force(null));
   const after = await p.evaluate(() => window.__G1__.info());
   const sim = await p.evaluate(() => window.__G1__.sim.state());
-  const same = ['programs', 'geometries', 'textures'].every(k => before[k] === after[k]);
+  const same = ['programs', 'geometries', 'textures'].every(k => atPlaying[k] === before[k] && before[k] === after[k]);
   if (!same || logs.length || table.longTasks.length) ok = false;
-  result[mode] = { gpu, programsConstant: same, before, after, perf: { avgFps: table.avgFps, p95: table.p95, p99: table.p99, calls: table.drawCalls, tris: table.triangles, sim: table.sections.sim, render: table.sections.render, longTasks: table.longTasks }, shotsFired: sim.shots, shots, logs };
+  result[mode] = { gpu, programsConstant: same, atPlaying, before, after, perf: { avgFps: table.avgFps, p95: table.p95, p99: table.p99, calls: table.drawCalls, tris: table.triangles, sim: table.sections.sim, render: table.sections.render, longTasks: table.longTasks }, shotsFired: sim.shots, shots, logs };
   await b.close();
 }
 console.log(JSON.stringify(result, null, 1));

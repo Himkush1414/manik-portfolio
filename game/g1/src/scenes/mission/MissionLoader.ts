@@ -4,7 +4,7 @@
 // warms the mission post chain off-screen, then creates the sim. Reports
 // progress (SYSTEMS SYNC). Idempotent per level; pools persist across retries.
 import { runSliced } from '../../core/slicer';
-import { compileSteps } from '../../render/compileSliced';
+import { compileSteps, uploadSteps } from '../../render/compileSliced';
 import { prepareMissionPost } from '../../render/MissionPostFX';
 import { ShipFactory } from '../../ships/ShipFactory';
 import { clampLivery } from '../../data/liveries';
@@ -13,7 +13,7 @@ import { useSettings } from '../../state/settings.store';
 import { Sim } from '../../game/sim';
 import { Bot } from '../../game/bot/bot';
 import type { LevelDef } from '../../levels/types';
-import { whenWorldMounted } from '../sceneBridge';
+import { whenWorldMounted, cockpitInMission, MIRROR_WORLD_LAYER } from '../sceneBridge';
 import { buildTunnelSteps } from '../../render/mission/tunnel/Tunnel';
 import { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
 import { VeilGate } from '../../render/mission/launch/VeilGate';
@@ -43,6 +43,9 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   mission.world = world;
   const { gl, scene, camera } = world;
   if (mission.root.parent !== scene) scene.add(mission.root);
+  // three collects a light only for cameras sharing one of its layers: the mission mirrors (no layer 0)
+  // must see the same light set as the eye, or every lit material compiles a no-light variant
+  scene.traverse(o => void ((o as { isLight?: boolean }).isLight && o.layers.enable(MIRROR_WORLD_LAYER)));
   // the player's ship (rebuilt only when the ship / livery changed)
   const p = useProfile.getState();
   const livery = clampLivery(p.selectedShip, p.liveryByShip[p.selectedShip] ?? 0);
@@ -97,6 +100,8 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   } finally {
     mission.root.visible = vis;
   }
+  // every geometry buffer too: the cockpit view frames meshes the launch never drew
+  await runSliced('mission:upload', uploadSteps(gl, [mission.root, cockpitInMission.root]));
   mission.progress = 0.8;
   const el = gl.domElement;
   prepareMissionPost(gl, scene, camera, el.clientWidth, el.clientHeight);

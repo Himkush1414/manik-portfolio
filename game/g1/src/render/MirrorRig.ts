@@ -43,6 +43,14 @@ export class MirrorRig {
     return this.targets.map(t => t.texture);
   }
 
+  /** What the cameras see (layer numbers); e.g. the mission's reduced mirror set. */
+  setLayers(layers: readonly number[]): void {
+    for (const cam of this.cameras) {
+      cam.layers.disableAll();
+      layers.forEach(l => cam.layers.enable(l));
+    }
+  }
+
   /** Re-size every target (quality preset change); one [w, h] per mirror. */
   resize(sizes: readonly (readonly [number, number])[]): void {
     sizes.forEach(([w, h], i) => this.targets[i]?.setSize(w, h));
