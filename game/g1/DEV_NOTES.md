@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3-cp6 done) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, a4e2a48, (cp6) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3-cp7 done) | ba206d5, 06054d8, d1d5d93, 6601722, 84bb284, a4e2a48, 5b33c80, (cp7) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -210,7 +210,13 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   pushes it. Original plan: live MFDs + combiner: `scenes/cockpit/displays.ts` new
   `hudMode 'mission'`: left shield/hull/energy/roll cd, right radar + progress,
   centre target wireframe/health or ship status; combiner flight symbology.
-- **cp7** settings rows (fields already in `state/schema.ts`):
+- **cp7 DONE (2026-10-02)** settings rows in SettingsModal: Controls > Flight
+  assists (aim assist OFF/LOW/MED/HIGH — read at sim creation, "applies
+  from the next launch"; auto-fire), Camera > roll coupling (0-140 %),
+  Graphics > speed lines (0-100 %), Accessibility > Subtitles (on/off +
+  SMALL/MEDIUM/LARGE). `tools/qa-settings-p2.mjs`: real clicks / slider keys,
+  values reach the save, survive a reload, console clean.
+  Original plan: settings rows (fields already in `state/schema.ts`):
   controls.aimAssist, controls.autoFire, accessibility.subtitles +
   subtitleSize, camera.rollCoupling (0-1.4), graphics.speedLines — in
   `ui/screens/settings/SettingsModal.tsx` with the existing row components.

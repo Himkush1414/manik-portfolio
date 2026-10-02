@@ -17,6 +17,7 @@ import { DEBUG } from '../../../core/constants';
 import { sfx } from '../../../audio/sfx';
 import { closeModal } from '../hangar/hangarActions';
 import type { CameraMode } from '../../../render/cameraRig';
+import type { AimAssistLevel, SubtitleSize } from '../../../state/schema';
 
 type Tab = 'controls' | 'camera' | 'graphics' | 'audio' | 'access';
 const TABS: { id: Tab; label: string }[] = [
@@ -178,6 +179,23 @@ function Controls() {
       <Row label="Smoothing">
         <Slider value={c.smoothing} min={0} max={1} step={0.01} onChange={v => patch('controls', { smoothing: v })} label="Smoothing" format={pct} numeric={false} />
       </Row>
+      <h3 className={s.section}>Flight assists</h3>
+      <Row label="Aim assist" hint="Gently steers shots toward the nearest target. Applies from the next launch.">
+        <Segmented<AimAssistLevel>
+          label="Aim assist"
+          value={c.aimAssist}
+          onChange={v => patch('controls', { aimAssist: v })}
+          options={[
+            { id: 'off', label: 'OFF' },
+            { id: 'low', label: 'LOW' },
+            { id: 'med', label: 'MED' },
+            { id: 'high', label: 'HIGH' },
+          ]}
+        />
+      </Row>
+      <Row label="Auto-fire" hint="Cannons fire continuously while flying.">
+        <Toggle checked={c.autoFire} onChange={v => patch('controls', { autoFire: v })} label="Auto-fire" />
+      </Row>
       <p className={s.hint}>Keyboard and mouse always work together — never either-or.</p>
     </>
   );
@@ -253,6 +271,9 @@ function Camera() {
       <Row label="Camera shake">
         <Slider value={cam.shake} min={0} max={1} step={0.01} onChange={v => patch('camera', { shake: v })} label="Camera shake" format={pct} numeric={false} />
       </Row>
+      <Row label="Roll coupling" hint="How far the camera banks with the ship. Reduce motion caps it at 30%.">
+        <Slider value={cam.rollCoupling} min={0} max={1.4} step={0.05} onChange={v => patch('camera', { rollCoupling: v })} label="Camera roll coupling" format={pct} numeric={false} />
+      </Row>
       <Row label="Helmet frame" hint="Dark visor rim in cockpit view.">
         <Segmented
           label="Helmet frame"
@@ -311,6 +332,9 @@ function Graphics() {
       {toggle('dof', 'Depth of field', 'HIGH and ULTRA presets.')}
       {toggle('ao', 'Ambient occlusion', 'HIGH and ULTRA presets.')}
       {toggle('reflections', 'Floor reflections', 'Off on LOW.')}
+      <Row label="Speed lines" hint="Streaks past the canopy at speed.">
+        <Slider value={g.speedLines} min={0} max={1} step={0.05} onChange={v => patch('graphics', { speedLines: v })} label="Speed lines" format={pct} numeric={false} />
+      </Row>
     </>
   );
 }
@@ -353,6 +377,22 @@ function Access() {
       </Row>
       <Row label="UI scale" hint="80 – 130%.">
         <Slider value={a.uiScale} min={0.8} max={1.3} step={0.05} onChange={v => patch('accessibility', { uiScale: v })} label="UI scale" format={pct} numeric={false} />
+      </Row>
+      <h3 className={s.section}>Subtitles</h3>
+      <Row label="Subtitles" hint="Radio lines and mission comms as text.">
+        <Toggle checked={a.subtitles} onChange={v => patch('accessibility', { subtitles: v })} label="Subtitles" />
+      </Row>
+      <Row label="Subtitle size">
+        <Segmented<SubtitleSize>
+          label="Subtitle size"
+          value={a.subtitleSize}
+          onChange={v => patch('accessibility', { subtitleSize: v })}
+          options={[
+            { id: 'small', label: 'SMALL' },
+            { id: 'medium', label: 'MEDIUM' },
+            { id: 'large', label: 'LARGE' },
+          ]}
+        />
       </Row>
     </>
   );
