@@ -21,7 +21,7 @@ production build, QA script with 0 console errors/warnings, then commit
 | Baseline | DONE | — | qa:phase1 green, build/tests clean (P2.6) |
 | 2A Foundation | DONE | 562274a, c9dd224, ceb9559, 08a2298, 2a78216, 53f3701, 4fd4243, 76946db | carry-overs (a)(b)(c), sim core, flow + input, bot + balance CLI, perf instrumentation, empty mission scene: GATE passed (60 fps both GPUs, programs constant) |
 | 2B Wormhole + launch | DONE | 6c06350, b6ef2fe, 80f637d, 2cd09be, (close-out) | tunnel, tiers, moods, speed FX, launch + Veil Gate, radius set pieces (chamber/collapse), storm flashes; GATE: 5-min in-mission heap trend flat (+0.09 MB/min, sawtooth 1.45 MB), 60 fps for 5 min. Storm-bolt readability judged in 2H |
-| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4a done) | ba206d5, 06054d8, (cp4a) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
+| 2C Flight + rigs + HUD | IN PROGRESS (cp1, cp3, cp4a, cp4b-1 done) | ba206d5, 06054d8, d1d5d93, (cp4b-1) | cp1 weapon VFX + flight feel; cp3 rig switching (third/chase blend, Cycle Camera, saved mode; cockpit falls back to third until cp4 registers the cockpit root); cp4a cockpit interior in the mission + live mirrors (reduced set) + iGPU/compile fixes; cp2, cp4b-cp9 TODO (see HANDOFF) |
 | 2D Hazards + damage + pause/fail | TODO | | |
 | 2E Umbra ships + AI + bestiary | TODO | | |
 | 2F Voidspawn monsters | TODO | | |
@@ -131,10 +131,21 @@ delete. Data already pushed for them: `COCKPIT_RIG`, `COCKPIT_LIGHTS` in
   mission frame = the breach (pre-existing since 2B).
   QA: `qa-flight`/`qa-camera` now snapshot resources AT `mission.playing`
   (the old snapshot 2.5 s later hid start-of-mission compiles).
-  REMAINING (cp4b): mirror cost still above the 1.2 ms rule on the iGPU
-  (MEDIUM ~4.9 ms/frame, LOW ~2 ms) -> one shared wide rear render through 3
-  UV windows; hands (stick/throttle tilt with input, recoil on PlayerFire);
-  envelope-corner clipping check.
+- **cp4b-1 DONE (2026-10-02)** shared mirror render: the 3-target path
+  measured 2.56 ms GPU per refresh on the UHD 770 MEDIUM (> the brief's 1.2 ms
+  rule), so in the mission `MirrorRig.setShared(true)`: ONE rear camera (the
+  centre mirror's, symmetric frustum = union of the 3 mirrors' corner rays)
+  into one target, each surface samples its `uWin` UV window; no MSAA on that
+  target (the multisampled HalfFloat resolve was most of the cost). GPU timer
+  queries (`.scratch/mirgpu.mjs`, EXT_disjoint_timer_query_webgl2), ms GPU per
+  refresh, 3 targets -> shared: UHD 770 MEDIUM 2.56 -> 1.32, LOW 2.39 -> 1.04,
+  RTX 3050 HIGH 0.78 -> 0.37. Frame-time deltas on the iGPU are too noisy for
+  this (the owner's desktop shares it) — use the timer queries. Phase 1 bay
+  keeps its 3 multisampled cameras. Phase 1 cockpit A/B on the iGPU (old
+  build 06054d8 vs new, back to back): new 10.5-13.6 fps vs old 7.7-10.3 —
+  no regression (absolute numbers below the Phase 1 record = machine load).
+  REMAINING (cp4b-2): hands (stick/throttle tilt with input, recoil on
+  PlayerFire); envelope-corner clipping check.
   Original plan for reference: in `scenes/cockpit/Cockpit.tsx`
   register `cockpitInMission.root = root.current`; visible when
   `stage.cockpit >= 0.5 || cockpitInMission.on`; while on: force
@@ -405,7 +416,10 @@ Decisions (2026-10-01, before code):
    while `cockpitInMission.on` and switches its cameras' layers (`MirrorRig.
    setLayers`, additive); `displays.ts` canvases are software-backed on
    integrated GPUs and redraw at most one canvas per frame (MFDs ~10 Hz
-   instead of 15 — visually equivalent; the combiner keeps 30 Hz). Phase 1
+   instead of 15 — visually equivalent; the combiner keeps 30 Hz).
+   `MirrorRig` gains a shared mode (`setShared`, `sharedCamera/Target`,
+   `windows`) and the mirror surface shader a `uWin` window (whole texture
+   in the bay = unchanged look). Phase 1
    cockpit QA group re-run: clean, mirrors 28.6 refresh/s, 60 fps.
 5. **Mission frame hooks (2A, 2026-10-01).** `stage.mission` flag (Stage);
    `MISSION_ORIGIN` (sceneBridge); Hangar hall hidden while a mission is

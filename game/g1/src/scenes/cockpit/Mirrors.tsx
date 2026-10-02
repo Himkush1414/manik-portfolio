@@ -7,7 +7,7 @@
 // vignette + faint scanlines, in a bezel.
 import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry, ShaderMaterial } from 'three';
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry, ShaderMaterial, Vector4 } from 'three';
 import { MIRRORS } from './cockpitSpec';
 import { MIRROR_LAYER, MIRROR_SURFACE_LAYER, MIRROR_WORLD_LAYER, cockpitInMission } from '../sceneBridge';
 import { stage } from '../Stage';
@@ -21,6 +21,8 @@ const CAMS: Record<string, { pos: [number, number, number]; look: [number, numbe
   left: { pos: [-0.55, 0.12, -0.45], look: [-0.9, 0.04, 0.55], fov: 40 },
   right: { pos: [0.55, 0.12, -0.45], look: [0.9, 0.04, 0.55], fov: 40 },
 };
+
+const _full = new Vector4(0, 0, 1, 1);
 
 /** Quality-preset mirror budget: the centre target's size + refresh rate;
  *  the side mirrors keep their 256x160 : 512x256 proportion. */
@@ -37,17 +39,18 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
     const bezelGeos: BoxGeometry[] = [];
     const surfaces = MIRRORS.map((def, i) => {
       const mat = new ShaderMaterial({
-        uniforms: { tMap: { value: rig.textures[i] }, uTime: { value: 0 }, uPower: { value: 0 } },
+        // uWin: the UV window of tMap this mirror shows (the whole texture, or its part of the shared render)
+        uniforms: { tMap: { value: rig.textures[i] }, uWin: { value: new Vector4(0, 0, 1, 1) }, uTime: { value: 0 }, uPower: { value: 0 } },
         vertexShader: /* glsl */ `varying vec2 vUv; varying vec3 vN; varying vec3 vV;
           void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix)*normal); vV = normalize(cameraPosition - w.xyz); gl_Position = projectionMatrix * viewMatrix * w; }`,
         fragmentShader: /* glsl */ `
-          uniform sampler2D tMap; uniform float uTime, uPower; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+          uniform sampler2D tMap; uniform vec4 uWin; uniform float uTime, uPower; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
           void main(){
             vec2 p = vUv * 2.0 - 1.0;
             float r2 = dot(p, p);
             vec2 uv = vec2(1.0 - vUv.x, vUv.y);                  // mirrored
             uv = (uv - 0.5) * (1.0 - 0.09 * r2) + 0.5;            // slight convex barrel
-            vec3 c = texture2D(tMap, uv).rgb;
+            vec3 c = texture2D(tMap, uWin.xy + uv * uWin.zw).rgb;
             float vig = smoothstep(1.35, 0.35, length(p * vec2(0.8, 1.0)));
             float scan = 0.96 + 0.04 * sin(vUv.y * 420.0);
             float fres = pow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 3.0);
@@ -76,6 +79,7 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
     if (!parent) return;
     m.rig.attach(parent);
     m.rig.setSource(scene);
+    gl.initRenderTarget(m.rig.sharedTarget); // allocated now, never on the first mission frame
     m.surfaces.forEach(s => parent.add(s.holder));
     registerDebug('mirrors', { rig: () => m.rig });
     return () => {
@@ -83,7 +87,7 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
       m.rig.detach();
       m.rig.setSource(null);
     };
-  }, [parent, scene, m]);
+  }, [parent, scene, m, gl]);
 
   // GPU resources: released once, on unmount
   useEffect(
@@ -115,6 +119,13 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
     if (m.inMission !== cockpitInMission.on) {
       m.inMission = cockpitInMission.on;
       m.rig.setLayers(m.inMission ? [MIRROR_LAYER, MIRROR_WORLD_LAYER] : [0, MIRROR_LAYER]);
+      // and ONE shared wide render sampled through each mirror's window (the per-pass cost dominated
+      // on the integrated GPU); the Phase 1 bay keeps its three cameras
+      m.rig.setShared(m.inMission);
+      m.surfaces.forEach((s, i) => {
+        s.mat.uniforms.tMap.value = m.inMission ? m.rig.sharedTarget.texture : m.rig.textures[i];
+        (s.mat.uniforms.uWin.value as Vector4).copy(m.inMission ? m.rig.windows[i] : _full);
+      });
     }
     const power = Math.min(1, cockpitFx.power.dash * 1.2);
     m.surfaces.forEach(s => {
