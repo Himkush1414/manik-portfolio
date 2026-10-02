@@ -27,8 +27,8 @@ look (§19 founder test, side-by-side stills).
 
 | Slice | Scope (brief §17) | Status | Push |
 |---|---|---|---|
-| W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, (W0b) |
-| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | TODO | |
+| W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
+| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | IN PROGRESS (W1a path) | (W1a) |
 | W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
 | W3 | water, rocks/cliffs, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
@@ -60,6 +60,24 @@ look (§19 founder test, side-by-side stills).
   BayLife words. qa:phase1 res + cockpit groups: layout clean at 5 sizes,
   console clean.
 - NEXT: W1 (see P2R.3 / P2R.4).
+
+### P2R.0b W1 log
+- W1a `src/game/world/path.ts` (FlightPath): horizontal centripetal
+  Catmull-Rom (Barry-Goldman, alpha 0.5, reflected phantom end points)
+  sampled with <= 0.25 u chords (coarser chords aliased the heading:
+  piecewise-constant -> curvature spikes / camera jitter), vertical =
+  floor profile + clearance profile eased (smoothstep) between waypoints by
+  horizontal arc length, resampled to a 1 u 3D arc-length table (x, y, z,
+  floor, clearance, envA, envB, bank, heading, curvature over +-10 u).
+  `frameAt(s)` (T, R = T x up, U = R x T; no roll), `toWorld(s, x, y)`,
+  `waypointS`. `PathWaypoint.floor?` (additive): valley-floor altitude
+  (default datum) — breaks the path<->terrain cycle: path y = floor +
+  clearance, terrain floor built to the same profile. `validatePath(p,
+  ground?)`: continuity (1 u steps), curvature radius >= 1125 u, pitch <=
+  20 deg, envelope (8 ellipse points every 45 deg) >= 3 u above terrain.
+  Authoring note: an arc that ENDS on a waypoint bends harder in its last
+  segment (reflected end condition) — give paths straight lead-in / lead-out
+  waypoints. 21 km path builds in < 400 ms (test).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

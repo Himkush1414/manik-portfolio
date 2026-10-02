@@ -15,6 +15,9 @@ export type PathWaypoint = {
   envB: number;
   /** extra visual bank (deg), added to the curvature bank */
   bank: number;
+  /** valley-floor altitude here (u); default PathDef.datum. The path flies at floor + clearance and
+   *  the terrain builds its valley floor to the same profile. */
+  floor?: number;
 };
 
 export type PathDef = {
