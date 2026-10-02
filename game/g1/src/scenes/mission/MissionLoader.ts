@@ -14,13 +14,14 @@ import { Sim } from '../../game/sim';
 import { Bot } from '../../game/bot/bot';
 import type { LevelDef } from '../../levels/types';
 import { whenWorldMounted, cockpitInMission, MIRROR_WORLD_LAYER } from '../sceneBridge';
-import { buildTunnelSteps } from '../../render/mission/tunnel/Tunnel';
 import { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
-import { VeilGate } from '../../render/mission/launch/VeilGate';
 import { createLaunchSky } from '../../render/mission/launch/LaunchSky';
 import { LAUNCH } from '../../data/mission';
 import { mission, type MissionOptions } from './missionRuntime';
 import { MissionVfx } from '../../render/mission/vfx/MissionVfx';
+import { MissionWorld } from '../../render/world/MissionWorld';
+import { missionSpace } from '../../render/world/missionSpace';
+import { worldById } from '../../data/worlds/registry';
 import { SPECS } from '../../ships/specs';
 import { cannonMuzzles } from './shipMounts';
 import { registerDebug } from '../../debug/debugApi';
@@ -82,39 +83,44 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
     setCockpitEye(p.selectedShip);
   }
   mission.progress = 0.15;
-  // the wormhole: built once (noise bake sliced), reused across launches
-  if (!mission.tunnel) {
-    mission.tunnel = await runSliced('mission:tunnel', buildTunnelSteps(level.seed));
-    mission.root.add(mission.tunnel.group);
+  // the world (per level + preset): path, terrain field + the sim's height grid, the streamed ribbon,
+  // its material and the sun (render/world/MissionWorld.ts)
+  const def = worldById(level.worldId);
+  if (!def) throw new Error(`MissionLoader: unknown world ${level.worldId}`);
+  const preset = useSettings.getState().graphics.preset;
+  const envKey = `${level.id}:${preset}`;
+  if (!mission.env || mission.envKey !== envKey) {
+    mission.env?.dispose();
+    const env = new MissionWorld(level, def, preset);
+    mission.root.add(env.streamer.group);
+    await env.init();
+    mission.env = env;
+    mission.envKey = envKey;
   }
+  const env = mission.env;
+  missionSpace.bind(env.path);
+  registerDebug('terrain', { stats: () => ({ ...env.streamer.stats, gridMisses: env.grid.misses, gridQueries: env.grid.queries }) });
+  // the first stretch streams in now (the reveal never waits for tiles) + the sim's first grid rows
+  await env.prestream(0);
+  env.grid.fill(-60, 400);
   if (!mission.streaks) {
     mission.streaks = new SpeedStreaks(level.seed ^ 0x51ed);
     mission.root.add(mission.streaks.mesh);
   }
-  mission.streaks.setTier(useSettings.getState().graphics.preset);
-  mission.vfx?.setTier(useSettings.getState().graphics.preset);
-  const t = mission.tunnel;
-  t.setTier(useSettings.getState().graphics.preset);
-  t.setMood(mission.qa.mood ? { preset: mission.qa.mood, storm: level.mood.storm } : level.mood);
-  t.setPath(level.pathParams.amp, level.pathParams.freq);
-  t.setRadiusKeys(level.radius ?? []);
-  // the Veil Gate (launch set piece): shares the corridor's noise + mood colours
-  if (!mission.gate) {
-    const u = t.uniforms;
-    mission.gate = new VeilGate(u.tNoise.value, { near: u.uNear.value, mid: u.uMid.value, far: u.uFar.value, core: u.uCore.value, fil: u.uFil.value });
-  }
+  mission.streaks.setTier(preset);
+  mission.vfx?.setTier(preset);
   if (!mission.sky) mission.sky = createLaunchSky(LAUNCH.skyRadius);
   mission.progress = 0.3;
   // every program of the mission frame, compiled in <= 4 ms slices (hidden root included)
   const vis = mission.root.visible;
   mission.root.visible = true;
   try {
-    await runSliced('mission:compile', compileSteps(gl, [mission.root, mission.gate.group, mission.sky], camera, scene));
+    await runSliced('mission:compile', compileSteps(gl, [mission.root, mission.sky], camera, scene));
   } finally {
     mission.root.visible = vis;
   }
   // every geometry buffer too: the cockpit view frames meshes the launch never drew
-  await runSliced('mission:upload', uploadSteps(gl, [mission.root, cockpitInMission.root]));
+  await runSliced('mission:upload', uploadSteps(gl, [mission.root, cockpitInMission.root], { hidden: true }));
   mission.progress = 0.8;
   const el = gl.domElement;
   prepareMissionPost(gl, scene, camera, el.clientWidth, el.clientHeight);
@@ -122,7 +128,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   const pr = useProfile.getState();
   mission.level = level;
   mission.opts = opts;
-  mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god, muzzles: cannonMuzzles(SPECS[pr.selectedShip]) });
+  mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god, muzzles: cannonMuzzles(SPECS[pr.selectedShip]), world: { path: env.path, ground: env.grid } });
   mission.bot = opts.bot ? new Bot(opts.bot, opts.seed ?? level.seed) : null;
   mission.progress = 1;
   mission.prepared = true;

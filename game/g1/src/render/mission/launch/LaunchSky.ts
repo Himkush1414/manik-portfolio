@@ -2,7 +2,7 @@
 // window plane sized for the bay mouth; out of the bay the whole view must be
 // space. A sphere fixed to the COCKPIT frame (the ship is static there, the
 // launch tunnel slides) = a skybox: direction-hashed stars (two layers) and
-// a Nebula / Ice glow toward the Veil Gate. Never writes depth.
+// a Nebula / Ice glow ahead (W5 replaces it with the planet below). Never writes depth.
 import { BackSide, Color, Mesh, ShaderMaterial, SphereGeometry } from 'three';
 import { HEX } from '../../palette';
 

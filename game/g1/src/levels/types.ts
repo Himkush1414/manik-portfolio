@@ -1,3 +1,4 @@
+import type { PathDef } from '../game/world/pathDef';
 // LevelDef (brief §14). Phase 3 GENERATES 50 of these, so everything is plain
 // data: no functions, no class instances, numbers in metres along the rail
 // (atM = the player's rail position when the event fires). Validated by
@@ -28,16 +29,6 @@ export type CommLine = { atM: number; speaker: Speaker; text: string; static?: b
 export type TutorialAction = 'move' | 'aim' | 'fire' | 'roll' | 'boost';
 export type TutorialHint = { atM: number; action: TutorialAction; /** auto-dismiss distance if never performed */ untilM?: number };
 
-/** Tunnel look (render side reads it; the sim ignores it): a mood preset
- *  (data/tunnel.ts MOODS) + optional overrides (generator-friendly numbers /
- *  colour strings) + the storm intensity curve. */
-export type TunnelMood = {
-  preset: 'l1' | 'l22' | 'l10';
-  overrides?: Readonly<Partial<{ near: string; mid: string; far: string; core: string; filament: string; vein: string; pulse: number; twist: number; flow: number; ringDensity: number; infestation: number; turbulence: number; glow: number }>>;
-  /** storm intensity curve [atM, 0..1] */
-  storm: readonly (readonly [number, number])[];
-};
-
 /** Boss hook (2I extends this additively: phases, parts, attack scripts, telegraphs). */
 export type BossDef = {
   type: string;
@@ -47,26 +38,29 @@ export type BossDef = {
   arena: { a: number; b: number; speed: number };
 };
 
+/** LevelDef version (Phase 2R: worlds replace the wormhole corridor) */
+export const LEVEL_DEF_VERSION = 2;
+
 export type LevelDef = {
   id: string;
   /** 1..50 */
   levelNumber: number;
   name: string;
-  /** corridor = ceil(level * 12 / 50) */
-  corridor: number;
+  /** Phase 2R: the world this level flies (data/worlds), world = ceil(level * 12 / 50) */
+  worldId: string;
+  /** the authored flight path (game/world/pathDef) and the valley half-width keys [s, halfWidth] */
+  path: PathDef;
+  widthKeys?: readonly (readonly [number, number])[];
+  /** TerrainField seed */
+  terrainSeed: number;
   seed: number;
   lengthM: number;
   cruiseSpeed: number;
   /** [atM, u/s], sorted */
   speedCurve: readonly (readonly [number, number])[];
-  mood: TunnelMood;
-  /** [atM, a, b] envelope segments, sorted */
+  /** [atM, a, b] envelope segments, sorted (used when the sim runs without the world path, e.g. unit
+   *  tests; with the path the envelope comes from its waypoints) */
   envelope: readonly (readonly [number, number, number])[];
-  /** cosmetic path curvature (render only) */
-  pathParams: { amp: number; freq: number; seed: number };
-  /** tunnel radius scale profile [atM, scale] (render: chamber widening, collapse narrowing; the
-   *  gameplay envelope is `envelope`) */
-  radius?: readonly (readonly [number, number])[];
   timeline: readonly SpawnEvent[];
   /** atM of each checkpoint, sorted */
   checkpoints: readonly number[];

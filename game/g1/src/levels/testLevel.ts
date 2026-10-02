@@ -1,22 +1,24 @@
-// A minimal LevelDef for unit tests and the sim lab (?screen=simlab): a
-// straight 4 km corridor at the L1 cruise speed, no timeline.
+// A minimal LevelDef for unit tests, the sim lab (?screen=simlab) and QA
+// (?level=test): a ~4 km stretch of ARDEN valley at the L1 cruise speed,
+// no timeline. Unit tests run the sim without the world (envelope segments).
 import type { LevelDef } from './types';
 import { RAIL } from '../data/mission';
+
+const w = (x: number, z: number, clearance: number, floor: number) => ({ x, z, clearance, envA: RAIL.envelope.a, envB: RAIL.envelope.b, bank: 0, floor });
 
 export const TEST_LEVEL: LevelDef = {
   id: 'test',
   levelNumber: 0,
   name: 'TEST VALLEY',
-  corridor: 1,
+  worldId: 'arden',
+  path: { datum: 40, waypoints: [w(0, 400, 40, 42), w(0, 0, 38, 40), w(90, -1300, 34, 36), w(-60, -2700, 40, 30), w(0, -4100, 36, 26), w(0, -4700, 40, 26)] },
+  widthKeys: [[0, 200], [1500, 170], [2600, 120], [3400, 190], [6000, 200]],
+  terrainSeed: 4321,
   seed: 1234,
   lengthM: 4000,
   cruiseSpeed: 58,
   speedCurve: [[0, 58]],
-  mood: { preset: 'l1', storm: [[0, 0]] },
   envelope: [[0, RAIL.envelope.a, RAIL.envelope.b]],
-  pathParams: { amp: 9, freq: 0.0016, seed: 1 },
-  // QA set pieces: a chamber (46 -> 110 u over 150 m) and a collapse
-  radius: [[0, 1], [700, 1], [850, 110 / 46], [1500, 110 / 46], [1650, 0.65], [2100, 0.65], [2250, 1]],
   timeline: [],
   checkpoints: [],
   comms: [],

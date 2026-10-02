@@ -8,9 +8,8 @@ import type { Sim } from '../../game/sim';
 import type { Bot } from '../../game/bot/bot';
 import type { LevelDef } from '../../levels/types';
 import type { BuiltShip } from '../../ships/ShipFactory';
-import type { Tunnel } from '../../render/mission/tunnel/Tunnel';
 import type { SpeedStreaks } from '../../render/mission/vfx/SpeedStreaks';
-import type { VeilGate } from '../../render/mission/launch/VeilGate';
+import type { MissionWorld } from '../../render/world/MissionWorld';
 import type { MissionVfx } from '../../render/mission/vfx/MissionVfx';
 import type { WorldHandles } from '../sceneBridge';
 import type { BotSkillId } from '../../data/bot';
@@ -38,15 +37,15 @@ export const mission = {
   sim: null as Sim | null,
   bot: null as Bot | null,
   ship: null as BuiltShip | null,
-  tunnel: null as Tunnel | null,
+  /** Phase 2R: the world this level flies (path, terrain, streaming, sun) */
+  env: null as MissionWorld | null,
+  /** level id + preset the env was built for */
+  envKey: '',
   streaks: null as SpeedStreaks | null,
-  gate: null as VeilGate | null,
   /** weapons / impacts / trails (render/mission/vfx) */
   vfx: null as MissionVfx | null,
   sky: null as import('three').Mesh | null,
   world: null as WorldHandles | null,
-  /** QA overrides (?mood= ?storm=) */
-  qa: { mood: null as null | 'l1' | 'l22' | 'l10', storm: -1 },
   /** QA: input fields forced on top of the pilot each step (__G1__.sim.force) */
   qaForce: null as null | Partial<import('../../game/input').SimInput>,
   /** presentation clock for shaders (never the sim clock) */

@@ -202,6 +202,6 @@ export const COMMS: Readonly<Record<string, readonly CommLine[]>> = {
 export const LAUNCH_LINES = {
   count: 'Catapult armed. Clear in three.',
   release: 'Clamps away. Good hunting, Seven.',
-  gate: 'Veil Gate ahead. Hold her steady.',
+  gate: 'Atmosphere in five. Hold her steady.',
   retry: 'Back in the air. Again.',
 } as const;

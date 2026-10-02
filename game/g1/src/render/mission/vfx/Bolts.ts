@@ -12,6 +12,9 @@ import { HEX } from '../../palette';
 import { STEP } from '../../../game/core/step';
 import type { ProjectilePool } from '../../../game/core/pool';
 import { queueRange, range } from './gpu';
+import { missionSpace } from '../../world/missionSpace';
+
+const _l = new Vector3(), _d = new Vector3();
 
 function instanced(cap: number, attrs: Record<string, number>): { geo: InstancedBufferGeometry; a: Record<string, InstancedBufferAttribute> } {
   const base = new PlaneGeometry(1, 1);
@@ -151,14 +154,17 @@ export class Bolts {
       const age = Math.max(0, maxLife - player.life[i] - back);
       const dist = s - playerS;
       const j = n * 4;
-      h[j] = x;
-      h[j + 1] = y;
-      h[j + 2] = -dist;
+      // rail -> mission-local through the bending path
+      missionSpace.railToLocal(s, x, y, _l);
+      h[j] = _l.x;
+      h[j + 1] = _l.y;
+      h[j + 2] = _l.z;
       // the tail never reaches back behind the muzzle: it grows at the bolt's speed RELATIVE to the ship
       h[j + 3] = Math.min(TRACER.length, PLAYER.bullet.speed * age * 0.9 + 0.6);
-      d[j] = vx / sp;
-      d[j + 1] = vy / sp;
-      d[j + 2] = -vs / sp;
+      missionSpace.railDirToLocal(s, vx / sp, vy / sp, vs / sp, _d).normalize();
+      d[j] = _d.x;
+      d[j + 1] = _d.y;
+      d[j + 2] = _d.z;
       d[j + 3] = dist > TRACER.fadeFrom ? Math.max(0, 1 - (dist - TRACER.fadeFrom) / (TRACER.fadeTo - TRACER.fadeFrom)) : 1;
       n++;
     }
@@ -172,9 +178,10 @@ export class Bolts {
     let m = 0;
     for (let i = 0; i < enemy.count; i++) {
       const j = m * 4;
-      o[j] = enemy.x[i] - enemy.vx[i] * back;
-      o[j + 1] = enemy.y[i] - enemy.vy[i] * back;
-      o[j + 2] = -(enemy.s[i] - enemy.vs[i] * back - playerS);
+      missionSpace.railToLocal(enemy.s[i] - enemy.vs[i] * back, enemy.x[i] - enemy.vx[i] * back, enemy.y[i] - enemy.vy[i] * back, _l);
+      o[j] = _l.x;
+      o[j + 1] = _l.y;
+      o[j + 2] = _l.z;
       o[j + 3] = (enemy.serial[i] % 97) / 97;
       m++;
     }

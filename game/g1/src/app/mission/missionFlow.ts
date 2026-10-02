@@ -1,6 +1,6 @@
 // Mission flow (brief §14 / §17): drives the FSM through a mission and owns
 // the frame swap. 2A: LAUNCH -> prepare -> swap straight into the mission
-// frame (2B adds the catapult, Veil Gate and breach in front of it); pause /
+// frame (2B: catapult + flash; Phase 2R W5: orbit dive + cloud break); pause /
 // resume; death -> failed -> retry and complete -> results are minimal until
 // their screens land (2D / 2G); HANGAR leaves through the bulkhead sequence.
 import gsap from 'gsap';
@@ -10,24 +10,25 @@ import { Ev } from '../../game/core/events';
 import { levelById } from '../../levels/registry';
 import { MissionLoader } from '../../scenes/mission/MissionLoader';
 import { mission, type MissionOptions } from '../../scenes/mission/missionRuntime';
-import { whenWorldMounted, MISSION_ORIGIN } from '../../scenes/sceneBridge';
+import { whenWorldMounted } from '../../scenes/sceneBridge';
 import { stage } from '../../scenes/Stage';
 import { lightRig } from '../../render/lightRig';
 import { InputManager } from '../../input/InputManager';
 import { perfMon } from '../../render/perfMon';
 import { CameraShaker } from '../../render/CameraShaker';
-import { MISSION_LIGHTS } from '../../data/mission';
+import { MISSION_VIEW } from '../../data/mission';
 import { returnSequence } from '../choreo/launchTimeline';
 import { cockpitFx } from '../../scenes/cockpit/displays';
 import { useSettings } from '../../state/settings.store';
 import { applyCockpitView, cycleCamera, followCameraSetting, missionMode } from '../../scenes/mission/missionCamera';
 import { runLaunch, runFastLaunch, resetLaunchRig } from './launchSequence';
-import type { SpotLight, HemisphereLight, Light, Object3D } from 'three';
+import { Color, type HemisphereLight, type Light, type PerspectiveCamera, type Scene } from 'three';
+import type { WorldDef } from '../../data/worlds/types';
 
 /** presentation beats (s) until the fail / results screens exist */
 const BEAT = { death: 1.4, failedAutoRetry: 1.2, complete: 1.0, resultsAutoExit: 1.5 } as const;
 
-let saved: { fog: [number, number, number]; shadowAuto: boolean } | null = null;
+let saved: { fog: [number, number, number]; shadowAuto: boolean; near: number; far: number; bg: Scene['background'] } | null = null;
 let gl: WebGLRenderer | null = null;
 let unfollowCamera: (() => void) | null = null;
 
@@ -56,16 +57,26 @@ function beginFrame(): void {
   if (!w) return;
   gl = w.gl;
   const fog = w.scene.fog as Fog | null;
-  saved = { fog: fog ? [fog.color.getHex(), fog.near, fog.far] : [0, 0, 0], shadowAuto: w.gl.shadowMap.autoUpdate };
+  const cam = w.camera as PerspectiveCamera;
+  saved = { fog: fog ? [fog.color.getHex(), fog.near, fog.far] : [0, 0, 0], shadowAuto: w.gl.shadowMap.autoUpdate, near: cam.near, far: cam.far, bg: w.scene.background };
   // shadows are off in missions (no casters; castShadow flags never toggled = no recompiles)
   w.gl.shadowMap.autoUpdate = false;
   lightRig.borrow();
-  applyLights();
-  if (fog) {
-    // enemies emerge from haze the colour of the corridor's mid tones
-    fog.color.copy(mission.tunnel?.uniforms.uMid.value ?? fog.color.set(MISSION_LIGHTS.fog.color));
-    fog.near = MISSION_LIGHTS.fog.near;
-    fog.far = MISSION_LIGHTS.fog.far;
+  const env = mission.env;
+  if (env) {
+    applyWorldLights(env.def);
+    // haze + sky colour of the world (W2: aerial-perspective chunk + sky dome replace these)
+    const atm = env.def.atmosphere;
+    if (fog) {
+      fog.color.set(atm.hazeFar);
+      fog.near = MISSION_VIEW.fogNear;
+      fog.far = MISSION_VIEW.fogFar;
+    }
+    w.scene.background = new Color(env.def.sky.horizon);
+    // the world needs a long far plane (two depth ranges arrive with the sky in W2)
+    cam.near = MISSION_VIEW.near;
+    cam.far = MISSION_VIEW.far;
+    cam.updateProjectionMatrix();
   }
   stage.cockpit = 0;
   stage.mission = 1;
@@ -109,39 +120,32 @@ function endFrame(): void {
         fog.near = saved.fog[1];
         fog.far = saved.fog[2];
       }
+      if (saved) {
+        const cam = w.camera as PerspectiveCamera;
+        cam.near = saved.near;
+        cam.far = saved.far;
+        cam.updateProjectionMatrix();
+        w.scene.background = saved.bg;
+      }
       saved = null;
     });
   }
   perfMon.reset('hangar');
 }
 
-function applyLights(): void {
-  const O = MISSION_ORIGIN, L = MISSION_LIGHTS;
-  const place = (o: Object3D | null, p: readonly [number, number, number]) => o?.position.set(O[0] + p[0], O[1] + p[1], O[2] + p[2]);
-  const spot = (role: 'key' | 'rimA' | 'rimB', d: { pos: readonly [number, number, number]; color: string; intensity: number; angle: number; penumbra: number }) => {
-    const l = lightRig.get<SpotLight>(role);
-    if (!l) return;
-    place(l, d.pos);
-    l.color.set(d.color);
-    l.intensity = d.intensity;
-    l.angle = d.angle;
-    l.penumbra = d.penumbra;
-    l.updateMatrixWorld();
-  };
-  place(lightRig.get('target'), L.target);
-  lightRig.get('target')?.updateMatrixWorld();
-  spot('key', L.key);
-  spot('rimA', L.rimA);
-  spot('rimB', L.rimB);
-  const hemi = lightRig.get<HemisphereLight>('hemi');
-  if (hemi) {
-    hemi.color.set(L.hemi.sky);
-    hemi.groundColor.set(L.hemi.ground);
-    hemi.intensity = L.hemi.intensity;
-  }
-  for (const r of ['cockpitKey', 'cockpitDash'] as const) {
+/** The world's light set on the borrowed rig: the studio spots go dark (the sun replaces them), the
+ *  hemisphere becomes the sky / ground fill; the sun itself (cockpit-key directional) is placed every
+ *  frame by MissionWorld.applySun. Light count and types never change (no recompile). */
+function applyWorldLights(def: WorldDef): void {
+  for (const r of ['key', 'rimA', 'rimB', 'cockpitDash'] as const) {
     const l = lightRig.get<Light>(r);
     if (l) l.intensity = 0;
+  }
+  const hemi = lightRig.get<HemisphereLight>('hemi');
+  if (hemi) {
+    hemi.color.set(def.lighting.fillSky);
+    hemi.groundColor.set(def.lighting.fillGround);
+    hemi.intensity = def.lighting.fillIntensity;
   }
 }
 

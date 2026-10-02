@@ -5,7 +5,7 @@
 // flashes, and the HUD layout flag (overlay vs diegetic). Layer / visibility
 // flips happen only on a view change (no per-frame traversal; layers never
 // recompile anything). Cycle Camera + Settings write `camera.mode`.
-import type { DirectionalLight, Light, Object3D } from 'three';
+import type { Light, Object3D } from 'three';
 import { Vector3 } from 'three';
 import { mission } from './missionRuntime';
 import { cockpitInMission, MIRROR_LAYER } from '../sceneBridge';
@@ -28,11 +28,11 @@ export function applyCockpitView(on: boolean): void {
   setShipLayer(mission.ship?.group ?? null, on);
   mission.vfx?.setCockpitView(on);
   hudView.cockpit = on;
+  // the cockpit-key directional is the WORLD SUN in missions (MissionWorld.applySun): only the dash
+  // point is the cockpit's own light
   if (!on) {
-    for (const r of ['cockpitKey', 'cockpitDash'] as const) {
-      const l = lightRig.get<Light>(r);
-      if (l) l.intensity = 0;
-    }
+    const l = lightRig.get<Light>('cockpitDash');
+    if (l) l.intensity = 0;
   }
 }
 
@@ -42,18 +42,12 @@ export function setCockpitEye(shipId: keyof typeof SPECS): void {
   mission.rig.cockpit.setEye(0, c.y + c.h * 0.55, -(c.z0 + c.z1) / 2);
 }
 
-/** Per frame while the cockpit interior is shown: its key + dash lights follow the eye. */
+/** Per frame while the cockpit interior is shown: the dash point follows the eye (the sun lights the
+ *  rest of the cockpit through the canopy). */
 export function updateCockpitLights(dashPower: number): void {
   const root = cockpitInMission.root;
   if (!cockpitInMission.on || !root) return;
   const L = COCKPIT_LIGHTS;
-  const key = lightRig.get<DirectionalLight>('cockpitKey');
-  if (key) {
-    key.position.copy(root.localToWorld(_p.set(L.key[0], L.key[1], L.key[2])));
-    key.target.position.copy(root.localToWorld(_p.set(0, -0.4, -1)));
-    key.target.updateMatrixWorld();
-    key.intensity = L.keyIntensity;
-  }
   const dash = lightRig.get<Light>('cockpitDash');
   if (dash) {
     dash.position.copy(root.localToWorld(_p.set(L.dash[0], L.dash[1], L.dash[2])));

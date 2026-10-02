@@ -4,9 +4,12 @@
 // worker's attributes (rock exposure, moisture, wet, wall), altitude above
 // the valley floor and world-space macro noise — no tiling texture yet (CC0
 // detail layers arrive with the rock kit in W3). Every colour / threshold is
-// a uniform, so world changes never recompile. World-space noise needs the
-// floating-origin offset (uOrigin) added back to the view-relative position.
+// a uniform, so world changes never recompile. World-space noise needs true
+// world positions: the mission scene is the path frame around the player, so
+// world = P0 + B (scene - missionOrigin) with the shared missionSpace uniforms.
 import { Color, MeshStandardMaterial, Vector3 } from 'three';
+import { missionSpace } from './missionSpace';
+import { MISSION_ORIGIN } from '../../scenes/sceneBridge';
 import type { WorldDef } from '../../data/worlds/types';
 
 export type TerrainUniforms = ReturnType<typeof createUniforms>;
@@ -14,7 +17,9 @@ export type TerrainUniforms = ReturnType<typeof createUniforms>;
 function createUniforms(w: WorldDef) {
   const surf = (id: string, fallback: string) => new Color(w.terrain.surfaces.find(s => s.id === id)?.color ?? fallback);
   return {
-    uOrigin: { value: new Vector3() },
+    uPathP0: missionSpace.uniforms.uPathP0,
+    uPathB: missionSpace.uniforms.uPathB,
+    uMissionO: { value: new Vector3(...MISSION_ORIGIN) },
     uGrass: { value: surf('grass', '#4F7A3A') },
     uMeadow: { value: surf('meadow', '#8C9A45') },
     uSoil: { value: surf('soil', '#6B5238') },
@@ -40,7 +45,8 @@ export function createTerrainMaterial(w: WorldDef): { material: MeshStandardMate
         '#include <common>',
         `#include <common>
 attribute vec4 terrainAttrib;
-uniform vec3 uOrigin;
+uniform vec3 uPathP0, uMissionO;
+uniform mat3 uPathB;
 varying vec4 vTerr;
 varying vec3 vWorldP;
 varying vec3 vWorldN;
@@ -51,8 +57,10 @@ varying float vAlt;`,
         `#include <begin_vertex>
 vTerr = terrainAttrib;
 vec4 wp4 = modelMatrix * vec4(transformed, 1.0);
-vWorldP = wp4.xyz + uOrigin;
-vWorldN = normalize(mat3(modelMatrix) * objectNormal);
+// scene -> world: uPathB is B^T (world -> local), so B = transpose(uPathB)
+mat3 toWorld = transpose(uPathB);
+vWorldP = uPathP0 + toWorld * (wp4.xyz - uMissionO);
+vWorldN = normalize(toWorld * (mat3(modelMatrix) * objectNormal));
 vAlt = transformed.y; // relative to the tile origin = the valley floor at the tile start`,
       );
     shader.fragmentShader = shader.fragmentShader

@@ -2,7 +2,7 @@
 // frame (plain objects: no per-frame allocation), plus the ONE FOV-kick
 // spring every rig reads (switching rigs never resets the speed feel).
 import { Quaternion, Vector3 } from 'three';
-import { SPEED_FX } from '../../data/tunnel';
+import { SPEED_FX } from '../../data/speedfx';
 
 /** reticle angles (rad) the look-ahead follows */
 export const rigAim = { yaw: 0, pitch: 0 };

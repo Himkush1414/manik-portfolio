@@ -5,7 +5,7 @@
 //   -> pickups -> scoring -> events -> HUD bus
 // Everything is preallocated; step() allocates nothing. Same LevelDef + seed
 // + input script => identical state (tests/sim.test.ts).
-import { CAPS, PLAYER, RAIL, SIM, AIM_ASSIST, SCORING, type AimAssist } from '../data/mission';
+import { CAPS, PLAYER, RAIL, SIM, AIM_ASSIST, SCORING, GROUND, type AimAssist } from '../data/mission';
 import { playerStats, type PlayerStats } from '../data/stats';
 import type { ShipId } from '../data/ships';
 import type { UpgradeTiers } from '../data/upgrades';
@@ -35,9 +35,19 @@ export type SimConfig = {
   god?: boolean;
   /** twin cannon muzzles [left, right] (rail-space offsets: x right, y up, forward); default PLAYER.muzzles */
   muzzles?: readonly (readonly [number, number, number])[];
+  /** Phase 2R world: the flight path (envelope + altitude) and deterministic ground heights at
+   *  path-relative (s, u). Without it the level's envelope segments apply and nothing hits terrain. */
+  world?: { path: SimPath; ground: SimGround };
 };
 
+/** what the sim needs from the flight path (game/world/path.ts FlightPath) */
+export type SimPath = { yAt(s: number): number; envelopeAt(s: number, out: { a: number; b: number }): { a: number; b: number } };
+/** ground world-y at path-relative (s, u) (game/world/terrain.ts HeightGrid) */
+export type SimGround = { height(s: number, u: number): number; fill?(s0: number, s1: number): void };
+
 export class Player {
+  /** terrain scrape cooldown (s) */
+  scrapeCd = 0;
   s = 0;
   x = 0;
   y = 0;
@@ -147,6 +157,7 @@ export class Sim {
     p.energy = PLAYER.boost.energy;
     p.boosting = p.braking = false;
     p.boostLock = 0;
+    p.scrapeCd = 0;
     p.sinceBoost = 99;
     p.rollT = -1;
     p.rollCd = p.hullImmune = p.fireCd = p.grazeCd = 0;
@@ -238,7 +249,9 @@ export class Sim {
     p.y += p.vy * dt;
 
     // soft envelope: spring back proportional to the overshoot, graze sparks
-    envelopeAt(this.level.envelope, p.s, env);
+    const world = this.cfg.world;
+    if (world) world.path.envelopeAt(p.s, env);
+    else envelopeAt(this.level.envelope, p.s, env);
     const r = ellipseR(p.x, p.y, env.a, env.b);
     p.grazeCd = Math.max(0, p.grazeCd - dt);
     if (r > 1) {
@@ -260,6 +273,25 @@ export class Sim {
       if (p.grazeCd <= 0) {
         p.grazeCd = RAIL.grazeEvery;
         this.emit(Ev.Graze, -1, p.x, p.y, p.s);
+      }
+    }
+
+    // terrain: soft floor (push up), scrape (damage + knock-back, never through, never an instakill)
+    p.scrapeCd = Math.max(0, p.scrapeCd - dt);
+    if (world) {
+      world.ground.fill?.(p.s - 60, p.s + 700);
+      const clear = world.path.yAt(p.s) + p.y - world.ground.height(p.s, p.x);
+      if (clear < GROUND.softFloor) {
+        p.vy += (GROUND.softFloor - clear) * GROUND.softPush * dt;
+        if (clear < GROUND.scrapeAt) {
+          p.y += GROUND.scrapeAt - clear;
+          if (p.vy < GROUND.knock) p.vy = GROUND.knock;
+          if (p.scrapeCd <= 0) {
+            p.scrapeCd = GROUND.scrapeCooldown;
+            this.damagePlayer(GROUND.scrapeDamage, 1, p.x, p.y, p.s);
+            this.emit(Ev.GroundScrape, -1, p.x, p.y, p.s, GROUND.scrapeDamage);
+          }
+        }
       }
     }
 
@@ -394,17 +426,23 @@ export class Sim {
 
   // ------------------------------------------------------------- projectiles
   private updateShots(pool: ProjectilePool): void {
-    const R2 = RAIL.tunnelRadius * RAIL.tunnelRadius;
+    const world = this.cfg.world;
     for (let i = pool.count - 1; i >= 0; i--) {
       pool.s[i] += pool.vs[i] * STEP;
       pool.x[i] += pool.vx[i] * STEP;
       pool.y[i] += pool.vy[i] * STEP;
       pool.life[i] -= STEP;
-      const x = pool.x[i], y = pool.y[i];
-      if (pool.life[i] <= 0) pool.kill(i);
-      else if (x * x + y * y > R2) {
-        this.emit(Ev.Spark, -1, x, y, pool.s[i]);
+      if (pool.life[i] <= 0) {
         pool.kill(i);
+        continue;
+      }
+      // bolts that reach the ground burst into a surface puff (player and enemy bolts alike)
+      if (world) {
+        const s = pool.s[i], x = pool.x[i], y = pool.y[i];
+        if (world.path.yAt(s) + y < world.ground.height(s, x)) {
+          this.emit(Ev.Spark, -1, x, y, s, 0, 1);
+          pool.kill(i);
+        }
       }
     }
   }

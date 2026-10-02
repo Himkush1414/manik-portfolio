@@ -124,9 +124,11 @@ export class TerrainStreamer {
 
   /**
    * Per frame: schedule requests (nearest first), evict far tiles, upload at most one ready tile
-   * inside `budgetMs`, and place every resident mesh relative to `origin` (floating origin).
+   * inside `budgetMs`, and place every resident mesh with `place(mesh, tileOriginWorld)` (the
+   * mission puts it in the path frame around the player: floating origin + rotation).
    */
-  update(viewS: number, origin: { x: number; y: number; z: number }, budgetMs = 0.6, lateDist = 640): void {
+  update(viewS: number, place: (m: Mesh, x: number, y: number, z: number) => void, budgetMs = 0.6, lateDist = 640): void {
+    this.lastView = viewS;
     if (!this.worker || this.pathLength <= 0) return;
     const need = new Map<number, Lod>();
     for (const [t, l] of this.wanted(viewS)) need.set(t, l);
@@ -169,8 +171,7 @@ export class TerrainStreamer {
       this.stats.uploadMsMax = Math.max(this.stats.uploadMsMax, performance.now() - start);
       break; // <= 1 tile upload per frame
     }
-    // floating origin
-    for (const slot of this.resident.values()) slot.mesh.position.set(slot.origin.x - origin.x, slot.origin.y - origin.y, slot.origin.z - origin.z);
+    for (const slot of this.resident.values()) place(slot.mesh, slot.origin.x, slot.origin.y, slot.origin.z);
     // late tiles: wanted near the viewer but nothing resident
     let late = 0;
     for (const [t] of need) {
@@ -180,6 +181,18 @@ export class TerrainStreamer {
     this.stats.lateTiles = late;
     this.stats.resident = this.resident.size;
     this.stats.pending = this.pending.size;
+  }
+
+  private lastView = 0;
+
+  /** every wanted tile around the last viewer position is resident at its wanted LOD, nothing pending */
+  settled(): boolean {
+    if (this.pathLength <= 0 || this.pending.size > 0 || this.ready.length > 0) return false;
+    for (const [t, l] of this.wanted(this.lastView)) {
+      const r = this.resident.get(t);
+      if (!r || r.lod !== l) return false;
+    }
+    return true;
   }
 
   /** free a resident slot of `lod` whose tile is not wanted at that LOD (farthest first) */
@@ -213,5 +226,6 @@ export class TerrainStreamer {
     this.worker?.terminate();
     this.worker = null;
     for (const s of this.slots) s.geo.dispose();
+    this.opts.material.dispose();
   }
 }

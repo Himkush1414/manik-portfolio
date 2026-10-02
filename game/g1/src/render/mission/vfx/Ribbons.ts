@@ -6,6 +6,7 @@
 // 2 x samples x 2 vertices per frame (no per-vertex maths on the CPU).
 // Samples are taken on a fixed time spacing (frame-rate independent length);
 // the head vertex always sits on the live wing tip.
+import { missionSpace, PATH_GLSL } from '../../world/missionSpace';
 import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, Mesh, ShaderMaterial, Sphere, Vector3, type Object3D } from 'three';
 import { RIBBON } from '../../../data/vfx';
 import { MISSION_ORIGIN } from '../../../scenes/sceneBridge';
@@ -53,6 +54,7 @@ export class Ribbons {
     this.mat = new ShaderMaterial({
       uniforms: {
         uPlayerS: { value: 0 },
+        ...missionSpace.uniforms,
         uCol: { value: new Color(RIBBON.color) },
         uBoostCol: { value: new Color(RIBBON.boostColor) },
         uBoost: { value: 0 },
@@ -61,10 +63,11 @@ export class Ribbons {
         attribute vec3 aNext;
         attribute float aSide, aAlong;
         uniform float uPlayerS;
+        ${PATH_GLSL}
         varying float vAlong;
         varying float vSide;
         varying float vCam;
-        vec3 toLocal(vec3 r) { return vec3(r.x, r.y, -(r.z - uPlayerS)); }
+        vec3 toLocal(vec3 r) { return railToLocal(r); }
         void main() {
           vec3 p = toLocal(position);
           vec3 q = toLocal(aNext);

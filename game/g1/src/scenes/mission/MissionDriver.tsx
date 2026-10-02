@@ -11,12 +11,13 @@ import { InputManager } from '../../input/InputManager';
 import { useFlow, isSimLive } from '../../app/flow';
 import { perfMon } from '../../render/perfMon';
 import { rigAim, rigFlight } from '../../render/rigs/rigState';
-import { PLAYER, RIGS } from '../../data/mission';
+import { PLAYER, RIGS, GROUND } from '../../data/mission';
 import type { EventReader } from '../../game/core/events';
 import { curveAt, envelopeAt, ellipseR } from '../../game/rail';
 import { STEP } from '../../game/core/step';
-import { TUNNEL, SPEED_FX, STORM_FX } from '../../data/tunnel';
-import { vfxRng } from '../../render/mission/vfx/gpu';
+import { SPEED_FX, SPEED_REF } from '../../data/speedfx';
+import { missionSpace } from '../../render/world/missionSpace';
+import { director } from '../../render/cameraDirector';
 import { useSettings } from '../../state/settings.store';
 import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
@@ -25,8 +26,6 @@ import { cockpitFx } from '../cockpit/displays';
 
 let reader: EventReader | null = null;
 const _env = { a: 0, b: 0 };
-const _p1 = { x: 0, y: 0 }, _p2 = { x: 0, y: 0 };
-let stormFlash = 0, stormGap = 0;
 let readerSim: unknown = null;
 /** speed-line gain eased toward the active view's (follows the rig blend) */
 let streakGain = 1;
@@ -68,7 +67,8 @@ export function MissionDriver() {
     const aimPitch = simAim ? mission.input.aimPitch : InputManager.state.pitch;
     // springs toward bank / pitch / yaw targets (render/mission/shipAttitude.ts, data FEEL); the
     // roll time is interpolated so the barrel roll is smooth above 60 Hz
-    const env = envelopeAt(sim.level.envelope, p.s, _env);
+    // the envelope the sim uses: the world path's (Phase 2R), else the level's segments
+    const env = mission.env ? mission.env.path.envelopeAt(p.s, _env) : envelopeAt(sim.level.envelope, p.s, _env);
     const press = Math.max(0, ellipseR(x, y, env.a, env.b) - 1);
     const rollT = p.rollT >= 0 ? p.rollT + a * STEP : -1;
     const reduceLife = useSettings.getState().accessibility.reduceMotion ? 0.25 : 1;
@@ -82,41 +82,35 @@ export function MissionDriver() {
       mission.ship.update(state.clock.elapsedTime);
     }
 
-    // ---- wormhole: rail-locked scroll from the interpolated rail position
+    // ---- world: mission space moves to the player (path frame), tiles stream + turn into it, sun
     mission.time += dt * mission.timeScale;
     const st = useSettings.getState();
     const reduce = st.accessibility.reduceMotion;
     const ps = p.prevS + (p.s - p.prevS) * a;
-    const speed01 = Math.min(1.5, p.speed / TUNNEL.speedRef);
-    if (mission.tunnel) {
-      const storm = mission.qa.storm >= 0 ? mission.qa.storm : curveAt(sim.level.mood.storm, ps);
-      // storm lightning: a vfx-RNG flash envelope (never the sim streams), inside the flash budget
-      stormGap -= dt;
-      if (!st.accessibility.reduceFlashing && storm > 0.05 && stormGap <= 0 && vfxRng.next() < storm * STORM_FX.rate * dt) {
-        stormFlash = STORM_FX.peak;
-        stormGap = STORM_FX.minGap;
-      }
-      stormFlash = Math.max(0, stormFlash - STORM_FX.decay * dt * stormFlash - dt);
-      mission.tunnel.update(ps, speed01, mission.time, reduce ? storm * 0.5 : storm, st.accessibility.reduceFlashing ? 0 : stormFlash);
-      // ---- speed sensation: streaks, radial blur + edge CA, FOV, turbulence rumble
-      const cruise = curveAt(sim.level.speedCurve, p.s) || sim.level.cruiseSpeed;
-      const ratio = p.speed / Math.max(1, cruise);
-      streakGain += (RIGS.streakGain[mission.rig.mode] - streakGain) * Math.min(1, dt / RIGS.blend * 3);
-      mission.streaks?.update(ps, speed01, st.graphics.speedLines * streakGain * (reduce ? 0.5 : 1), mission.tunnel.uniforms.uFil.value, state.camera.position.z - mission.root.position.z);
-      missionPost.blur = reduce ? 0 : SPEED_FX.blur * Math.min(1, Math.max(0, (ratio - 1.05) / 0.4) + Math.max(0, speed01 - 0.85));
-      missionPost.ca = SPEED_FX.caPerSpeed * speed01 * (reduce ? 0.3 : 1);
-      rigFlight.speedRatio = ratio;
-      rigFlight.boost = p.boosting;
-      rigFlight.reduceMotion = reduce;
-      // cosmetic bend ahead: the look point leans into it, the camera banks a touch
-      const S = RIGS.sway;
-      const p1 = mission.tunnel.pathAt(RIGS.third.lookDist, _p1), p2x = mission.tunnel.pathAt(RIGS.third.lookDist * 2, _p2).x;
-      rigFlight.swayX = p1.x * S.look;
-      rigFlight.swayY = p1.y * S.look;
-      const curv = (p2x - 2 * p1.x) / (RIGS.third.lookDist * RIGS.third.lookDist);
-      rigFlight.swayBank = Math.max(-S.maxBank, Math.min(S.maxBank, -curv * S.bankPerCurv * ratio * ratio));
-      CameraShaker.setRumble(mission.tunnel.moodDef.turbulence * speed01 * SPEED_FX.rumble, SPEED_FX.rumbleHz);
-    }
+    const world = mission.env;
+    world?.update(ps);
+    // ---- speed sensation: streaks, radial blur + edge CA, FOV, gust rumble
+    const speed01 = Math.min(1.5, p.speed / SPEED_REF);
+    const cruise = curveAt(sim.level.speedCurve, p.s) || sim.level.cruiseSpeed;
+    const ratio = p.speed / Math.max(1, cruise);
+    streakGain += (RIGS.streakGain[mission.rig.mode] - streakGain) * Math.min(1, dt / RIGS.blend * 3);
+    // open air: sparse wind streaks at cruise, building with boost (the tube-era density read as a
+    // hyperspace starfield over a valley)
+    const air = SPEED_FX.airBase + SPEED_FX.airBoost * Math.min(1, Math.max(0, (ratio - 1) / 0.5));
+    if (world) mission.streaks?.update(ps, speed01, st.graphics.speedLines * streakGain * air * (reduce ? 0.5 : 1), world.streakColor, state.camera.position.z - mission.root.position.z);
+    missionPost.blur = reduce ? 0 : SPEED_FX.blur * Math.min(1, Math.max(0, (ratio - 1.05) / 0.4) + Math.max(0, speed01 - 0.85));
+    missionPost.ca = SPEED_FX.caPerSpeed * speed01 * (reduce ? 0.3 : 1);
+    rigFlight.speedRatio = ratio;
+    rigFlight.boost = p.boosting;
+    rigFlight.reduceMotion = reduce;
+    // the path frame already turns and climbs with the valley; the camera only banks a touch into
+    // the bend (cosmetic, curvature x speed^2, capped)
+    const S = RIGS.sway;
+    const curv = world ? world.path.curvatureAt(ps) : 0;
+    rigFlight.swayX = 0;
+    rigFlight.swayY = 0;
+    rigFlight.swayBank = Math.max(-S.maxBank, Math.min(S.maxBank, -curv * S.bankPerCurv * ratio * ratio));
+    if (world) CameraShaker.setRumble(world.def.weather.gusts * speed01 * SPEED_FX.rumble, SPEED_FX.rumbleHz);
 
     // ---- weapons / impacts / trails (after the attitude: ribbons sample the wing tips)
     mission.vfx?.frame(dt, sim, a, ps, mission.time);
@@ -130,7 +124,18 @@ export function MissionDriver() {
     rigFlight.ay = att.ay;
     rigFlight.rollCoupling = useSettings.getState().camera.rollCoupling;
     mission.rig.update(dt);
-    // cockpit view: the borrowed cockpit key + dash lights follow the eye (after the rig placed the root)
+    if (world) {
+      // terrain-aware camera: never closer to the ground than GROUND.cameraClearance (mission-local
+      // camera -> path-relative (s, u) -> ground; push up along local y)
+      const O = mission.root.position, d = director.pos;
+      const lx = d.x - O.x, ly = d.y - O.y, lz = d.z - O.z;
+      const r = missionSpace.r;
+      const wy = missionSpace.py + r[1] * lx + r[4] * ly + r[7] * lz;
+      const g = world.groundY(ps - lz, lx);
+      if (wy < g + GROUND.cameraClearance) d.y += g + GROUND.cameraClearance - wy;
+      world.applySun(d);
+    }
+    // cockpit view: the dash light follows the eye (after the rig placed the root)
     updateCockpitLights(cockpitFx.power.dash);
     mission.hands.update(dt * mission.timeScale, mission.input, p.shotsFired, reduce);
   }, -3);

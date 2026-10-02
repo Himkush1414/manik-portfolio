@@ -96,7 +96,7 @@ let uploadMat: MeshBasicMaterial | null = null;
  * cockpit eye's head inertia) never uploads its buffers then. Roots are lent
  * to a scratch scene for the draw and handed straight back.
  */
-export function* uploadSteps(gl: WebGLRenderer, roots: (Object3D | null)[]): Generator<unknown, void, void> {
+export function* uploadSteps(gl: WebGLRenderer, roots: (Object3D | null)[], opts: { hidden?: boolean } = {}): Generator<unknown, void, void> {
   uploadMat ??= new MeshBasicMaterial();
   const warm = new Scene();
   warm.overrideMaterial = uploadMat;
@@ -107,11 +107,16 @@ export function* uploadSteps(gl: WebGLRenderer, roots: (Object3D | null)[]): Gen
     for (const root of roots) {
       if (!root) continue;
       const parent = root.parent, vis = root.visible;
-      const culled: Object3D[] = [];
+      const culled: Object3D[] = [], shown: Object3D[] = [];
       root.traverse(o => {
         if (o.frustumCulled) {
           o.frustumCulled = false;
           culled.push(o);
+        }
+        // pooled meshes that are hidden until used (terrain tiles) get their buffers now too
+        if (opts.hidden && o !== root && !o.visible) {
+          o.visible = true;
+          shown.push(o);
         }
       });
       root.visible = true;
@@ -126,6 +131,7 @@ export function* uploadSteps(gl: WebGLRenderer, roots: (Object3D | null)[]): Gen
         parent?.add(root);
         root.visible = vis;
         for (const o of culled) o.frustumCulled = true;
+        for (const o of shown) o.visible = false;
       }
       yield;
     }

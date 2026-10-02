@@ -49,11 +49,13 @@ for (const mode of modes) {
   await p.waitForTimeout(2500);
   const before = await p.evaluate(() => window.__G1__.info());
   const shots = [];
+  let lateMax = 0;
   for (const [name, force, hold] of BEATS) {
     await p.evaluate(f => window.__G1__.sim.force(f), force);
     await p.waitForTimeout(hold);
     const file = `${out}/flight-${mode}${tag}-${name}.png`;
     await p.screenshot({ path: file });
+    lateMax = Math.max(lateMax, (await p.evaluate(() => window.__G1__.terrain?.stats().lateTiles ?? 0)));
     shots.push(file);
     if (process.env.QA_BEAT_FPS) {
       await p.evaluate(() => window.__G1__.perf.reset('beat'));
@@ -81,8 +83,10 @@ for (const mode of modes) {
   const after = await p.evaluate(() => window.__G1__.info());
   const sim = await p.evaluate(() => window.__G1__.sim.state());
   const same = ['programs', 'geometries', 'textures'].every(k => atPlaying[k] === before[k] && before[k] === after[k]);
+  const terrain = await p.evaluate(() => window.__G1__.terrain?.stats() ?? null);
+  if (lateMax > 0) ok = false;
   if (!same || logs.length || table.longTasks.length) ok = false;
-  result[mode] = { gpu, programsConstant: same, atPlaying, before, after, perf: { avgFps: table.avgFps, p95: table.p95, p99: table.p99, calls: table.drawCalls, tris: table.triangles, sim: table.sections.sim, render: table.sections.render, longTasks: table.longTasks }, shotsFired: sim.shots, shots, logs };
+  result[mode] = { gpu, programsConstant: same, lateMax, terrain, atPlaying, before, after, perf: { avgFps: table.avgFps, p95: table.p95, p99: table.p99, calls: table.drawCalls, tris: table.triangles, sim: table.sections.sim, render: table.sections.render, longTasks: table.longTasks }, shotsFired: sim.shots, shots, logs };
   await b.close();
 }
 console.log(JSON.stringify(result, null, 1));

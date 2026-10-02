@@ -219,9 +219,6 @@ async function startLevel(level: string): Promise<void> {
   await whenContentReady();
   if (!useLoader.getState().finished) await new Promise<void>(r => { const u = useLoader.subscribe(s => s.finished && (u(), r())); });
   const bot = QUERY.get('bot');
-  const mood = QUERY.get('mood');
-  if (mood === 'l1' || mood === 'l22' || mood === 'l10') mission.qa.mood = mood;
-  if (QUERY.has('storm')) mission.qa.storm = Math.max(0, Math.min(1, Number(QUERY.get('storm')) || 0));
   const opts = { bot: isBotSkill(bot) ? bot : null, god: QUERY.get('god') === '1', seed: Number(QUERY.get('seed')) || undefined };
   // the REAL path: hangar -> bulkhead -> cockpit -> briefing (prepare starts here) -> camera -> standby -> LAUNCH
   prewarmMission(level, opts);

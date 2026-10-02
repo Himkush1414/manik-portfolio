@@ -23,7 +23,7 @@ import {
 import { HalfFloatType, Vector2, type Camera, type Scene, type WebGLRenderer } from 'three';
 import { POST } from '../data/render.config';
 import { ExposureEffect, RadialBlurEffect, scaleBloom } from './effects';
-import { SPEED_FX } from '../data/tunnel';
+import { SPEED_FX } from '../data/speedfx';
 import { postfx } from './fxController';
 import { CameraShaker } from './CameraShaker';
 import { stage } from '../scenes/Stage';

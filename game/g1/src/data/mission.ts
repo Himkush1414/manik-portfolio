@@ -30,9 +30,23 @@ export const CAPS = {
   threats: 8,
 } as const;
 
-/** Rail frame + tunnel (brief §5). */
+/** Terrain interaction (Phase 2R §5 INTERACTION): soft floor below `softFloor` clearance (push up +
+ *  skim FX), scrape below `scrapeAt` (damage + knock-back, never an instakill). */
+export const GROUND = {
+  softFloor: 10,
+  /** upward acceleration per u of intrusion below the soft floor (u/s^2) */
+  softPush: 70,
+  scrapeAt: 3,
+  scrapeDamage: 6,
+  /** upward speed set on a scrape (u/s) */
+  knock: 14,
+  scrapeCooldown: 0.5,
+  /** camera never closer to the ground than this (u) */
+  cameraClearance: 2,
+} as const;
+
+/** Rail frame (brief §5; Phase 2R: the rail follows the world's flight path). */
 export const RAIL = {
-  tunnelRadius: 46,
   envelope: { a: 18, b: 10.5 },
   arenaEnvelope: { a: 24, b: 14 },
   /** soft boundary: spring-back acceleration per unit of overshoot (ellipse-normalised) */
@@ -166,7 +180,7 @@ export const RIGS = {
   /** reduce-motion: camera roll coupling at most this fraction (brief §18) */
   reduceRoll: 0.3,
   /** cosmetic tunnel curvature: look-point sway toward the bend ahead + bank into it */
-  sway: { look: 0.6, bankPerCurv: 900, maxBank: 4 * DEG },
+  sway: { look: 0.6, bankPerCurv: 80, maxBank: 4 * DEG },
 } as const;
 
 /** Cockpit rig (brief §8): head inertia (+-0.12 u lagging lateral acceleration), combiner focus,
@@ -204,11 +218,9 @@ export const COCKPIT_HANDS = {
   reduceRecoil: 0.3,
 } as const;
 
-/** Cockpit lights in the mission (the Phase 1 cockpit key + dash point, placed on the eye each
- *  frame while the interior shows): positions in cockpit-root space, intensities as in Phase 1. */
+/** Cockpit dash light in the mission (placed on the eye each frame while the interior shows; the
+ *  world sun lights the rest): position in cockpit-root space, intensities as in Phase 1. */
 export const COCKPIT_LIGHTS = {
-  key: [-1.2, 4.5, 3] as const,
-  keyIntensity: 1.1,
   dash: [0, -0.12, -0.7] as const,
   dashBase: 0.15,
   dashPower: 0.3,
@@ -237,25 +249,16 @@ export const FEEL = {
   graze: { kick: 2.2 * DEG, decay: 0.12 },
 } as const;
 
-/** Borrowed light rig in the mission frame (brief §4 rule 3; render/lightRig.ts). Offsets from MISSION_ORIGIN. */
-export const MISSION_LIGHTS = {
-  key: { pos: [8, 34, 95] as const, color: '#ffe8d9', intensity: 3.4, angle: 0.5, penumbra: 0.6 },
-  target: [0, -2, -120] as const,
-  /** core backlight: far ahead, shining back at the play space (rims on every silhouette) */
-  rimA: { pos: [-34, 16, -430] as const, color: '#7B5BFF', intensity: 2.6, angle: 0.32, penumbra: 0.7 },
-  rimB: { pos: [36, -12, -430] as const, color: '#7FD1FF', intensity: 2.0, angle: 0.32, penumbra: 0.7 },
-  hemi: { sky: '#2a3168', ground: '#04050A', intensity: 0.4 },
-  fog: { color: '#1A1F5C', near: 150, far: 520 },
-} as const;
+/** Mission view (Phase 2R): camera range for the world pass + the interim haze (W2's aerial
+ *  perspective + sky dome replace the linear fog colour). */
+export const MISSION_VIEW = { near: 0.25, far: 6500, fogNear: 600, fogFar: 5600 } as const;
 
 /** Launch sequence (brief §14 LAUNCH SEQUENCE), seconds / u / deg. */
 export const LAUNCH = {
   countdown: 1.0, // per digit (3, 2, 1)
   catapult: 3.3, // clamps release -> gate
-  /** launch-tunnel travel at the gate (cockpit-local u): mouth at 84, gate beyond */
+  /** launch-tunnel travel at the flash (cockpit-local u): the bay mouth is at 84 */
   travel: 350,
-  gateZ: -344,
-  gateRadius: 57,
   fovPunch: 16,
   flash: 7,
   flashIn: 0.22,

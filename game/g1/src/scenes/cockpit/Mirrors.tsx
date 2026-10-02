@@ -115,7 +115,7 @@ export function Mirrors({ parent, quality }: { parent: Group | null; quality: Mi
 
   useFrame((state, dt) => {
     if ((stage.cockpit < 0.5 && !cockpitInMission.on) || !parent) return; // skipped entirely outside the cockpit
-    // in a mission the mirrors see the reduced set: own ship + the cheapest tunnel (MIRROR_WORLD_LAYER)
+    // in a mission the mirrors see the reduced set: own ship + the world terrain (MIRROR_WORLD_LAYER)
     if (m.inMission !== cockpitInMission.on) {
       m.inMission = cockpitInMission.on;
       m.rig.setLayers(m.inMission ? [MIRROR_LAYER, MIRROR_WORLD_LAYER] : [0, MIRROR_LAYER]);

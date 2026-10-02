@@ -169,6 +169,8 @@ export class FlightPath {
   }
 
   floorAt(s: number): number { return this.sample(this.floor, s); }
+  /** path altitude (world y) at s */
+  yAt(s: number): number { return this.sample(this.y, s); }
   clearanceAt(s: number): number { return this.sample(this.clearance, s); }
   bankAt(s: number): number { return this.sample(this.bank, s); }
   curvatureAt(s: number): number { return this.sample(this.curvature, s); }

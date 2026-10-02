@@ -1,10 +1,11 @@
 // LAUNCH SEQUENCE (brief §14): replaces STANDBY on flow LAUNCH.
 //   3-2-1 with Sato -> clamps release -> catapult down the launch tunnel (FOV
-//   punch, shake, streaking strip lights) -> bay mouth -> the VEIL GATE vortex
-//   -> breach flash (FOV punch + chromatic burst) -> the wormhole.
+//   punch, shake, streaking strip lights) -> bay mouth -> flash (FOV punch +
+//   chromatic burst) -> the world. (Phase 2R: the Veil Gate vortex is gone;
+//   W5 replaces the flash with the orbit dive + cloud break.)
 // The cut into the mission frame happens at the flash peak. One GSAP
 // timeline (shared ticker: pausable, seekable). Retries use the fast
-// relaunch (~1.6 s) inside the corridor.
+// relaunch (~1.6 s) in the valley.
 import gsap from 'gsap';
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import { cockpitFx } from '../../scenes/cockpit/displays';
@@ -29,10 +30,7 @@ export function runLaunch(swap: () => void): Promise<void> {
   cockpitFx.view = mode === 'cockpit' ? 'eye' : mode;
   cockpitFx.hudMode = 'launch';
   cockpitFx.count = 3;
-  const gate = mission.gate;
   const tunnel = launchTunnelRef.group;
-  if (gate && tunnel && gate.group.parent !== tunnel) tunnel.add(gate.group);
-  if (gate) gate.group.visible = true;
   // deep-space skybox on the cockpit frame (fixed relative to the static ship)
   const sky = mission.sky;
   const cockpitRoot = tunnel?.parent ?? null;
@@ -75,7 +73,6 @@ export function runLaunch(swap: () => void): Promise<void> {
         cockpitFx.launchSpeed = st.speed;
         cockpitFx.fovKick = reduce ? 0 : LAUNCH.fovPunch * Math.min(1, st.travel / LAUNCH.travel) ** 1.5;
         stretchStrips(st.speed);
-        gate?.update(now);
         // out of the bay: the window plane gives way to the full sky
         const out = st.travel > LAUNCH.mouthTravel;
         if (sky) {
@@ -121,11 +118,10 @@ export function runFastLaunch(): Promise<void> {
   });
 }
 
-/** put the cockpit-frame launch rig back (tunnel at rest, strips unstretched, gate hidden) */
+/** put the cockpit-frame launch rig back (launch tunnel at rest, strips unstretched, sky hidden) */
 export function resetLaunchRig(): void {
   if (launchTunnelRef.group) launchTunnelRef.group.position.z = 0;
   stretchStrips(0);
-  if (mission.gate) mission.gate.group.visible = false;
   if (mission.sky) mission.sky.visible = false;
   if (launchTunnelRef.sky) launchTunnelRef.sky.visible = true;
   cockpitFx.fovKick = 0;

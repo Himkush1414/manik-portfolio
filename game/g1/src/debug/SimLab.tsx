@@ -30,6 +30,9 @@ const ORB = { every: 1.4, speed: 90, damage: 8, radius: 0.6 } as const;
 const VIEW = { ahead: 320, behind: 20 } as const;
 const DRONE = { type: 1, hp: 40, radius: 2, score: 100, every: 1.6 } as const;
 
+/** lab view: lateral half-extent mapped to the side view's height (u) */
+const LAB_HALF = 46;
+
 export function SimLab() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -121,7 +124,7 @@ export function SimLab() {
       // ---- top view: s right, x down
       const top = { x: 40 * k, y: 70 * k, w: W - 80 * k, h: H * 0.48 };
       const sx = (s: number) => top.x + ((s - ps + VIEW.behind) / (VIEW.ahead + VIEW.behind)) * top.w;
-      const sy = (x: number) => top.y + top.h / 2 + (x / RAIL.tunnelRadius) * (top.h / 2);
+      const sy = (x: number) => top.y + top.h / 2 + (x / LAB_HALF) * (top.h / 2);
       g.strokeStyle = HEX.indigo;
       g.strokeRect(top.x, top.y, top.w, top.h);
       g.strokeStyle = 'rgba(127,209,255,0.25)';
@@ -172,7 +175,7 @@ export function SimLab() {
         const es = e.prevS + (e.s - e.prevS) * a;
         g.fillStyle = e.flash > 0 ? HEX.frost : HEX.nebula;
         g.beginPath();
-        g.arc(sx(es), sy(e.x), Math.max(3 * k, (e.radius / RAIL.tunnelRadius) * (top.h / 2)), 0, Math.PI * 2);
+        g.arc(sx(es), sy(e.x), Math.max(3 * k, (e.radius / LAB_HALF) * (top.h / 2)), 0, Math.PI * 2);
         g.fill();
         g.fillStyle = HEX.danger;
         g.fillRect(sx(es) - 12 * k, sy(e.x) - 14 * k, 24 * k * (e.hp / e.maxHp), 3 * k);

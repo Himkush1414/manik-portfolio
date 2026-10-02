@@ -5,7 +5,7 @@
 // never touches an instance after build. Count is set per preset (no
 // rebuild: drawing fewer instances costs nothing extra).
 import { AdditiveBlending, Color, DoubleSide, InstancedBufferAttribute, InstancedMesh, PlaneGeometry, ShaderMaterial, Sphere, Vector3 } from 'three';
-import { SPEED_FX } from '../../../data/tunnel';
+import { SPEED_FX } from '../../../data/speedfx';
 import type { Preset } from '../../quality';
 import { Rng } from '../../../game/core/rng';
 

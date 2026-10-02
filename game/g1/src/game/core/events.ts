@@ -39,8 +39,10 @@ export const enum Ev {
   LevelComplete,
   /** a = hazard type code, b = damage */
   HazardImpact,
-  /** projectile hit something indestructible / missed into a wall: sparks */
+  /** projectile hit something indestructible / the terrain: sparks / surface puff (b = 1: terrain) */
   Spark,
+  /** the player scraped the terrain: a = damage */
+  GroundScrape,
 }
 
 export class EventRing {

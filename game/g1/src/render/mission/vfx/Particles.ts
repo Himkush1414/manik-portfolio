@@ -8,6 +8,7 @@
 //
 // Rail space: x right, y up, s forward (absolute). Render z = -(s - playerS),
 // so a spark stays where it was born on the rail and the player flies past it.
+import { missionSpace, PATH_GLSL } from '../../world/missionSpace';
 import { AdditiveBlending, Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, PlaneGeometry, ShaderMaterial, Sphere, Vector3 } from 'three';
 import { PARTICLE_CAP, RAMP_COLORS, SPARK_STRETCH } from '../../../data/vfx';
 import type { Preset } from '../../quality';
@@ -58,12 +59,14 @@ export class Particles {
       rampB.push(new Vector3(c.r, c.g, c.b));
     }
     this.material = new ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uPlayerS: { value: 0 }, uRampA: { value: rampA }, uRampB: { value: rampB } },
+      // the path uniforms are SHARED objects (missionSpace): rail positions bend with the world
+      uniforms: { uTime: { value: 0 }, uPlayerS: { value: 0 }, uRampA: { value: rampA }, uRampB: { value: rampB }, ...missionSpace.uniforms },
       vertexShader: /* glsl */ `
         attribute vec4 aP; // x, y, s, t0
         attribute vec4 aV; // vx, vy, vs, life
         attribute vec4 aK; // size, ramp, drag, stretch (0 round / 1 spark)
         uniform float uTime, uPlayerS;
+        ${PATH_GLSL}
         uniform vec3 uRampA[${RAMP_COLORS.length}];
         uniform vec3 uRampB[${RAMP_COLORS.length}];
         varying vec2 vUv;
@@ -78,7 +81,7 @@ export class Particles {
           float decay = exp(-k * age);
           float f = k > 0.0 ? (1.0 - decay) / k : age;
           vec3 rail = aP.xyz + aV.xyz * f;
-          vec3 local = vec3(rail.x, rail.y, -(rail.z - uPlayerS));
+          vec3 local = railToLocal(rail);
           vec4 mv = modelViewMatrix * vec4(local, 1.0);
           float t = age / life;
           float size = aK.x * (1.0 - 0.55 * t);

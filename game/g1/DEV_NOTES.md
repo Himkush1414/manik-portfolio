@@ -28,7 +28,7 @@ look (§19 founder test, side-by-side stills).
 | Slice | Scope (brief §17) | Status | Push |
 |---|---|---|---|
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
-| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | IN PROGRESS (W1a path, W1b terrain field, W1c tiles + streamer + worldlab) | ec5fc39, 5c58aac, (W1c) |
+| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, (W1d) |
 | W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
 | W3 | water, rocks/cliffs, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
@@ -153,6 +153,68 @@ look (§19 founder test, side-by-side stills).
     35.7 ms (target 25 ms: max likely the JIT-cold first tiles — measure
     steady state in W1d; 2nd worker if needed), upload <= 0.6 ms,
     programs / geometries / textures constant, console clean.
+- W1d THE MISSION FLIES THE WORLD; THE WORMHOLE IS DELETED.
+  * Mission space (`render/world/missionSpace.ts`): the mission root's
+    axes = the path frame at the player (R, U, -T), origin = the player's
+    path point (floating origin). local = B^T (world - P). Player, camera
+    rigs, ship attitude, HUD unchanged (local frame); world objects are
+    placed with `placeWorld` (position + B^T rotation) every frame; rail
+    things map EXACTLY through the path: CPU `railToLocal` / `railDirToLocal`
+    (bolts, orbs), GPU `PATH_GLSL railToLocal()` reading a static path
+    texture (world P, R, U per metre, RGBA32F 1024 wide, built at bind)
+    + shared uniforms (uPathP0, uPathB = B^T, uPathLen) — particles and
+    ribbons. (A rigid rotation alone would misplace things 300 u ahead by
+    up to ~40 u on the tightest legal bend.)
+  * `render/world/MissionWorld.ts`: per level + preset — FlightPath,
+    TerrainField + HeightGrid (sim ground), TerrainStreamer (+ material),
+    sun (borrowed cockpit-key DirectionalLight = THE SUN in missions, incl.
+    the cockpit interior; dash point stays the cockpit's own), streak
+    tint; `prestream(0)` in prepare, `update(ps)`, `applySun`, `groundY`.
+    WORLD_VIEW per preset (LOW 1300 u ahead + LOD bias, MED 2000, HIGH /
+    ULTRA 2600). Terrain meshes on MIRROR_WORLD_LAYER (mirrors see the
+    valley behind). WorldLab now runs on MissionWorld too.
+  * LevelDef v2 (`LEVEL_DEF_VERSION = 2`): + worldId, path (PathDef),
+    widthKeys, terrainSeed; - mood / TunnelMood, pathParams, radius. Level 1
+    flies ARDEN on ARDEN_01_PATH (lengthM 10200 incl. lead-in / lead-out);
+    the test level = a 4 km ARDEN valley (validated).
+  * Sim (`SimConfig.world = { path, ground }`, optional): envelope from the
+    path; soft floor (< 10 u clearance: push up 70 u/s^2 per u), scrape (< 3
+    u: never through, vy >= 14, 6 damage, 0.5 s cooldown, Ev.GroundScrape);
+    player AND enemy bolts burst on the ground (Ev.Spark b = 1 = terrain);
+    HeightGrid filled ahead each step (0 misses in play). Without a world
+    (unit tests) the old envelope segments apply. Tests: level paths valid
+    vs terrain, floor push / scrape never through, bolts burst on terrain,
+    determinism with terrain.
+  * MissionDriver: world.update(ps) -> streaming + placement + sun; speed
+    FX re-tuned for open air (SPEED_FX.airBase 0.16 at cruise + airBoost
+    0.55 with boost — the tube density read as a hyperspace starfield);
+    camera bank from path curvature (RIGS.sway.bankPerCurv 80, cap 4 deg);
+    gust rumble from the world weather; terrain-aware camera (>= 2 u above
+    the ground). missionFlow: world lights (studio spots off, hemisphere =
+    world fill), world haze fog + sky colour background (W2 replaces),
+    camera near 0.25 / far 6500 (restored on exit). GROUND + MISSION_VIEW in
+    data/mission.ts.
+  * DELETED: render/mission/tunnel/ (Tunnel, tunnelMaterial, tunnelNoise),
+    data/tunnel.ts (TUNNEL, TUNNEL_TIERS, MOODS, STORM_FX — lightning
+    returns with STORMWARD weather in W8), render/mission/launch/VeilGate.ts,
+    LAUNCH.gateZ / gateRadius, MISSION_LIGHTS, COCKPIT_LIGHTS.key, RAIL
+    .tunnelRadius, Tunnel.mirrorShell, mission.qa mood / storm. SPEED_FX +
+    SPEED_REF moved to data/speedfx.ts. Launch: catapult -> flash cut into
+    the valley (W5 builds the orbit dive + cloud break); LAUNCH_LINES.gate =
+    "Atmosphere in five. Hold her steady."
+  * GATE (prod build, RTX 3050 HIGH, qa-flight all 3 rigs + qa-prodlaunch
+    x1 + qa-camera --hangar): 60 fps, p95 16.9, lateTiles 0, grid misses 0
+    (~11k queries / run), programs / geometries / textures constant from
+    play start, 0 GL allocations after play start (prod path), 0 long
+    tasks, console clean; third 68 calls / 258k tris, cockpit 125 calls /
+    240k tris (budgets 170 / 550k). UHD 770 LOW, DRS live (settles 0.5):
+    third 53.9 fps, cockpit 44.7 fps (target >= 40). Phase 1 cockpit group
+    clean; mission -> hangar restores fog / background / camera range.
+    138 unit tests.
+  * OPEN: tile gen max 32-37 ms (cold tiles in prepare; avg 6.5-7.5 ms;
+    target 25 ms -> 2nd worker if in-play max exceeds it); sky is a flat
+    colour + linear fog (W2); near ground has no surface detail (W3/W4);
+    vista passes not authored yet (W6); two depth ranges (W2, with the sky).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 
@@ -239,7 +301,7 @@ every slice | §16 audio -> W9 (+ per world) | §17 workflow + build order |
    CPU height grids (5 u, bilinear) filled from the same pure function; a
    miss evaluates directly (identical); never GPU tiles.
 
-### P2R.4 Tunnel removal plan (W1, after the fly-through exists)
+### P2R.4 Tunnel removal plan (W1, after the fly-through exists) — DONE in W1d
 DELETE: src/render/mission/tunnel/ (Tunnel.ts, tunnelMaterial.ts,
 tunnelNoise.ts), src/data/tunnel.ts (TUNNEL, TUNNEL_TIERS, MOODS, SPEED_FX
 tunnel parts, STORM_FX), src/render/mission/launch/VeilGate.ts (+ its
