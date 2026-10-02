@@ -29,14 +29,18 @@ look (§19 founder test, side-by-side stills).
 |---|---|---|---|
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
-| W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | IN PROGRESS — W2a (sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph) gated; W2b (grade, horizon ridges, depth ranges, cloud polish) next | (W2a) |
-| W3 | water, rocks/cliffs, set-piece framework | TODO | |
-| W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
-| W5 | launch + orbit dive + cloud break + planet generator + cockpit bay tweak | TODO | |
-| W6 | remaining Phase 2 systems on W1 (hazards, HUD additions, Sortie Select planet cards), LEVEL 1 re-authored, full playthrough | TODO | |
-| W7 | KHARAN + SANDWYRM + SAND SKIMMERS + canal/colonnade/arena + L10 + boss | TODO | |
-| W8 | STORMWARD + sea + rain/lightning + L22 + kraken/manta/eels + BULWARK stack | TODO | |
-| W9 | creature/installation polish, infestation, audio per world, balance, soak, final QA, docs, Phase 3 handoff | TODO | |
+| W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
+| F1 | **VISION §2 FREEDOM OF FLIGHT**: cursor-flight (default) + AIM legacy, chapter envelopes (plains 70/38 .. slot 12/18, arena 60/34), lateral speed clamp(1.1a,30,80) x AGI, computed camera follow, full-screen reticle, bank +-70 deg / 0.18 s, close calls + wall-run, `qa-freedom` 8-extremes test | NEXT | |
+| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | TODO | |
+| C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
+| W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
+| W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
+| E1 | **encounters (§7, §9) = old 2D-2J merged**: enemy registry + parts / weak points, AI behaviours, spawner + entrance patterns, encounter grammar, hive maws + bomb-spores, cliff-clingers, wyrm, husks, rifts [P1], feedback hierarchy, charge lock-on [P1], nova [P1], HUD additions, results + medals | TODO | |
+| W5 | dive / landing / ascent cinematics + camera director (FOV / letterbox / flare), planet generator, cockpit bay tweak | TODO | |
+| W6 | LEVEL 1 full authoring (8 chapters, TOD, comms, wonders every 25-40 s, Marrow Wyrm, landing finale, narrative props) + founder playtest evidence | TODO | |
+| W7 | KHARAN + L10 + THE WARDEN event | TODO | |
+| W8 | STORMWARD + L22 + storm / rain / lightning + sea monsters + BULWARK STACK + beacon | TODO | |
+| W9 | polish, audio per world, balance, soak (3 full runs / level), final QA on both GPUs, docs, Phase 3 handoff | TODO | |
 
 ### P2R.0a W0 log (2026-10-02)
 - W0a `407b0fb`: this plan, baseline, `src/data/worlds/` (types, ARDEN /
@@ -215,6 +219,21 @@ look (§19 founder test, side-by-side stills).
     target 25 ms -> 2nd worker if in-play max exceeds it); sky is a flat
     colour + linear fog (W2); near ground has no surface detail (W3/W4);
     vista passes not authored yet (W6); two depth ranges (W2, with the sky).
+
+### P2R.0v FOUNDER'S VISION ADDENDUM (2026-10-02) — binding, wins over 2R
+Source of truth for the look/feel: `docs/CREATIVE_BIBLE.md` (acceptance
+criteria AC2.x-AC10.x, the 13-point founder playtest, the three levels
+chapter by chapter, [BEYOND] additions). The owner's prompts are a FLOOR
+("~30 % of the vision"): expansions are deliberate and logged there.
+Known conflicts fixed by the re-plan: (a) envelope + camera too tight -> F1;
+(b) fixed time of day -> W2b TODTimeline; (c) one biome / valley-only ->
+C1 chapters; (d) trees optional -> W4 trunk colliders + slaloms; (e) mouse =
+small aim cone -> F1 cursor-flight; (f) boss arena too small -> 60/34 (F1
+data, E1/W7 bosses). Order rationale: FREEDOM first (every later slice is
+judged while flying; it is sim + camera + input, no render risk), then the
+living sky (finishes W2 with TOD built in rather than retrofitted), then
+chapters (terrain shape language the dressing slices W3/W4 sit on), then
+encounters on top of a world that already feels right.
 
 ### P2R.0c W2 log
 - W2a look review of W1 found (sky1 shots): stars in a full-day sky; ORRIN's
