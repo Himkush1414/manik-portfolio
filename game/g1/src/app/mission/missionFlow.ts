@@ -28,7 +28,7 @@ import type { WorldDef } from '../../data/worlds/types';
 /** presentation beats (s) until the fail / results screens exist */
 const BEAT = { death: 1.4, failedAutoRetry: 1.2, complete: 1.0, resultsAutoExit: 1.5 } as const;
 
-let saved: { fog: [number, number, number]; shadowAuto: boolean; near: number; far: number; bg: Scene['background'] } | null = null;
+let saved: { fog: [number, number, number]; shadowAuto: boolean; near: number; far: number; bg: Scene['background']; env: Scene['environment']; envRot: Scene['environmentRotation']; envInt: number } | null = null;
 let gl: WebGLRenderer | null = null;
 let unfollowCamera: (() => void) | null = null;
 
@@ -58,7 +58,7 @@ function beginFrame(): void {
   gl = w.gl;
   const fog = w.scene.fog as Fog | null;
   const cam = w.camera as PerspectiveCamera;
-  saved = { fog: fog ? [fog.color.getHex(), fog.near, fog.far] : [0, 0, 0], shadowAuto: w.gl.shadowMap.autoUpdate, near: cam.near, far: cam.far, bg: w.scene.background };
+  saved = { fog: fog ? [fog.color.getHex(), fog.near, fog.far] : [0, 0, 0], shadowAuto: w.gl.shadowMap.autoUpdate, near: cam.near, far: cam.far, bg: w.scene.background, env: w.scene.environment, envRot: w.scene.environmentRotation, envInt: w.scene.environmentIntensity };
   // shadows are off in missions (no casters; castShadow flags never toggled = no recompiles)
   w.gl.shadowMap.autoUpdate = false;
   lightRig.borrow();
@@ -73,6 +73,13 @@ function beginFrame(): void {
       fog.far = MISSION_VIEW.fogFar;
     }
     w.scene.background = new Color(env.def.sky.horizon);
+    // the world's sky is the environment (same PMREM size as the studio one: no program change);
+    // its rotation object is the probe's, turned into the path frame every frame
+    if (env.probe.texture) {
+      w.scene.environment = env.probe.texture;
+      w.scene.environmentRotation = env.probe.rotation;
+      w.scene.environmentIntensity = env.def.lighting.envIntensity ?? 1;
+    }
     // the world needs a long far plane (two depth ranges arrive with the sky in W2)
     cam.near = MISSION_VIEW.near;
     cam.far = MISSION_VIEW.far;
@@ -126,6 +133,9 @@ function endFrame(): void {
         cam.far = saved.far;
         cam.updateProjectionMatrix();
         w.scene.background = saved.bg;
+        w.scene.environment = saved.env;
+        w.scene.environmentRotation = saved.envRot;
+        w.scene.environmentIntensity = saved.envInt;
       }
       saved = null;
     });

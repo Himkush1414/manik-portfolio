@@ -7,7 +7,7 @@
 // changes LOD keeps its old mesh until the new one is uploaded (no holes).
 // Meshes sit relative to a floating origin set every frame.
 import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Group, Mesh, Sphere, Vector3, type Material } from 'three';
-import { TILE_LEN, tileIndices, tileLayout, allocTile, type Lod, type TileBuffers } from '../../game/world/tiles';
+import { TILE_LEN, tileIndices, tileLayout, allocTile, tileTransfer, type Lod, type TileBuffers } from '../../game/world/tiles';
 import type { TerrainDef } from '../../data/worlds/types';
 import type { PathDef } from '../../game/world/pathDef';
 import type { TerrainWorkerGen, TerrainWorkerInit, TerrainWorkerResult } from './terrain.worker';
@@ -37,6 +37,8 @@ export class TerrainStreamer {
   private readonly resident = new Map<number, Slot>();
   private readonly pending = new Map<number, Pending>();
   private readonly ready: TerrainWorkerResult[] = [];
+  /** a tile whose first half was uploaded last frame (second half + show this frame) */
+  private staged: { slot: Slot; res: TerrainWorkerResult } | null = null;
   private readonly spare: TileBuffers[][] = [[], [], []];
   private worker: Worker | null = null;
   private nextId = 1;
@@ -60,6 +62,8 @@ export class TerrainStreamer {
         geo.setAttribute('position', pos);
         geo.setAttribute('normal', nor);
         geo.setAttribute('terrainAttrib', att);
+        geo.setAttribute('terrainMorph', new BufferAttribute(new Float32Array(L.vertices * 4), 4).setUsage(DynamicDrawUsage));
+        geo.setAttribute('terrainMorphAttrib', new BufferAttribute(new Uint8Array(L.vertices * 4), 4, true).setUsage(DynamicDrawUsage));
         geo.boundingSphere = new Sphere(new Vector3(), 1);
         const mesh = new Mesh(geo, opts.material);
         mesh.name = `terrain-lod${lod}-${k}`;
@@ -104,7 +108,7 @@ export class TerrainStreamer {
     const buffers = this.spare[lod].pop() ?? allocTile(lod);
     const msg: TerrainWorkerGen = { type: 'gen', id: this.nextId++, tile, s0: tile * TILE_LEN, lod, buffers };
     this.pending.set(tile, { tile, lod });
-    this.worker.postMessage(msg, [buffers.position.buffer, buffers.normal.buffer, buffers.attrib.buffer]);
+    this.worker.postMessage(msg, tileTransfer(buffers));
   }
 
   /** wanted tiles + LODs around the viewer */
@@ -135,7 +139,7 @@ export class TerrainStreamer {
     // schedule: one request in flight per tile; keep at most 3 in flight (the worker is sequential)
     for (const [t, l] of need) {
       if (this.pending.size >= 3) break;
-      if (this.pending.has(t)) continue;
+      if (this.pending.has(t) || this.staged?.res.tile === t) continue;
       const r = this.resident.get(t);
       if (r && r.lod === l) continue;
       if (this.free[l].length === 0 && !this.evictOne(need, l)) continue;
@@ -143,33 +147,47 @@ export class TerrainStreamer {
     }
     // evict tiles no longer wanted
     for (const [t, slot] of this.resident) if (!need.has(t)) this.release(t, slot);
-    // upload one ready result
+    // upload: a tile lands over TWO frames (main attributes, then the geomorph targets) so no
+    // frame copies more than ~half a tile; it is shown once both halves are in
     const start = performance.now();
-    while (this.ready.length && performance.now() - start < budgetMs) {
-      const res = this.ready.shift()!;
-      this.pending.delete(res.tile);
-      const wantLod = need.get(res.tile);
-      if (wantLod === undefined || wantLod !== res.lod || this.free[res.lod].length === 0) {
-        this.spare[res.lod].push(res.buffers);
-        continue;
-      }
-      const slot = this.free[res.lod].pop()!;
+    if (this.staged) {
+      const { slot, res } = this.staged;
+      this.staged = null;
       const g = slot.geo;
-      (g.getAttribute('position') as BufferAttribute).copyArray(res.buffers.position).needsUpdate = true;
-      (g.getAttribute('normal') as BufferAttribute).copyArray(res.buffers.normal).needsUpdate = true;
-      (g.getAttribute('terrainAttrib') as BufferAttribute).copyArray(res.buffers.attrib).needsUpdate = true;
-      g.boundingSphere!.center.set(res.sphere[0], res.sphere[1], res.sphere[2]);
-      g.boundingSphere!.radius = res.sphere[3];
-      slot.origin.set(res.origin.x, res.origin.y, res.origin.z);
-      slot.tile = res.tile;
-      const old = this.resident.get(res.tile);
-      if (old) this.releaseSlot(old);
-      this.resident.set(res.tile, slot);
-      slot.mesh.visible = true;
+      (g.getAttribute('terrainMorph') as BufferAttribute).copyArray(res.buffers.morph).needsUpdate = true;
+      (g.getAttribute('terrainMorphAttrib') as BufferAttribute).copyArray(res.buffers.morphAttrib).needsUpdate = true;
+      if (need.get(res.tile) === res.lod) {
+        const old = this.resident.get(res.tile);
+        if (old) this.releaseSlot(old);
+        this.resident.set(res.tile, slot);
+        slot.mesh.visible = true;
+        this.stats.uploads++;
+      } else this.releaseSlot(slot); // no longer wanted at this LOD
       this.spare[res.lod].push(res.buffers);
-      this.stats.uploads++;
       this.stats.uploadMsMax = Math.max(this.stats.uploadMsMax, performance.now() - start);
-      break; // <= 1 tile upload per frame
+    } else {
+      while (this.ready.length && performance.now() - start < budgetMs) {
+        const res = this.ready.shift()!;
+        this.pending.delete(res.tile);
+        const wantLod = need.get(res.tile);
+        if (wantLod === undefined || wantLod !== res.lod || this.free[res.lod].length === 0) {
+          this.spare[res.lod].push(res.buffers);
+          continue;
+        }
+        const slot = this.free[res.lod].pop()!;
+        const g = slot.geo;
+        (g.getAttribute('position') as BufferAttribute).copyArray(res.buffers.position).needsUpdate = true;
+        (g.getAttribute('normal') as BufferAttribute).copyArray(res.buffers.normal).needsUpdate = true;
+        (g.getAttribute('terrainAttrib') as BufferAttribute).copyArray(res.buffers.attrib).needsUpdate = true;
+        g.boundingSphere!.center.set(res.sphere[0], res.sphere[1], res.sphere[2]);
+        g.boundingSphere!.radius = res.sphere[3];
+        slot.origin.set(res.origin.x, res.origin.y, res.origin.z);
+        slot.tile = res.tile;
+        // held (invisible, out of the free list) until its second half lands next frame
+        this.staged = { slot, res };
+        this.stats.uploadMsMax = Math.max(this.stats.uploadMsMax, performance.now() - start);
+        break; // <= 1 half-tile upload per frame
+      }
     }
     for (const slot of this.resident.values()) place(slot.mesh, slot.origin.x, slot.origin.y, slot.origin.z);
     // late tiles: wanted near the viewer but nothing resident
@@ -187,7 +205,7 @@ export class TerrainStreamer {
 
   /** every wanted tile around the last viewer position is resident at its wanted LOD, nothing pending */
   settled(): boolean {
-    if (this.pathLength <= 0 || this.pending.size > 0 || this.ready.length > 0) return false;
+    if (this.pathLength <= 0 || this.pending.size > 0 || this.ready.length > 0 || this.staged) return false;
     for (const [t, l] of this.wanted(this.lastView)) {
       const r = this.resident.get(t);
       if (!r || r.lod !== l) return false;

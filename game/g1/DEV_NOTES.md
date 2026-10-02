@@ -28,8 +28,8 @@ look (§19 founder test, side-by-side stills).
 | Slice | Scope (brief §17) | Status | Push |
 |---|---|---|---|
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
-| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, (W1d) |
-| W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | TODO | |
+| W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
+| W2 | sky, celestials, atmosphere/fog chunk, env probe, clouds, grade | IN PROGRESS — W2a (sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph) gated; W2b (grade, horizon ridges, depth ranges, cloud polish) next | (W2a) |
 | W3 | water, rocks/cliffs, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind, placement, ground cover) + wildlife | TODO | |
 | W5 | launch + orbit dive + cloud break + planet generator + cockpit bay tweak | TODO | |
@@ -215,6 +215,70 @@ look (§19 founder test, side-by-side stills).
     target 25 ms -> 2nd worker if in-play max exceeds it); sky is a flat
     colour + linear fog (W2); near ground has no surface detail (W3/W4);
     vista passes not authored yet (W6); two depth ranges (W2, with the sky).
+
+### P2R.0c W2 log
+- W2a look review of W1 found (sky1 shots): stars in a full-day sky; ORRIN's
+  rings drawn as thin concentric lines; its night side painted dark over the
+  day sky; and a RIVER SEAM where a LOD0 tile meets a LOD1 tile (4 u columns
+  re-sample the 8-10 u channel -> the bank steps sideways). Fixed:
+  * GEOMORPH (`tiles.ts`, `terrainMaterial.ts` terrain-v4): every vertex
+    carries its next-LOD target (dy, packed s + LOD, target normal x/z,
+    target attribs) taken from the LOD + 1 grid sampled by the SAME function
+    (bit-identical to that tile's own vertices) and interpolated over its
+    triangles exactly as the rasterizer does; the vertex shader blends by
+    path distance. A tile is fully its coarser self by `lodDist - 64` (the
+    nearest point a coarser tile can begin), so LOD borders and LOD switches
+    are seamless (test: fully morphed LOD0 == LOD1 at shared vertices +
+    on the border edge). Ranges in `uMorph` per preset (HIGH 40-86 / 476-636).
+    Cost: +25 % tile gen (coarse grid), +20 B / vertex -> uploads now land
+    over TWO frames (main attributes, then morph targets; shown after both).
+  * `render/world/SkyDome.ts`: one dome shader (depth off, camera-centred,
+    world-space via transpose(uPathB)): gradient + haze band, HDR sun disc +
+    glow, optional 2nd sun, stars (only below daylight), cirrus, up to 3
+    ray-cast bodies (banded / cratered / icy / rocky / cloudy / void), lit
+    by the sun (terminator, ring shadow on the planet, planet shadow on the
+    rings, atmosphere limb). Rings: radial density profile (faint inner,
+    dense middle, Cassini-like gap, narrow outer gap, coarse ringlets — fine
+    ringlets alias into lines). DAYLIGHT: the atmosphere is in front of a
+    body, so in day the body's light ADDS over the sky and its night side
+    lets the sky through (lit side ~0.9 occlusion, night ~0.45) — reads as a
+    real daytime giant, not a sticker. ORRIN moved to el 24 / az -55 (gibbous
+    against the ARDEN sun at az 78; behind the left range in the opening).
+  * `render/world/atmosphere.ts`: shared AP chunk `aerial(worldP)` (exp2 haze
+    with analytic height falloff from the valley floor, near -> far colour,
+    sun in-scatter) on terrain + clouds; actors keep the linear Fog.
+  * `render/world/envProbe.ts`: the world sky (probe mode: ground bounce
+    below the horizon, sun glow without the 40x disc) captured once in
+    prepare into a 256 cube -> PMREM in WORLD axes — same size as the studio
+    env, so assigning it changes no program key (programs constant, QA'd).
+    Per frame `scene.environmentRotation` turns it into the path frame (three
+    negates the Euler: e = ZYX angles of B^T stored as XYZ -> envMapRotation
+    = B; unit-tested). Mission start saves / sets / restores environment,
+    rotation, intensity (`LightingDef.envIntensity`, default 1). ARDEN: hemi
+    fill 0.55 -> 0.18 (the probe is the sky ambient now), env 0.75; terrain
+    keeps the probe's irradiance but only 20 % of its mirror term (a rough
+    ground's sky reflection veiled the grass blue) except on wet banks.
+    KHARAN / STORMWARD fills get the same retune in W7 / W8.
+  * `render/world/clouds.ts`: cumulus banks = ONE instanced draw (slots x 9
+    puffs: LOW 10 .. ULTRA 22 slots), soft fbm-eroded billboards lit toward
+    the sun with flat darker bases, placed by hash in WORLD space along the
+    path (lateral +-2850, altitude = floor + layer altitude) and recycled
+    through a fixed slot ring (k mod slots; spacing never lets the window
+    exceed the slots); AP-hazed. Cloud SHADOWS: the terrain dims the sun's
+    direct term by the same coverage projected along the sun onto the layer
+    and drifting with the wind.
+  * GATE W2a (prod build, RTX 3050 HIGH): worldlab fly 60 fps, p95 16.9,
+    lateTiles 0, programs 28 constant, console clean; qa-flight third /
+    chase / cockpit: 60 fps, p95 16.9, calls 70 / 70 / 127, tris 260k / 260k
+    / 242k, programs 106, textures 102, geometries constant, 0 long tasks,
+    grid misses 0, console clean; qa:phase1 (all 7 groups) green. Tile gen avg 7-10 ms (max 38-63 ms, cold
+    tiles in prepare). OPEN: tile upload copy max 0.7-1.0 ms against the
+    0.6 ms target even split in halves (timer granularity 0.1 ms + prepare
+    load; no long task / frame spike in play) — revisit with Int8 normals if
+    an iGPU run shows frame spikes on uploads.
+  * OPEN for W2b: per-world grade, far horizon ridge layers (the valley end
+    is empty haze), two depth ranges (or measured proof they're unneeded),
+    cloud look (reads a little "cotton ball"), near-ground detail (W3).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

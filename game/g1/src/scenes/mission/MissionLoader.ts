@@ -103,6 +103,8 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   // the first stretch streams in now (the reveal never waits for tiles) + the sim's first grid rows
   await env.prestream(0);
   env.grid.fill(-60, 400);
+  // the world's environment probe (sky in world axes -> PMREM; once per world build)
+  if (!env.probe.texture) env.probe.capture(gl, env.sky);
   if (!mission.streaks) {
     mission.streaks = new SpeedStreaks(level.seed ^ 0x51ed);
     mission.root.add(mission.streaks.mesh);

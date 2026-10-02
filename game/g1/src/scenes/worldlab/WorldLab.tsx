@@ -68,6 +68,10 @@ export function WorldLab() {
     root.add(world.streamer.group);
     ref.current = { world, root };
     void world.init();
+    const prevEnv = scene.environment, prevRot = scene.environmentRotation, prevInt = scene.environmentIntensity;
+    scene.environment = world.probe.capture(gl, world.sky);
+    scene.environmentRotation = world.probe.rotation;
+    scene.environmentIntensity = def.lighting.envIntensity ?? 1;
 
     const c = cam.current;
     const st = world.streamer;
@@ -94,6 +98,9 @@ export function WorldLab() {
       world.dispose();
       scene.remove(root);
       scene.background = prevBg;
+      scene.environment = prevEnv;
+      scene.environmentRotation = prevRot;
+      scene.environmentIntensity = prevInt;
       stage.mission = 0;
       lightRig.restore();
       director.quat = null;
@@ -129,7 +136,7 @@ export function WorldLab() {
     director.focus.copy(director.look);
     director.fov = c.fov;
     director.roll = 0;
-    r.world.applySun(director.pos);
+    r.world.applySun(director.pos, performance.now() / 1000);
   }, -2);
   return null;
 }

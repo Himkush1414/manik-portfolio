@@ -45,7 +45,7 @@ export const ARDEN: WorldDef = {
     groundBounce: '#6E7A52',
     stars: { density: 0.15, milkyWay: 0 },
     bodies: [
-      { id: 'orrin', name: 'ORRIN', kind: 'gasGiant', angularDeg: 15, elevation: 31, azimuth: -38, palette: ['#E9D2A6', '#C99A5C', '#8A5E3A'], surface: 'banded', atmosphere: { color: '#F6E3C0', thickness: 0.05 }, rings: { inner: 1.35, outer: 2.25, tilt: 14, color: '#E8D7B4', opacity: 0.7 }, rotation: 0.4 },
+      { id: 'orrin', name: 'ORRIN', kind: 'gasGiant', angularDeg: 15, elevation: 24, azimuth: -55, palette: ['#E9D2A6', '#C99A5C', '#8A5E3A'], surface: 'banded', atmosphere: { color: '#F6E3C0', thickness: 0.05 }, rings: { inner: 1.35, outer: 2.25, tilt: 14, color: '#E8D7B4', opacity: 0.7 }, rotation: 0.4 },
       { id: 'lune', name: 'LUNE', kind: 'moon', angularDeg: 5, elevation: 22, azimuth: 132, palette: ['#D9DCE2', '#A7ADB8', '#7A808C'], surface: 'cratered', rotation: 0 },
     ],
     clouds: [
@@ -95,7 +95,7 @@ export const ARDEN: WorldDef = {
     { id: 'river-wyrm', family: 'WYRM', name: 'RIVER WYRM', context: 'water', palette: ['#1E3A3E', '#3A2A5E'], vein: '#7B5BFF', scale: 1, finish: 'wet chitin, river weed', phase: 3 },
   ],
   ambience: { beds: ['wind-highland', 'river', 'birds-dawn', 'colony-horns'], music: { key: 'D major (lydian lift)', tempo: 92, mood: 'hopeful dawn' } },
-  lighting: { key: '#FFD9A0', keyIntensity: 3.2, fillSky: '#7FA8E0', fillGround: '#6E7A52', fillIntensity: 0.55, rim: '#FFC88A', rimIntensity: 1.4 },
+  lighting: { key: '#FFD9A0', keyIntensity: 3.2, fillSky: '#7FA8E0', fillGround: '#6E7A52', fillIntensity: 0.18, rim: '#FFC88A', rimIntensity: 1.4, envIntensity: 0.75 },
   landmarks: [
     { id: 'marrow-falls', name: 'Marrow Falls', kind: 'waterfall', distance: [3000, 5000], note: 'triple-tier waterfall mountain at the valley head' },
     { id: 'arden-peaks', name: 'Greyhorn range', kind: 'mountain', distance: [4000, 8000], note: 'snow-capped peaks catching the dawn' },

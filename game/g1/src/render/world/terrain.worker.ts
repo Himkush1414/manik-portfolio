@@ -5,7 +5,7 @@
 /// <reference lib="webworker" />
 import { FlightPath } from '../../game/world/path';
 import { TerrainField } from '../../game/world/terrain';
-import { allocTile, generateTile, tileLayout, type Lod, type TileBuffers } from '../../game/world/tiles';
+import { allocTile, generateTile, tileLayout, tileTransfer, type Lod, type TileBuffers } from '../../game/world/tiles';
 import type { TerrainDef } from '../../data/worlds/types';
 import type { PathDef } from '../../game/world/pathDef';
 
@@ -38,6 +38,6 @@ self.onmessage = (e: MessageEvent<TerrainWorkerInit | TerrainWorkerGen>) => {
     }
     const sphere: [number, number, number, number] = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2];
     const res: TerrainWorkerResult = { type: 'tile', id: m.id, tile: m.tile, lod: m.lod, origin, sphere, ms: performance.now() - t0, buffers: buf };
-    (self as unknown as Worker).postMessage(res, [buf.position.buffer, buf.normal.buffer, buf.attrib.buffer]);
+    (self as unknown as Worker).postMessage(res, tileTransfer(buf));
   }
 };

@@ -133,7 +133,7 @@ export function MissionDriver() {
       const wy = missionSpace.py + r[1] * lx + r[4] * ly + r[7] * lz;
       const g = world.groundY(ps - lz, lx);
       if (wy < g + GROUND.cameraClearance) d.y += g + GROUND.cameraClearance - wy;
-      world.applySun(d);
+      world.applySun(d, mission.time);
     }
     // cockpit view: the dash light follows the eye (after the rig placed the root)
     updateCockpitLights(cockpitFx.power.dash);

@@ -169,7 +169,7 @@ export type StrainDef = {
 
 export type AmbienceDef = { beds: readonly string[]; music: { key: string; tempo: number; mood: string } };
 
-export type LightingDef = { key: Hex; keyIntensity: number; fillSky: Hex; fillGround: Hex; fillIntensity: number; rim: Hex; rimIntensity: number };
+export type LightingDef = { key: Hex; keyIntensity: number; fillSky: Hex; fillGround: Hex; fillIntensity: number; rim: Hex; rimIntensity: number; /** sky environment (probe) intensity; default 1 */ envIntensity?: number };
 
 export type LandmarkDef = { id: string; name: string; kind: 'mountain' | 'waterfall' | 'volcano' | 'spire' | 'titan' | 'city' | 'lighthouse' | 'dam' | 'statue' | 'arch' | 'wreck'; distance: Range; note: string };
 
