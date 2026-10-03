@@ -32,7 +32,7 @@ look (§19 founder test, side-by-side stills).
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
 | F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
 | W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | DONE — TOD + weather timeline, grade, black-frame fixes, visible cloud deck, horizon ridges, keyframe probes, sky events (P2R.0e) | d9e7309, 42bda0b, f3c8e30, + piece 4 |
-| C1 | **chapters (§3, §4)** [IN PROGRESS — piece 1: chapter model + bounds validator, L1 100 % framed; P2R.0f]: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
+| C1 | **chapters (§3, §4)** [IN PROGRESS — piece 1 PUSHED 5f33666: chapter model + bounds validator, L1 100 % framed, ceiling fixes; P2R.0f; next piece 2 waits on the founder-review flag]: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
 | E1 | **encounters (§7, §9) = old 2D-2J merged**: enemy registry + parts / weak points, AI behaviours, spawner + entrance patterns, encounter grammar, hive maws + bomb-spores, cliff-clingers, wyrm, husks, rifts [P1], feedback hierarchy, charge lock-on [P1], nova [P1], HUD additions, results + medals | TODO | |
@@ -274,7 +274,7 @@ shadows, terrain geomorph; gate passed on the RTX 3050 + qa:phase1 green), Creat
      (4) every ceiling is turbulence / cloud / overhang; (5) enemies + hazards use the full width; (6) no
      new hitches, all gates green, perf budgets unchanged. Evidence (stills + logs) in DEV_NOTES.
 
-**F1 DONE (P2R.0d) and W2b DONE (P2R.0e), 2026-10-03.** Next slice: C1.
+**F1 DONE (P2R.0d) and W2b DONE (P2R.0e); C1 piece 1 pushed 5f33666 (P2R.0f), 2026-10-03.** Next: C1 piece 2 — but first read the FOUNDER REVIEW FLAG in P2R.0f (plains framed within 160 u read as corridors: owner call on wider plains with diegetic frames).
 
 **FIRST ACTIONS ON RESUME (in order):**
 1. Read P2R.0d / P2R.0e and this section; `git status` + `git log -3` == `git ls-remote origin main`.
@@ -298,8 +298,8 @@ launch pad as provisional: the old Phase 2 §6 wormhole (already deleted in W1d)
 and the current ARDEN valley / Level 1 path are placeholders until C1 re-authors them. Briefs are a FLOOR
 ("~30 % of the vision"): expand deliberately and log the additions.
 
-**Processes:** the Vite preview server for QA (port 5198, Windows PID 14556, serving `dist/`) was
-stopped by PID at the end of this session; restart it for QA exactly as in the "Start preview for QA" step of the run
+**Processes:** the Vite preview server for QA (port 5198; 2026-10-03 session: Windows PID 19368, serving `dist/`) was
+stopped by PID at the end of the session; restart it for QA exactly as in the "Start preview for QA" step of the run
 book (search "Start preview for QA") and record its PID. Port 5173 is the owner's dev server: never touch.
 
 ### P2R.0v FOUNDER'S VISION ADDENDUM (2026-10-02) — binding, wins over 2R
