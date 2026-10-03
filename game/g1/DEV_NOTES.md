@@ -30,7 +30,7 @@ look (§19 founder test, side-by-side stills).
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
-| F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | IN PROGRESS — UNCOMMITTED WIP in the working tree (builds clean, 152 tests green, NOT gated); patch backup `.scratch/f1-wip.patch` | |
+| F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | IN PROGRESS — part 1 (controls + save v2, boundaries, camera attachments, qa-freedom) GATED + pushed; part 2a (contact feedback + no wall-surf speed) pushed; 2b (HUD turbulence / whiteout / callouts / tutorial) + 2c (balance on terrain) next — P2R.0d | 362bbb8 |
 | W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | TODO | |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
@@ -427,7 +427,35 @@ cursor-flight default + computed follow).
   (20 s attached, 6 s steady), keyboard strafes, wall, ceiling, stills `qa/f1/freedom-*`, JSON
   `qa/f1/freedom.json`. `qa-settings-p2` now seeds a v1 save and checks the in-browser migration and
   the v2 rows. `qa-flight` beats are keyboard again (the WIP had switched them to cursor forces).
-- Gate evidence for part 1: see the push entry below.
+- **Part 1 pushed `362bbb8`** (2026-10-03). Gate (prod build, RTX 3050, preview 5198): typecheck +
+  170 tests; qa-freedom third / chase / cockpit x attached / steady ALL PASS — mouse-only 20 s (real
+  pointer lock): ship offset 0, camera move 0, reticle +-0.96 both axes; attached drift <= 0.33 %, roll
+  error 1.4-2.6 %; steady roll <= 1.19 deg, reach 0.90, worst frame 0.93, lateral corr 0.99, cockpit
+  shell 25 deg; wall: contact + 11 scrapes / 5 impacts in 7 s, min forward 34-40 u/s (no stall), camera
+  >= 2 u, clampEvents 0; ceiling: turb 1.0, never above it; strafing 60 fps, sim 0.05-0.08 ms. qa-flight
+  3 rigs: 60 fps, p95 16.8-16.9, programs 106 constant, 0 long tasks, late tiles 0. qa-settings-p2
+  (v1 -> v2 in the browser) + qa:phase1 (all 7 groups, 84 shots) green; consoles clean.
+- **Part 2a (contact feedback).** `Player.contactNu / contactNy` (last contact normal). MissionVfx:
+  GroundScrape -> sparks off the contact point (impact: bigger + flash puff) + a surface puff (rock
+  chips vs soil dust from `TerrainField.sample().rock`, bound by MissionLoader as `vfx.surfaceAt`), a
+  continuous spark + dust stream while `contact > 0` (SCRAPE_STREAM), Splash -> a water sheet;
+  bolt-on-ground sparks now spray up + kick dust / chips (the tunnel-era radial spray is gone); the
+  dead "shield presses the envelope" Graze branch removed. New ramps dust / chips / water (additive:
+  earth reads as a lit haze — alpha dust + ground-effect rooster tails belong to W3 near-field).
+  `scenes/mission/flightFeedback.ts`: own event cursor -> grind / impact / impactHeavy / splash /
+  closeCall voices (`audio/synth/flight.ts`, synthesis) + camera trauma (FLIGHT_FX), sustained rumble
+  from turbulence + contact added to the gust rumble, the wind howl follows `turb` (silent when not
+  live; reset on enter / retry / hangar). Input: single pointer-locked motion events > 500 counts are
+  dropped (Chrome's movementX spikes; headless pointer lock even dispatches -541 / -536 on a
+  screenshot). qa-freedom: the wall phase asserts voices + particles; the reticle-drift check fails
+  only if the reticle moves with ZERO mousemove events (browser-generated ones are counted).
+  **Exploit found + fixed (sim):** the contact response projected the velocity onto the tangent plane
+  INCLUDING the rail speed, so a wall receding ahead (normal with a forward component) added forward
+  speed — holding into it reached 131 u/s (2.3x cruise; seen as 838 on the HUD). A contact now only
+  ever removes rail speed (test: "contact never adds forward speed", red before / green after).
+  Gate 2a (prod, RTX 3050): 172 tests; qa-freedom 6 / 6 (wall: 15 voices, ~880 particles, min forward
+  33-37 u/s, camera >= 2 u, clampEvents 0); qa-flight 3 rigs 60 fps, p95 16.8-16.9, programs constant;
+  qa-settings-p2 + qa:phase1 green (before the sim fix; neither touches the sim); consoles clean.
 - Notes: Level 1's valley is far wider than C1's target (a held strafe reached x ~ 476 u before the
   wall) — C1 brings walls within +-140 u. Holding INTO a wall at full lateral speed is a series of
   impacts (closing speed > 12 u/s), not a scrape — by design (head-on rule); brushing it is a slide.

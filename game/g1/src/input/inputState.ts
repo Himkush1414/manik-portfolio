@@ -94,6 +94,7 @@ export class InputState {
 
   /** relative motion (pointer locked), in mouse counts: moves the reticle only */
   mouseMove(dx: number, dy: number, now: number): void {
+    if (Math.abs(dx) > INPUT.spikeCounts || Math.abs(dy) > INPUT.spikeCounts) return;
     const o = this.opts();
     const px = INPUT.cursorPxPerCount * o.sensitivity, E = INPUT.reticleEdge;
     this.cx = clamp(this.cx + (dx * px * 2) / this.vw, E);

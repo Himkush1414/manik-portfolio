@@ -24,6 +24,7 @@ import { missionSpace } from '../../render/world/missionSpace';
 import { worldById } from '../../data/worlds/registry';
 import { SPECS } from '../../ships/specs';
 import { cannonMuzzles, wingContactSpan } from './shipMounts';
+import { createSample } from '../../game/world/terrain';
 import { registerDebug } from '../../debug/debugApi';
 import { setCockpitEye } from './missionCamera';
 
@@ -130,6 +131,11 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   const pr = useProfile.getState();
   mission.level = level;
   mission.opts = opts;
+  // terrain surface for contact / bolt VFX (rock chips vs soil dust)
+  if (mission.vfx) {
+    const field = env.field, sm = createSample();
+    mission.vfx.surfaceAt = (s, u) => field.sample(s, u, sm).rock;
+  }
   mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god, muzzles: cannonMuzzles(SPECS[pr.selectedShip]), wingHalfSpan: wingContactSpan(SPECS[pr.selectedShip]), world: { path: env.path, ground: env.grid } });
   mission.bot = opts.bot ? new Bot(opts.bot, opts.seed ?? level.seed) : null;
   mission.progress = 1;

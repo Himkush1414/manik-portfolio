@@ -42,6 +42,9 @@ for (const mode of modes) {
   p.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(m.text().slice(0, 200)); });
   p.on('pageerror', e => logs.push('pageerror ' + e.message));
   // a v2 save at the defaults (KEYBOARD steering, FULLY ATTACHED, 100 % roll), no camera shake (clean roll reads)
+  // count every mousemove the page receives: a reticle that moves with ZERO events is a game bug; one
+  // that moves with browser-generated events (headless pointer lock dispatches some on screenshots) is not
+  await p.addInitScript(() => { window.__mm = 0; window.addEventListener('mousemove', () => window.__mm++, true); });
   await p.addInitScript(([m, pr]) => localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 2, profile: {}, settings: { graphics: { preset: pr, autoPicked: true }, gpuHintShown: true, camera: { mode: m, shake: 0 } } })), [mode, preset]);
   await p.goto(`${origin}/game/g1/?level=l01&debug=1&drs=0&god=1&launch=skip`);
   await p.waitForFunction(() => window.__G1__?.flowState?.get() === 'mission.playing', null, { timeout: 120000, polling: 100 });
@@ -61,6 +64,20 @@ for (const mode of modes) {
     rig.shots.push(await shot(`${tag}-rest`));
     await p.evaluate(() => window.__G1__.flight.events());
 
+    let mm0 = 0;
+    const recentre = async () => {
+      await p.evaluate(() => window.__G1__.flight.cursor(0, 0));
+      mm0 = await p.evaluate(() => window.__mm);
+    };
+    R.browserMouseEvents = 0;
+    const reticleDrift = async phase => {
+      const q = await probe();
+      const events = (await p.evaluate(() => window.__mm)) - mm0;
+      R.browserMouseEvents += events;
+      const d = Math.hypot(q.input.cx, q.input.cy);
+      if (d > 0.01 && events === 0) check(false, `${mode}/${tag}: reticle moved to (${q.input.cx.toFixed(2)}, ${q.input.cy.toFixed(2)}) during ${phase} with NO mouse event`);
+      await recentre();
+    };
     // ---- 1. MOUSE ONLY: the real mouse, the real InputManager (pointer lock, or the absolute fallback)
     {
       const secs = attachment === 'attached' ? mouseSecs : Math.min(6, mouseSecs);
@@ -104,11 +121,13 @@ for (const mode of modes) {
       check(ret.minX < -0.9 && ret.maxX > 0.9 && ret.minY < -0.9 && ret.maxY > 0.9, `${mode}/${tag}: reticle did not cover the screen ${JSON.stringify(ret)}`);
       // re-centre the reticle once the last (relative, pointer-locked) motion has been delivered
       await p.waitForTimeout(150);
-      await p.evaluate(() => window.__G1__.flight.cursor(0, 0));
+      await recentre();
     }
 
+    // the reticle stays where it was left: no mouse moves from here on, so it must stay centred
     // ---- 2. KEYBOARD STRAFES
     {
+      await reticleDrift('reset');
       await jump(START);
       const rest = await probe();
       await p.evaluate(() => window.__G1__.perf.reset('freedom'));
@@ -143,6 +162,7 @@ for (const mode of modes) {
         }
       }
       await force(null);
+      await reticleDrift('strafes');
       const perf = await p.evaluate(() => window.__G1__.perf.table());
       R.strafe = { samples: n, perf: { avgFps: perf.avgFps, p95: perf.p95, sim: perf.sections?.sim } };
       if (attachment === 'attached') {
@@ -174,6 +194,8 @@ for (const mode of modes) {
     {
       await jump(START);
       await p.evaluate(() => window.__G1__.flight.events());
+      await p.evaluate(() => window.__G1__.audio.clear());
+      const vfx0 = await p.evaluate(() => window.__G1__.vfx.stats().particlesSpawned);
       await force({ moveX: 1 });
       let contactT = 0, minClear = Infinity, stalls = 0, walled = false, n = 0;
       let win = await probe(), winT = Date.now(), minAdvance = Infinity;
@@ -192,6 +214,7 @@ for (const mode of modes) {
         if (q.cam.clearance !== null) minClear = Math.min(minClear, q.cam.clearance);
         if (q.sim.contact > 0) {
           contactT++;
+          if (contactT === 60) rig.shots.push(await shot(`${tag}-wall-scrape`)); // sparks + dust streaming
           if (!walled) {
             walled = true;
             rig.shots.push(await shot(`${tag}-wall`));
@@ -200,9 +223,14 @@ for (const mode of modes) {
       }
       await force(null);
       const ev = await p.evaluate(() => window.__G1__.flight.events());
+      await reticleDrift('wall');
       const q = await probe();
-      R.wall = { samples: n, contactSamples: contactT, events: ev, minCamClearance: +minClear.toFixed(2), stalls, minForwardSpeed: +minAdvance.toFixed(1), clampEvents: q.sim.clampEvents, x: +q.sim.x.toFixed(1) };
+      // the contact is seen + heard: sparks / dust spawned, grind / impact voices requested
+      const voices = await p.evaluate(() => window.__G1__.audio.log().filter(n => n === 'grind' || n === 'impact' || n === 'impactHeavy'));
+      const sparks = (await p.evaluate(() => window.__G1__.vfx.stats().particlesSpawned)) - vfx0;
+      R.wall = { voices: voices.length, particles: sparks, samples: n, contactSamples: contactT, events: ev, minCamClearance: +minClear.toFixed(2), stalls, minForwardSpeed: +minAdvance.toFixed(1), clampEvents: q.sim.clampEvents, x: +q.sim.x.toFixed(1) };
       check(contactT > 0 && ev.scrape + ev.impact > 0, `${mode}/${tag}: never touched the wall`);
+      check(voices.length > 0 && sparks > 50, `${mode}/${tag}: contact not presented (voices ${voices.length}, particles ${sparks})`);
       check(stalls === 0, `${mode}/${tag}: forward motion stalled (${stalls}) — an invisible stop`);
       check(mode === 'cockpit' || minClear >= 2 - 0.05, `${mode}/${tag}: camera ${minClear.toFixed(2)} u from terrain`);
       check(q.sim.clampEvents === 0, `${mode}/${tag}: clampEvents ${q.sim.clampEvents}`);

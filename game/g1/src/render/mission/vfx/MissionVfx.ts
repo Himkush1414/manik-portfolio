@@ -7,7 +7,8 @@
 import { Object3D, type Group } from 'three';
 import { Ev, type EventReader } from '../../../game/core/events';
 import type { Sim } from '../../../game/sim';
-import { BURSTS, MUZZLE, RAMPS } from '../../../data/vfx';
+import { BURSTS, MUZZLE, RAMPS, SCRAPE_STREAM } from '../../../data/vfx';
+import { CONTACT } from '../../../data/mission';
 import { QUALITY, type Preset } from '../../quality';
 import type { ShipSpec } from '../../../ships/types';
 import { cannonMuzzles, engineMounts, wingTips } from '../../../scenes/mission/shipMounts';
@@ -30,6 +31,11 @@ export class MissionVfx {
   private tips = [new Object3D(), new Object3D()];
   private engines: [number, number, number][] = [];
   private onEv = (slot: number) => this.event(slot);
+  /** terrain surface at path-relative (s, u): 0 soil / grass, 1 rock (MissionLoader binds the world) */
+  surfaceAt: (s: number, u: number) => number = () => 0;
+  /** continuous-scrape emission carry (fractional particles between frames) */
+  private scrapeCarry = 0;
+  private dustCarry = 0;
 
   /** mission root gets the world-space effects; the attitude group gets the muzzle flashes */
   attach(root: Group, player: Group): void {
@@ -81,6 +87,7 @@ export class MissionVfx {
 
   /** Per frame, after the player attitude is final. */
   frame(dt: number, sim: Sim, alpha: number, playerS: number, time: number): void {
+    this.scrapeStream(dt, sim);
     this.bolts.update(sim.playerShots, sim.enemyShots, alpha, playerS, time);
     this.muzzle.update(dt);
     this.ribbons.boost += ((sim.player.boosting ? 1 : 0) - this.ribbons.boost) * Math.min(1, dt * 6);
@@ -111,24 +118,31 @@ export class MissionVfx {
         this.particles.emit(x, y, s, 0, 0, 0, BURSTS.puff.kill[1], BURSTS.puff.kill[0], RAMPS.flash, 0, false);
         break;
       case Ev.Spark: {
-        // a bolt reached the tunnel wall: spray back inward
-        const r = Math.hypot(x, y) || 1;
-        this.burst(BURSTS.wall, x, y, s, -x / r, -y / r, -0.4, RAMPS.spark);
+        // a bolt reached the ground: spray up and back, chips on rock / dust on soil
+        const rock = this.surfaceAt(s, x) > 0.5;
+        this.burst(BURSTS.wall, x, y, s, 0, 0.8, -0.4, RAMPS.spark);
+        this.burst(BURSTS.dust, x, y, s, 0, 1, -0.2, rock ? RAMPS.chips : RAMPS.dust);
         break;
       }
-      case Ev.Graze: {
-        if (E.b[slot] > 0) {
-          // roll i-frames ate a projectile: an Ice flicker where it passed
-          this.burst(BURSTS.graze, x, y, s, 0, 0, -1, RAMPS.ice);
-          break;
-        }
-        // shield pressing the envelope: sparks on the boundary side, streaming past
-        const env = sim.level.envelope[0];
-        let nx = x / (env[1] * env[1]), ny = y / (env[2] * env[2]);
-        const nl = Math.hypot(nx, ny) || 1;
-        nx /= nl;
-        ny /= nl;
-        this.burst(BURSTS.graze, x + nx * 2.2, y + ny * 1.4, s + 1, nx, ny, -0.2, RAMPS.ice);
+      case Ev.Graze:
+        // roll i-frames ate a projectile: an Ice flicker where it passed
+        this.burst(BURSTS.graze, x, y, s, 0, 0, -1, RAMPS.ice);
+        break;
+      case Ev.GroundScrape: {
+        // terrain contact (addendum §3): sparks off the hull at the contact point, a puff by surface
+        const p = sim.player, nu = p.contactNu, ny = p.contactNy, R = CONTACT.hullR;
+        const cx = x - nu * R, cy = y - ny * R;
+        const hard = E.b[slot] === 1;
+        const rock = this.surfaceAt(s, cx) > 0.5;
+        this.burst(hard ? BURSTS.impact : BURSTS.scrape, cx, cy, s, nu, ny, -0.8, RAMPS.spark, p.speed * 0.6);
+        this.burst(BURSTS.dust, cx, cy, s, nu, ny, -0.3, rock ? RAMPS.chips : RAMPS.dust, p.speed * 0.3);
+        if (hard) this.particles.emit(cx, cy, s, 0, 0, 0, BURSTS.puff.hit[1] * 2, BURSTS.puff.hit[0] * 2, RAMPS.flash, 0, false);
+        break;
+      }
+      case Ev.Splash: {
+        // water: a white sheet thrown up and back
+        const p = sim.player;
+        this.burst(BURSTS.splash, x, y - CONTACT.hullR, s, 0, 1.4, -0.6, RAMPS.water, p.speed * 0.4);
         break;
       }
       case Ev.BoostOn: {
@@ -139,6 +153,31 @@ export class MissionVfx {
         }
         break;
       }
+    }
+  }
+
+  /** while the hull is in contact: a stream of sparks (+ some dust) from the contact point */
+  private scrapeStream(dt: number, sim: Sim): void {
+    const p = sim.player;
+    if (p.contact <= 0 || !p.alive) {
+      this.scrapeCarry = this.dustCarry = 0;
+      return;
+    }
+    const d = this.particles.density, R = CONTACT.hullR;
+    const cx = p.x - p.contactNu * R, cy = p.y - p.contactNy * R;
+    this.scrapeCarry += SCRAPE_STREAM.sparksPerSec * d * dt;
+    this.dustCarry += SCRAPE_STREAM.dustPerSec * d * dt;
+    const rock = this.dustCarry >= 1 && this.surfaceAt(p.s, cx) > 0.5;
+    const B = BURSTS.scrape;
+    for (; this.scrapeCarry >= 1; this.scrapeCarry--) {
+      const sp = pick(B.speed);
+      const a = (vfxRng.next() - 0.5) * 1.6;
+      this.particles.emit(cx, cy, p.s, (p.contactNu + a * p.contactNy) * sp * 0.5, (p.contactNy - a * p.contactNu) * sp * 0.5, -sp + p.speed * 0.55, pick(B.life), pick(B.size), RAMPS.spark, B.drag, true);
+    }
+    const D = BURSTS.dust;
+    for (; this.dustCarry >= 1; this.dustCarry--) {
+      const sp = pick(D.speed);
+      this.particles.emit(cx, cy, p.s, p.contactNu * sp, p.contactNy * sp, -sp * 0.5 + p.speed * 0.3, pick(D.life), pick(D.size), rock ? RAMPS.chips : RAMPS.dust, D.drag, false);
     }
   }
 

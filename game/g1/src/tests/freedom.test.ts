@@ -150,7 +150,7 @@ describe('real boundaries (Control / Camera / Boundary addendum)', () => {
     let seed = 7, minX = 1, maxX = -1;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) * 2 - 1;
     for (let n = 0; n < 20 * 60; n++) {
-      ist.mouseMove(rnd() * 900, rnd() * 600, n * STEP);
+      ist.mouseMove(rnd() * 450, rnd() * 300, n * STEP);
       ist.update(STEP, n * STEP);
       ist.setCursorAim(ist.cx * 1.1, ist.cy * 0.8); // the camera ray through the reticle (MissionDriver)
       minX = Math.min(minX, ist.cx);
@@ -188,6 +188,22 @@ describe('real boundaries (Control / Camera / Boundary addendum)', () => {
     expect(closest).toBeGreaterThan(0); // never inside it
     expect(scrapes).toBeGreaterThan(0);
     expect(sim.player.clampEvents).toBe(0);
+  });
+
+  it('contact never adds forward speed (no wall surfing on a slope that falls away ahead)', () => {
+    // a wall on the right that recedes ahead (its face normal has a FORWARD component)
+    const tan = Math.tan((70 * Math.PI) / 180);
+    const ground: SimGround = { height: (s, u) => (u < 20 + s * 0.5 ? -40 : -40 + (u - 20 - s * 0.5) * tan) };
+    const sim = make(60, 34, { path: pathAt(), ground });
+    const cruise = sim.level.cruiseSpeed;
+    let maxSpeed = 0, contacts = 0;
+    for (let n = 0; n < 400; n++) {
+      sim.step(keys(1, 0));
+      maxSpeed = Math.max(maxSpeed, sim.player.speed);
+      if (sim.player.contact > 0) contacts++;
+    }
+    expect(contacts).toBeGreaterThan(10);
+    expect(maxSpeed).toBeLessThanOrEqual(cruise * 1.001);
   });
 
   it('a face ACROSS the line: head-on impact 6-25 by closing speed, 30 % bounce, 0.6 s immunity, no tunnelling at boost', () => {

@@ -10,6 +10,7 @@ import { Ev } from '../../game/core/events';
 import { levelById } from '../../levels/registry';
 import { MissionLoader } from '../../scenes/mission/MissionLoader';
 import { mission, type MissionOptions } from '../../scenes/mission/missionRuntime';
+import { flightFeedback } from '../../scenes/mission/flightFeedback';
 import { whenWorldMounted } from '../../scenes/sceneBridge';
 import { stage } from '../../scenes/Stage';
 import { lightRig } from '../../render/lightRig';
@@ -96,6 +97,7 @@ function beginFrame(): void {
   unfollowCamera?.();
   unfollowCamera = followCameraSetting();
   mission.vfx?.reset();
+  flightFeedback.reset();
   mission.attitude.reset();
   mission.hands.reset();
   mission.stepper.resync();
@@ -185,6 +187,7 @@ export function missionToHangar(): boolean {
   if (!flow.send('HANGAR')) return false;
   InputManager.playing = false;
   InputManager.releaseLock();
+  flightFeedback.reset();
   returnSequence(endFrame);
   return true;
 }
@@ -220,6 +223,7 @@ export function retryMission(): void {
   for (const c of cps) if (c <= sim.player.s) at = c;
   sim.reset(at);
   mission.vfx?.reset();
+  flightFeedback.reset();
   mission.attitude.reset();
   mission.stepper.resync();
   void runFastLaunch().then(() => {

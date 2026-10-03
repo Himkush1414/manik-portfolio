@@ -4,10 +4,11 @@ import { AudioBus } from './AudioBus';
 import { uiTick, uiConfirm, uiDeny, uiLocked, uiPurchase, uiLivery, sfxMaterialise } from './synth/ui';
 import { sting, zing, whoosh, loaderTick, clunk, hiss } from './synth/boot';
 import { powerUp, mfdBlip, hudOn } from './synth/cockpit';
+import { grind, impact, splash, closeCall, turbulence } from './synth/flight';
 import { DEBUG } from '../core/constants';
 import { registerDebug } from '../debug/debugApi';
 
-export type SfxName = 'hover' | 'confirm' | 'deny' | 'locked' | 'purchase' | 'livery' | 'materialise' | 'sting' | 'zing' | 'whoosh' | 'loaderTick' | 'clunk' | 'clunkHeavy' | 'hiss' | 'powerUp' | 'mfdBlip0' | 'mfdBlip1' | 'mfdBlip2' | 'hudOn';
+export type SfxName = 'hover' | 'confirm' | 'deny' | 'locked' | 'purchase' | 'livery' | 'materialise' | 'sting' | 'zing' | 'whoosh' | 'loaderTick' | 'clunk' | 'clunkHeavy' | 'hiss' | 'powerUp' | 'mfdBlip0' | 'mfdBlip1' | 'mfdBlip2' | 'hudOn' | 'grind' | 'impact' | 'impactHeavy' | 'splash' | 'closeCall';
 
 const VOICES: Record<SfxName, () => void> = {
   hover: uiTick,
@@ -29,6 +30,11 @@ const VOICES: Record<SfxName, () => void> = {
   mfdBlip1: () => mfdBlip(1),
   mfdBlip2: () => mfdBlip(2),
   hudOn,
+  grind: () => grind(0.7),
+  impact: () => impact(0.5),
+  impactHeavy: () => impact(1),
+  splash,
+  closeCall,
 };
 
 // QA (?debug=1): every requested sound, even before audio unlocks — the
@@ -77,3 +83,13 @@ export const sfx = {
     }
   },
 };
+
+/** the sustained turbulence howl (0 = silent); a continuous voice, not a one-shot */
+export function setTurbulenceSound(level: number): void {
+  if (!AudioBus.running) return;
+  try {
+    turbulence(level);
+  } catch (err) {
+    console.error('[sfx] turbulence', err);
+  }
+}

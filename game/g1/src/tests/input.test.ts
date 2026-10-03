@@ -76,14 +76,14 @@ describe('reticle + steering schemes (Control / Camera / Boundary addendum)', ()
   };
   it('KEYBOARD (default): the mouse moves only the reticle, over the whole screen (2 % margin)', () => {
     const s = mkv();
-    s.mouseMove(100000, -100000, 0);
+    for (let i = 0; i < 50; i++) s.mouseMove(400, -400, 0);
     let o = s.sample(emptyInput());
     expect(o.cursor).toBe(false);
     expect(o.moveX).toBe(0);
     expect(o.moveY).toBe(0);
     expect(o.cursorX).toBe(INPUT.reticleEdge);
     expect(o.cursorY).toBe(INPUT.reticleEdge);
-    s.mouseMove(-1e6, 1e6, 0);
+    for (let i = 0; i < 50; i++) s.mouseMove(-400, 400, 0);
     o = s.sample(emptyInput());
     expect(o.cursorX).toBe(-INPUT.reticleEdge);
     expect(o.cursorY).toBe(-INPUT.reticleEdge);
@@ -106,9 +106,16 @@ describe('reticle + steering schemes (Control / Camera / Boundary addendum)', ()
     inv.mouseMove(0, -200, 0);
     expect(inv.sample(emptyInput()).cursorY).toBeLessThan(0);
   });
+  it('drops a pointer-lock motion spike (browser glitch), keeps a fast real flick', () => {
+    const s = mkv();
+    s.mouseMove(-541, -536, 0);
+    expect(s.sample(emptyInput()).cursorX).toBe(0);
+    s.mouseMove(INPUT.spikeCounts, 0, 0);
+    expect(s.sample(emptyInput()).cursorX).toBeGreaterThan(0.5);
+  });
   it('a half-screen sweep takes a sensible number of counts at sensitivity 1', () => {
     const s = mkv();
-    s.mouseMove(480 / INPUT.cursorPxPerCount, 0, 0);
+    for (let i = 0; i < 4; i++) s.mouseMove(120 / INPUT.cursorPxPerCount, 0, 0);
     expect(s.sample(emptyInput()).cursorX).toBeCloseTo(0.5, 6);
   });
   it('KEYBOARD + MOUSE: the ship follows the reticle; the keys nudge the reticle (additive)', () => {

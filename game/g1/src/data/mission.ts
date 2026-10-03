@@ -88,6 +88,21 @@ export const CEILING = {
   rimProbe: [6, 24, 48] as const,
 } as const;
 
+/** Feel of terrain contact + ceilings (addendum §3): camera trauma per event, sustained rumble levels
+ *  (added to the world's gust rumble), the HUD's close-call callout life (s). */
+export const FLIGHT_FX = {
+  /** impact trauma = impactTrauma x damage / CONTACT.impactMax; a scrape tick / splash */
+  impactTrauma: 0.7,
+  scrapeTrauma: 0.1,
+  splashTrauma: 0.3,
+  /** sustained rumble while in contact / at full turbulence */
+  contactRumble: 0.5,
+  turbRumble: 0.75,
+  /** impact louder than this share of impactMax = the heavy voice */
+  heavyAt: 0.5,
+  calloutLife: 0.9,
+} as const;
+
 /** Terrain helpers kept from Phase 2R §5 for the camera + scoring. */
 export const GROUND = {
   /** camera never closer to the ground than this (u) */
@@ -232,6 +247,9 @@ export const FAIRNESS = {
 export const INPUT = {
   /** screen px the reticle moves per mouse count at sensitivity 1 */
   cursorPxPerCount: 1.25,
+  /** a single pointer-locked motion event larger than this (counts, either axis) is a browser glitch
+   *  (Chrome's known movementX spikes; headless screenshots), never a hand: dropped */
+  spikeCounts: 500,
   /** the reticle spans the whole screen with a 2 % margin (NDC bound) */
   reticleEdge: 0.96,
   /** KEYBOARD + MOUSE steering: keys nudge the reticle (NDC per second) */

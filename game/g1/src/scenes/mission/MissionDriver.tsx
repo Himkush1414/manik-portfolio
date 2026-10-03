@@ -23,6 +23,7 @@ import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
 import { updateCockpitLights } from './missionCamera';
 import { cockpitFx } from '../cockpit/displays';
+import { flightFeedback } from './flightFeedback';
 import { Vector3, type Camera } from 'three';
 import type { InputState } from '../../input/inputState';
 
@@ -90,6 +91,7 @@ export function MissionDriver() {
     perfMon.end('sim');
     if (!isSimLive(flowState)) mission.stepper.resync();
     mission.vfx?.drain(sim, mission.time);
+    flightFeedback.update(sim, dt, isSimLive(flowState));
     reader?.drain(onSimEvent);
 
     // ---- player view (interpolated between the last two sim states)
@@ -149,7 +151,8 @@ export function MissionDriver() {
     rigFlight.swayX = 0;
     rigFlight.swayY = 0;
     rigFlight.swayBank = Math.max(-S.maxBank, Math.min(S.maxBank, -curv * S.bankPerCurv * ratio * ratio));
-    if (world) CameraShaker.setRumble(world.def.weather.gusts * speed01 * SPEED_FX.rumble, SPEED_FX.rumbleHz);
+    // the world's gusts + turbulence / terrain contact (scenes/mission/flightFeedback.ts)
+    if (world) CameraShaker.setRumble(world.def.weather.gusts * speed01 * SPEED_FX.rumble + flightFeedback.rumble, SPEED_FX.rumbleHz);
 
     // ---- weapons / impacts / trails (after the attitude: ribbons sample the wing tips)
     mission.vfx?.frame(dt, sim, a, ps, mission.time);

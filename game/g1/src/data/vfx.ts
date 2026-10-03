@@ -54,6 +54,11 @@ export const RAMPS = {
   engine: 4,
   /** soft flash puff: Core -> Ignition (round, not stretched) */
   flash: 5,
+  /** terrain contact by surface (addendum §3): soil / grass dust, rock chips, water spray. Dim: the
+   *  particles are additive, so earth reads as a kicked-up haze (alpha dust with ground effect: W3) */
+  dust: 6,
+  chips: 7,
+  water: 8,
 } as const;
 export const RAMP_COLORS: readonly (readonly [string, number, string, number])[] = [
   ['#FFE1C2', 9, '#FF5A1F', 1.6],
@@ -62,16 +67,24 @@ export const RAMP_COLORS: readonly (readonly [string, number, string, number])[]
   ['#7B5BFF', 4, '#FF2D55', 1.2],
   ['#FFE1C2', 5, '#FF5A1F', 0.6],
   ['#FFE1C2', 5, '#FF5A1F', 0.0],
+  ['#D9B98A', 1.5, '#6B5638', 0.0],
+  ['#E2DCD2', 1.9, '#6C6862', 0.0],
+  ['#F2FAFF', 2.2, '#7FB8D8', 0.0],
 ];
 
 /** Burst recipes (counts are scaled by the preset's particle multiplier, min 1). */
 export const BURSTS = {
   hit: { count: 8, speed: [18, 46], life: [0.16, 0.34], size: [0.12, 0.2], drag: 5, spread: 0.9 },
   weak: { count: 14, speed: [24, 60], life: [0.2, 0.42], size: [0.16, 0.26], drag: 4.5, spread: 1.1 },
-  /** bolt into the tunnel wall: sprays back inward */
+  /** bolt into the ground: sprays up and back */
   wall: { count: 7, speed: [14, 36], life: [0.2, 0.45], size: [0.14, 0.24], drag: 3.5, spread: 0.8 },
-  /** shield pressing the envelope boundary */
+  /** a roll's i-frames ate a projectile */
   graze: { count: 6, speed: [10, 26], life: [0.14, 0.3], size: [0.1, 0.16], drag: 6, spread: 0.7 },
+  /** terrain contact (addendum §3): sparks off the hull + a surface puff per scrape tick, more on impact */
+  scrape: { count: 14, speed: [16, 42], life: [0.18, 0.4], size: [0.2, 0.34], drag: 4, spread: 0.7 },
+  impact: { count: 30, speed: [20, 60], life: [0.2, 0.5], size: [0.14, 0.26], drag: 3.5, spread: 1.1 },
+  dust: { count: 10, speed: [3, 12], life: [0.45, 1.0], size: [1.0, 2.2], drag: 2.5, spread: 1 },
+  splash: { count: 34, speed: [8, 28], life: [0.4, 0.95], size: [0.3, 0.75], drag: 2, spread: 0.6 },
   /** kill pop until the 2E explosions land */
   kill: { count: 26, speed: [20, 70], life: [0.25, 0.6], size: [0.16, 0.3], drag: 3, spread: 1.6 },
   /** boost ignition: a puff out of the engines */
@@ -79,6 +92,9 @@ export const BURSTS = {
   /** flash puff size (u) + life (s) for hit / kill */
   puff: { hit: [1.3, 0.09], weak: [2.2, 0.12], kill: [5.5, 0.16] },
 } as const;
+
+/** Continuous scrape: sparks per second while the hull is in contact (x the preset's particle multiplier). */
+export const SCRAPE_STREAM = { sparksPerSec: 140, dustPerSec: 22 } as const;
 
 /** Spark stretch along velocity (u per u/s) and the minimum length factor. */
 export const SPARK_STRETCH = { k: 0.02, min: 1 } as const;

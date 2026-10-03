@@ -77,8 +77,10 @@ export class Player {
   turb = 0;
   deck = 0;
   ceilingKind = 1;
-  /** terrain contact this step (0..1, presentation shudder) + timers */
+  /** terrain contact this step (0..1, presentation shudder) + the last contact normal (u, y; VFX) + timers */
   contact = 0;
+  contactNu = 0;
+  contactNy = 1;
   scrapeAcc = 0;
   scrapeTick = 0;
   impactCd = 0;
@@ -709,6 +711,8 @@ export class Sim {
     p.y += nY * best;
     p.s += nS * best;
     p.contact = Math.min(1, Math.max(p.contact, best / R + 0.3));
+    p.contactNu = nU;
+    p.contactNy = nY;
     // velocity response: into-surface component removed (slide) or bounced (impact)
     const vn = p.vx * nU + p.vy * nY + p.speed * nS;
     if (vn < 0) {
@@ -716,8 +720,12 @@ export class Sim {
       const k = closing >= CONTACT.impactAt ? 1 + CONTACT.bounce : 1;
       p.vx -= k * vn * nU;
       p.vy -= k * vn * nY;
-      const cruise = curveAt(this.level.speedCurve, p.s) || this.level.cruiseSpeed;
-      p.speed = Math.max(cruise * CONTACT.minSpeedShare, p.speed - k * vn * nS);
+      // forward speed: a face ahead takes speed away; a contact never ADDS rail speed (no wall surfing)
+      const dvs = -k * vn * nS;
+      if (dvs < 0) {
+        const cruise = curveAt(this.level.speedCurve, p.s) || this.level.cruiseSpeed;
+        p.speed = Math.max(cruise * CONTACT.minSpeedShare, p.speed + dvs);
+      }
       if (closing >= CONTACT.impactAt && p.impactCd <= 0) {
         const t = Math.min(1, (closing - CONTACT.impactAt) / (CONTACT.impactFull - CONTACT.impactAt));
         const dmg = CONTACT.impactMin + (CONTACT.impactMax - CONTACT.impactMin) * t;
