@@ -4,7 +4,7 @@ import { emptyInput } from '../game/input';
 import { Ev } from '../game/core/events';
 import { TEST_LEVEL } from '../levels/testLevel';
 import { EMPTY_TIERS } from '../data/upgrades';
-import { ENVELOPES, FREEDOM, FEEL, PLAYER, CONTACT, CEILING } from '../data/mission';
+import { ENVELOPES, FREEDOM, FEEL, PLAYER, CONTACT, SERVICE_CEILING } from '../data/mission';
 import { InputState, type InputOptions } from '../input/inputState';
 import { DEFAULT_BINDINGS, cloneBindings } from '../input/bindings';
 import { STEP } from '../game/core/step';
@@ -246,53 +246,70 @@ describe('real boundaries (Control / Camera / Boundary addendum)', () => {
     expect(sim.player.speed).toBeLessThanOrEqual(v0 * 1.001);
   });
 
-  it('open sky: the CLOUD DECK is the ceiling — turbulence, climb authority -> 0, never an invisible wall', () => {
+  it('VERTICAL FREEDOM: straight up reaches >= 400 u, the climb decays smoothly to 0 at the service ceiling, no clamp', () => {
     const sim = make(60, 34, { path: pathAt(), ground: flat(-40) });
-    const deck = Math.max(CEILING.deckK * 34, CEILING.deckMin);
-    let maxY = -Infinity, maxTurb = 0;
-    for (let n = 0; n < 600; n++) {
+    let maxY = -Infinity, prevVy = Infinity, decaying = true;
+    for (let n = 0; n < 60 * 20; n++) {
       sim.step(keys(0, 1));
-      maxY = Math.max(maxY, sim.player.y);
-      maxTurb = Math.max(maxTurb, sim.player.turb);
+      const p = sim.player;
+      maxY = Math.max(maxY, p.y);
+      // inside the last 80 u the climb rate never exceeds lim x room / 80 (a smooth decay, no wall)
+      // (the cap acts on the room BEFORE this step's move)
+      const room = p.freeUp - p.y + p.vy * STEP;
+      if (room < SERVICE_CEILING.decay && p.vy > (p.latMax * Math.max(0, room)) / SERVICE_CEILING.decay + 1e-9) decaying = false;
+      prevVy = p.vy;
     }
-    expect(sim.player.ceilingKind).toBe(1);
-    expect(maxY).toBeGreaterThan(34 * 2); // far past the design envelope's b
-    expect(maxY).toBeLessThan(deck + 2);
-    expect(maxY).toBeGreaterThan(deck - CEILING.zone);
-    expect(maxTurb).toBeGreaterThan(0.8);
-    expect(sim.player.deck).toBeGreaterThan(0.5); // pushed into the cloud base: whiteout
+    expect(sim.player.freeUp).toBeGreaterThanOrEqual(SERVICE_CEILING.min);
+    expect(maxY).toBeGreaterThanOrEqual(SERVICE_CEILING.min - 2);
+    expect(maxY).toBeLessThanOrEqual(sim.player.freeUp + 1e-6);
+    expect(decaying).toBe(true);
+    expect(prevVy).toBeLessThan(1);
     expect(sim.player.clampEvents).toBe(0);
   });
 
-  it('a canyon: the RIM is the ceiling (ridge turbulence from ~30 u below it), not the deck', () => {
-    const tan = Math.tan((75 * Math.PI) / 180), rim = 50;
-    const ground: SimGround = { height: (_s, u) => Math.min(rim, Math.abs(u) < 20 ? -40 : -40 + (Math.abs(u) - 20) * tan) };
+  it('the service ceiling clears the tallest ridge within 600 u by 150 u', () => {
+    // a 700 u peak 450 u to the right of the line
+    const ground: SimGround = { height: (_s, u) => (Math.abs(u - 450) < 60 ? 700 : -40) };
     const sim = make(60, 34, { path: pathAt(), ground });
-    let maxY = -Infinity;
-    for (let n = 0; n < 600; n++) {
-      sim.step(keys(0, 1));
-      maxY = Math.max(maxY, sim.player.y);
-    }
-    expect(sim.player.ceilingKind).toBe(0);
-    expect(sim.player.freeUp).toBeCloseTo(rim, 0);
-    expect(maxY).toBeLessThan(rim + 2);
-    expect(maxY).toBeGreaterThan(rim - CEILING.zone);
-    expect(sim.player.turb).toBeGreaterThan(0.5);
+    sim.step(emptyInput());
+    expect(sim.player.ceilY).toBeCloseTo(700 + SERVICE_CEILING.ridgeMargin, 6);
+    expect(sim.player.freeUp).toBeCloseTo(850, 6);
   });
 
-  it('a canyon whose rim DROPS ahead: the climb cap anticipates it, the ship never ends up above the rim', () => {
-    const tan = Math.tan((75 * Math.PI) / 180);
-    // rim 80 u, falling to 40 u from s = 400 over 60 m
-    const rimAt = (s: number) => (s < 400 ? 80 : s > 460 ? 40 : 80 - ((s - 400) / 60) * 40);
-    const ground: SimGround = { height: (s, u) => Math.min(rimAt(s), Math.abs(u) < 20 ? -40 : -40 + (Math.abs(u) - 20) * tan) };
-    const sim = make(60, 34, { path: pathAt(), ground });
-    let worst = -Infinity;
-    for (let n = 0; n < 900 && sim.player.s < 900; n++) {
-      sim.step(keys(0, 1));
-      worst = Math.max(worst, sim.player.y - rimAt(sim.player.s));
-      expect(sim.player.ceilNow).toBeCloseTo(rimAt(sim.player.s), -1); // the rim right here (within ~5 u: probe spacing)
+  it('holding 60 s at 350 u is stable (no drift, no push), and the dive back to a skim is clean', () => {
+    const sim = make(60, 34, { path: pathAt(), ground: flat(-40) });
+    while (sim.player.y < 350) sim.step(keys(0, 1));
+    const y0 = sim.player.y;
+    let drift = 0;
+    for (let n = 0; n < 60 * 60; n++) {
+      sim.step(emptyInput());
+      drift = Math.max(drift, Math.abs(sim.player.y - y0));
     }
-    expect(sim.player.s).toBeGreaterThan(600);
-    expect(worst).toBeLessThan(2);
+    expect(drift).toBeLessThan(6); // the release decelerates over ~0.12 s, then it holds
+    let minClear = Infinity;
+    for (let n = 0; n < 60 * 12; n++) {
+      sim.step(keys(0, -1));
+      minClear = Math.min(minClear, sim.player.y + 40);
+    }
+    expect(minClear).toBeGreaterThan(CONTACT.hullR - 0.6); // down onto the floor: contact, never through
+    expect(sim.player.alive).toBe(true);
+    expect(sim.player.clampEvents).toBe(0);
+  });
+
+  it('altitude has consequences: > 180 u for 4 s summons air hunters (once per cooldown)', () => {
+    const sim = make(60, 34, { path: pathAt(), ground: flat(-40) });
+    const r = sim.events.reader();
+    let calls = 0, firstAt = -1;
+    for (let n = 0; n < 60 * 30; n++) {
+      sim.step(sim.player.y < 250 ? keys(0, 1) : emptyInput());
+      r.drain(i => {
+        if (sim.events.type[i] === Ev.AirHunters) {
+          calls++;
+          if (firstAt < 0) firstAt = sim.time;
+        }
+      });
+    }
+    expect(calls).toBe(Math.floor((30 - firstAt) / SERVICE_CEILING.airHunters.cooldown) + 1);
+    expect(firstAt).toBeGreaterThan(SERVICE_CEILING.airHunters.after);
   });
 });

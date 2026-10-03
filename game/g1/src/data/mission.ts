@@ -70,31 +70,22 @@ export const CONTACT = {
   scanMax: 240,
 } as const;
 
-/** Diegetic ceilings (addendum §3): ridge turbulence below a canyon rim, a cloud deck over open sky. No
- *  wall: climb authority fades to zero over `zone` u, air shear shakes the ship, above the deck a
- *  downdraft forces it back down (whiteout + lightning on screen). */
-export const CEILING = {
-  /** turbulence zone below the ceiling (u) */
-  zone: 30,
-  /** lateral shear (u/s^2 at full turbulence) */
-  shear: 55,
-  /** above the cloud deck: downdraft (u/s^2) + per u of penetration */
-  downdraft: 30,
-  downdraftPerU: 3,
-  /** default cloud deck above the path line: max(k x design envelope half-height, min) (u) */
-  deckK: 2.4,
-  deckMin: 90,
-  /** the cloud base: whiteout from this many u below the deck (full at the deck) */
-  deckFog: 12,
-  /** a rim is measured from the walls' tops within this many u beyond the wall face */
-  rimProbe: [6, 24, 48] as const,
-  /** ... and taken as the lowest over the next rimAhead m (every rimAheadStep): a rim that drops ahead
-   *  caps the climb before the ship gets there */
-  rimAhead: 90,
-  rimAheadStep: 15,
+/** Vertical freedom (Planet 1 prompt §1.1): open chapters are free from the ground up to a SERVICE
+ *  CEILING = max(`min` u above the local path baseline, the tallest ridge within `ridgeRadius` u +
+ *  `ridgeMargin`) — the edge of the atmosphere, not a wall: the climb rate decays smoothly to 0 over the
+ *  last `decay` u (no shake, no label, no clamp). The ridge scan runs every `every` steps. Altitude has
+ *  consequences: more than `airHunters.above` u over the baseline for `after` s summons AIR HUNTERS. */
+export const SERVICE_CEILING = {
+  min: 400,
+  ridgeRadius: 600,
+  ridgeStep: 75,
+  ridgeMargin: 150,
+  decay: 80,
+  every: 15,
+  airHunters: { above: 180, after: 4, cooldown: 20 },
 } as const;
 
-/** Feel of terrain contact + ceilings (addendum §3): camera trauma per event, sustained rumble levels
+/** Feel of terrain contact (addendum §3): camera trauma per event, a sustained rumble while in contact
  *  (added to the world's gust rumble), the HUD's close-call callout life (s). */
 export const FLIGHT_FX = {
   /** impact trauma = impactTrauma x damage / CONTACT.impactMax; a scrape tick / splash */
@@ -103,32 +94,23 @@ export const FLIGHT_FX = {
   splashTrauma: 0.3,
   /** sustained rumble while in contact / at full turbulence */
   contactRumble: 0.5,
-  turbRumble: 0.75,
   /** impact louder than this share of impactMax = the heavy voice */
   heavyAt: 0.5,
   calloutLife: 0.9,
 } as const;
 
-/** The HUD's flight layer (scenes/mission/hudFlight.ts): TURBULENCE fades in from `alertFrom` over
- *  `alertRamp` and pulses above `pulseAt`; the cloud-deck whiteout reaches `whiteout` opacity; lightning
- *  inside the deck (above `lightningFrom` of it) at `lightningRate` / s, `lightningLife` s; the close-call
- *  callout rises `calloutRise` px; the skim / wall-run streak shows after `streakFrom` s. */
+/** The HUD's flight layer (scenes/mission/hudFlight.ts): the close-call callout rises `calloutRise` px; the
+ *  skim / wall-run streak shows after `streakFrom` s. */
 export const HUD_FLIGHT = {
-  alertFrom: 0.2,
-  alertRamp: 0.3,
-  pulseAt: 0.7,
-  whiteout: 0.92,
-  lightningFrom: 0.35,
-  lightningRate: 0.9,
-  lightningLife: 0.14,
   calloutRise: 70,
   streakFrom: 0.6,
 } as const;
 
-/** The visible cloud deck (render/world/cloudDeck.ts) at the sim's ceiling: plane size (u), noise scale
- *  (u per unit), coverage over the corridor (|x| < coreHalf) easing to coverEdge by edgeHalf (peaks rise
+/** The valley cloud layer (render/world/cloudDeck.ts) `altitude` u above the path baseline: fly through it
+ *  and above it (a sunlit cloud sea from the top, prompt §1.1); plane size (u), noise scale (u per unit), coverage over the corridor (|x| < coreHalf) easing to coverEdge by edgeHalf (peaks rise
  *  through it), distance fade (u), base colour (tinted by the time of day). */
 export const CLOUD_DECK = {
+  altitude: 240,
   size: 9000,
   scale: 520,
   coverCore: 0.58,

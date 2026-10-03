@@ -1,15 +1,12 @@
-// The HUD's flight layer (Control / Camera / Boundary addendum), written per
-// frame by MissionHudDriver through `hudDom`: TURBULENCE under a canyon rim /
-// the cloud deck (pulsing when severe), the deck's whiteout + lightning
-// (never flashes under reduce-flashing), the close-call callout rising off the
-// reticle, the skim / wall-run streak, and the tutorial prompt — its text built
-// from the player's REAL bindings and steering scheme (input/prompts.ts), shown
-// until the action is performed. Writes only when a value changed; no
-// allocation per frame except the prompt text when the hint changes.
+// The HUD's flight layer (Planet 1 §1.1 / Control-Camera-Boundary addendum), written per frame by
+// MissionHudDriver through `hudDom`: altitude above the valley floor + ground clearance under the ship
+// (10 Hz text; climbing is free — nothing warns about it), the close-call callout rising off the
+// reticle, the skim / wall-run streak, and the tutorial prompt — its text built from the player's REAL
+// bindings and steering scheme (input/prompts.ts), shown until the action is performed. Writes only
+// when a value changed; no allocation per frame except the prompt text when the hint changes.
 import { mission } from './missionRuntime';
 import { hudDom } from '../../ui/screens/mission/hudDom';
 import { flightFeedback } from './flightFeedback';
-import { deckFx } from '../../render/world/cloudDeck';
 import { FLIGHT_FX, HUD_FLIGHT } from '../../data/mission';
 import { InputManager } from '../../input/InputManager';
 import { useSettings } from '../../state/settings.store';
@@ -24,11 +21,11 @@ let trackedSim: Sim | null = null;
 let lastTick = 0;
 let shownHint: TutorialHint | null | undefined;
 let shownKey = '';
-let flashT = 0;
-const lastOp = { whiteout: -1, flash: -1, alert: -1, callout: -1, streak: -1 };
-let lastAlert = '';
-let lastPulse = false;
+const lastOp = { callout: -1, streak: -1 };
 let lastStreak = '';
+let lastAlt = '';
+let lastClr = '';
+let altT = 0;
 
 function opacity(el: HTMLElement | null, k: keyof typeof lastOp, v: number): void {
   const q = Math.round(v * 50) / 50;
@@ -40,29 +37,23 @@ function opacity(el: HTMLElement | null, k: keyof typeof lastOp, v: number): voi
 /** a fresh HUD mount: force every write */
 export function hudFlightRemount(): void {
   for (const k in lastOp) lastOp[k as keyof typeof lastOp] = -1;
-  lastAlert = lastStreak = shownKey = '';
-  lastPulse = false;
+  lastStreak = shownKey = lastAlt = lastClr = '';
   shownHint = undefined;
 }
 
 /** rx / ry: the reticle in CSS px (the callout rises from it) */
 export function hudFlight(sim: Sim, dt: number, rx: number, ry: number): void {
   const d = hudDom, p = sim.player, H = HUD_FLIGHT;
-  const reduceFlash = useSettings.getState().accessibility.reduceFlashing;
-  // ---- ceiling: TURBULENCE (rim or deck), the deck whiteout + lightning
-  const turb = p.alive ? p.turb : 0;
-  const deck = p.alive ? p.deck : 0;
-  opacity(d.alert, 'alert', Math.min(1, Math.max(0, (turb - H.alertFrom) / H.alertRamp)));
-  const text = deck > 0.05 ? 'CLOUD DECK — DESCEND' : 'TURBULENCE';
-  if (d.alert && text !== lastAlert) d.alert.textContent = lastAlert = text;
-  const pulse = turb > H.pulseAt;
-  if (d.alert && pulse !== lastPulse) d.alert.dataset.pulse = String((lastPulse = pulse));
-  opacity(d.whiteout, 'whiteout', deck * H.whiteout);
-  flashT = Math.max(0, flashT - dt);
-  if (!reduceFlash && deck > H.lightningFrom && Math.random() < H.lightningRate * deck * dt) flashT = H.lightningLife;
-  opacity(d.flash, 'flash', reduceFlash ? 0 : flashT / H.lightningLife);
-  // the same bolt lights the deck from within (never under reduce-flashing)
-  deckFx.flash = reduceFlash ? 0 : flashT / H.lightningLife;
+  // ---- altitude above the valley floor + ground clearance (10 Hz)
+  altT -= dt;
+  const world = mission.env;
+  if (world && altT <= 0) {
+    altT = 0.1;
+    const wy = world.path.yAt(p.s) + p.y;
+    const alt = `${Math.round(wy - world.path.floorAt(p.s))}`, clr = `${Math.max(0, Math.round(wy - world.groundY(p.s, p.x)))}`;
+    if (d.alt && alt !== lastAlt) d.alt.textContent = lastAlt = alt;
+    if (d.clr && clr !== lastClr) d.clr.textContent = lastClr = clr;
+  }
   // ---- close call: the score it paid, rising off the reticle
   const c = flightFeedback.callout / FLIGHT_FX.calloutLife;
   opacity(d.callout, 'callout', c > 0 ? Math.min(1, c * 2) : 0);

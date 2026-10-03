@@ -27,10 +27,9 @@ export const hudDom = {
   target: null as HTMLElement | null,
   targetName: null as HTMLElement | null,
   targetHp: null as HTMLElement | null,
-  /** flight alerts (addendum §3) + tutorial prompt */
-  whiteout: null as HTMLElement | null,
-  flash: null as HTMLElement | null,
-  alert: null as HTMLElement | null,
+  /** flight layer: altitude + ground clearance (Planet 1 §1.1), callouts, tutorial prompt */
+  alt: null as HTMLElement | null,
+  clr: null as HTMLElement | null,
   callout: null as HTMLElement | null,
   streak: null as HTMLElement | null,
   prompt: null as HTMLElement | null,

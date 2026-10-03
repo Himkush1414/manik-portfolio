@@ -47,6 +47,8 @@ export const enum Ev {
   CloseCall,
   /** the player hit water: a = damage */
   Splash,
+  /** the ship stayed high too long (Planet 1 §1.1): air hunters dive out of the sun */
+  AirHunters,
 }
 
 export class EventRing {

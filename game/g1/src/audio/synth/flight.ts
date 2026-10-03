@@ -4,7 +4,6 @@
 //   impact(k)   head-on: a thud (pitch-dropping sine) + a gravel burst
 //   splash()    water: a hiss that opens and closes + a low plop
 //   closeCall() near miss: a fast airy whoosh, Doppler-dropped
-//   turbulence(level)  a sustained wind howl (two detuned band-passes, LFO'd), 0 = off
 // Voices route to the sfx bus; the mission loop calls them from sim events.
 import { AudioBus } from '../AudioBus';
 
@@ -83,36 +82,3 @@ export function closeCall(): void {
   n.stop(t + 0.4);
 }
 
-/** the turbulence howl: built once, its gain follows `level` (0..1) */
-let howl: { gain: GainNode; f1: BiquadFilterNode; f2: BiquadFilterNode } | null = null;
-export function turbulence(level: number): void {
-  const c = AudioBus.ctx;
-  if (!c) return;
-  if (!howl) {
-    if (level <= 0) return;
-    const n = noiseSrc();
-    const f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter();
-    f1.type = f2.type = 'bandpass';
-    f1.Q.value = 7;
-    f2.Q.value = 9;
-    f1.frequency.value = 420;
-    f2.frequency.value = 610;
-    const gain = c.createGain();
-    gain.gain.value = 0;
-    // slow LFOs make it gust and moan
-    const lfo = c.createOscillator(), lfoG = c.createGain();
-    lfo.frequency.value = 0.37;
-    lfoG.gain.value = 140;
-    lfo.connect(lfoG);
-    lfoG.connect(f1.frequency);
-    lfoG.connect(f2.frequency);
-    n.connect(f1).connect(gain);
-    n.connect(f2).connect(gain);
-    gain.connect(AudioBus.buses.sfx);
-    n.start();
-    lfo.start();
-    howl = { gain, f1, f2 };
-  }
-  const t = c.currentTime;
-  howl.gain.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * 0.22, t, 0.12);
-}

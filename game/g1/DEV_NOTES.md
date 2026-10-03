@@ -23,7 +23,7 @@ it does not exist yet: the hangar launches Level 1 directly).
 ### P1.0 Status
 | Slice | Scope | Status | Push |
 |---|---|---|---|
-| A | FIX PACK (§1): A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
+| A | FIX PACK (§1) [A1 pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
 | B | realism pass on CH1 (grass tiers, river, mountain bases, atmosphere), before / after stills | TODO | |
 | C | strong-curve paths + validator, CH1 + CH2, scale, burst holes, MOUNTAIN WYRM, sighting #1, first creatures (incl. AIR HUNTERS) | TODO | |
 | D | CH3 Narrows (hairpins, slot crack, hidden valley, hive maws, sighting #2) | TODO | |
@@ -31,6 +31,26 @@ it does not exist yet: the hangar launches Level 1 directly).
 | F | CH5 Waterfall + CH6 Underdeep (cave fields, speed ramp) | TODO | |
 | G | CH7 Rift + CH8 Nest + the MARROW QUEEN | TODO | |
 | H | story + polish (holo-briefing, comms, storytelling, results, balance to targets, perf, soak, qa:planet1, docs) | TODO | |
+
+### P1.1 Slice A log (fix pack)
+- **A1 vertical freedom (2026-10-03).** DELETED: ridge turbulence, climb-authority fade, forced descent,
+  rim / deck ceilings + look-ahead, shear, downdraft, cloud-deck whiteout + lightning, the TURBULENCE HUD
+  alert, the turbulence howl voice + rumble (sim fields turb / deck / ceilingKind / ceilNow, CEILING,
+  HUD_FLIGHT alert / whiteout / lightning, cloudDeckOffset, deckFx). `tests/noTurbulence.test.ts` scans
+  src for the forbidden mechanics / strings. NEW: `SERVICE_CEILING` — the edge of the atmosphere at
+  max(400 u above the path baseline, tallest ridge within 600 u + 150 u), ridge scan every 15 steps
+  (13 queries), climb rate decays smoothly to 0 over the last 80 u (no clamp, no label); `player.ceilY`;
+  `Ev.AirHunters` after > 4 s above 180 u (20 s cooldown) — the hunters themselves come with the first
+  creature slice (C). The cloud layer is now a fixed-altitude valley layer (`CLOUD_DECK.altitude` 240 u)
+  you fly through and above: its TOP face is a sunlit cloud sea. Sky: `uAlt` (280 -> 430 u above the
+  baseline) dips the horizon, darkens toward space, shows stars by day, grows the bodies. HUD: ALT
+  (above the valley floor) + CLR (ground clearance) readout, 10 Hz, every view. Engine-note rise: no
+  engine audio exists yet -> with the audio pass (slice H). qa-freedom phase 4 is now VERTICAL (>= 400 u,
+  hold 350 u: 60 s on the first rig, 8 s elsewhere, dive to a skim, no warning text, camera clear,
+  clampEvents 0). Gate A1 (prod, RTX 3050): 194 tests; qa-freedom 3 rigs x 2 attachments (every one
+  climbs to 552 u — ridge rule ceiling 557 —, 60 s hold drift 3.9 u, no warning, clampEvents 0, camera
+  >= 3.7 u from terrain); qa-flight 60 fps, p95 16.8-16.9, programs 108 constant; qa-hud 67 nodes;
+  qa-tod 0 black frames; consoles clean.
 
 ## P2R PHASE 2R — WORLD OVERHAUL (F1 + W2b done; the rest superseded by P1 above)
 

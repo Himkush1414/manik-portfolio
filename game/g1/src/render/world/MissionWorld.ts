@@ -16,7 +16,6 @@ import { SkyDome } from './SkyDome';
 import { WorldEnvProbe } from './envProbe';
 import { CloudBanks } from './clouds';
 import { CloudDeck } from './cloudDeck';
-import { cloudDeckOffset } from '../../game/sim';
 import { AP_UNIFORMS, setAtmosphere } from './atmosphere';
 import { TodTimeline, createTodState } from './tod';
 import { createSkyEventState, evaluateSkyEvents } from './skyEvents';
@@ -26,6 +25,7 @@ import { CLOUD_SHADOW_UNIFORMS } from './clouds';
 const ENV_RECAPTURE_DEG = 1;
 import { missionGrade, setWorldGrade } from './grade';
 import { MISSION_ORIGIN } from '../../scenes/sceneBridge';
+import { CLOUD_DECK } from '../../data/mission';
 import { missionSpace } from './missionSpace';
 import { lightRig } from '../lightRig';
 import { MIRROR_WORLD_LAYER } from '../../scenes/sceneBridge';
@@ -153,7 +153,10 @@ export class MissionWorld {
   private lastS = 0;
   /** sun elevation of the environment probe's last capture */
   private probeEl = NaN;
-  private readonly env = { a: 0, b: 0 };
+
+  /** the ship's height above the path baseline (u), set by the mission loop before update (edge of the
+   *  atmosphere visuals) */
+  altitude = 0;
 
   update(ps: number): void {
     this.lastS = ps;
@@ -161,6 +164,8 @@ export class MissionWorld {
     missionSpace.update(ps);
     this.probe.update();
     this.applyTod(ps);
+    const ea = Math.min(1, Math.max(0, (this.altitude - 280) / 150));
+    this.sky.setAltitude(ea * ea * (3 - 2 * ea));
     // keyframe probes: the sky moved enough since the last capture -> recapture (time-sliced)
     if (Math.abs(this.tod.sunEl - this.probeEl) > ENV_RECAPTURE_DEG && !this.probe.busy && this.probe.texture) {
       this.probeEl = this.tod.sunEl;
@@ -176,7 +181,7 @@ export class MissionWorld {
     this.skyAt.set(at.x - MISSION_ORIGIN[0], at.y - MISSION_ORIGIN[1], at.z - MISSION_ORIGIN[2]);
     this.sky.update(this.skyAt, time);
     this.clouds.update(this.lastS, this.sunLocal, time);
-    this.deck.update(cloudDeckOffset(this.path.envelopeAt(this.lastS, this.env).b), time);
+    this.deck.update(CLOUD_DECK.altitude, time);
     // camera in world space: world = P + B (scene - O)
     const r = missionSpace.r, L = this.skyAt;
     AP_UNIFORMS.uCamW.value.set(

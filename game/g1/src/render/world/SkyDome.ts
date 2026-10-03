@@ -55,6 +55,7 @@ export class SkyDome {
         uStars: { value: 0 },
         uRidgeFar: { value: new Color() },
         uMeteors: { value: 0 },
+        uAlt: { value: 0 },
         uMeteorAmt: { value: 0 },
         uShipDir: { value: new Vector3(0, 1, 0) },
         uShipAxis: { value: new Vector3(1, 0, 0) },
@@ -90,7 +91,7 @@ export class SkyDome {
         uniform vec3 uSunW, uZenith, uMid, uHorizon, uHaze, uGround, uSunCol, uSun2W, uSun2Col, uCirrusCol;
         uniform float uSunDisc, uSunGlow, uSun2Disc, uStars, uCirrus, uTime, uProbe;
         uniform vec3 uBounce, uRidgeFar, uRidgeNear, uShipDir, uShipAxis;
-        uniform float uMeteors, uMeteorAmt, uShipOn;
+        uniform float uMeteors, uMeteorAmt, uShipOn, uAlt;
         uniform vec3 uBodyDir[${MAX_BODIES}];
         uniform vec3 uBodyAxis[${MAX_BODIES}];
         uniform vec4 uBodyP[${MAX_BODIES}];
@@ -153,7 +154,7 @@ export class SkyDome {
 
         // one body over the colour behind it; returns premultiplied colour + coverage
         vec4 body(int i, vec3 v) {
-          float r = uBodyP[i].x;
+          float r = uBodyP[i].x * (1.0 + 0.3 * uAlt); // the bodies grow at the edge of the atmosphere
           if (r <= 0.0) return vec4(0.0);
           vec3 d = uBodyDir[i];
           float c = dot(v, d);
@@ -233,16 +234,19 @@ export class SkyDome {
         void main() {
           // the dome is camera-centred in mission space; turn the view direction into WORLD space
           vec3 v = normalize(transpose(uPathB) * normalize(vDir));
-          float y = v.y;
+          // the edge of the atmosphere (Planet 1 §1.1, uAlt 0..1 above ~300 u): the horizon dips (the
+          // world curves away below), the sky darkens toward space, stars show even by day
+          float y = v.y + 0.04 * uAlt;
           vec3 sky;
           if (y >= 0.0) {
             sky = mix(uHorizon, uMid, smoothstep(0.0, 0.28, y));
             sky = mix(sky, uZenith, smoothstep(0.22, 0.95, y));
           } else sky = mix(uHorizon, uGround, smoothstep(0.0, -0.2, y));
           sky = mix(sky, uHaze, exp(-abs(y) * 12.0) * 0.55);
+          sky = mix(sky, vec3(0.008, 0.014, 0.04), uAlt * 0.62 * smoothstep(0.02, 0.6, y));
           // stars (fade into the sky's brightness)
           // daylight: 0 with the sun below the horizon, 1 in full day
-          float dayF = smoothstep(-0.1, 0.22, uSunW.y);
+          float dayF = smoothstep(-0.1, 0.22, uSunW.y) * (1.0 - 0.75 * uAlt);
           if (uStars > 0.0 && y > 0.0 && dayF < 0.999) {
             vec3 sc = floor(v * 420.0);
             float st = step(1.0 - 0.0025 * uStars, h31(sc));
@@ -392,6 +396,11 @@ export class SkyDome {
     const u = this.material.uniforms;
     const dir = sunDirection(el, az, u.uBodyDir.value[i]);
     (u.uBodyAxis.value[i] as Vector3).set(0, 1, 0).applyAxisAngle(dir, this.bodyTilt[i]).normalize();
+  }
+
+  /** the edge of the atmosphere: 0 below ~300 u above the path baseline .. 1 at the service ceiling */
+  setAltitude(a: number): void {
+    this.material.uniforms.uAlt.value = a;
   }
 
   /** sky events: shooting stars (per minute, x visibility) and the Meridian (direction, track, 0 = off) */

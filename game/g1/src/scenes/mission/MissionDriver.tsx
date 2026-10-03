@@ -129,6 +129,7 @@ export function MissionDriver() {
     const reduce = st.accessibility.reduceMotion;
     const ps = p.prevS + (p.s - p.prevS) * a;
     const world = mission.env;
+    if (world) world.altitude = y;
     world?.update(ps);
     // keyframe env probe: one cube face / the prefilter per frame while a recapture runs, then rebind
     if (world) {

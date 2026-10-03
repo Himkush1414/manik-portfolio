@@ -5,7 +5,7 @@
 //   -> pickups -> scoring -> events -> HUD bus
 // Everything is preallocated; step() allocates nothing. Same LevelDef + seed
 // + input script => identical state (tests/sim.test.ts).
-import { CAPS, PLAYER, RAIL, SIM, AIM_ASSIST, SCORING, FREEDOM, CONTACT, CEILING, FEEL, type AimAssist } from '../data/mission';
+import { CAPS, PLAYER, RAIL, SIM, AIM_ASSIST, SCORING, FREEDOM, CONTACT, SERVICE_CEILING, FEEL, type AimAssist } from '../data/mission';
 import { playerStats, type PlayerStats } from '../data/stats';
 import type { ShipId } from '../data/ships';
 import type { UpgradeTiers } from '../data/upgrades';
@@ -47,17 +47,9 @@ export type SimPath = {
   yAt(s: number): number;
   /** DESIGN envelope (tunes the lateral speed; never a limit) */
   envelopeAt(s: number, out: { a: number; b: number }): { a: number; b: number };
-  /** world y of the cloud deck over this s (diegetic ceiling); default path y + CEILING.deck */
-  deckAt?(s: number): number;
 };
 /** ground world-y at path-relative (s, u) (game/world/terrain.ts HeightGrid); water surface y or NaN */
 export type SimGround = { height(s: number, u: number): number; water?(s: number, u: number): number; fill?(s0: number, s1: number): void };
-
-/** the cloud deck's height above the path line (u) from the design envelope's half-height (the sim's
- *  ceiling and the rendered deck share it) */
-export function cloudDeckOffset(envB: number): number {
-  return Math.max(CEILING.deckK * envB, CEILING.deckMin);
-}
 
 export class Player {
   /** terrain scrape cooldown (s) */
@@ -74,19 +66,17 @@ export class Player {
   /** the current skim / wall-run streak (s), for the HUD + score ticks, and its kind (0 skim, 1 wall run) */
   skimT = 0;
   streakWall = 0;
-  /** measured free space (u) at the path line's altitude: left / right to terrain, up to the ceiling,
-   *  down to the ground under the path (camera STEADY follow, steering target, spawner lanes) */
+  /** measured free space (u) at the path line's altitude: left / right to terrain, up to the service
+   *  ceiling, down to the ground under the path (camera STEADY follow, steering target, spawner lanes) */
   freeL = 0;
   freeR = 0;
   freeUp = 0;
   freeDown = 0;
-  /** the ceiling right HERE (u above the path line: the rim at this s / the deck), vs freeUp which takes
-   *  the lowest rim ahead (the climb cap anticipates it) — QA: the ship never above ceilNow */
-  ceilNow = 0;
-  /** ceiling: 0..1 turbulence, 0..1 into the cloud deck's base (whiteout), kind (0 rim, 1 deck) */
-  turb = 0;
-  deck = 0;
-  ceilingKind = 1;
+  /** the service ceiling (world y; Planet 1 §1.1), refreshed every SERVICE_CEILING.every steps */
+  ceilY = NaN;
+  /** seconds spent above SERVICE_CEILING.airHunters.above + the summon cooldown */
+  highT = 0;
+  airCd = 0;
   /** terrain contact this step (0..1, presentation shudder) + the last contact normal (u, y; VFX) + timers */
   contact = 0;
   contactNu = 0;
@@ -210,7 +200,9 @@ export class Sim {
     p.boostLock = 0;
     p.scrapeCd = 0;
     p.closeCd = p.skimT = p.streakWall = 0;
-    p.turb = p.deck = p.contact = p.scrapeAcc = p.scrapeTick = p.impactCd = p.waterCd = 0;
+    p.contact = p.scrapeAcc = p.scrapeTick = p.impactCd = p.waterCd = 0;
+    p.ceilY = NaN;
+    p.highT = p.airCd = 0;
     p.clampEvents = 0;
     p.closeCalls = p.skimTime = p.wallTime = 0;
     p.sinceBoost = 99;
@@ -330,8 +322,8 @@ export class Sim {
       if (p.rollT >= T) p.rollT = -1;
     }
 
-    // diegetic ceiling (ridge turbulence / cloud deck): climb authority fades, shear, downdraft
-    if (world) this.ceiling(world, lim, dt);
+    // the service ceiling (smooth climb decay) + the altitude consequence (air hunters)
+    if (world) this.ceiling(lim, dt);
 
     // forward speed: level curve x boost / brake, eased
     const cruise = curveAt(this.level.speedCurve, p.s) || this.level.cruiseSpeed;
@@ -614,54 +606,34 @@ export class Sim {
     p.freeL = l;
     p.freeR = r;
     p.freeDown = Math.max(0, py - G.height(s, 0));
-    // ceiling: the cloud deck, or a canyon rim when both walls are within reach and below the deck
-    const deck = world.path.deckAt ? world.path.deckAt(s) : py + cloudDeckOffset(p.envB);
-    let ceil = deck, kind = 1, here = deck;
-    if (l < max && r < max) {
-      // the rim = the LOWER wall top, and the lowest of it over the next rimAhead metres: the climb cap
-      // anticipates a rim that drops ahead (else the ship flies forward into the air above a lower rim)
-      // (PATH-relative: the ship rides the rail, so where the path climbs ahead the clearance shrinks)
-      let rimRel = Infinity, rimHere = Infinity;
-      for (let a = 0; a <= CEILING.rimAhead; a += CEILING.rimAheadStep) {
-        let topL = -Infinity, topR = -Infinity;
-        for (const d of CEILING.rimProbe) {
-          topL = Math.max(topL, G.height(s + a, -(l + d)));
-          topR = Math.max(topR, G.height(s + a, r + d));
-        }
-        rimRel = Math.min(rimRel, Math.min(topL, topR) - world.path.yAt(s + a));
-        if (a === 0) rimHere = Math.min(topL, topR);
-      }
-      here = Math.min(here, rimHere);
-      if (py + rimRel < deck) {
-        ceil = py + rimRel;
-        kind = 0;
-      }
+    // the service ceiling: the edge of the atmosphere, never lower than the tallest ridge around + margin
+    const C = SERVICE_CEILING;
+    if (this.tick % C.every === 0 || !(p.ceilY === p.ceilY)) {
+      let ridge = -Infinity;
+      for (let u = -C.ridgeRadius; u <= C.ridgeRadius; u += C.ridgeStep) ridge = Math.max(ridge, G.height(s, u));
+      p.ceilY = Math.max(py + C.min, ridge + C.ridgeMargin);
     }
-    p.freeUp = Math.max(0, ceil - py);
-    p.ceilNow = Math.max(0, here - py);
-    p.ceilingKind = kind;
+    p.freeUp = Math.max(0, p.ceilY - py);
   }
 
-  /** ridge turbulence / cloud deck: climb authority fades to zero at the ceiling, shear, downdraft above */
-  private ceiling(world: NonNullable<SimConfig['world']>, lim: number, dt: number): void {
-    const p = this.player;
-    const wy = world.path.yAt(p.s) + p.y;
-    const ceilY = world.path.yAt(p.s) + p.freeUp;
-    const below = ceilY - wy;
-    p.turb = Math.min(1, Math.max(0, 1 - below / CEILING.zone));
-    // inside the cloud base: the whiteout builds over the last deckFog u below the deck
-    p.deck = p.ceilingKind === 1 ? Math.min(1, Math.max(0, 1 - below / CEILING.deckFog)) : 0;
-    if (p.turb <= 0) return;
-    // shear: deterministic gusts (sim stream)
-    p.vx += (this.rng.sim.next() - 0.5) * 2 * CEILING.shear * p.turb * dt;
-    p.vy += (this.rng.sim.next() - 0.5) * CEILING.shear * 0.6 * p.turb * dt;
-    // above the deck / rim: the air pushes the ship back down
-    if (below < 0) p.vy -= (CEILING.downdraft + CEILING.downdraftPerU * -below) * dt;
-    // climb authority LAST (no gust can lift past it): the rising-air shear eats the climb as the rim /
-    // deck nears, and ABOVE it the cap turns negative with the overshoot — a forced descent no held key
-    // can out-climb
-    const cap = (lim * below) / CEILING.zone;
-    if (p.vy > cap) p.vy = cap;
+  /**
+   * Vertical freedom (Planet 1 §1.1): free up to the service ceiling; the climb rate decays smoothly to 0
+   * over its last SERVICE_CEILING.decay u (no shake, no label, no clamp event). Staying above
+   * airHunters.above u for `after` s summons air hunters (an event; the creatures answer it).
+   */
+  private ceiling(lim: number, dt: number): void {
+    const p = this.player, C = SERVICE_CEILING;
+    if (p.vy > 0) {
+      const room = p.freeUp - p.y;
+      const k = room <= 0 ? 0 : room >= C.decay ? 1 : room / C.decay;
+      if (p.vy > lim * k) p.vy = lim * k;
+    }
+    p.airCd = Math.max(0, p.airCd - dt);
+    p.highT = p.y > C.airHunters.above ? p.highT + dt : 0;
+    if (p.highT >= C.airHunters.after && p.airCd <= 0) {
+      p.airCd = C.airHunters.cooldown;
+      this.emit(Ev.AirHunters, -1, p.x, p.y, p.s);
+    }
   }
 
   /**

@@ -4,7 +4,7 @@ import { AudioBus } from './AudioBus';
 import { uiTick, uiConfirm, uiDeny, uiLocked, uiPurchase, uiLivery, sfxMaterialise } from './synth/ui';
 import { sting, zing, whoosh, loaderTick, clunk, hiss } from './synth/boot';
 import { powerUp, mfdBlip, hudOn } from './synth/cockpit';
-import { grind, impact, splash, closeCall, turbulence } from './synth/flight';
+import { grind, impact, splash, closeCall } from './synth/flight';
 import { DEBUG } from '../core/constants';
 import { registerDebug } from '../debug/debugApi';
 
@@ -84,12 +84,3 @@ export const sfx = {
   },
 };
 
-/** the sustained turbulence howl (0 = silent); a continuous voice, not a one-shot */
-export function setTurbulenceSound(level: number): void {
-  if (!AudioBus.running) return;
-  try {
-    turbulence(level);
-  } catch (err) {
-    console.error('[sfx] turbulence', err);
-  }
-}

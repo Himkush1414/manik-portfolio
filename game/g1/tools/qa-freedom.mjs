@@ -12,9 +12,9 @@
 //     rolls with the bank (attached) / stays level, shell <= 25 deg (steady)
 //  3. WALL: hold right into the valley side -> scrape + SLIDE (s advances, no
 //     invisible stop), camera >= 2 u from terrain, clampEvents 0
-//  4. CEILING: hold up -> diegetic turbulence (turb > 0.5) under the deck /
-//     rim, no invisible wall below it
-// Stills per rig x attachment (rest, left, right, wall, ceiling), perf while
+//  4. VERTICAL: climb to >= 400 u (service ceiling, smooth decay, no warning),
+//     hold at 350 u (60 s on the first rig), dive back to a skim, camera clean
+// Stills per rig x attachment (rest, left, right, wall, 400 u, dive), perf while
 // strafing, console clean.
 //   node tools/qa-freedom.mjs [origin] [--modes third,chase,cockpit] [--out qa/f1] [--preset high] [--mouse 20]
 import { chromium } from 'playwright';
@@ -258,41 +258,64 @@ for (const mode of modes) {
       check(q.sim.clampEvents === 0, `${mode}/${tag}: clampEvents ${q.sim.clampEvents}`);
     }
 
-    // ---- 4. CEILING: hold up
+    // ---- 4. VERTICAL FREEDOM (Planet 1 §1.1): climb to >= 400 u, hold at 350 u, dive back to a skim —
+    // no warning text anywhere, no clamp event, the camera never clips
     {
       await jump(START);
       await force({ moveY: 1 });
-      let maxTurb = 0, maxAbove = -Infinity, maxY = -Infinity, kind = -1, shotTaken = false, maxAlert = 0, maxWhite = 0, alertText = '';
-      const t0 = Date.now();
-      while (Date.now() - t0 < 5000) {
+      let maxY = -Infinity, maxCeil = 0, minClear = Infinity, shotTop = false, t0 = Date.now();
+      const warn = async () => p.evaluate(() => /TURBULENCE|DESCEND|WARNING/i.test(document.querySelector('[data-view]')?.textContent ?? ''));
+      let warned = false;
+      while (Date.now() - t0 < 12000) {
         const q = await probe();
-        maxTurb = Math.max(maxTurb, q.sim.turb);
-        // against the ceiling HERE (freeUp anticipates a lower rim ahead and drops before the ship gets there)
-        maxAbove = Math.max(maxAbove, q.sim.y - q.sim.ceilNow);
         maxY = Math.max(maxY, q.sim.y);
-        kind = q.sim.ceilingKind;
-        const hud = await p.evaluate(() => {
-          const op = sel => +(document.querySelector(sel)?.style.opacity || 0);
-          return { alert: op('[class*="_alert_"]'), whiteout: op('[class*="_whiteout_"]'), text: document.querySelector('[class*="_alert_"]')?.textContent };
-        });
-        maxAlert = Math.max(maxAlert, hud.alert);
-        maxWhite = Math.max(maxWhite, hud.whiteout);
-        if (hud.alert > 0.5) alertText = hud.text;
-        if (!shotTaken && q.sim.turb > 0.6) {
-          rig.shots.push(await shot(`${tag}-ceiling`));
-          shotTaken = true;
+        maxCeil = Math.max(maxCeil, q.sim.freeUp);
+        if (q.cam.clearance !== null) minClear = Math.min(minClear, q.cam.clearance);
+        if (await warn()) warned = true;
+        if (!shotTop && q.sim.y > 390) {
+          rig.shots.push(await shot(`${tag}-altitude-400`));
+          shotTop = true;
+        }
+        if (q.sim.y >= q.sim.freeUp - 3) break;
+      }
+      // hold: descend to 350 then release (60 s on the first rig + attachment, 8 s elsewhere)
+      await force({ moveY: -1 });
+      while ((await probe()).sim.y > 352) await p.waitForTimeout(40);
+      await force(null);
+      const holdMs = mode === modes[0] && attachment === 'attached' ? 60000 : 8000;
+      const h0 = (await probe()).sim.y;
+      let drift = 0;
+      t0 = Date.now();
+      while (Date.now() - t0 < holdMs) {
+        const q = await probe();
+        drift = Math.max(drift, Math.abs(q.sim.y - h0));
+        if (q.cam.clearance !== null) minClear = Math.min(minClear, q.cam.clearance);
+        if (await warn()) warned = true;
+        await p.waitForTimeout(200);
+      }
+      const alt = await p.evaluate(() => Number(document.querySelector('[class*="_altVal_"]')?.textContent ?? 'NaN'));
+      // dive back down to a skim
+      await force({ moveY: -1 });
+      let minY = Infinity, shotSkim = false;
+      t0 = Date.now();
+      while (Date.now() - t0 < 9000) {
+        const q = await probe();
+        minY = Math.min(minY, q.sim.y);
+        if (q.cam.clearance !== null) minClear = Math.min(minClear, q.cam.clearance);
+        if (!shotSkim && q.sim.y < -15) {
+          rig.shots.push(await shot(`${tag}-dive-skim`));
+          shotSkim = true;
         }
       }
       await force(null);
       const q = await probe();
-      R.ceiling = { hudAlert: maxAlert, alertText, whiteout: maxWhite, maxTurb: +maxTurb.toFixed(2), maxY: +maxY.toFixed(1), maxAboveCeiling: +maxAbove.toFixed(2), kind, clampEvents: q.sim.clampEvents };
-      check(maxTurb > 0.5, `${mode}/${tag}: no turbulence under the ceiling (${maxTurb})`);
-      check(maxAlert > 0.9 && !!alertText, `${mode}/${tag}: HUD turbulence alert not shown (${maxAlert})`);
-      check(kind !== 1 || maxWhite > 0.3, `${mode}/${tag}: no cloud-deck whiteout (${maxWhite})`);
-      // the cloud deck's height is exact (2 u); a canyon rim is ESTIMATED from probes beyond the wall face
-      // (the face is found on a 3 u scan): the estimate steps by a few u, the forced descent corrects it
-      const tol = kind === 1 ? 2 : 5;
-      check(maxAbove < tol, `${mode}/${tag}: flew ${maxAbove.toFixed(1)} u through the ceiling (tolerance ${tol})`);
+      R.vertical = { maxY: +maxY.toFixed(1), serviceCeiling: +maxCeil.toFixed(1), holdMs, holdDrift: +drift.toFixed(2), hudAlt: alt, minY: +minY.toFixed(1), minCamClearance: +minClear.toFixed(2), warned, clampEvents: q.sim.clampEvents, alive: q.sim.hull > 0 };
+      check(maxY >= 400 - 3, `${mode}/${tag}: climbed only to ${maxY.toFixed(0)} u (>= 400 required)`);
+      check(!warned, `${mode}/${tag}: a climb warning was shown`);
+      check(drift < 6, `${mode}/${tag}: drifted ${drift.toFixed(1)} u while holding at 350 u`);
+      check(alt > 300, `${mode}/${tag}: the HUD altitude read ${alt} at 350 u`);
+      check(mode === 'cockpit' || minClear >= 2 - 0.05, `${mode}/${tag}: camera ${minClear.toFixed(2)} u from terrain`);
+      check(q.sim.clampEvents === 0, `${mode}/${tag}: clampEvents ${q.sim.clampEvents}`);
     }
   }
   rig.logs = logs;

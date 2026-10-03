@@ -148,7 +148,7 @@ export function applyStartParams(): void {
         ship,
         reticle: r ? { x: ((r.left + r.width / 2) / W) * 2 - 1, y: 1 - ((r.top + r.height / 2) / H) * 2 } : null,
         input: { cx: InputManager.state.cx, cy: InputManager.state.cy, yaw: InputManager.state.yaw, pitch: InputManager.state.pitch },
-        sim: { s: p.s, x: p.x, y: p.y, contact: p.contact, freeL: p.freeL, freeR: p.freeR, freeUp: p.freeUp, ceilNow: p.ceilNow, freeDown: p.freeDown, turb: p.turb, deck: p.deck, ceilingKind: p.ceilingKind, clampEvents: p.clampEvents, closeCalls: p.closeCalls, skim: p.skimTime, wall: p.wallTime, hull: p.hull, shield: p.shield, lat: p.latMax },
+        sim: { s: p.s, x: p.x, y: p.y, contact: p.contact, freeL: p.freeL, freeR: p.freeR, freeUp: p.freeUp, ceilY: p.ceilY, highT: p.highT, freeDown: p.freeDown, clampEvents: p.clampEvents, closeCalls: p.closeCalls, skim: p.skimTime, wall: p.wallTime, hull: p.hull, shield: p.shield, lat: p.latMax },
         att: { bank: mission.attitude.bank, roll: mission.attitude.roll, attach: rigFlight.attach, strength: rigFlight.rollStrength, interiorRoll: rigFlight.interiorRoll },
         mode: mission.rig.mode,
         blending: mission.rig.blending,

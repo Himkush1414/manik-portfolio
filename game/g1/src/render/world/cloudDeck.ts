@@ -1,21 +1,15 @@
-// The CLOUD DECK (Control / Camera / Boundary addendum: "open sky = a visible
-// dense cloud deck"; W2b). The sim's ceiling over open terrain sits
-// cloudDeckOffset(envB) above the path line; this draws it there, so the
-// limit the ship feels is a thing the pilot sees: a low valley cloud layer,
-// dense over the flight corridor with fbm breaks (the sky shows through),
-// fading out beyond the valley walls so peaks rise through it. Seen from
-// below (the only side the downdraft allows): darker, sun-tinted base;
-// lightning (the HUD's flashes inside the deck) lights it from within.
-// One horizontal plane, world-space noise (it never swims with the camera),
-// aerial perspective, depth-tested against the terrain. Uniforms only.
+// The valley cloud layer (Planet 1 §1.1: cloud layers can be flown through AND above). One
+// world-horizontal plane CLOUD_DECK.altitude u above the path baseline, world-space fbm (never swims with
+// the camera), dense over the flight corridor with breaks (the sky shows through), fading out beyond the
+// valley walls so peaks rise through it. From below: a darker, sun-tinted base; from ABOVE: a sunlit
+// cloud sea (the reward view at altitude). Aerial perspective, depth-tested, faded at grazing angles
+// (edge-on a plane collapses to a bright line). Uniforms only.
 import { Color, DoubleSide, Mesh, PlaneGeometry, ShaderMaterial, Vector3 } from 'three';
 import { missionSpace } from './missionSpace';
 import { AP_GLSL, AP_UNIFORMS } from './atmosphere';
 import { MISSION_ORIGIN } from '../../scenes/sceneBridge';
 import { CLOUD_DECK } from '../../data/mission';
 
-/** HUD -> deck: lightning flash level (0..1) this frame */
-export const deckFx = { flash: 0 };
 
 const _c = new Color();
 const _w = new Color(1, 1, 1);
@@ -41,7 +35,7 @@ export class CloudDeck {
         uMissionO: { value: new Vector3(...MISSION_ORIGIN) },
         uLit: { value: new Color() },
         uBase: { value: new Color() },
-        uFlash: { value: 0 },
+        uTop: { value: new Color() },
         uTime: { value: 0 },
         uOpacity: { value: 1 },
       },
@@ -61,8 +55,8 @@ export class CloudDeck {
           vDist = -mv.z;
         }`,
       fragmentShader: /* glsl */ `
-        uniform vec3 uLit, uBase;
-        uniform float uFlash, uTime, uOpacity;
+        uniform vec3 uLit, uBase, uTop;
+        uniform float uTime, uOpacity;
         varying vec3 vWorldP;
         varying vec2 vLocal;
         varying float vDist;
@@ -83,12 +77,12 @@ export class CloudDeck {
           float a = smoothstep(1.0 - cover, 1.0 - cover + 0.22, n);
           a *= smoothstep(${CLOUD_DECK.fadeFar.toFixed(1)}, ${CLOUD_DECK.fadeNear.toFixed(1)}, vDist);
           // edge-on (the camera at the deck's height) a plane collapses to a bright line: fade at grazing
-          // angles — inside the base the HUD whiteout takes over
+          // angles
           a *= smoothstep(0.015, 0.09, abs(normalize(uCamW - vWorldP).y));
           if (a < 0.004) discard;
-          // underside: darker where thick, the sun's colour where thin; lightning from within
+          // from below: darker where thick, the sun's colour where thin; from above: the sunlit cloud sea
           float thick = smoothstep(0.45, 0.9, n);
-          vec3 col = mix(uLit, uBase, thick) + vec3(0.85, 0.9, 1.0) * uFlash * (0.6 + thick);
+          vec3 col = gl_FrontFacing ? mix(uTop * 0.82, uTop, smoothstep(0.3, 0.8, n)) : mix(uLit, uBase, thick);
           vec4 ap = aerial(vWorldP);
           col = mix(col, ap.rgb, ap.a * 0.85);
           gl_FragColor = vec4(col, a * uOpacity * ${CLOUD_DECK.maxAlpha.toFixed(2)});
@@ -105,15 +99,15 @@ export class CloudDeck {
     const u = this.material.uniforms, D = CLOUD_DECK;
     u.uLit.value.set(D.color).multiply(_c.copy(sunColor).lerp(_w, 0.55)).lerp(hazeFar, 0.2).multiplyScalar(0.62 + 0.45 * daylight);
     u.uBase.value.set(D.color).lerp(zenith, 0.25).multiplyScalar(0.42 + 0.33 * daylight);
+    u.uTop.value.set(D.color).multiply(_c.copy(sunColor).lerp(_w, 0.4)).multiplyScalar(0.9 + 0.6 * daylight);
   }
 
-  /** per frame: the plane at the deck height over the player's path point (world-horizontal) */
+  /** per frame: the plane `offset` u above the player's path point (world-horizontal) */
   update(offset: number, time: number): void {
     const s = missionSpace;
     s.placeWorld(this.mesh, s.px, s.py + offset, s.pz);
     const u = this.material.uniforms;
     u.uTime.value = time;
-    u.uFlash.value = deckFx.flash;
   }
 
   dispose(): void {

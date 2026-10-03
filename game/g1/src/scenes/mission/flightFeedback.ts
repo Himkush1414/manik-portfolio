@@ -2,14 +2,13 @@
 // Boundary addendum §3): the sim only emits events + state; this reads the
 // event ring with its own cursor once per frame (after the sim steps) and
 // turns scrapes / impacts / splashes / close calls into voices + camera
-// trauma, and the turbulence / contact level into a sustained rumble + the
-// wind howl. The HUD reads `flightFeedback.callout` for the close-call text.
+// trauma, and terrain contact into a sustained rumble. The HUD reads `flightFeedback.callout` for the close-call text.
 // No allocation per frame.
 import { Ev, type EventReader } from '../../game/core/events';
 import type { Sim } from '../../game/sim';
 import { CONTACT, FLIGHT_FX } from '../../data/mission';
 import { CameraShaker } from '../../render/CameraShaker';
-import { sfx, setTurbulenceSound } from '../../audio/sfx';
+import { sfx } from '../../audio/sfx';
 
 let reader: EventReader | null = null;
 let readerSim: Sim | null = null;
@@ -23,7 +22,7 @@ export const flightFeedback = {
   rumble: 0,
 
   /** per frame, after the sim stepped (the events of this frame); `live` = the sim is running (paused,
-   *  dying or completing: the howl falls silent) */
+   *  dying or completing: no rumble) */
   update(s: Sim, dt: number, live: boolean): void {
     if (readerSim !== s) {
       reader = s.events.reader();
@@ -33,15 +32,13 @@ export const flightFeedback = {
     this.callout = Math.max(0, this.callout - dt);
     reader?.drain(onEvent);
     const p = s.player, on = live && p.alive;
-    this.rumble = on ? p.turb * FLIGHT_FX.turbRumble + p.contact * FLIGHT_FX.contactRumble : 0;
-    setTurbulenceSound(on ? p.turb : 0);
+    this.rumble = on ? p.contact * FLIGHT_FX.contactRumble : 0;
   },
 
-  /** mission end / retry / hangar: silence the howl, drop the callout */
+  /** mission end / retry / hangar: drop the callout + rumble */
   reset(): void {
     this.callout = this.rumble = 0;
     reader?.skip();
-    setTurbulenceSound(0);
   },
 };
 
