@@ -31,7 +31,7 @@ look (§19 founder test, side-by-side stills).
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
 | F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
-| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | IN PROGRESS — piece 1 (TOD timeline + grade + black-frame fix) pushed; next: visible cloud deck + lightning, horizon ridges; then keyframe probes, sky events — P2R.0e | (see git log) |
+| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | IN PROGRESS — piece 1 (TOD + grade + black-frame fix) + piece 2 (visible cloud deck + lightning glow, horizon ridges) pushed; next: keyframe env probes + blend, sky events, moon phases, the Meridian — P2R.0e | (see git log) |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
@@ -524,6 +524,21 @@ cursor-flight default + computed follow).
   qa-tod third + cockpit; qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-17.0, programs 106
   constant; qa-settings-p2; qa:phase1 (all 7 groups — the chunk fix touches every program); consoles
   clean.
+
+- **Piece 2: the visible cloud deck + far horizon ridges.** `render/world/cloudDeck.ts`: the sim's
+  open-sky ceiling is now SEEN — one world-horizontal plane at `cloudDeckOffset(envB)` above the path
+  (the function now lives in sim.ts and both sides use it), world-space fbm (never swims), dense over the
+  corridor (coverage 0.58 within 180 u of the line) easing to 0.06 by 620 u so peaks rise through it
+  (reads as a valley inversion cloud, not an overcast lid: the sky + ORRIN stay visible), alpha capped
+  0.82, underside darker where thick, tinted by the time of day (cool-white; the first warm pass read as
+  sepia overcast in the gorge and was reworked), aerial perspective, depth-tested; lightning from the HUD's
+  deck flashes (`deckFx`, never under reduce-flashing) lights it from within. Sky dome: two far ridge
+  bands at the horizon (periodic noise on the azimuth circle, <= ~3 deg, coloured from the TOD haze /
+  horizon; the first pass was a flat dark band that read as sea and was reworked), view only (never the
+  probe). One new program (the deck): 106 -> 107, constant across the run. The deck fades at grazing
+  angles (edge-on it drew a bright line across the valley). Gate piece 2 (prod, RTX 3050): 182 tests;
+  qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-17.0, render +0.2 ms, programs 107 constant;
+  qa-tod third + cockpit (160 frames swept, 0 black); consoles clean.
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

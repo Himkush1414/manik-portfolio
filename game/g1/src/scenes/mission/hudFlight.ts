@@ -9,6 +9,7 @@
 import { mission } from './missionRuntime';
 import { hudDom } from '../../ui/screens/mission/hudDom';
 import { flightFeedback } from './flightFeedback';
+import { deckFx } from '../../render/world/cloudDeck';
 import { FLIGHT_FX, HUD_FLIGHT } from '../../data/mission';
 import { InputManager } from '../../input/InputManager';
 import { useSettings } from '../../state/settings.store';
@@ -60,6 +61,8 @@ export function hudFlight(sim: Sim, dt: number, rx: number, ry: number): void {
   flashT = Math.max(0, flashT - dt);
   if (!reduceFlash && deck > H.lightningFrom && Math.random() < H.lightningRate * deck * dt) flashT = H.lightningLife;
   opacity(d.flash, 'flash', reduceFlash ? 0 : flashT / H.lightningLife);
+  // the same bolt lights the deck from within (never under reduce-flashing)
+  deckFx.flash = reduceFlash ? 0 : flashT / H.lightningLife;
   // ---- close call: the score it paid, rising off the reticle
   const c = flightFeedback.callout / FLIGHT_FX.calloutLife;
   opacity(d.callout, 'callout', c > 0 ? Math.min(1, c * 2) : 0);

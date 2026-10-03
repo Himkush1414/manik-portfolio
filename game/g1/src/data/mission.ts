@@ -121,6 +121,23 @@ export const HUD_FLIGHT = {
   streakFrom: 0.6,
 } as const;
 
+/** The visible cloud deck (render/world/cloudDeck.ts) at the sim's ceiling: plane size (u), noise scale
+ *  (u per unit), coverage over the corridor (|x| < coreHalf) easing to coverEdge by edgeHalf (peaks rise
+ *  through it), distance fade (u), base colour (tinted by the time of day). */
+export const CLOUD_DECK = {
+  size: 9000,
+  scale: 520,
+  coverCore: 0.58,
+  coverEdge: 0.06,
+  coreHalf: 180,
+  edgeHalf: 620,
+  fadeNear: 2600,
+  fadeFar: 4300,
+  color: '#F4F6FA',
+  /** never fully opaque from below: the sky reads through the thickest part */
+  maxAlpha: 0.82,
+} as const;
+
 /** Terrain helpers kept from Phase 2R §5 for the camera + scoring. */
 export const GROUND = {
   /** camera never closer to the ground than this (u) */

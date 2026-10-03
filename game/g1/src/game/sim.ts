@@ -53,6 +53,12 @@ export type SimPath = {
 /** ground world-y at path-relative (s, u) (game/world/terrain.ts HeightGrid); water surface y or NaN */
 export type SimGround = { height(s: number, u: number): number; water?(s: number, u: number): number; fill?(s0: number, s1: number): void };
 
+/** the cloud deck's height above the path line (u) from the design envelope's half-height (the sim's
+ *  ceiling and the rendered deck share it) */
+export function cloudDeckOffset(envB: number): number {
+  return Math.max(CEILING.deckK * envB, CEILING.deckMin);
+}
+
 export class Player {
   /** terrain scrape cooldown (s) */
   scrapeCd = 0;
@@ -606,7 +612,7 @@ export class Sim {
     p.freeR = r;
     p.freeDown = Math.max(0, py - G.height(s, 0));
     // ceiling: the cloud deck, or a canyon rim when both walls are within reach and below the deck
-    const deck = world.path.deckAt ? world.path.deckAt(s) : py + Math.max(CEILING.deckK * p.envB, CEILING.deckMin);
+    const deck = world.path.deckAt ? world.path.deckAt(s) : py + cloudDeckOffset(p.envB);
     let ceil = deck, kind = 1;
     if (l < max && r < max) {
       let topL = -Infinity, topR = -Infinity;

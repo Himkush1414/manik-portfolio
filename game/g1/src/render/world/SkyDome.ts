@@ -50,6 +50,8 @@ export class SkyDome {
         uSun2Col: { value: new Color() },
         uSun2Disc: { value: 1.1 },
         uStars: { value: 0 },
+        uRidgeFar: { value: new Color() },
+        uRidgeNear: { value: new Color() },
         uCirrus: { value: 0 },
         uCirrusCol: { value: new Color() },
         uTime: { value: 0 },
@@ -79,7 +81,7 @@ export class SkyDome {
         uniform mat3 uPathB;
         uniform vec3 uSunW, uZenith, uMid, uHorizon, uHaze, uGround, uSunCol, uSun2W, uSun2Col, uCirrusCol;
         uniform float uSunDisc, uSunGlow, uSun2Disc, uStars, uCirrus, uTime, uProbe;
-        uniform vec3 uBounce;
+        uniform vec3 uBounce, uRidgeFar, uRidgeNear;
         uniform vec3 uBodyDir[${MAX_BODIES}];
         uniform vec3 uBodyAxis[${MAX_BODIES}];
         uniform vec4 uBodyP[${MAX_BODIES}];
@@ -268,6 +270,14 @@ export class SkyDome {
           } else {
             sky += uSunCol * smoothstep(uSunDisc, uSunDisc + 0.00003, cs) * 40.0;
             sky += uSun2Col * (pow(max(c2, 0.0), 40.0) * 0.5 + smoothstep(uSun2Disc, uSun2Disc + 0.00003, c2) * 20.0);
+            // far horizon ridges (W2b): two hazy silhouette bands where the terrain ribbon ends (the
+            // valley end was empty haze); periodic in azimuth (noise on the unit circle: no seam), low
+            // (<= ~2 deg) so a dawn sun can still peek over them; the view only (never the probe)
+            vec2 ring = normalize(v.xz + vec2(1e-5));
+            float far = 0.008 + 0.05 * pow(1.0 - abs(2.0 * n3(vec3(ring * 4.3, 0.5)) - 1.0), 2.2) + 0.012 * n3(vec3(ring * 17.0, 4.2));
+            float near = 0.003 + 0.03 * pow(1.0 - abs(2.0 * n3(vec3(ring * 2.7, 9.3)) - 1.0), 1.8) + 0.009 * n3(vec3(ring * 9.0, 2.7));
+            sky = mix(sky, uRidgeFar, smoothstep(far + 0.0015, far - 0.0015, y));
+            sky = mix(sky, uRidgeNear, smoothstep(near + 0.0012, near - 0.0012, y));
           }
           gl_FragColor = vec4(sky, 1.0);
         }`,
@@ -335,6 +345,10 @@ export class SkyDome {
     u.uHorizon.value.copy(t.horizon);
     u.uSunCol.value.copy(t.sunColor);
     u.uStars.value = this.starDensity * t.stars;
+    // ridge silhouettes sit IN the haze: far = between the horizon glow and the far haze, near = the far
+    // haze a little darker (aerial perspective: nearer ranges are darker, never a flat band)
+    u.uRidgeFar.value.copy(t.horizon).lerp(t.hazeFar, 0.55);
+    u.uRidgeNear.value.copy(t.hazeFar).lerp(t.horizon, 0.25).multiplyScalar(0.88);
   }
 
   /** per frame: centre on the camera (mission-scene position relative to the dome's parent) */

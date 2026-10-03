@@ -14,6 +14,8 @@ import { createTerrainMaterial, type TerrainUniforms } from './terrainMaterial';
 import { SkyDome } from './SkyDome';
 import { WorldEnvProbe } from './envProbe';
 import { CloudBanks } from './clouds';
+import { CloudDeck } from './cloudDeck';
+import { cloudDeckOffset } from '../../game/sim';
 import { AP_UNIFORMS, setAtmosphere } from './atmosphere';
 import { TodTimeline, createTodState } from './tod';
 import { missionGrade, setWorldGrade } from './grade';
@@ -43,6 +45,8 @@ export class MissionWorld {
   /** the world's sky as the scene environment (captured in prepare, rotated into the path frame) */
   readonly probe = new WorldEnvProbe();
   readonly clouds: CloudBanks;
+  /** the visible cloud deck at the sim's open-sky ceiling */
+  readonly deck = new CloudDeck();
   /** world sun direction (toward the sun) and the same in mission-local space this frame */
   readonly sunWorld: Vector3;
   readonly sunLocal = new Vector3();
@@ -81,6 +85,7 @@ export class MissionWorld {
     this.clouds = new CloudBanks(preset);
     this.clouds.setWorld(def, this.path);
     this.streamer.group.add(this.clouds.mesh);
+    this.streamer.group.add(this.deck.mesh);
     setAtmosphere(def);
     setWorldGrade(def);
     this.applyTod(0);
@@ -96,6 +101,7 @@ export class MissionWorld {
     AP_UNIFORMS.uApInscatter.value.copy(t.inscatter);
     this.sky.applyTod(t);
     this.clouds.applyTod(t.sunColor, t.zenith, this.daylight());
+    this.deck.applyTod(t.sunColor, t.zenith, t.hazeFar, this.daylight());
     missionGrade.tod = t.exposure;
   }
 
@@ -124,6 +130,7 @@ export class MissionWorld {
   /** per frame, with the player's interpolated rail position */
   private readonly skyAt = new Vector3();
   private lastS = 0;
+  private readonly env = { a: 0, b: 0 };
 
   update(ps: number): void {
     this.lastS = ps;
@@ -141,6 +148,7 @@ export class MissionWorld {
     this.skyAt.set(at.x - MISSION_ORIGIN[0], at.y - MISSION_ORIGIN[1], at.z - MISSION_ORIGIN[2]);
     this.sky.update(this.skyAt, time);
     this.clouds.update(this.lastS, this.sunLocal, time);
+    this.deck.update(cloudDeckOffset(this.path.envelopeAt(this.lastS, this.env).b), time);
     // camera in world space: world = P + B (scene - O)
     const r = missionSpace.r, L = this.skyAt;
     AP_UNIFORMS.uCamW.value.set(
@@ -165,6 +173,7 @@ export class MissionWorld {
 
   dispose(): void {
     this.sky.dispose();
+    this.deck.dispose();
     this.probe.dispose();
     this.clouds.dispose();
     this.streamer.dispose();
