@@ -21,7 +21,7 @@ for (const mode of modes) {
   const logs = [];
   p.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(m.text().slice(0, 200)); });
   p.on('pageerror', e => logs.push('pageerror ' + e.message));
-  await p.addInitScript(([m, pr]) => localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: pr, autoPicked: true }, gpuHintShown: true, camera: { mode: m } } })), [mode, preset]);
+  await p.addInitScript(([m, pr]) => localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 2, profile: {}, settings: { graphics: { preset: pr, autoPicked: true }, gpuHintShown: true, camera: { mode: m } } })), [mode, preset]);
   await p.goto(`${origin}/game/g1/?level=test&debug=1&drs=0&god=1&launch=skip`);
   await p.waitForFunction(() => window.__G1__?.flowState?.get() === 'mission.playing', null, { timeout: 120000, polling: 100 });
   const atPlaying = await p.evaluate(() => window.__G1__.info());
@@ -29,9 +29,11 @@ for (const mode of modes) {
   await p.waitForTimeout(2000);
   const hud = () => p.evaluate(() => {
     const root = document.querySelector('[data-view]');
-    const ret = root?.firstElementChild;
+    // by class (hashed CSS-module names keep `_name_`), never by child order: the flight layer (whiteout,
+    // alerts) sits under the reticle
+    const ret = root?.querySelector('[class*="_reticle_"]');
     const m = ret ? new DOMMatrix(getComputedStyle(ret).transform) : null;
-    const pip = root?.children[1]?.getBoundingClientRect();
+    const pip = root?.querySelector('[class*="_pipper_"]')?.getBoundingClientRect();
     return { nodes: root ? root.querySelectorAll('*').length + 1 : 0, view: root?.dataset.view ?? null, reticle: m ? [Math.round(m.e), Math.round(m.f)] : null, pipper: pip ? [Math.round(pip.x + pip.width / 2), Math.round(pip.y + pip.height / 2)] : null };
   });
   const shot = async name => { const f = `${out}/hud-${mode}-${name}.png`; await p.screenshot({ path: f }); return f; };

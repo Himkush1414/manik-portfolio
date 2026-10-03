@@ -18,6 +18,7 @@ import { Ev, type EventReader } from '../../game/core/events';
 import type { HudState } from '../../game/hud';
 import { cockpitFx } from '../cockpit/displays';
 import { useSettings } from '../../state/settings.store';
+import { hudFlight, hudFlightRemount } from './hudFlight';
 
 const _v = new Vector3();
 const pos = { x: 0, y: 0, on: false };
@@ -115,6 +116,7 @@ export function MissionHudDriver() {
       lastSeq = -1;
       for (const k in last) last[k as keyof typeof last] = -2;
       lastXY.fill(-1e4);
+      hudFlightRemount();
     }
     // combiner attitude, per frame: the cockpit interior's roll / pitch relative to the rail (the cockpit
     // rig writes them: the view's roll + the shell's roll around it in STEADY HORIZON)
@@ -176,6 +178,9 @@ export function MissionHudDriver() {
       el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) rotate(${t.angle.toFixed(3)}rad)`;
       el.style.opacity = (0.4 + 0.6 * t.urgency).toFixed(2);
     }
+
+    // ---- flight layer: turbulence / whiteout / callouts / tutorial prompt
+    hudFlight(sim, dt, rx, ry);
 
     // ---- 20 Hz data
     if (h.seq !== lastSeq) {

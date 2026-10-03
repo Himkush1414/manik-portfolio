@@ -65,15 +65,16 @@ export class Player {
   closeCalls = 0;
   skimTime = 0;
   wallTime = 0;
-  /** the current skim / wall-run streak (s), for the HUD + score ticks */
+  /** the current skim / wall-run streak (s), for the HUD + score ticks, and its kind (0 skim, 1 wall run) */
   skimT = 0;
+  streakWall = 0;
   /** measured free space (u) at the path line's altitude: left / right to terrain, up to the ceiling,
    *  down to the ground under the path (camera STEADY follow, steering target, spawner lanes) */
   freeL = 0;
   freeR = 0;
   freeUp = 0;
   freeDown = 0;
-  /** ceiling: 0..1 turbulence, 0..1 inside the cloud deck (whiteout), kind (0 rim, 1 deck) */
+  /** ceiling: 0..1 turbulence, 0..1 into the cloud deck's base (whiteout), kind (0 rim, 1 deck) */
   turb = 0;
   deck = 0;
   ceilingKind = 1;
@@ -199,7 +200,7 @@ export class Sim {
     p.boosting = p.braking = false;
     p.boostLock = 0;
     p.scrapeCd = 0;
-    p.closeCd = p.skimT = 0;
+    p.closeCd = p.skimT = p.streakWall = 0;
     p.turb = p.deck = p.contact = p.scrapeAcc = p.scrapeTick = p.impactCd = p.waterCd = 0;
     p.clampEvents = 0;
     p.closeCalls = p.skimTime = p.wallTime = 0;
@@ -630,7 +631,8 @@ export class Sim {
     const ceilY = world.path.yAt(p.s) + p.freeUp;
     const below = ceilY - wy;
     p.turb = Math.min(1, Math.max(0, 1 - below / CEILING.zone));
-    p.deck = p.ceilingKind === 1 ? Math.min(1, Math.max(0, -below / 25)) : 0;
+    // inside the cloud base: the whiteout builds over the last deckFog u below the deck
+    p.deck = p.ceilingKind === 1 ? Math.min(1, Math.max(0, 1 - below / CEILING.deckFog)) : 0;
     if (p.turb <= 0) return;
     // climb authority: the rising-air shear eats the climb as the rim / deck nears
     const cap = lim * Math.max(0, below) / CEILING.zone;
@@ -805,6 +807,7 @@ export class Sim {
       p.skimT += dt;
       if (skim) p.skimTime += dt;
       if (wall) p.wallTime += dt;
+      p.streakWall = wall ? 1 : 0;
       if (Math.floor(p.skimT) > before) this.score += Math.round(FREEDOM.skimScore * this.combo);
     } else p.skimT = 0;
   }

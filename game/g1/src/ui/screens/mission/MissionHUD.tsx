@@ -6,7 +6,10 @@
 // MissionHudDriver through `hudDom` refs — transforms per frame, text / bars
 // at the sim's 20 Hz HUD refresh. No React state per frame, no
 // backdrop-filter. In the cockpit view the overlay goes light (reticle,
-// markers, threats): the MFDs carry the rest.
+// markers, threats): the MFDs carry the rest. Flight alerts (Control / Camera
+// / Boundary addendum): TURBULENCE under a canyon rim or the cloud deck, the
+// deck's whiteout + lightning, close-call / skim / wall-run callouts, and the
+// tutorial prompt built from the player's real bindings.
 import { useFlow } from '../../../app/flow';
 import { useSettings } from '../../../state/settings.store';
 import { CAPS } from '../../../data/mission';
@@ -23,6 +26,16 @@ export function MissionHUD() {
   if (!on) return null;
   return (
     <div className={s.hud} ref={set('root')} data-view="overlay" data-reduce-flash={reduceFlash} aria-hidden="true">
+      {/* inside the cloud deck (whiteout) + its lightning; under everything else */}
+      <div className={s.whiteout} ref={set('whiteout')} />
+      <div className={s.flash} ref={set('flash')} />
+      <div className={s.alert} ref={set('alert')} data-pulse="false">TURBULENCE</div>
+      <div className={s.callout} ref={set('callout')}>CLOSE CALL</div>
+      <div className={s.streak} ref={set('streak')}>SKIM</div>
+      <div className={s.prompt} ref={set('prompt')} data-on="false">
+        <span className={s.promptVerb} ref={set('promptVerb')} />
+        <span className={s.promptKeys} ref={set('promptKeys')} />
+      </div>
       <div className={s.reticle} ref={set('reticle')}>
         <div className={s.hit} ref={set('hit')} />
         <div className={s.kill} ref={set('kill')} />

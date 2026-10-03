@@ -78,6 +78,25 @@ for (const mode of modes) {
       if (d > 0.01 && events === 0) check(false, `${mode}/${tag}: reticle moved to (${q.input.cx.toFixed(2)}, ${q.input.cy.toFixed(2)}) during ${phase} with NO mouse event`);
       await recentre();
     };
+    // ---- 0. TUTORIAL (first pass only): the MOVE prompt shows the real keys, a real key press retires it
+    if (attachment === 'attached') {
+      await force(null);
+      await p.evaluate(() => window.__G1__.mission.jump(60));
+      await p.waitForTimeout(500);
+      const pr = () => p.evaluate(() => { const el = document.querySelector('[class*="_prompt_"]'); return { on: el?.dataset.on, text: el?.textContent }; });
+      const before = await pr();
+      rig.shots.push(await shot('tutorial-move'));
+      await p.keyboard.down('KeyD');
+      await p.waitForTimeout(250);
+      await p.keyboard.up('KeyD');
+      await p.waitForTimeout(400);
+      const after = await pr();
+      R.tutorial = { before, after };
+      check(before.on === 'true' && /MOVE/.test(before.text) && /W A S D/.test(before.text), `${mode}: tutorial MOVE prompt missing (${JSON.stringify(before)})`);
+      check(after.on === 'false', `${mode}: the MOVE prompt did not retire on a key press (${JSON.stringify(after)})`);
+      await jump(START);
+    }
+
     // ---- 1. MOUSE ONLY: the real mouse, the real InputManager (pointer lock, or the absolute fallback)
     {
       const secs = attachment === 'attached' ? mouseSecs : Math.min(6, mouseSecs);
@@ -240,7 +259,7 @@ for (const mode of modes) {
     {
       await jump(START);
       await force({ moveY: 1 });
-      let maxTurb = 0, maxAbove = -Infinity, maxY = -Infinity, kind = -1, shotTaken = false;
+      let maxTurb = 0, maxAbove = -Infinity, maxY = -Infinity, kind = -1, shotTaken = false, maxAlert = 0, maxWhite = 0, alertText = '';
       const t0 = Date.now();
       while (Date.now() - t0 < 5000) {
         const q = await probe();
@@ -248,6 +267,13 @@ for (const mode of modes) {
         maxAbove = Math.max(maxAbove, q.sim.y - q.sim.freeUp);
         maxY = Math.max(maxY, q.sim.y);
         kind = q.sim.ceilingKind;
+        const hud = await p.evaluate(() => {
+          const op = sel => +(document.querySelector(sel)?.style.opacity || 0);
+          return { alert: op('[class*="_alert_"]'), whiteout: op('[class*="_whiteout_"]'), text: document.querySelector('[class*="_alert_"]')?.textContent };
+        });
+        maxAlert = Math.max(maxAlert, hud.alert);
+        maxWhite = Math.max(maxWhite, hud.whiteout);
+        if (hud.alert > 0.5) alertText = hud.text;
         if (!shotTaken && q.sim.turb > 0.6) {
           rig.shots.push(await shot(`${tag}-ceiling`));
           shotTaken = true;
@@ -255,8 +281,10 @@ for (const mode of modes) {
       }
       await force(null);
       const q = await probe();
-      R.ceiling = { maxTurb: +maxTurb.toFixed(2), maxY: +maxY.toFixed(1), maxAboveCeiling: +maxAbove.toFixed(2), kind, clampEvents: q.sim.clampEvents };
+      R.ceiling = { hudAlert: maxAlert, alertText, whiteout: maxWhite, maxTurb: +maxTurb.toFixed(2), maxY: +maxY.toFixed(1), maxAboveCeiling: +maxAbove.toFixed(2), kind, clampEvents: q.sim.clampEvents };
       check(maxTurb > 0.5, `${mode}/${tag}: no turbulence under the ceiling (${maxTurb})`);
+      check(maxAlert > 0.9 && !!alertText, `${mode}/${tag}: HUD turbulence alert not shown (${maxAlert})`);
+      check(kind !== 1 || maxWhite > 0.3, `${mode}/${tag}: no cloud-deck whiteout (${maxWhite})`);
       check(maxAbove < 3, `${mode}/${tag}: flew ${maxAbove.toFixed(1)} u through the ceiling`);
     }
   }

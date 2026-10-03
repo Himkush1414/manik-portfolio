@@ -23,7 +23,14 @@ export const LEVEL_01: LevelDef = {
   timeline: [],
   checkpoints: [3100, 6200],
   comms: [],
-  tutorialHints: [],
+  // first flight teaches itself (prompts from the real bindings, each retired once performed)
+  tutorialHints: [
+    { atM: 60, action: 'move', untilM: 900 },
+    { atM: 320, action: 'aim', untilM: 1100 },
+    { atM: 560, action: 'fire', untilM: 1300 },
+    { atM: 900, action: 'boost', untilM: 1700 },
+    { atM: 1300, action: 'roll', untilM: 2100 },
+  ],
   rewards: { base: 0, scoreRate: 0, firstClearMult: 1 },
   rankThresholds: { S: 1, A: 1, B: 1 },
   intensityCurve: [[0, 0]],

@@ -129,3 +129,78 @@
 /* cockpit view: the MFDs + combiner carry the gauges; keep aim + warnings */
 .hud[data-view='cockpit'] .panel { display: none; }
 .hud[data-view='cockpit'] .reticle { border-color: rgba(255, 176, 122, 0.85); }
+
+/* ---- flight alerts (Control / Camera / Boundary addendum): ceiling turbulence, cloud-deck whiteout,
+   close-call / skim / wall-run callouts, tutorial prompt. Opacity / transform only. ---- */
+.whiteout {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 45%, rgba(236, 240, 246, 0.92) 0%, rgba(214, 222, 232, 0.97) 70%, rgba(196, 204, 216, 1) 100%);
+  will-change: opacity;
+}
+.flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: rgba(240, 244, 255, 0.85);
+  will-change: opacity;
+}
+.alert {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  translate: -50% 0;
+  padding: calc(var(--u) * 6) calc(var(--u) * 18);
+  font: 700 calc(var(--u) * 18) / 1 var(--font-mono);
+  letter-spacing: 0.32em;
+  color: var(--danger);
+  border: 1.5px solid var(--danger);
+  background: rgba(4, 5, 10, 0.5);
+  opacity: 0;
+  will-change: opacity;
+}
+.alert[data-pulse='true'] { animation: pulse 0.45s ease-in-out infinite alternate; }
+.hud[data-reduce-flash='true'] .alert[data-pulse='true'] { animation: none; }
+.callout {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin-top: calc(var(--u) * 38);
+  translate: -50% 0;
+  white-space: nowrap;
+  font: 700 calc(var(--u) * 14) / 1 var(--font-mono);
+  letter-spacing: 0.24em;
+  color: var(--ice);
+  text-shadow: 0 0 calc(var(--u) * 6) rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.streak {
+  position: absolute;
+  left: 50%;
+  bottom: 24%;
+  translate: -50% 0;
+  font: 700 calc(var(--u) * 13) / 1 var(--font-mono);
+  letter-spacing: 0.3em;
+  color: var(--hot);
+  opacity: 0;
+  will-change: opacity;
+}
+.prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  translate: -50% 0;
+  display: flex;
+  gap: calc(var(--u) * 14);
+  align-items: baseline;
+  padding: calc(var(--u) * 10) calc(var(--u) * 20);
+  background: rgba(4, 5, 10, 0.6);
+  border-left: 3px solid var(--hot);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.prompt[data-on='true'] { opacity: 1; }
+.promptVerb { font: 700 calc(var(--u) * 14) / 1 var(--font-mono); letter-spacing: 0.3em; color: var(--hot); }
+.promptKeys { font: 700 calc(var(--u) * 18) / 1 var(--font-ui); letter-spacing: 0.12em; color: var(--frost); }

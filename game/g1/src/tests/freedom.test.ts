@@ -260,6 +260,7 @@ describe('real boundaries (Control / Camera / Boundary addendum)', () => {
     expect(maxY).toBeLessThan(deck + 2);
     expect(maxY).toBeGreaterThan(deck - CEILING.zone);
     expect(maxTurb).toBeGreaterThan(0.8);
+    expect(sim.player.deck).toBeGreaterThan(0.5); // pushed into the cloud base: whiteout
     expect(sim.player.clampEvents).toBe(0);
   });
 

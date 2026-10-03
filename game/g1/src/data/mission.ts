@@ -84,6 +84,8 @@ export const CEILING = {
   /** default cloud deck above the path line: max(k x design envelope half-height, min) (u) */
   deckK: 2.4,
   deckMin: 90,
+  /** the cloud base: whiteout from this many u below the deck (full at the deck) */
+  deckFog: 12,
   /** a rim is measured from the walls' tops within this many u beyond the wall face */
   rimProbe: [6, 24, 48] as const,
 } as const;
@@ -101,6 +103,22 @@ export const FLIGHT_FX = {
   /** impact louder than this share of impactMax = the heavy voice */
   heavyAt: 0.5,
   calloutLife: 0.9,
+} as const;
+
+/** The HUD's flight layer (scenes/mission/hudFlight.ts): TURBULENCE fades in from `alertFrom` over
+ *  `alertRamp` and pulses above `pulseAt`; the cloud-deck whiteout reaches `whiteout` opacity; lightning
+ *  inside the deck (above `lightningFrom` of it) at `lightningRate` / s, `lightningLife` s; the close-call
+ *  callout rises `calloutRise` px; the skim / wall-run streak shows after `streakFrom` s. */
+export const HUD_FLIGHT = {
+  alertFrom: 0.2,
+  alertRamp: 0.3,
+  pulseAt: 0.7,
+  whiteout: 0.92,
+  lightningFrom: 0.35,
+  lightningRate: 0.9,
+  lightningLife: 0.14,
+  calloutRise: 70,
+  streakFrom: 0.6,
 } as const;
 
 /** Terrain helpers kept from Phase 2R §5 for the camera + scoring. */

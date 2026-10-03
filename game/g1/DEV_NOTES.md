@@ -30,7 +30,7 @@ look (§19 founder test, side-by-side stills).
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
-| F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | IN PROGRESS — part 1 (controls + save v2, boundaries, camera attachments, qa-freedom) GATED + pushed; part 2a (contact feedback + no wall-surf speed) pushed; 2b (HUD turbulence / whiteout / callouts / tutorial) + 2c (balance on terrain) next — P2R.0d | 362bbb8 |
+| F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | IN PROGRESS — part 1 (controls + save v2, boundaries, camera attachments, qa-freedom) GATED + pushed; part 2a (contact feedback + no wall-surf speed) + 2b (HUD flight layer + tutorial) pushed; 2c (balance on terrain) next — P2R.0d | 362bbb8, e34b66a |
 | W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | TODO | |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
@@ -456,6 +456,23 @@ cursor-flight default + computed follow).
   Gate 2a (prod, RTX 3050): 172 tests; qa-freedom 6 / 6 (wall: 15 voices, ~880 particles, min forward
   33-37 u/s, camera >= 2 u, clampEvents 0); qa-flight 3 rigs 60 fps, p95 16.8-16.9, programs constant;
   qa-settings-p2 + qa:phase1 green (before the sim fix; neither touches the sim); consoles clean.
+  Pushed `e34b66a`.
+- **Part 2b (HUD flight layer).** `scenes/mission/hudFlight.ts` (called by MissionHudDriver):
+  TURBULENCE alert (fades in from turb 0.2, pulses above 0.7, reduce-flash: no pulse) which reads
+  "CLOUD DECK — DESCEND" in the deck's base; whiteout (opacity deck x 0.92) + lightning flashes in the
+  deck (never under reduce-flashing); CLOSE CALL +score callout rising off the reticle; SKIM / WALL RUN
+  streak (sim `player.streakWall`); tutorial prompt. Sim: `player.deck` now builds over the last
+  `CEILING.deckFog` (12 u) BELOW the deck (it only counted above it, where climb authority is already 0,
+  so the whiteout could never show). Tutorial: `input/prompts.ts` builds "MOVE  W A S D / ↑ ← ↓ →",
+  "AIM  MOUSE", "FIRE  SPACE / MOUSE 1", "ROLL  Q E", "BOOST  L-SHIFT" (KEYBOARD + MOUSE: "STEER  MOUSE +
+  ...") from the live bindings; `app/mission/tutorial.ts` TutorialTracker shows a hint from atM until
+  performed / untilM and retires actions performed earlier; Level 1 hints move 60, aim 320, fire 560,
+  boost 900, roll 1300 (m). Bots / QA-forced input never get prompts. qa-freedom: tutorial phase (prompt
+  shows the real keys, a real KeyD retires it), ceiling phase asserts the HUD alert + whiteout. qa-hud
+  now finds the reticle / pipper by class (it used child order; the flight layer sits under them).
+  Gate 2b (prod, RTX 3050): 177 tests; qa-freedom 6 / 6 (alert 1.0, whiteout 0.92, tutorial ok);
+  qa-flight 3 rigs 60 fps, p95 16.8-17.0, programs constant; qa-hud 3 rigs (65 nodes, reticle follows
+  the aim, programs constant); consoles clean.
 - Notes: Level 1's valley is far wider than C1's target (a held strafe reached x ~ 476 u before the
   wall) — C1 brings walls within +-140 u. Holding INTO a wall at full lateral speed is a series of
   impacts (closing speed > 12 u/s), not a scrape — by design (head-on rule); brushing it is a slide.

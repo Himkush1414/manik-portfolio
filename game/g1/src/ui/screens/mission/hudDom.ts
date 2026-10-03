@@ -27,6 +27,15 @@ export const hudDom = {
   target: null as HTMLElement | null,
   targetName: null as HTMLElement | null,
   targetHp: null as HTMLElement | null,
+  /** flight alerts (addendum §3) + tutorial prompt */
+  whiteout: null as HTMLElement | null,
+  flash: null as HTMLElement | null,
+  alert: null as HTMLElement | null,
+  callout: null as HTMLElement | null,
+  streak: null as HTMLElement | null,
+  prompt: null as HTMLElement | null,
+  promptVerb: null as HTMLElement | null,
+  promptKeys: null as HTMLElement | null,
 };
 
 /** circumference of the 2 small SVG rings (r = 15) */
