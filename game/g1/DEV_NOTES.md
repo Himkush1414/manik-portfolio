@@ -3,13 +3,36 @@
 Source of truth for `/game/g1/`. A fresh session must be able to resume from
 this file alone. Updated after every slice.
 
-**Layout:** Phase 2R (current) lives in the `P2R.*` sections directly below, then Phase 2 in `P2.*`; the frozen
+**Layout:** Planet 1 (current) lives in `P1.*` directly below; Phase 2R in the `P2R.*` sections after it, then Phase 2 in `P2.*`; the frozen
 Phase 1 record follows (sections 0-10, unchanged except where a "Phase 1
 amendment" is logged in P2.4).
 
 ---
 
-## P2R PHASE 2R — WORLD OVERHAUL (current phase; read this first)
+## P1 PLANET 1 — ARDEN COMPLETION (current; read this first)
+
+Brief: "PLANET 1 COMPLETION PROMPT - ARDEN: THE FULL JOURNEY + FEEL FIXES" (received 2026-10-03),
+stored VERBATIM in `docs/PLANET1_PROMPT.md`; acceptance criteria + logged decisions in
+`docs/PLANET1_BIBLE.md` (wins over the Creative Bible / 2R brief / addendum where they conflict). ARDEN
+becomes ONE big level (~14 min, 8 chapters); Planet 2 (KHARAN) only after the Planet 1 Founder Playtest.
+The remaining 2R slices (C1 rest, W3-W9) are SUPERSEDED by slices A-H below; their parts that survive
+(water, rocks, vegetation, encounters, cinematics, soak) are folded into B-H. L10 / L22, STORMWARD and
+the 50-level pipeline are PARKED (implemented:false; "SIGNAL LOST" cards when Sortie Select is built —
+it does not exist yet: the hangar launches Level 1 directly).
+
+### P1.0 Status
+| Slice | Scope | Status | Push |
+|---|---|---|---|
+| A | FIX PACK (§1): A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
+| B | realism pass on CH1 (grass tiers, river, mountain bases, atmosphere), before / after stills | TODO | |
+| C | strong-curve paths + validator, CH1 + CH2, scale, burst holes, MOUNTAIN WYRM, sighting #1, first creatures (incl. AIR HUNTERS) | TODO | |
+| D | CH3 Narrows (hairpins, slot crack, hidden valley, hive maws, sighting #2) | TODO | |
+| E | CH4 Great Forest (giant trees, roof, webs, limbs, fauna) calibrated to the filter | TODO | |
+| F | CH5 Waterfall + CH6 Underdeep (cave fields, speed ramp) | TODO | |
+| G | CH7 Rift + CH8 Nest + the MARROW QUEEN | TODO | |
+| H | story + polish (holo-briefing, comms, storytelling, results, balance to targets, perf, soak, qa:planet1, docs) | TODO | |
+
+## P2R PHASE 2R — WORLD OVERHAUL (F1 + W2b done; the rest superseded by P1 above)
 
 Brief "PHASE 2R - WORLD OVERHAUL: REAL PLANETS, REAL VALLEYS (REPLACES THE
 WORMHOLE)", sections §0-§21, received 2026-10-02 from the owner after the
