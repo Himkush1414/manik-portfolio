@@ -1,5 +1,6 @@
 // SPACE WAR: DARK EDITION — entry. Fonts are self-hosted (@fontsource, no
 // runtime Google requests); only the weights the art bible uses are loaded.
+import './render/shaderFixes'; // FIRST: patches three's shader chunks before anything compiles
 import '@fontsource/big-shoulders-display/900';
 import '@fontsource/big-shoulders-display/700';
 import '@fontsource/oxanium/500';

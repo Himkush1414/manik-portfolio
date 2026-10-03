@@ -3,8 +3,9 @@
 // PostFX (rebuilding that one at the launch = a synchronous EffectPass
 // compile): built during MissionLoader.prepare and warmed by one off-screen
 // render, then it owns the frame while stage.mission is on (PostFX yields).
-// Chain: RenderPass -> [bloom (preset resolution), CA, exposure, AgX (the ONE
-// tone-map), vignette, grain]. Speed blur / CA-by-speed land in 2B.
+// Chain: RenderPass -> [bloom (preset resolution), CA, exposure (x the world's
+// grade exposure x the time of day), AgX (the ONE tone-map), the per-world
+// GRADE (render/world/grade.ts), vignette, grain]. Speed blur / CA-by-speed land in 2B.
 import { useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
@@ -23,6 +24,7 @@ import {
 import { HalfFloatType, Vector2, type Camera, type Scene, type WebGLRenderer } from 'three';
 import { POST } from '../data/render.config';
 import { ExposureEffect, RadialBlurEffect, scaleBloom } from './effects';
+import { GradeEffect, missionGrade } from './world/grade';
 import { SPEED_FX } from '../data/speedfx';
 import { postfx } from './fxController';
 import { CameraShaker } from './CameraShaker';
@@ -66,6 +68,8 @@ export function prepareMissionPost(gl: WebGLRenderer, scene: Scene, camera: Came
   const exposure = new ExposureEffect();
   effects.push(exposure);
   effects.push(new ToneMappingEffect({ mode: POST.toneMapping === 'agx' ? ToneMappingMode.AGX : ToneMappingMode.NEUTRAL }));
+  // per-world grade (contrast / saturation / split toning) after the ONE tone-map: uniforms only
+  effects.push(new GradeEffect());
   const vignette = g.vignette ? new VignetteEffect(POST.vignette) : null;
   if (vignette) effects.push(vignette);
   if (g.grain) {
@@ -130,7 +134,7 @@ export function MissionPostFX() {
       c.radialPass.enabled = missionPost.blur > 0.002;
     }
     if (c.vignette) c.vignette.darkness = POST.vignette.darkness + postfx.vignette;
-    c.exposure.exposure = postfx.exposure;
+    c.exposure.exposure = postfx.exposure * missionGrade.exposure * missionGrade.tod;
     CameraShaker.intensity = reduceMotion ? shake * 0.25 : shake;
     CameraShaker.update(dt);
     CameraShaker.apply(camera);

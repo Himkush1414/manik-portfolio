@@ -14,7 +14,9 @@ import { createTerrainMaterial, type TerrainUniforms } from './terrainMaterial';
 import { SkyDome } from './SkyDome';
 import { WorldEnvProbe } from './envProbe';
 import { CloudBanks } from './clouds';
-import { AP_UNIFORMS, setAtmosphere, sunDirection } from './atmosphere';
+import { AP_UNIFORMS, setAtmosphere } from './atmosphere';
+import { TodTimeline, createTodState } from './tod';
+import { missionGrade, setWorldGrade } from './grade';
 import { MISSION_ORIGIN } from '../../scenes/sceneBridge';
 import { missionSpace } from './missionSpace';
 import { lightRig } from '../lightRig';
@@ -44,6 +46,9 @@ export class MissionWorld {
   /** world sun direction (toward the sun) and the same in mission-local space this frame */
   readonly sunWorld: Vector3;
   readonly sunLocal = new Vector3();
+  /** time of day (Creative Bible AC5.1): the level's timeline + this frame's blended state */
+  readonly todTimeline: TodTimeline;
+  readonly tod = createTodState();
   /** speed-streak tint: the near haze lifted toward white (air streaks, not tunnel filaments) */
   readonly streakColor: Color;
   private readonly place = (m: Mesh, x: number, y: number, z: number) => missionSpace.placeWorld(m, x, y, z);
@@ -66,8 +71,8 @@ export class MissionWorld {
     const e0 = v.lodDist[0] - TILE_LEN / 2, e1 = v.lodDist[1] - TILE_LEN / 2;
     uniforms.uMorph.value.set(Math.max(0, e0 - 48), Math.max(1, e0), e1 - 160, e1);
     this.streakColor = new Color(def.atmosphere.hazeNear).lerp(new Color('#ffffff'), 0.55);
-    const sun = def.sky.suns[0];
-    this.sunWorld = sunDirection(sun.elevation, sun.azimuth);
+    this.todTimeline = new TodTimeline(def, level.todTimeline);
+    this.sunWorld = new Vector3();
     missionSpace.bind(this.path);
     // sky dome + aerial perspective for this world (uniforms only)
     this.sky.setWorld(def);
@@ -77,7 +82,28 @@ export class MissionWorld {
     this.clouds.setWorld(def, this.path);
     this.streamer.group.add(this.clouds.mesh);
     setAtmosphere(def);
-    AP_UNIFORMS.uSunW.value.copy(this.sunWorld);
+    setWorldGrade(def);
+    this.applyTod(0);
+  }
+
+  /** the time of day at rail position s -> every shared uniform that carries it */
+  private applyTod(s: number): void {
+    const t = this.todTimeline.evaluate(s, this.tod);
+    this.sunWorld.copy(t.sunDir);
+    AP_UNIFORMS.uSunW.value.copy(t.sunDir);
+    AP_UNIFORMS.uApNear.value.copy(t.hazeNear);
+    AP_UNIFORMS.uApFar.value.copy(t.hazeFar);
+    AP_UNIFORMS.uApInscatter.value.copy(t.inscatter);
+    this.sky.applyTod(t);
+    this.clouds.applyTod(t.sunColor, t.zenith, this.daylight());
+    missionGrade.tod = t.exposure;
+  }
+
+  /** 0 (sun well below the horizon) .. 1 (sun above ~8 deg): direct light + lit-cloud strength */
+  daylight(): number {
+    const e = this.tod.sunEl;
+    const x = Math.min(1, Math.max(0, (e + 3) / 11));
+    return x * x * (3 - 2 * x);
   }
 
   init(): Promise<void> {
@@ -104,6 +130,7 @@ export class MissionWorld {
     this.uniforms.uViewS.value = ps;
     missionSpace.update(ps);
     this.probe.update();
+    this.applyTod(ps);
     this.streamer.update(ps, this.place);
     missionSpace.dirToLocal(this.sunWorld.x, this.sunWorld.y, this.sunWorld.z, this.sunLocal);
   }
@@ -127,8 +154,8 @@ export class MissionWorld {
     l.position.copy(at).addScaledVector(this.sunLocal, 800);
     l.target.position.copy(at);
     l.target.updateMatrixWorld();
-    l.color.set(this.def.lighting.key);
-    l.intensity = this.def.lighting.keyIntensity;
+    l.color.copy(this.tod.key);
+    l.intensity = this.tod.keyIntensity * this.daylight();
   }
 
   /** deterministic ground world-y at path-relative (s, u) */

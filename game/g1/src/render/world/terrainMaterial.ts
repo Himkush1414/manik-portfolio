@@ -43,7 +43,7 @@ export function createTerrainMaterial(w: WorldDef): { material: MeshStandardMate
   const uniforms = createUniforms(w);
   const material = new MeshStandardMaterial({ color: '#ffffff', roughness: 0.92, metalness: 0, envMapIntensity: 0.8 });
   material.name = 'terrain';
-  material.customProgramCacheKey = () => 'terrain-v4';
+  material.customProgramCacheKey = () => 'terrain-v5';
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms, AP_UNIFORMS, CLOUD_SHADOW_UNIFORMS);
     shader.vertexShader = shader.vertexShader
@@ -97,6 +97,10 @@ varying vec4 vTerr;
 varying vec3 vWorldP;
 varying vec3 vWorldN;
 varying float vAlt;
+// a NaN / Inf never leaves the terrain: in the HDR buffer one such pixel is smeared over the whole frame by
+// bloom (late Level 1 rendered black frames, 2026-10-03). Bit test: isnan() is folded away by the D3D
+// compiler's fast math, and instrumenting the stages perturbs codegen enough to hide the source op.
+bool tBad(float x) { return (floatBitsToUint(x) & 0x7fffffffu) >= 0x7f800000u; }
 float tHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float tNoise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
@@ -146,6 +150,7 @@ ${CLOUD_SHADOW_GLSL}`,
   // aerial perspective (shared chunk) instead of the scene's linear fog
   vec4 ap = aerial(vWorldP);
   gl_FragColor.rgb = mix(gl_FragColor.rgb, ap.rgb, ap.a);
+  if (tBad(gl_FragColor.r) || tBad(gl_FragColor.g) || tBad(gl_FragColor.b)) gl_FragColor.rgb = ap.rgb;
 }`,
       )
       .replace(

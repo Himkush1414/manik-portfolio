@@ -34,4 +34,12 @@ export const LEVEL_01: LevelDef = {
   rewards: { base: 0, scoreRate: 0, firstClearMult: 1 },
   rankThresholds: { S: 1, A: 1, B: 1 },
   intensityCurve: [[0, 0]],
+  // Creative Bible §5 L1: pre-dawn blue -> sunrise gold -> bright morning (the sun climbs over the
+  // eastern range as the convoy flies; stars fade out; the haze warms then clears)
+  todTimeline: [
+    { atM: 0, sunEl: 1.5, sunAz: 72, sunColor: '#FF9A5A', zenith: '#16264A', mid: '#3E5585', horizon: '#E59866', hazeNear: '#8C8AA0', hazeFar: '#4E6488', inscatter: '#FF9A5A', key: '#FFB27A', keyIntensity: 2.4, exposure: 1.25, stars: 1 },
+    { atM: 2600, sunEl: 6, sunAz: 75, sunColor: '#FFB26E', zenith: '#1F3F7A', mid: '#6A89BE', horizon: '#F4B47C', hazeNear: '#B8A6A0', hazeFar: '#7C8EB2', inscatter: '#FFB26E', key: '#FFC58C', keyIntensity: 2.9, exposure: 1.12, stars: 0.3 },
+    { atM: 6000, sunEl: 14, sunAz: 78, exposure: 1, stars: 0 },
+    { atM: 10200, sunEl: 22, sunAz: 82, zenith: '#1A56A8', mid: '#63A6E0', horizon: '#EAD2A8', key: '#FFE6C0', keyIntensity: 3.4, exposure: 0.98, stars: 0 },
+  ],
 };

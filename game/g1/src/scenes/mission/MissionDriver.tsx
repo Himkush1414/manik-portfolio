@@ -24,7 +24,7 @@ import { CameraShaker } from '../../render/CameraShaker';
 import { updateCockpitLights } from './missionCamera';
 import { cockpitFx } from '../cockpit/displays';
 import { flightFeedback } from './flightFeedback';
-import { Vector3, type Camera } from 'three';
+import { Vector3, type Camera, type Fog } from 'three';
 import type { InputState } from '../../input/inputState';
 
 const _ray = new Vector3();
@@ -130,6 +130,8 @@ export function MissionDriver() {
     const ps = p.prevS + (p.s - p.prevS) * a;
     const world = mission.env;
     world?.update(ps);
+    // the actors' linear fog follows the time of day's far haze
+    if (world && state.scene.fog) (state.scene.fog as Fog).color.copy(world.tod.hazeFar);
     // ---- speed sensation: streaks, radial blur + edge CA, FOV, gust rumble
     const speed01 = Math.min(1.5, p.speed / SPEED_REF);
     const cruise = curveAt(sim.level.speedCurve, p.s) || sim.level.cruiseSpeed;

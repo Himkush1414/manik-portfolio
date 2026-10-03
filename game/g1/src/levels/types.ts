@@ -71,4 +71,28 @@ export type LevelDef = {
   rankThresholds: { S: number; A: number; B: number };
   /** designed intensity [atM, 0..1] (the validator compares the estimate against it) */
   intensityCurve: readonly (readonly [number, number])[];
+  /** time of day DURING the mission (Creative Bible AC5.1): keys by rail position, blended smoothly;
+   *  a field left out falls back to the world's def. Uniforms only (no recompile). */
+  todTimeline?: readonly TodKey[];
+};
+
+type HexColor = `#${string}`;
+/** one time-of-day key (Creative Bible AC5.1): sun elevation / azimuth (deg) + optional colours,
+ *  key-light intensity and pre-tone-map exposure */
+export type TodKey = {
+  atM: number;
+  sunEl: number;
+  sunAz: number;
+  sunColor?: HexColor;
+  zenith?: HexColor;
+  mid?: HexColor;
+  horizon?: HexColor;
+  hazeNear?: HexColor;
+  hazeFar?: HexColor;
+  inscatter?: HexColor;
+  key?: HexColor;
+  keyIntensity?: number;
+  exposure?: number;
+  /** star field visibility multiplier (pre-dawn / dusk) */
+  stars?: number;
 };

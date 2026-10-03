@@ -11,6 +11,7 @@ import { BackSide, Color, Mesh, ShaderMaterial, SphereGeometry, Vector3, Vector4
 import type { SkyBodyDef, WorldDef } from '../../data/worlds/types';
 import { missionSpace } from './missionSpace';
 import { AP_UNIFORMS, sunDirection } from './atmosphere';
+import type { TodState } from './tod';
 
 const MAX_BODIES = 3;
 const SURF: Record<SkyBodyDef['surface'], number> = { banded: 1, cratered: 2, icyCracked: 3, rocky: 4, cloudy: 5, void: 6 };
@@ -19,6 +20,8 @@ const DEG = Math.PI / 180;
 export const SKY_RADIUS = 4800;
 
 export class SkyDome {
+  /** the world's star density (the time of day scales it) */
+  private starDensity = 0;
   readonly mesh: Mesh;
   readonly material: ShaderMaterial;
 
@@ -295,7 +298,7 @@ export class SkyDome {
       u.uSun2Col.value.set(s2.color);
       u.uSun2Disc.value = Math.cos((s2.discDeg / 2) * DEG);
     } else u.uSun2Disc.value = 1.1;
-    u.uStars.value = s.stars.density;
+    u.uStars.value = this.starDensity = s.stars.density;
     const cirrus = s.clouds.find(c => c.kind === 'cirrus');
     u.uCirrus.value = cirrus ? cirrus.coverage : 0;
     u.uCirrusCol.value.set(cirrus ? cirrus.color : '#ffffff');
@@ -322,6 +325,16 @@ export class SkyDome {
         (u.uRingCol.value[i] as Color).set(b.rings.color);
       } else R.set(0, 0, 0, 0);
     }
+  }
+
+  /** time of day (render/world/tod.ts): gradient, sun colour, stars (uniforms only) */
+  applyTod(t: TodState): void {
+    const u = this.material.uniforms;
+    u.uZenith.value.copy(t.zenith);
+    u.uMid.value.copy(t.mid);
+    u.uHorizon.value.copy(t.horizon);
+    u.uSunCol.value.copy(t.sunColor);
+    u.uStars.value = this.starDensity * t.stars;
   }
 
   /** per frame: centre on the camera (mission-scene position relative to the dome's parent) */

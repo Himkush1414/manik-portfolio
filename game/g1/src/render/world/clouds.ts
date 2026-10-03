@@ -53,6 +53,9 @@ const h = (k: number, salt: number) => {
   return (x >>> 0) / 4294967296;
 };
 
+const _tint = new Color();
+const _white = new Color(1, 1, 1);
+
 export class CloudBanks {
   readonly mesh: Mesh;
   readonly material: ShaderMaterial;
@@ -165,6 +168,14 @@ export class CloudBanks {
     this.mesh.name = 'clouds';
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = -500; // after the sky, before other transparents (they are nearer)
+  }
+
+  /** time of day: the lit side takes the sun's colour, the shade the zenith's (uniforms only) */
+  applyTod(sunColor: Color, zenith: Color, daylight: number): void {
+    if (!this.layer) return;
+    const u = this.material.uniforms;
+    u.uLit.value.set(this.layer.color).multiply(_tint.copy(sunColor).lerp(_white, 0.35)).multiplyScalar(1.25 * (0.35 + 0.65 * daylight));
+    u.uShade.value.set(this.layer.color).lerp(zenith, 0.45).multiplyScalar(0.5 * (0.3 + 0.7 * daylight));
   }
 
   setWorld(w: WorldDef, path: FlightPath): void {

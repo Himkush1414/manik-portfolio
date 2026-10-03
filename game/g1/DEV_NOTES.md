@@ -31,7 +31,7 @@ look (§19 founder test, side-by-side stills).
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
 | F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
-| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | TODO | |
+| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | IN PROGRESS — piece 1 (TOD timeline + grade + black-frame fix) pushed; next: visible cloud deck + lightning, horizon ridges; then keyframe probes, sky events — P2R.0e | (see git log) |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
@@ -495,6 +495,35 @@ cursor-flight default + computed follow).
 - Notes: Level 1's valley is far wider than C1's target (a held strafe reached x ~ 476 u before the
   wall) — C1 brings walls within +-140 u. Holding INTO a wall at full lateral speed is a series of
   impacts (closing speed > 12 u/s), not a scrape — by design (head-on rule); brushing it is a slide.
+
+### P2R.0e W2b log (living sky)
+- **Piece 1: time of day + per-world grade (2026-10-03).** `LevelDef.todTimeline` (`TodKey`: atM, sun
+  el / az, optional sun colour, zenith / mid / horizon, haze near / far, in-scatter, key colour +
+  intensity, exposure, stars; missing fields fall back to the world def). `render/world/tod.ts`
+  TodTimeline: smoothstep blend between keys, preallocated state; MissionWorld applies it per frame to the
+  SHARED uniforms (sky dome gradient / sun colour / stars, AP haze + in-scatter + sun dir, cloud lit /
+  shade, the sun light colour x intensity x daylight(el)), the actors' linear fog colour and
+  `missionGrade.tod` exposure: a sunrise is uniforms only (programs 106 constant across the level).
+  `GradeEffect` (written in the W2 session) is now in the mission chain after the ONE AgX tone-map;
+  exposure = postfx x world grade x time of day. Level 1: pre-dawn (el 1.5, stars 1, exposure 1.25)
+  -> sunrise gold (el 6 @ 2600 m) -> morning (el 14 @ 6000) -> bright (el 22 @ 10200). OPEN (piece 3):
+  the env probe is still captured ONCE (at the dawn state) — keyframe probes + blend come next.
+- **Pre-existing bug found + fixed: black frames in late Level 1.** Every gate so far flew the TEST
+  level; the new TOD stills flew L1 to 9800 m and got all-black frames (8500-9800, flickering). One
+  NaN / Inf pixel in the HalfFloat HDR buffer is smeared over the whole frame by bloom's mip chain.
+  Two sources: (1) three r169's GGX `normalize(lightDir + viewDir)` is NaN for the fragment exactly on
+  the camera -> sun line (0 x NaN stays NaN even when unlit) — `render/shaderFixes.ts` (imported FIRST
+  by main.tsx, before anything compiles) swaps all 4 sites for `safeHalfDir()`; unit-tested; (2) a far
+  LOD2 terrain fragment (isolated on a frozen frame: hiding only the LOD2 tiles clears it; tile
+  buffers are NaN-free; isnan() is folded away by the D3D compiler and stage instrumentation perturbs
+  codegen enough to hide the op) -> the terrain output is guarded with a bit-pattern NaN / Inf test
+  (-> haze colour), terrain program key terrain-v5. Result: 0 / 60 black on the frozen sequence that was
+  56 / 60, all of L1 clean. `tools/qa-tod.mjs` (new): stills at 3 TOD points + a WHOLE-LEVEL sweep
+  (every 500 m, 4 frames each) that fails on any black frame; third + cockpit: 80 frames swept, 0 black,
+  60 fps, p95 16.8-16.9, programs constant, console clean. Gate piece 1 (prod, RTX 3050): 182 tests;
+  qa-tod third + cockpit; qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-17.0, programs 106
+  constant; qa-settings-p2; qa:phase1 (all 7 groups — the chunk fix touches every program); consoles
+  clean.
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 
