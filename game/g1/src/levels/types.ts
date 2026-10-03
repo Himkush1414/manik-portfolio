@@ -74,7 +74,16 @@ export type LevelDef = {
   /** time of day DURING the mission (Creative Bible AC5.1): keys by rail position, blended smoothly;
    *  a field left out falls back to the world's def. Uniforms only (no recompile). */
   todTimeline?: readonly TodKey[];
+  /** authored sky moments (Creative Bible AC5.4 / AC6.2 / AC6.5), by rail position */
+  skyEvents?: readonly SkyEvent[];
 };
+
+/** A sky moment: a world body moving (planet-rise over a ridge), shooting stars (fading with the stars),
+ *  the ICS Meridian crossing in orbit (scale). Positions in deg (elevation, azimuth like the world defs). */
+export type SkyEvent =
+  | { kind: 'bodyMove'; body: string; atM: number; untilM: number; fromEl: number; fromAz: number; toEl: number; toAz: number }
+  | { kind: 'meteors'; atM: number; untilM: number; perMinute: number }
+  | { kind: 'meridian'; atM: number; untilM: number; fromEl: number; fromAz: number; toEl: number; toAz: number };
 
 type HexColor = `#${string}`;
 /** one time-of-day key (Creative Bible AC5.1): sun elevation / azimuth (deg) + optional colours,
@@ -95,4 +104,7 @@ export type TodKey = {
   exposure?: number;
   /** star field visibility multiplier (pre-dawn / dusk) */
   stars?: number;
+  /** WEATHER (AC5.2): haze density multiplier (ground mist / clearing) and cumulus cover multiplier */
+  hazeDensity?: number;
+  cloudCover?: number;
 };

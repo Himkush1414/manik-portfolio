@@ -18,6 +18,8 @@ import { CloudDeck } from './cloudDeck';
 import { cloudDeckOffset } from '../../game/sim';
 import { AP_UNIFORMS, setAtmosphere } from './atmosphere';
 import { TodTimeline, createTodState } from './tod';
+import { createSkyEventState, evaluateSkyEvents } from './skyEvents';
+import { CLOUD_SHADOW_UNIFORMS } from './clouds';
 
 /** the env probe is recaptured each time the sun has moved this far (deg) */
 const ENV_RECAPTURE_DEG = 1;
@@ -56,6 +58,8 @@ export class MissionWorld {
   /** time of day (Creative Bible AC5.1): the level's timeline + this frame's blended state */
   readonly todTimeline: TodTimeline;
   readonly tod = createTodState();
+  /** authored sky moments (planet-rise, shooting stars, the Meridian) */
+  readonly skyEvents: ReturnType<typeof createSkyEventState>;
   /** speed-streak tint: the near haze lifted toward white (air streaks, not tunnel filaments) */
   readonly streakColor: Color;
   private readonly place = (m: Mesh, x: number, y: number, z: number) => missionSpace.placeWorld(m, x, y, z);
@@ -79,6 +83,7 @@ export class MissionWorld {
     uniforms.uMorph.value.set(Math.max(0, e0 - 48), Math.max(1, e0), e1 - 160, e1);
     this.streakColor = new Color(def.atmosphere.hazeNear).lerp(new Color('#ffffff'), 0.55);
     this.todTimeline = new TodTimeline(def, level.todTimeline);
+    this.skyEvents = createSkyEventState(level.skyEvents ?? []);
     this.sunWorld = new Vector3();
     missionSpace.bind(this.path);
     // sky dome + aerial perspective for this world (uniforms only)
@@ -107,6 +112,17 @@ export class MissionWorld {
     this.clouds.applyTod(t.sunColor, t.zenith, this.daylight());
     this.deck.applyTod(t.sunColor, t.zenith, t.hazeFar, this.daylight());
     missionGrade.tod = t.exposure;
+    // weather in the timeline (AC5.2): haze density (ground mist burning off), cumulus shadow cover
+    AP_UNIFORMS.uApDensity.value = this.def.atmosphere.density * t.hazeDensity;
+    const cum = this.def.sky.clouds.find(c => c.kind === 'cumulus' || c.kind === 'storm');
+    if (cum) CLOUD_SHADOW_UNIFORMS.uCloudCover.value = Math.min(1, cum.coverage * t.cloudCover);
+    // sky events
+    const ev = this.level.skyEvents;
+    if (ev?.length) {
+      const e = evaluateSkyEvents(ev, s, this.skyEvents);
+      for (const b of e.bodies) if (b.el === b.el) this.sky.setBody(b.id, b.el, b.az);
+      this.sky.setEvents(e.meteorsPerMin, e.meteorAmt * t.stars, e.shipOn ? e.shipDir : null, e.shipOn ? e.shipAxis : null);
+    }
   }
 
   /** 0 (sun well below the horizon) .. 1 (sun above ~8 deg): direct light + lit-cloud strength */

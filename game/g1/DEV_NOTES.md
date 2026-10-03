@@ -31,7 +31,7 @@ look (§19 founder test, side-by-side stills).
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
 | F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
-| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | IN PROGRESS — piece 1 (TOD + grade + black-frame fix) + piece 2 (visible cloud deck + lightning glow, horizon ridges) + piece 3 (keyframe env probes) pushed; next: sky events (shooting stars, aurora, eclipse, planet-rise), moon phases, the Meridian, weather timeline — P2R.0e | (see git log) |
+| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | DONE — TOD + weather timeline, grade, black-frame fixes, visible cloud deck, horizon ridges, keyframe probes, sky events (P2R.0e) | d9e7309, 42bda0b, f3c8e30, + piece 4 |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
@@ -274,18 +274,23 @@ shadows, terrain geomorph; gate passed on the RTX 3050 + qa:phase1 green), Creat
      (4) every ceiling is turbulence / cloud / overhang; (5) enemies + hazards use the full width; (6) no
      new hitches, all gates green, perf budgets unchanged. Evidence (stills + logs) in DEV_NOTES.
 
-**F1 status: DONE (2026-10-03; full log + deferrals in P2R.0d).** Next slice: W2b.
+**F1 DONE (P2R.0d) and W2b DONE (P2R.0e), 2026-10-03.** Next slice: C1.
 
 **FIRST ACTIONS ON RESUME (in order):**
-1. Read P2R.0d (F1 log) and this section; `git status` + `git log -3` == `git ls-remote origin main`.
+1. Read P2R.0d / P2R.0e and this section; `git status` + `git log -3` == `git ls-remote origin main`.
    `export WSLENV=G1_DGPU G1_DGPU=1` before ANY QA; tools/gpu.mjs assertGpu must say RTX 3050.
-2. W2b — living sky (§5, §6): TOD / weather timelines (uniform-only), keyframe env probes time-sliced
-   in prepare + blended, per-world grade (`src/render/world/grade.ts` is written but NOT wired into
-   MissionPostFX, still untracked), far horizon ridge layers, the VISIBLE cloud deck (the sim's deck +
-   HUD whiteout already exist: F1) + lightning, sky events, nebula / moon phases, the Meridian in orbit.
-   Push in 2-3 gated pieces.
-3. Then C1 (chapters + walls within +-140 u + slots / barriers / forks + 40-probe validator + approach
-   strips) -> W3 -> W4 -> E1 -> W5-W9.
+   Gate per push: typecheck, vitest, root `npm run build`, qa-freedom (3 rigs x 2 attachments),
+   qa-flight (3 rigs), qa-tod (third + cockpit: TOD stills + WHOLE-LEVEL black-frame sweep), and
+   qa-settings-p2 + qa:phase1 when settings / hangar / global shader code changed.
+2. C1 — chapters (§3, §4; Creative Bible AC3.x, AC2.11): a chapter timeline in TerrainField (width /
+   wall height / steepness / floor-type curves blended over 200-500 u), walls within +-140 u in EVERY
+   chapter (L1's valley is far wider today: a held strafe reached x ~ 476 u), barrier massifs +
+   fissures, slot cracks (<= 1 u columns, 82 deg cap), forks (lane profiles), the 40-probe validator
+   (fail: probe escapes > 160 u without a diegetic cap; path centre within 6 u of terrain; a wall
+   unreachable within 2 u without camera clipping), `qa-approach` strips, LevelDef v3. Then L1's
+   8 chapters re-authored on it. Watch: LOD2 strata / terrace cliffs moiré at distance.
+3. Then W3 (water, rocks, near-field, arches / overhang ceilings + colliders, alpha dust + ground
+   effect) -> W4 (vegetation + trunk colliders) -> E1 (encounters; AC2.12 full-width lanes) -> W5-W9.
 
 **PROVISIONAL / COMING NEXT (owner's note):** a reworked, go-overboard version of the post-launchpad
 world (landscape, levels, enemies, story) is coming next from the owner. Treat everything after the
@@ -555,6 +560,28 @@ cursor-flight default + computed follow).
   Gate piece 3 (prod, RTX 3050): 182 tests; qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-16.9,
   p99 <= 17.1, programs 108 + textures 105 constant; qa-tod third + cockpit (0 black, flight 0 long
   tasks); consoles clean.
+
+- **Piece 4: sky events + weather in the timeline.** `LevelDef.skyEvents` (`SkyEvent`: `bodyMove`
+  (a world body travels between two el / az over a span — planet-rise over a ridge), `meteors` (per
+  minute, eased in / out, dimmed by the star field), `meridian` (the ICS Meridian along a track in
+  orbit)); `render/world/skyEvents.ts` evaluates them by rail position (unit-tested); the sky dome draws
+  shooting stars (3 hashed slots, streak + fading tail) and the Meridian (~0.35 deg dark hull, sunlit
+  edge, blinking beacon — the first pass was 2 px and drawn off-centre because the track chord was not
+  tangent at the ship: fixed) and `setBody` moves a body (re-derives its spin axis). Moon phases come
+  from the real sun direction on the bodies (terminator) — no extra work. Weather in the TOD keys:
+  `hazeDensity` (AP density multiplier) + `cloudCover` (cumulus shadow cover). Level 1: dawn ground
+  mist 1.8x burning off to 1.0 by 6 km; meteors 0-2600 m; the Meridian crossing 1200-4600 m in front of
+  the pilot; ORRIN sinks toward the left range in the gorge (2600-4400) and RISES over the ridge into
+  the hidden valley (5600-8400) — AC6.5. Event azimuths are world: L1's path flies az -9..+8, so the
+  tracks were placed inside the third-person view (~+-50 deg).
+  Deferred to the worlds that own them: eclipse (L10 boss, W7), aurora + storm / rain / lightning
+  bolts (STORMWARD, W8), nebula band (dark-sky worlds). Gate piece 4 (prod, RTX 3050): 186 tests;
+  qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-16.9, p99 <= 17.2, programs 108 constant; qa-tod
+  third + cockpit (0 black, 0 long tasks); consoles clean.
+- **W2b DONE** for ARDEN / Level 1 (TOD timeline + weather, per-world grade, black-frame fixes,
+  visible cloud deck, horizon ridges, keyframe env probes, sky events, the Meridian). Per-world specials
+  ride with their worlds (W7 KHARAN: twin suns + eclipse; W8 STORMWARD: storm / rain / aurora). The
+  'two depth ranges' question: not needed so far (far = 6500 u, no z-fighting seen on the ridges / deck).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

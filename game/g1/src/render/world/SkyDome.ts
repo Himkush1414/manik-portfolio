@@ -22,6 +22,9 @@ export const SKY_RADIUS = 4800;
 export class SkyDome {
   /** the world's star density (the time of day scales it) */
   private starDensity = 0;
+  /** body id per uniform slot (size order) + its spin-axis tilt (sky events move bodies) */
+  private bodyIds: string[] = [];
+  private bodyTilt: number[] = [];
   readonly mesh: Mesh;
   readonly material: ShaderMaterial;
 
@@ -51,6 +54,11 @@ export class SkyDome {
         uSun2Disc: { value: 1.1 },
         uStars: { value: 0 },
         uRidgeFar: { value: new Color() },
+        uMeteors: { value: 0 },
+        uMeteorAmt: { value: 0 },
+        uShipDir: { value: new Vector3(0, 1, 0) },
+        uShipAxis: { value: new Vector3(1, 0, 0) },
+        uShipOn: { value: 0 },
         uRidgeNear: { value: new Color() },
         uCirrus: { value: 0 },
         uCirrusCol: { value: new Color() },
@@ -81,7 +89,8 @@ export class SkyDome {
         uniform mat3 uPathB;
         uniform vec3 uSunW, uZenith, uMid, uHorizon, uHaze, uGround, uSunCol, uSun2W, uSun2Col, uCirrusCol;
         uniform float uSunDisc, uSunGlow, uSun2Disc, uStars, uCirrus, uTime, uProbe;
-        uniform vec3 uBounce, uRidgeFar, uRidgeNear;
+        uniform vec3 uBounce, uRidgeFar, uRidgeNear, uShipDir, uShipAxis;
+        uniform float uMeteors, uMeteorAmt, uShipOn;
         uniform vec3 uBodyDir[${MAX_BODIES}];
         uniform vec3 uBodyAxis[${MAX_BODIES}];
         uniform vec4 uBodyP[${MAX_BODIES}];
@@ -270,6 +279,43 @@ export class SkyDome {
           } else {
             sky += uSunCol * smoothstep(uSunDisc, uSunDisc + 0.00003, cs) * 40.0;
             sky += uSun2Col * (pow(max(c2, 0.0), 40.0) * 0.5 + smoothstep(uSun2Disc, uSun2Disc + 0.00003, c2) * 20.0);
+            // shooting stars (W2b sky events): 3 slots, each a fast streak with a fading tail, placed by
+            // hash per period; strength follows the star field (they fade out with the dawn)
+            if (uMeteorAmt > 0.001 && y > 0.05) {
+              float period = 180.0 / max(uMeteors, 0.1);
+              for (int i = 0; i < 3; i++) {
+                float t = uTime / period + float(i) * 0.371;
+                float k = floor(t), u = fract(t) * period / 0.9;
+                if (u < 1.0) {
+                  vec3 hk = vec3(k, float(i), 3.7);
+                  float maz = h31(hk) * 6.2832, mel = 0.4 + h31(hk + 1.3) * 0.7;
+                  vec3 c = vec3(sin(maz) * cos(mel), sin(mel), -cos(maz) * cos(mel));
+                  if (dot(v, c) > 0.97) {
+                    vec3 t1 = normalize(cross(c, vec3(0.0, 1.0, 0.0)) * (h31(hk + 2.1) < 0.5 ? -1.0 : 1.0) + vec3(0.0, -0.4, 0.0));
+                    t1 = normalize(t1 - c * dot(t1, c));
+                    vec3 t2 = cross(c, t1);
+                    float along = dot(v, t1) - (u - 0.5) * 0.3, across = dot(v, t2);
+                    float tail = clamp(1.0 + along / 0.08, 0.0, 1.0) * step(along, 0.0);
+                    float m = smoothstep(0.0011, 0.0, abs(across)) * tail * tail * sin(u * 3.1416);
+                    sky += vec3(0.85, 0.92, 1.0) * m * 3.0 * uMeteorAmt;
+                  }
+                }
+              }
+            }
+            // the ICS Meridian in orbit (scale): a sunlit sliver along its track + a blinking beacon
+            if (uShipOn > 0.001) {
+              // the track axis made tangent at the ship (the from -> to chord is not), offsets from its centre
+              vec3 ax1 = normalize(uShipAxis - uShipDir * dot(uShipAxis, uShipDir));
+              vec3 ax2 = cross(uShipDir, ax1);
+              vec2 sp = vec2(dot(v - uShipDir, ax1), dot(v - uShipDir, ax2));
+              if (dot(v, uShipDir) > 0.995) {
+                // ~0.35 deg long: a kilometre-class hull a few hundred km up, a dark sliver with a lit edge
+                float hull = smoothstep(0.0062, 0.0042, length(sp * vec2(0.42, 2.2)));
+                float rim = hull * smoothstep(-0.001, 0.0016, sp.y);
+                float beacon = smoothstep(0.0016, 0.0, length(sp - vec2(0.0075, 0.0))) * step(0.82, fract(uTime * 0.9));
+                sky = mix(sky, vec3(0.05, 0.06, 0.08), hull * 0.75 * uShipOn) + (uSunCol * 1.4 * rim + vec3(1.0, 0.25, 0.2) * 4.0 * beacon) * uShipOn;
+              }
+            }
             // far horizon ridges (W2b): two hazy silhouette bands where the terrain ribbon ends (the
             // valley end was empty haze); periodic in azimuth (noise on the unit circle: no seam), low
             // (<= ~2 deg) so a dawn sun can still peek over them; the view only (never the probe)
@@ -313,6 +359,8 @@ export class SkyDome {
     u.uCirrus.value = cirrus ? cirrus.coverage : 0;
     u.uCirrusCol.value.set(cirrus ? cirrus.color : '#ffffff');
     const bodies = [...s.bodies].sort((a, b) => b.angularDeg - a.angularDeg).slice(0, MAX_BODIES);
+    this.bodyIds = bodies.map(b => b.id);
+    this.bodyTilt = bodies.map(b => (b.rings?.tilt ?? 8) * DEG);
     for (let i = 0; i < MAX_BODIES; i++) {
       const b = bodies[i];
       const P = u.uBodyP.value[i] as Vector4;
@@ -334,6 +382,27 @@ export class SkyDome {
         R.set(b.rings.inner, b.rings.outer, b.rings.opacity, 1);
         (u.uRingCol.value[i] as Color).set(b.rings.color);
       } else R.set(0, 0, 0, 0);
+    }
+  }
+
+  /** sky event: move a world body (planet-rise over a ridge); uniforms only */
+  setBody(id: string, el: number, az: number): void {
+    const i = this.bodyIds.indexOf(id);
+    if (i < 0) return;
+    const u = this.material.uniforms;
+    const dir = sunDirection(el, az, u.uBodyDir.value[i]);
+    (u.uBodyAxis.value[i] as Vector3).set(0, 1, 0).applyAxisAngle(dir, this.bodyTilt[i]).normalize();
+  }
+
+  /** sky events: shooting stars (per minute, x visibility) and the Meridian (direction, track, 0 = off) */
+  setEvents(meteorsPerMin: number, meteorAmt: number, shipDir: Vector3 | null, shipAxis: Vector3 | null): void {
+    const u = this.material.uniforms;
+    u.uMeteors.value = meteorsPerMin;
+    u.uMeteorAmt.value = meteorAmt;
+    u.uShipOn.value = shipDir ? 1 : 0;
+    if (shipDir && shipAxis) {
+      u.uShipDir.value.copy(shipDir);
+      u.uShipAxis.value.copy(shipAxis);
     }
   }
 

@@ -26,13 +26,15 @@ export type TodState = {
   keyIntensity: number;
   exposure: number;
   stars: number;
+  hazeDensity: number;
+  cloudCover: number;
 };
 
 export function createTodState(): TodState {
-  return { sunDir: new Vector3(0, 1, 0), sunEl: 0, sunColor: new Color(), zenith: new Color(), mid: new Color(), horizon: new Color(), hazeNear: new Color(), hazeFar: new Color(), inscatter: new Color(), key: new Color(), keyIntensity: 1, exposure: 1, stars: 1 };
+  return { sunDir: new Vector3(0, 1, 0), sunEl: 0, sunColor: new Color(), zenith: new Color(), mid: new Color(), horizon: new Color(), hazeNear: new Color(), hazeFar: new Color(), inscatter: new Color(), key: new Color(), keyIntensity: 1, exposure: 1, stars: 1, hazeDensity: 1, cloudCover: 1 };
 }
 
-type Resolved = { el: number; az: number; sunColor: Color; zenith: Color; mid: Color; horizon: Color; hazeNear: Color; hazeFar: Color; inscatter: Color; key: Color; keyIntensity: number; exposure: number; stars: number };
+type Resolved = { el: number; az: number; sunColor: Color; zenith: Color; mid: Color; horizon: Color; hazeNear: Color; hazeFar: Color; inscatter: Color; key: Color; keyIntensity: number; exposure: number; stars: number; hazeDensity: number; cloudCover: number };
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 
@@ -57,6 +59,8 @@ export class TodTimeline {
       keyIntensity: k.keyIntensity ?? def.lighting.keyIntensity,
       exposure: k.exposure ?? 1,
       stars: k.stars ?? 1,
+      hazeDensity: k.hazeDensity ?? 1,
+      cloudCover: k.cloudCover ?? 1,
     });
     this.keys = keys.length ? [...keys].sort((x, y) => x.atM - y.atM).map(base) : [base({ atM: 0 })];
   }
@@ -82,6 +86,8 @@ export class TodTimeline {
     out.keyIntensity = lerp(a.keyIntensity, b.keyIntensity);
     out.exposure = lerp(a.exposure, b.exposure);
     out.stars = lerp(a.stars, b.stars);
+    out.hazeDensity = lerp(a.hazeDensity, b.hazeDensity);
+    out.cloudCover = lerp(a.cloudCover, b.cloudCover);
     return out;
   }
 }
