@@ -31,6 +31,9 @@ export type SubtitleSize = 'small' | 'medium' | 'large';
 export type SteeringScheme = 'keyboard' | 'keyboardMouse';
 /** FULLY ATTACHED (rigid mount, rolls with the ship) or STEADY HORIZON (translates, never rolls) */
 export type CameraAttachment = 'attached' | 'steady';
+/** the reticle (Planet 1 §1.3): TACTICAL (degree scale, offset readout, boresight line) | MINIMAL | CLASSIC (the old ring) */
+export type ReticleStyle = 'tactical' | 'minimal' | 'classic';
+export const RETICLE_STYLES: readonly ReticleStyle[] = ['tactical', 'minimal', 'classic'];
 
 export type SettingsData = {
   controls: {
@@ -47,6 +50,9 @@ export type SettingsData = {
   };
   /** rollStrength 0..1: share of the ship's bank the camera rolls with (reduce-motion caps it at 30 %) */
   camera: { mode: CameraMode; fov: number; shake: number; helmetFrame: HelmetFrame; attachment: CameraAttachment; rollStrength: number };
+  /** reticle: style, size 0.6..1.6 (line weights / arms / text; the degree scale stays angle-true), brightness
+   *  0.3..1, degree ticks + offset readout on / off */
+  hud: { reticle: ReticleStyle; reticleSize: number; reticleBrightness: number; reticleDegrees: boolean };
   graphics: {
     preset: Preset;
     autoPicked: boolean;
@@ -89,6 +95,7 @@ export function defaultSettings(prefersReducedMotion = false): SettingsData {
   return {
     controls: { bindings: cloneBindings(DEFAULT_BINDINGS), sensitivity: 1, invertY: false, aimAssist: 'low', autoFire: false, steering: 'keyboard', reticleAutoCentre: false, reticleLookAhead: false },
     camera: { mode: 'cockpit', fov: 75, shake: 0.8, helmetFrame: 'subtle', attachment: 'attached', rollStrength: 1 },
+    hud: { reticle: 'tactical', reticleSize: 1, reticleBrightness: 0.9, reticleDegrees: true },
     graphics: {
       preset: 'high',
       autoPicked: false,
@@ -167,6 +174,7 @@ function sanitizeSettings(raw: unknown): SettingsData {
   }
   const cam = obj(r.camera);
   const g = obj(r.graphics);
+  const hu = obj(r.hud);
   const au = obj(r.audio);
   const ac = obj(r.accessibility);
   const helmet = cam.helmetFrame === 'off' || cam.helmetFrame === 'full' || cam.helmetFrame === 'subtle' ? cam.helmetFrame : 'subtle';
@@ -189,6 +197,12 @@ function sanitizeSettings(raw: unknown): SettingsData {
       helmetFrame: helmet,
       attachment: cam.attachment === 'steady' ? 'steady' : 'attached',
       rollStrength: num(cam.rollStrength, 0, 1, d.camera.rollStrength),
+    },
+    hud: {
+      reticle: RETICLE_STYLES.includes(hu.reticle as ReticleStyle) ? (hu.reticle as ReticleStyle) : d.hud.reticle,
+      reticleSize: num(hu.reticleSize, 0.6, 1.6, d.hud.reticleSize),
+      reticleBrightness: num(hu.reticleBrightness, 0.3, 1, d.hud.reticleBrightness),
+      reticleDegrees: bool(hu.reticleDegrees, d.hud.reticleDegrees),
     },
     graphics: {
       preset: isPreset(g.preset) ? g.preset : d.graphics.preset,

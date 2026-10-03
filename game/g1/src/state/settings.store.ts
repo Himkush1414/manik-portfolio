@@ -39,6 +39,7 @@ export function settingsSnapshot(): SettingsData {
   return {
     controls: s.controls,
     camera: s.camera,
+    hud: s.hud,
     graphics: s.graphics,
     audio: s.audio,
     accessibility: s.accessibility,

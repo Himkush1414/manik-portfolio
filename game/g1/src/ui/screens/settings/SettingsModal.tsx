@@ -17,7 +17,7 @@ import { DEBUG } from '../../../core/constants';
 import { sfx } from '../../../audio/sfx';
 import { closeModal } from '../hangar/hangarActions';
 import type { CameraMode } from '../../../render/cameraRig';
-import type { AimAssistLevel, CameraAttachment, SteeringScheme, SubtitleSize } from '../../../state/schema';
+import type { AimAssistLevel, CameraAttachment, ReticleStyle, SteeringScheme, SubtitleSize } from '../../../state/schema';
 
 type Tab = 'controls' | 'camera' | 'graphics' | 'audio' | 'access';
 const TABS: { id: Tab; label: string }[] = [
@@ -45,6 +45,7 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 /* ---------------------------------------------------------------- controls */
 function Controls() {
   const c = useSettings(st => st.controls);
+  const hud = useSettings(st => st.hud);
   const patch = useSettings(st => st.patch);
   const setBindings = useSettings(st => st.setBindings);
   const [capture, setCapture] = useState<{ action: InputAction; slot: 0 | 1 } | null>(null);
@@ -190,6 +191,27 @@ function Controls() {
       </Row>
       <Row label="Reticle look-ahead" hint="The outside cameras lean a little toward where you aim.">
         <Toggle checked={c.reticleLookAhead} onChange={v => patch('controls', { reticleLookAhead: v })} label="Reticle look-ahead" />
+      </Row>
+      <Row label="Reticle style" hint="Tactical: a degree scale true to the field of view, the offset off the ship's nose and a boresight line. Minimal: crosshair and ring. Classic: the original ring.">
+        <Segmented<ReticleStyle>
+          label="Reticle style"
+          value={hud.reticle}
+          onChange={v => patch('hud', { reticle: v })}
+          options={[
+            { id: 'tactical', label: 'TACTICAL' },
+            { id: 'minimal', label: 'MINIMAL' },
+            { id: 'classic', label: 'CLASSIC' },
+          ]}
+        />
+      </Row>
+      <Row label="Reticle size" hint="Line weight, arms and text. The degree scale always measures true angle.">
+        <Slider value={hud.reticleSize} min={0.6} max={1.6} step={0.05} onChange={v => patch('hud', { reticleSize: v })} label="Reticle size" format={pct} numeric={false} />
+      </Row>
+      <Row label="Reticle brightness">
+        <Slider value={hud.reticleBrightness} min={0.3} max={1} step={0.05} onChange={v => patch('hud', { reticleBrightness: v })} label="Reticle brightness" format={pct} numeric={false} />
+      </Row>
+      <Row label="Reticle degrees" hint="Degree ticks and the AZ / EL offset readout.">
+        <Toggle checked={hud.reticleDegrees} onChange={v => patch('hud', { reticleDegrees: v })} label="Reticle degrees" />
       </Row>
       <h3 className={s.section}>Flight assists</h3>
       <Row label="Aim assist" hint="Gently steers shots toward the nearest target. Applies from the next launch.">

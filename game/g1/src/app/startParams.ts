@@ -7,6 +7,7 @@
 //   ?screen=briefing|camera|cockpit        run the real launch flow (sped up) to it
 //   ?unlock=all  ?credits=<n>              save edits: only with ?debug=1
 // Default: the full boot sequence (flow stays in boot.black until it starts).
+import { reticleCanvas } from '../ui/screens/mission/reticleCanvas';
 import { QUERY } from '../core/constants';
 import { flow } from './flow';
 import { setView, VIEWS } from '../render/cameraDirector';
@@ -114,7 +115,7 @@ export function applyStartParams(): void {
       InputManager.state.cy = Math.max(-E, Math.min(E, y));
     },
     /** live settings change (QA): e.g. ('camera', { attachment: 'steady' }) */
-    settings: (section: 'camera' | 'controls', patch: Record<string, unknown>) => useSettings.getState().patch(section, patch as never),
+    settings: (section: 'camera' | 'controls' | 'hud', patch: Record<string, unknown>) => useSettings.getState().patch(section, patch as never),
     /** terrain-contact / water / close-call events since the last call */
     events: () => {
       const sim = mission.sim;
@@ -154,6 +155,7 @@ export function applyStartParams(): void {
         blending: mission.rig.blending,
         cam: { local: [lx, ly, lz], roll: _eu.z, pitch: _eu.x, yaw: _eu.y, clearance: rigFlight.clearAt ? rigFlight.clearAt(lx, ly, lz) : null, fov: (cam as PerspectiveCamera).fov },
         shipLocal: [mission.player.position.x, mission.player.position.y, mission.player.position.z],
+        reticleOffset: { az: reticleCanvas.offset.az, el: reticleCanvas.offset.el, total: reticleCanvas.offset.total },
       };
     },
   });

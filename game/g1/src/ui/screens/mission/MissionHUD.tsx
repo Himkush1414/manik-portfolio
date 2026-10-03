@@ -1,4 +1,4 @@
-// Mission HUD (brief §9): reticle ring + dot, ship pipper, hit / kill
+// Mission HUD (brief §9): the tactical reticle canvas (Planet 1 §1.3), ship pipper, hit / kill
 // markers, 8 pooled threat chevrons, SHIELD / HULL bars (danger pulse under
 // 25 %), boost energy + speed + roll-cooldown ring, score + combo ring,
 // progress, credits, target panel. Static DOM rendered once (~60 nodes,
@@ -14,10 +14,12 @@ import { useFlow } from '../../../app/flow';
 import { useSettings } from '../../../state/settings.store';
 import { CAPS } from '../../../data/mission';
 import { hudDom, RING_C } from './hudDom';
+import { reticleCanvas } from './reticleCanvas';
 import s from './hud.module.css';
 
 type Key = Exclude<keyof typeof hudDom, 'threats'>;
 const set = (k: Key) => (el: Element | null) => void ((hudDom as Record<Key, Element | null>)[k] = el);
+const attachReticle = (el: HTMLCanvasElement | null) => reticleCanvas.attach(el);
 const THREATS = Array.from({ length: CAPS.threats }, (_, i) => i);
 
 export function MissionHUD() {
@@ -38,6 +40,7 @@ export function MissionHUD() {
         <span className={s.promptVerb} ref={set('promptVerb')} />
         <span className={s.promptKeys} ref={set('promptKeys')} />
       </div>
+      <canvas className={s.reticleCanvas} ref={attachReticle} />
       <div className={s.reticle} ref={set('reticle')}>
         <div className={s.hit} ref={set('hit')} />
         <div className={s.kill} ref={set('kill')} />

@@ -23,7 +23,7 @@ it does not exist yet: the hangar launches Level 1 directly).
 ### P1.0 Status
 | Slice | Scope | Status | Push |
 |---|---|---|---|
-| A | FIX PACK (§1) [A1, A2 pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
+| A | FIX PACK (§1) [A1, A2, A3a pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
 | B | realism pass on CH1 (grass tiers, river, mountain bases, atmosphere), before / after stills | TODO | |
 | C | strong-curve paths + validator, CH1 + CH2, scale, burst holes, MOUNTAIN WYRM, sighting #1, first creatures (incl. AIR HUNTERS) | TODO | |
 | D | CH3 Narrows (hairpins, slot crack, hidden valley, hive maws, sighting #2) | TODO | |
@@ -79,6 +79,32 @@ it does not exist yet: the hangar launches Level 1 directly).
   compositor / Windows hitch; open: re-check with the perf pass in slice B). Slice-A gate: qa-freedom 6
   configs (552 u, drift 3.9 u, clampEvents 0), qa-flight 60 fps p95 16.9, qa-hud 67 nodes, qa-tod 0
   black frames, consoles clean. [P2] "barrel-roll screen effect" setting: not done (logged).
+- **A3a tactical reticle core (2026-10-03).** The DOM ring is gone; the reticle is ONE canvas overlay
+  (`ui/screens/mission/reticleCanvas.ts`, redrawn per frame by MissionHudDriver; the DOM `.reticle` box
+  now only anchors the hit / kill markers). `render/mission/reticleMath.ts` (pure): screen <-> camera
+  direction through the live FOV / aspect, and `offsetPoint(d, deg, bearing)` = the direction `deg` off
+  the reticle's ray, projected EXACTLY — so the 5 deg ring and the ticks measure true angle anywhere on
+  screen at any FOV (unit-tested to 1e-6 deg). TACTICAL: crosshair with a centre gap + dot, the 5 deg
+  ring, the scale on the left / right / up arms (none below — the ship sits there) with ticks every 5 deg
+  to 15 (major, labelled once), the convergence marker LEFT of the ring (gun lines converging + range:
+  PLAYER.aim.convergence x HUD.speedScale = 1200 m), AZ / EL off the ship boresight RIGHT of it (camera
+  axes, the total = the true angle), a dashed boresight line pipper -> reticle with the degree label
+  (near the pipper end) when the offset > 4 deg. MINIMAL: dot, short crosshair, ring. CLASSIC: the old
+  ring + dot. Every stroke twice (dark outline, then frost / ice) = legible over bright sky. Size x the
+  viewport unit (CSS --u, floored 0.85 for 720p) scales lines / text, never the degree scale;
+  brightness = alpha. Text rebuilt at the 20 Hz HUD refresh; fonts cached per size; no closures or
+  allocation per frame. SETTINGS: `hud` section {reticle, reticleSize 0.6-1.6, reticleBrightness 0.3-1,
+  reticleDegrees} — sanitised (no version bump needed: missing -> defaults), persisted (the
+  `settingsSnapshot` omission caught by tsc), Controls tab rows. At rest the nose sits ~2 deg off the rail
+  aim (EL -2.0 reads truthfully; no boresight line under 4 deg). `tests/reticle.test.ts` (8);
+  `tools/qa-reticle.mjs` (1280x720 / 1920x1080 / 3440x1440 x tactical idle / aimed / degrees off /
+  size 1.5 / minimal / classic + cockpit; drawn-pixel counts per style, AZ / EL signs, nodes 68 (+1:
+  the canvas), consoles clean — it ignores its own getImageData readback warning). NEXT: A3b flight
+  data (heading tape, pitch ladder +-5/10/20/30 + bank arc, speed, alt / clearance; diegetic on the
+  cockpit combiner), A3c lead pipper + time-to-impact, target-lock brackets with the combat slices.
+  Gate A3a (prod, RTX 3050): 210 tests; qa-reticle 3 resolutions + cockpit clean; slice-A gate: freedom 6
+  configs (552 u, drift 3.9 u, clampEvents 0), qa-flight 60 fps p95 16.8-16.9 (programs 108), qa-hud 68
+  nodes 60 fps, qa-tod 0 black frames, consoles clean.
 
 ## P2R PHASE 2R — WORLD OVERHAUL (F1 + W2b done; the rest superseded by P1 above)
 

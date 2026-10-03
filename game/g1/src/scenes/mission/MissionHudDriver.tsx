@@ -7,7 +7,7 @@
 // 20 Hz HUD refresh (hud.seq): bars (transform scaleX), numbers (text only
 // when changed), danger / lock flags, rings.
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector3, type Camera } from 'three';
+import { Vector3, type Camera, type PerspectiveCamera } from 'three';
 import { stage } from '../Stage';
 import { mission } from './missionRuntime';
 import { hudDom, RING_C } from '../../ui/screens/mission/hudDom';
@@ -19,6 +19,7 @@ import type { HudState } from '../../game/hud';
 import { cockpitFx } from '../cockpit/displays';
 import { useSettings } from '../../state/settings.store';
 import { hudFlight, hudFlightRemount } from './hudFlight';
+import { reticleCanvas, type ReticleOpts } from '../../ui/screens/mission/reticleCanvas';
 
 const _v = new Vector3();
 const pos = { x: 0, y: 0, on: false };
@@ -30,6 +31,7 @@ let lastRoot: HTMLElement | null = null;
 let hitT = 0, killT = 0;
 const last = { score: -1, combo: -1, credits: -1, pct: -1, shield: -1, hull: -1, speed: -1, target: -2 };
 const lastXY = new Float32Array(4);
+const ropts: ReticleOpts = { style: 'tactical', size: 1, brightness: 0.9, degrees: true };
 
 /** world point -> CSS px in `pos` (on = in front of the camera) */
 function project(cam: Camera, w: number, h: number): void {
@@ -152,6 +154,13 @@ export function MissionHudDriver() {
     pl.localToWorld(_v);
     project(camera, size.width, size.height);
     place(d.pipper, 1);
+    // the tactical reticle (canvas): degree scale through the live FOV, offset off the boresight pipper
+    const hs = useSettings.getState().hud;
+    ropts.style = hs.reticle;
+    ropts.size = hs.reticleSize;
+    ropts.brightness = hs.reticleBrightness;
+    ropts.degrees = hs.reticleDegrees;
+    reticleCanvas.draw(size.width, size.height, (camera as PerspectiveCamera).fov, rx, ry, pos.x, pos.y, pos.on, ropts, true);
 
     // ---- markers
     if (hitT > 0 || killT > 0) {
@@ -186,6 +195,7 @@ export function MissionHudDriver() {
     if (h.seq !== lastSeq) {
       lastSeq = h.seq;
       bars(h);
+      reticleCanvas.setText(C * HUD.speedScale);
     }
   }, 0.5);
   return null;
