@@ -6,8 +6,8 @@ import type { Sim } from '../sim';
 import type { SimInput } from '../input';
 import { Rng } from '../core/rng';
 import { STEP } from '../core/step';
-import { BOT, BOT_SKILLS, type BotSkillId } from '../../data/bot';
-import { PLAYER, RAIL } from '../../data/mission';
+import { BOT, BOT_SKILLS, type BotSkillId, type BotStyle } from '../../data/bot';
+import { PLAYER, RAIL, CONTACT } from '../../data/mission';
 
 const DEG = Math.PI / 180;
 
@@ -25,6 +25,9 @@ export class Bot {
   private wanderT = 0;
   private rerollT = 0;
   private weave = 0;
+  /** style 'hugger': current phase (0 wall left, 1 floor, 2 wall right, 3 open air) and its time left */
+  private hugPhase = 0;
+  private hugT = 0;
   /** projectile serials already judged (each threat rolls the dodge dice once) */
   private judged = new Uint32Array(64);
   private judgedN = 0;
@@ -33,6 +36,7 @@ export class Bot {
   constructor(
     readonly skillId: BotSkillId,
     seed: number,
+    readonly style: BotStyle = 'lanes',
   ) {
     this.skill = BOT_SKILLS[skillId];
     this.rng = new Rng(seed ^ 0x5bd1e995);
@@ -125,9 +129,23 @@ export class Bot {
       }
     }
 
-    // ---- steering: dodge > lane target, kept inside the envelope margin
-    const ax = this.dodgeT > 0 ? this.dodgeX : clamp(wantX * BOT.margin * RAIL.envelope.a - p.x, 1) ;
-    const ay = this.dodgeT > 0 ? this.dodgeY : clamp(wantY * BOT.margin * RAIL.envelope.b - p.y, 1);
+    // ---- steering: dodge > lane target, kept inside the envelope margin (or the hugger's surface line)
+    let tx = wantX * BOT.margin * RAIL.envelope.a, ty = wantY * BOT.margin * RAIL.envelope.b;
+    if (this.style === 'hugger') {
+      const H = BOT.hug;
+      this.hugT -= STEP;
+      if (this.hugT <= 0) {
+        this.hugPhase = (this.hugPhase + 1) % 4;
+        this.hugT = this.rng.range(H.phase[0], H.phase[1]);
+      }
+      // the wing tip (or the hull underside) `gap` u off the MEASURED surface
+      const reach = (sim.cfg.wingHalfSpan ?? 0) + CONTACT.wingR + H.gap, under = CONTACT.hullR + H.gap;
+      tx = this.hugPhase === 0 ? -(p.freeL - reach) : this.hugPhase === 2 ? p.freeR - reach : 0;
+      ty = this.hugPhase === 1 ? -(p.freeDown - under) : this.hugPhase === 3 ? p.freeUp * 0.6 : 0;
+    }
+    const gain = this.style === 'hugger' ? BOT.hug.gain : 1;
+    const ax = this.dodgeT > 0 ? this.dodgeX : clamp((tx - p.x) * gain, 1);
+    const ay = this.dodgeT > 0 ? this.dodgeY : clamp((ty - p.y) * gain, 1);
     out.moveX = Math.abs(ax) < 0.05 ? 0 : ax;
     out.moveY = Math.abs(ay) < 0.05 ? 0 : ay;
     out.boost = this.target < 0 && p.energy > 60 && this.rng.next() < sk.boostUse;

@@ -39,4 +39,13 @@ export const BOT = {
   margin: 0.82,
   /** aim lead uses this fraction of the true lead (humans under-lead) */
   leadSkill: { novice: 0.4, mid: 0.75, expert: 1 },
+  /** style 'hugger' (F1 soak: the addendum's "fly within 2 u of a wall"): cycles wall-left / floor /
+   *  wall-right / open air every `phase` s, aiming its wing tip `gap` u off the MEASURED surface (the
+   *  hull + wing clearance, so it brushes, scrapes and slides), steering gain per u of error */
+  hug: { phase: [3.5, 6.5] as const, gap: 0.8, gain: 1 / 6 },
 } as const;
+
+/** how the bot chooses its line: 'lanes' (enemy lanes inside the design envelope) or 'hugger' (walls,
+ *  floor, the open air: terrain soak) */
+export type BotStyle = 'lanes' | 'hugger';
+export const isBotStyle = (v: unknown): v is BotStyle => v === 'lanes' || v === 'hugger';

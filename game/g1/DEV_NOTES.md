@@ -30,7 +30,7 @@ look (§19 founder test, side-by-side stills).
 | W0 | plan, baseline, schemas (WorldDef/TerrainDef/SkyDef/PathDef) + tests, world bible (12), canon rewrite, tunnel-removal plan | DONE | 407b0fb, 5f8a7d0 |
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
-| F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | IN PROGRESS — part 1 (controls + save v2, boundaries, camera attachments, qa-freedom) GATED + pushed; part 2a (contact feedback + no wall-surf speed) + 2b (HUD flight layer + tutorial) pushed; 2c (balance on terrain) next — P2R.0d | 362bbb8, e34b66a |
+| F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
 | W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | TODO | |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
@@ -274,23 +274,18 @@ shadows, terrain geomorph; gate passed on the RTX 3050 + qa:phase1 green), Creat
      (4) every ceiling is turbulence / cloud / overhang; (5) enemies + hazards use the full width; (6) no
      new hitches, all gates green, perf budgets unchanged. Evidence (stills + logs) in DEV_NOTES.
 
-**F1 status (2026-10-03 session; full log in P2R.0d).** The WIP was resumed from the working tree
-(byte-identical to `.scratch/f1-wip.patch`) and finished against addendum 3. Part 1 = sim boundaries +
-controls / settings v2 + both camera attachments + `qa-freedom` rewrite (gated; see P2R.0d for the push).
-Still open in F1 (part 2): scrape / impact / splash / close-call presentation (sparks + dust by surface,
-grind / splash / whoosh voices, shake), HUD "TURBULENCE" + cloud-deck whiteout, tutorial prompts from the
-real bindings (L1 tutorialHints + HUD), dead Graze-envelope VFX branch removal, terrain-spark direction,
-balance bot re-run. Then W2b.
+**F1 status: DONE (2026-10-03; full log + deferrals in P2R.0d).** Next slice: W2b.
 
 **FIRST ACTIONS ON RESUME (in order):**
-1. Read P2R.0d (F1 log: what is pushed, what is open) and this section; `git status` + `git log -3`.
+1. Read P2R.0d (F1 log) and this section; `git status` + `git log -3` == `git ls-remote origin main`.
    `export WSLENV=G1_DGPU G1_DGPU=1` before ANY QA; tools/gpu.mjs assertGpu must say RTX 3050.
-2. Finish F1 part 2 (list above), gate (typecheck, vitest, build, qa-freedom all rigs x attachments,
-   qa-flight all rigs, qa-settings-p2, qa:phase1 on 5198), push.
-3. Then the re-planned slices: W2b (living sky: TOD / weather timelines, keyframe probes, grade — the
-   already-written `src/render/world/grade.ts` is NOT wired yet —, horizon ridges, cloud DECK visual +
-   whiteout, sky events) -> C1 (chapters + walls within +-140 u + slots / barriers / forks + 40-probe
-   validator + approach strips) -> W3 -> W4 -> E1 -> W5-W9.
+2. W2b — living sky (§5, §6): TOD / weather timelines (uniform-only), keyframe env probes time-sliced
+   in prepare + blended, per-world grade (`src/render/world/grade.ts` is written but NOT wired into
+   MissionPostFX, still untracked), far horizon ridge layers, the VISIBLE cloud deck (the sim's deck +
+   HUD whiteout already exist: F1) + lightning, sky events, nebula / moon phases, the Meridian in orbit.
+   Push in 2-3 gated pieces.
+3. Then C1 (chapters + walls within +-140 u + slots / barriers / forks + 40-probe validator + approach
+   strips) -> W3 -> W4 -> E1 -> W5-W9.
 
 **PROVISIONAL / COMING NEXT (owner's note):** a reworked, go-overboard version of the post-launchpad
 world (landscape, levels, enemies, story) is coming next from the owner. Treat everything after the
@@ -472,7 +467,31 @@ cursor-flight default + computed follow).
   now finds the reticle / pipper by class (it used child order; the flight layer sits under them).
   Gate 2b (prod, RTX 3050): 177 tests; qa-freedom 6 / 6 (alert 1.0, whiteout 0.92, tutorial ok);
   qa-flight 3 rigs 60 fps, p95 16.8-17.0, programs constant; qa-hud 3 rigs (65 nodes, reticle follows
-  the aim, programs constant); consoles clean.
+  the aim, programs constant); consoles clean. Pushed `521869c`.
+- **Part 2c (balance on terrain + wing-aware scoring).** `runLevel` now flies the level's REAL terrain by
+  default (FlightPath + TerrainField + HeightGrid, wing span; `--world 0` = envelope-only) and reports
+  scrapes / impacts / splashes / close calls / skim / wall-run / clampEvents. New bot style `hugger`
+  (`--style hugger`, `BOT.hug`): cycles wall-left / floor / wall-right / open air, aiming its wing tip
+  0.8 u off the MEASURED surface — the addendum's "fly within 2 u of a wall" as a soak. It found that
+  wall-run could never score for a winged ship (the probe measured from the centre: a 5.3 u half-span
+  keeps it 6.5 u off the wall) -> close-call + wall-run probes now measure from the OUTERMOST point
+  (wing tip + wingR, else the hull); closeRock 4.5 -> 3 u (AC9.6 "within 3 u"), wallProbe 6 -> 4.5 u
+  beyond the tip. Balance (halcyon, tier 0, prod sim): lanes bots 10 runs x 3 skills x 2 levels — win
+  100 %, no terrain contact (lanes stay inside the design envelope; no enemies until E1); hugger 3 full
+  runs x 3 skills x 2 levels — win 100 %, clampEvents 0 in all 18 runs, L1 per run ~150-166 scrapes,
+  30-33 impacts, 10-13 splashes, 41-44 close calls, skim 21-23 s, wall run 11-14 s, hull lost <= 2.4 %
+  (shield first). Unit test: hugger soak of the test level (contact, wall run, skim, close calls,
+  clampEvents 0). Gate 2c (prod, RTX 3050): 178 tests; qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95
+  16.9, programs constant; consoles clean.
+- **F1 DONE** against the addendum's DONE WHEN: (1) default: the mouse never moves the ship or camera
+  (unit + qa-freedom 20 s real pointer lock, 3 rigs); (2) both attachments pass in all 3 rigs; (3) wall
+  within 2 u, scrape + slide, no invisible stop, clampEvents 0 (qa-freedom + 18 full hugger runs);
+  (4) ceilings: rim turbulence + cloud deck (HUD alert, whiteout, howl, shake); (6) no new hitches,
+  gates green, perf budgets unchanged (sim 0.15-0.24 ms). DEFERRED to their owning slices: (5) enemies
+  + hazards using the full measured width -> E1 (no enemies exist yet; AC2.12); the VISIBLE cloud-deck
+  layer + lightning bolts -> W2b; alpha-blended dust / ground-effect rooster tails -> W3; overhang /
+  arch / root ceilings -> W3 meshes; walls within +-140 u + the 40-probe validator -> C1; in-browser
+  3-full-runs-per-level soak -> W9 (the `?bot=` URL bot is still style 'lanes').
 - Notes: Level 1's valley is far wider than C1's target (a held strafe reached x ~ 476 u before the
   wall) — C1 brings walls within +-140 u. Holding INTO a wall at full lateral speed is a series of
   impacts (closing speed > 12 u/s), not a scrape — by design (head-on rule); brushing it is a slide.

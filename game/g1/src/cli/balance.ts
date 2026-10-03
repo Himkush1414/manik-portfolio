@@ -1,12 +1,15 @@
 // Balance harness entry (brief §15; Node tooling, outside src/game): bundled by tools/balance.mjs and run on
 // Node. Runs a level N times per skill tier with seeded bots and prints a
 // JSON summary (win rate, hull left, time, accuracy, kills).
-//   node tools/balance.mjs --level test --skills novice,mid,expert --runs 20 [--ship halcyon] [--tier 0]
+//   node tools/balance.mjs --level test --skills novice,mid,expert --runs 20 [--ship halcyon] [--tier 0] [--world 0] [--style lanes|hugger]
+// Default: the level's real terrain (contact, water, ceilings) — F1; --world 0 = envelope-only.
 import { runLevel, type RunResult } from '../game/bot/run';
 import { levelById, LEVELS } from '../levels/registry';
-import { isBotSkill, type BotSkillId } from '../data/bot';
+import { isBotSkill, isBotStyle, type BotSkillId } from '../data/bot';
 import { EMPTY_TIERS, TRACK_IDS, type UpgradeTiers } from '../data/upgrades';
 import { isShipId } from '../data/ships';
+import { SPECS } from '../ships/specs';
+import { wingContactSpan } from '../scenes/mission/shipMounts';
 
 declare const process: { argv: string[]; exitCode?: number };
 
@@ -20,6 +23,9 @@ const ship = opt('ship', 'halcyon');
 const runs = Math.max(1, Number(opt('runs', '20')));
 const tier = Math.max(0, Math.min(5, Number(opt('tier', '0'))));
 const skills = opt('skills', 'novice,mid,expert').split(',').filter(isBotSkill) as BotSkillId[];
+const world = opt('world', '1') !== '0';
+const styleArg = opt('style', 'lanes');
+const style = isBotStyle(styleArg) ? styleArg : 'lanes';
 
 if (!level || !isShipId(ship)) {
   console.log(JSON.stringify({ error: 'unknown level or ship', levels: Object.keys(LEVELS) }));
@@ -27,11 +33,12 @@ if (!level || !isShipId(ship)) {
 } else {
   const tiers: UpgradeTiers = { ...EMPTY_TIERS };
   for (const t of TRACK_IDS) tiers[t] = tier;
-  const out: Record<string, unknown> = { level: level.id, ship, tier, runs };
+  const out: Record<string, unknown> = { level: level.id, ship, tier, runs, world, style };
+  const wingHalfSpan = wingContactSpan(SPECS[ship]);
   const t0 = Date.now();
   for (const skill of skills) {
     const rs: RunResult[] = [];
-    for (let i = 0; i < runs; i++) rs.push(runLevel({ level, ship, tiers, skill, seed: level.seed + i * 7919 }));
+    for (let i = 0; i < runs; i++) rs.push(runLevel({ level, ship, tiers, skill, seed: level.seed + i * 7919, world, wingHalfSpan, style }));
     const won = rs.filter(r => r.won);
     const mean = (f: (r: RunResult) => number, list = rs) => (list.length ? list.reduce((a, r) => a + f(r), 0) / list.length : 0);
     out[skill] = {
@@ -41,6 +48,14 @@ if (!level || !isShipId(ship)) {
       accuracy: +mean(r => r.accuracy).toFixed(3),
       kills: +mean(r => r.kills).toFixed(1),
       score: Math.round(mean(r => r.score)),
+      damageTaken: +mean(r => r.damageTaken).toFixed(1),
+      scrapes: +mean(r => r.scrapes).toFixed(1),
+      impacts: +mean(r => r.impacts).toFixed(1),
+      splashes: +mean(r => r.splashes).toFixed(1),
+      closeCalls: +mean(r => r.closeCalls).toFixed(1),
+      skim: +mean(r => r.skim).toFixed(1),
+      wallRun: +mean(r => r.wallRun).toFixed(1),
+      clampEvents: rs.reduce((a, r) => a + r.clampEvents, 0),
     };
   }
   out.ms = Date.now() - t0;

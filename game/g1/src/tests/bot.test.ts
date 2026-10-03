@@ -7,6 +7,8 @@ import { Rng } from '../game/core/rng';
 import { TEST_LEVEL } from '../levels/testLevel';
 import { EMPTY_TIERS } from '../data/upgrades';
 import type { BotSkillId } from '../data/bot';
+import { wingContactSpan } from '../scenes/mission/shipMounts';
+import { SPECS } from '../ships/specs';
 
 /** drone gallery: a drone appears every 1.2 s at a random lane, holding 120-220 u ahead */
 function gallery(skill: BotSkillId, seed: number, seconds = 40) {
@@ -82,5 +84,18 @@ describe('bot (brief §15)', () => {
       }
     }
     expect(hits).toBeLessThanOrEqual(1);
+  });
+});
+
+// F1 soak in the unit suite: a wall-hugging bot flies the whole test level on its real terrain
+describe('hugger soak (Control / Camera / Boundary addendum)', () => {
+  it('rides walls + floor for a full level: real contact, wall runs, never an invisible limit, survives', () => {
+    const r = runLevel({ level: TEST_LEVEL, ship: 'halcyon', tiers: { ...EMPTY_TIERS }, skill: 'expert', seed: 11, style: 'hugger', wingHalfSpan: wingContactSpan(SPECS.halcyon) });
+    expect(r.won).toBe(true);
+    expect(r.clampEvents).toBe(0);
+    expect(r.scrapes + r.impacts).toBeGreaterThan(10);
+    expect(r.wallRun).toBeGreaterThan(0.5);
+    expect(r.skim).toBeGreaterThan(2);
+    expect(r.closeCalls).toBeGreaterThan(3);
   });
 });

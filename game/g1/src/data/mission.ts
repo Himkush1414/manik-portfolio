@@ -156,16 +156,17 @@ export const FREEDOM = {
    *  this far inside the measured free space (u) so it never scrapes by accident */
   omega: 16,
   targetInset: 4,
-  /** close calls (AC9.6): rock within this clearance (u) without scraping; bolt within this miss distance */
-  closeRock: 4.5,
+  /** close calls (AC9.6): rock within this clearance (u, from the hull underside / the outermost point)
+   *  without scraping; bolt within this miss distance */
+  closeRock: 3,
   closeBolt: 3,
   closeCooldown: 1.2,
   closeScore: 50,
   closeShield: 3,
-  /** skim (below this clearance over the ground) and wall-run (a wall within `wallProbe` u at ship
-   *  altitude): score per second */
+  /** skim (below this clearance over the ground) and wall-run (a wall within `wallProbe` u of the outermost
+   *  point at ship altitude): score per second */
   skimAt: 9,
-  wallProbe: 6,
+  wallProbe: 4.5,
   skimScore: 40,
 } as const;
 

@@ -797,10 +797,15 @@ export class Sim {
     const G = world.ground;
     const wy = world.path.yAt(p.s) + p.y;
     const vClear = wy - G.height(p.s, p.x);
-    // clearance to the nearest surface (ring of probes at 3 u around the hull)
-    const near = Math.min(vClear, wy - Math.max(G.height(p.s, p.x - FREEDOM.closeRock - CONTACT.hullR), G.height(p.s, p.x + FREEDOM.closeRock + CONTACT.hullR)) + FREEDOM.closeRock) - CONTACT.hullR;
-    if (p.contact <= 0 && near < FREEDOM.closeRock - CONTACT.hullR + 1.5 && near > 0 && p.closeCd <= 0) this.closeCall(1);
-    const wall = G.height(p.s, p.x - FREEDOM.wallProbe) > wy || G.height(p.s, p.x + FREEDOM.wallProbe) > wy;
+    // lateral probes measure from the ship's OUTERMOST point (the wing tips when it has wings): a winged
+    // ship hugging a wall keeps its centre a whole half-span away from it
+    const hs = this.cfg.wingHalfSpan ?? 0;
+    const ext = hs > 0 ? hs + CONTACT.wingR : CONTACT.hullR;
+    // a close call: rock within closeRock of the hull underside or of the outermost point, no contact
+    const under = vClear - CONTACT.hullR;
+    const side = G.height(p.s, p.x - ext - FREEDOM.closeRock) > wy - CONTACT.hullR || G.height(p.s, p.x + ext + FREEDOM.closeRock) > wy - CONTACT.hullR;
+    if (p.contact <= 0 && p.closeCd <= 0 && ((under > 0 && under < FREEDOM.closeRock) || side)) this.closeCall(1);
+    const wall = G.height(p.s, p.x - ext - FREEDOM.wallProbe) > wy || G.height(p.s, p.x + ext + FREEDOM.wallProbe) > wy;
     const skim = vClear < FREEDOM.skimAt && p.contact <= 0;
     if (skim || wall) {
       const before = Math.floor(p.skimT);
