@@ -5,7 +5,7 @@
 //   -> pickups -> scoring -> events -> HUD bus
 // Everything is preallocated; step() allocates nothing. Same LevelDef + seed
 // + input script => identical state (tests/sim.test.ts).
-import { CAPS, PLAYER, RAIL, SIM, AIM_ASSIST, SCORING, GROUND, type AimAssist } from '../data/mission';
+import { CAPS, PLAYER, RAIL, SIM, AIM_ASSIST, SCORING, FREEDOM, CONTACT, CEILING, FEEL, type AimAssist } from '../data/mission';
 import { playerStats, type PlayerStats } from '../data/stats';
 import type { ShipId } from '../data/ships';
 import type { UpgradeTiers } from '../data/upgrades';
@@ -14,7 +14,7 @@ import { STEP } from './core/step';
 import { createStreams, type RngStreams } from './core/rng';
 import { EventRing, Ev } from './core/events';
 import { ProjectilePool, SlotPool } from './core/pool';
-import { curveAt, envelopeAt, ellipseR } from './rail';
+import { curveAt, envelopeAt } from './rail';
 import { segSphere } from './collide';
 import type { SimInput } from './input';
 import { createHud, type HudState } from './hud';
@@ -38,16 +38,53 @@ export type SimConfig = {
   /** Phase 2R world: the flight path (envelope + altitude) and deterministic ground heights at
    *  path-relative (s, u). Without it the level's envelope segments apply and nothing hits terrain. */
   world?: { path: SimPath; ground: SimGround };
+  /** half wing span (u) of the flown ship: the wing-tip contact spheres (render measures the model) */
+  wingHalfSpan?: number;
 };
 
 /** what the sim needs from the flight path (game/world/path.ts FlightPath) */
-export type SimPath = { yAt(s: number): number; envelopeAt(s: number, out: { a: number; b: number }): { a: number; b: number } };
-/** ground world-y at path-relative (s, u) (game/world/terrain.ts HeightGrid) */
-export type SimGround = { height(s: number, u: number): number; fill?(s0: number, s1: number): void };
+export type SimPath = {
+  yAt(s: number): number;
+  /** DESIGN envelope (tunes the lateral speed; never a limit) */
+  envelopeAt(s: number, out: { a: number; b: number }): { a: number; b: number };
+  /** world y of the cloud deck over this s (diegetic ceiling); default path y + CEILING.deck */
+  deckAt?(s: number): number;
+};
+/** ground world-y at path-relative (s, u) (game/world/terrain.ts HeightGrid); water surface y or NaN */
+export type SimGround = { height(s: number, u: number): number; water?(s: number, u: number): number; fill?(s0: number, s1: number): void };
 
 export class Player {
   /** terrain scrape cooldown (s) */
   scrapeCd = 0;
+  /** this step's lateral speed limit (from the envelope + AGI) and envelope (u) */
+  latMax = 0;
+  envA = 0;
+  envB = 0;
+  /** close calls / skim / wall-run (Creative Bible AC9.6) */
+  closeCd = 0;
+  closeCalls = 0;
+  skimTime = 0;
+  wallTime = 0;
+  /** the current skim / wall-run streak (s), for the HUD + score ticks */
+  skimT = 0;
+  /** measured free space (u) at the path line's altitude: left / right to terrain, up to the ceiling,
+   *  down to the ground under the path (camera STEADY follow, steering target, spawner lanes) */
+  freeL = 0;
+  freeR = 0;
+  freeUp = 0;
+  freeDown = 0;
+  /** ceiling: 0..1 turbulence, 0..1 inside the cloud deck (whiteout), kind (0 rim, 1 deck) */
+  turb = 0;
+  deck = 0;
+  ceilingKind = 1;
+  /** terrain contact this step (0..1, presentation shudder) + timers */
+  contact = 0;
+  scrapeAcc = 0;
+  scrapeTick = 0;
+  impactCd = 0;
+  waterCd = 0;
+  /** an invisible limit fired (must stay 0: addendum §3) */
+  clampEvents = 0;
   s = 0;
   x = 0;
   y = 0;
@@ -109,6 +146,8 @@ export class Enemy {
 const DEG = Math.PI / 180;
 // scratch (module scope: step() allocates nothing)
 const env = { a: 0, b: 0 };
+const _n = new Float64Array(3);
+const WING_SIDES = [-1, 1] as const;
 const order = new Int16Array(CAPS.enemies);
 
 export class Sim {
@@ -158,6 +197,10 @@ export class Sim {
     p.boosting = p.braking = false;
     p.boostLock = 0;
     p.scrapeCd = 0;
+    p.closeCd = p.skimT = 0;
+    p.turb = p.deck = p.contact = p.scrapeAcc = p.scrapeTick = p.impactCd = p.waterCd = 0;
+    p.clampEvents = 0;
+    p.closeCalls = p.skimTime = p.wallTime = 0;
     p.sinceBoost = 99;
     p.rollT = -1;
     p.rollCd = p.hullImmune = p.fireCd = p.grazeCd = 0;
@@ -211,22 +254,52 @@ export class Sim {
     p.aimYaw = Math.max(-PLAYER.aim.coneX, Math.min(PLAYER.aim.coneX, input.aimYaw));
     p.aimPitch = Math.max(-PLAYER.aim.coneY, Math.min(PLAYER.aim.coneY, input.aimPitch));
 
-    // lateral: velocity command = keys + mouse fine positioning (15 % of the
-    // reticle offset at convergence becomes a position target, tau 0.25 s)
-    let tvx = input.moveX * st.lateralSpeed;
-    let tvy = input.moveY * st.lateralSpeed;
-    if (input.aimSteer) {
-      const C = PLAYER.aim.convergence;
-      tvx += (Math.tan(p.aimYaw) * C * PLAYER.aim.steer) / PLAYER.aim.steerTau;
-      tvy += (Math.tan(p.aimPitch) * C * PLAYER.aim.steer) / PLAYER.aim.steerTau;
+    // design envelope (tunes the lateral speed only — addendum §3: nothing limits the ship but terrain)
+    const world = this.cfg.world;
+    if (world) world.path.envelopeAt(p.s, env);
+    else envelopeAt(this.level.envelope, p.s, env);
+    p.envA = env.a;
+    p.envB = env.b;
+    const L = FREEDOM.lateral;
+    const lim = Math.min(L.max, Math.max(L.min, L.k * env.a)) * (st.lateralSpeed / FREEDOM.agiRef);
+    p.latMax = lim;
+    const accel = lim / FREEDOM.accelTime, decel = lim / FREEDOM.stopTime;
+    if (world) {
+      // the height grid's rows ahead (bolts reach ~320 u): new rows only, a few per step
+      world.ground.fill?.(p.s - 60, p.s + 700);
+      this.measureFree(world);
     }
-    const lim = st.lateralSpeed;
-    if (tvx > lim) tvx = lim;
-    else if (tvx < -lim) tvx = -lim;
-    if (tvy > lim) tvy = lim;
-    else if (tvy < -lim) tvy = -lim;
-    p.vx = approach(p.vx, tvx, (Math.abs(tvx) > Math.abs(p.vx) && tvx * p.vx >= 0 ? st.accel : st.decel) * dt);
-    p.vy = approach(p.vy, tvy, (Math.abs(tvy) > Math.abs(p.vy) && tvy * p.vy >= 0 ? st.accel : st.decel) * dt);
+    if (input.cursor) {
+      // KEYBOARD + MOUSE: a critically damped pull toward the cursor's point in the MEASURED free space
+      // (kept targetInset inside it, so it never scrapes by accident); the keys nudge the cursor itself
+      const w = FREEDOM.omega, I = FREEDOM.targetInset;
+      const cx = Math.max(-1, Math.min(1, input.cursorX)), cy = Math.max(-1, Math.min(1, input.cursorY));
+      const tx = world ? cx * Math.max(0, (cx > 0 ? p.freeR : p.freeL) - I) : cx * env.a;
+      const ty = world ? cy * Math.max(0, (cy > 0 ? p.freeUp : p.freeDown) - I) : cy * env.b;
+      let axc = w * w * (tx - p.x) - 2 * w * p.vx, ayc = w * w * (ty - p.y) - 2 * w * p.vy;
+      const am = Math.hypot(axc, ayc), amax = Math.max(accel, decel);
+      if (am > amax) {
+        axc *= amax / am;
+        ayc *= amax / am;
+      }
+      p.vx += axc * dt;
+      p.vy += ayc * dt;
+      const vm = Math.hypot(p.vx, p.vy);
+      if (vm > lim) {
+        p.vx *= lim / vm;
+        p.vy *= lim / vm;
+      }
+    } else {
+      // KEYBOARD STEERS (default): the movement keys only; the mouse aims and never moves the ship
+      let tvx = input.moveX * lim;
+      let tvy = input.moveY * lim;
+      if (tvx > lim) tvx = lim;
+      else if (tvx < -lim) tvx = -lim;
+      if (tvy > lim) tvy = lim;
+      else if (tvy < -lim) tvy = -lim;
+      p.vx = approach(p.vx, tvx, (Math.abs(tvx) > Math.abs(p.vx) && tvx * p.vx >= 0 ? accel : decel) * dt);
+      p.vy = approach(p.vy, tvy, (Math.abs(tvy) > Math.abs(p.vy) && tvy * p.vy >= 0 ? accel : decel) * dt);
+    }
 
     // roll: impulse with a linearly decaying profile whose integral is 6 u
     p.rollCd = Math.max(0, p.rollCd - dt);
@@ -245,55 +318,8 @@ export class Sim {
       if (p.rollT >= T) p.rollT = -1;
     }
 
-    p.x += (p.vx + rollVx) * dt;
-    p.y += p.vy * dt;
-
-    // soft envelope: spring back proportional to the overshoot, graze sparks
-    const world = this.cfg.world;
-    if (world) world.path.envelopeAt(p.s, env);
-    else envelopeAt(this.level.envelope, p.s, env);
-    const r = ellipseR(p.x, p.y, env.a, env.b);
-    p.grazeCd = Math.max(0, p.grazeCd - dt);
-    if (r > 1) {
-      const over = Math.min(r - 1, RAIL.envelopeSoft);
-      // inward normal of the ellipse (gradient), scaled
-      let nx = p.x / (env.a * env.a), ny = p.y / (env.b * env.b);
-      const nl = Math.hypot(nx, ny) || 1;
-      nx /= nl;
-      ny /= nl;
-      const k = RAIL.envelopeSpring * over * dt;
-      p.vx -= nx * k * env.a;
-      p.vy -= ny * k * env.b;
-      // never further out than the soft limit
-      if (r > 1 + RAIL.envelopeSoft) {
-        const f = (1 + RAIL.envelopeSoft) / r;
-        p.x *= f;
-        p.y *= f;
-      }
-      if (p.grazeCd <= 0) {
-        p.grazeCd = RAIL.grazeEvery;
-        this.emit(Ev.Graze, -1, p.x, p.y, p.s);
-      }
-    }
-
-    // terrain: soft floor (push up), scrape (damage + knock-back, never through, never an instakill)
-    p.scrapeCd = Math.max(0, p.scrapeCd - dt);
-    if (world) {
-      world.ground.fill?.(p.s - 60, p.s + 700);
-      const clear = world.path.yAt(p.s) + p.y - world.ground.height(p.s, p.x);
-      if (clear < GROUND.softFloor) {
-        p.vy += (GROUND.softFloor - clear) * GROUND.softPush * dt;
-        if (clear < GROUND.scrapeAt) {
-          p.y += GROUND.scrapeAt - clear;
-          if (p.vy < GROUND.knock) p.vy = GROUND.knock;
-          if (p.scrapeCd <= 0) {
-            p.scrapeCd = GROUND.scrapeCooldown;
-            this.damagePlayer(GROUND.scrapeDamage, 1, p.x, p.y, p.s);
-            this.emit(Ev.GroundScrape, -1, p.x, p.y, p.s, GROUND.scrapeDamage);
-          }
-        }
-      }
-    }
+    // diegetic ceiling (ridge turbulence / cloud deck): climb authority fades, shear, downdraft
+    if (world) this.ceiling(world, lim, dt);
 
     // forward speed: level curve x boost / brake, eased
     const cruise = curveAt(this.level.speedCurve, p.s) || this.level.cruiseSpeed;
@@ -317,7 +343,15 @@ export class Sim {
     }
     const target = cruise * (p.boosting ? st.boostMult : p.braking ? PLAYER.brake : 1);
     p.speed += (target - p.speed) * (1 - Math.exp(-PLAYER.speedResponse * dt));
-    p.s += p.speed * dt;
+    // ALL motion (lateral + forward) through one swept contact: walls slide, a face ahead is an impact
+    this.moveAndCollide(p.vx + rollVx, p.vy, p.speed, dt);
+    this.terrainScore(dt);
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.s)) {
+      // a numerical guard is the ONLY reset the player can get; counted (must stay 0)
+      p.x = p.y = p.vx = p.vy = 0;
+      p.s = p.prevS;
+      p.clampEvents++;
+    }
 
     // shields regenerate after a quiet spell; immunity timers
     p.sinceDamage += dt;
@@ -513,7 +547,14 @@ export class Sim {
       const y1 = pool.y[i], y0 = y1 - pool.vy[i] * STEP;
       const px = x0 - p.prevX, py = y0 - p.prevY, pz = s0 - p.prevS;
       const t = segSphere(px, py, pz, x1 - p.x - px, y1 - p.y - py, s1 - p.s - pz, PLAYER.hurtRadius + pool.radius[i]);
-      if (t < 0) continue;
+      if (t < 0) {
+        // a bolt crossing the player's plane this step close by (not a hit) = a close call
+        if ((s0 - p.prevS) * (s1 - p.s) <= 0 && p.closeCd <= 0) {
+          const miss = Math.hypot(x1 - p.x, y1 - p.y) - PLAYER.hurtRadius - pool.radius[i];
+          if (miss < FREEDOM.closeBolt) this.closeCall(0);
+        }
+        continue;
+      }
       const hx = x0 + (x1 - x0) * t, hy = y0 + (y1 - y0) * t, hs = s0 + (s1 - s0) * t;
       const dmg = pool.dmg[i];
       pool.kill(i);
@@ -536,6 +577,239 @@ export class Sim {
       this.emit(Ev.Explode, e.slot, e.x, e.y, e.s, 1);
       this.enemies.release(e.slot);
     }
+  }
+
+
+  // ------------------------------------------------------- terrain contact (addendum §3)
+  /** free space at the path line: lateral scan to terrain, the ceiling above, the ground below */
+  private measureFree(world: NonNullable<SimConfig['world']>): void {
+    const p = this.player, G = world.ground, s = p.s;
+    const py = world.path.yAt(s);
+    const step = CONTACT.scanStep, max = CONTACT.scanMax;
+    let l: number = max, r: number = max;
+    for (let u = step; u <= max; u += step) {
+      if (G.height(s, -u) > py) {
+        l = u;
+        break;
+      }
+    }
+    for (let u = step; u <= max; u += step) {
+      if (G.height(s, u) > py) {
+        r = u;
+        break;
+      }
+    }
+    p.freeL = l;
+    p.freeR = r;
+    p.freeDown = Math.max(0, py - G.height(s, 0));
+    // ceiling: the cloud deck, or a canyon rim when both walls are within reach and below the deck
+    const deck = world.path.deckAt ? world.path.deckAt(s) : py + Math.max(CEILING.deckK * p.envB, CEILING.deckMin);
+    let ceil = deck, kind = 1;
+    if (l < max && r < max) {
+      let topL = -Infinity, topR = -Infinity;
+      for (const d of CEILING.rimProbe) {
+        topL = Math.max(topL, G.height(s, -(l + d)));
+        topR = Math.max(topR, G.height(s, r + d));
+      }
+      const rim = Math.min(topL, topR);
+      if (rim < deck) {
+        ceil = rim;
+        kind = 0;
+      }
+    }
+    p.freeUp = Math.max(0, ceil - py);
+    p.ceilingKind = kind;
+  }
+
+  /** ridge turbulence / cloud deck: climb authority fades to zero at the ceiling, shear, downdraft above */
+  private ceiling(world: NonNullable<SimConfig['world']>, lim: number, dt: number): void {
+    const p = this.player;
+    const wy = world.path.yAt(p.s) + p.y;
+    const ceilY = world.path.yAt(p.s) + p.freeUp;
+    const below = ceilY - wy;
+    p.turb = Math.min(1, Math.max(0, 1 - below / CEILING.zone));
+    p.deck = p.ceilingKind === 1 ? Math.min(1, Math.max(0, -below / 25)) : 0;
+    if (p.turb <= 0) return;
+    // climb authority: the rising-air shear eats the climb as the rim / deck nears
+    const cap = lim * Math.max(0, below) / CEILING.zone;
+    if (p.vy > cap) p.vy = cap;
+    // shear: deterministic gusts (sim stream)
+    p.vx += (this.rng.sim.next() - 0.5) * 2 * CEILING.shear * p.turb * dt;
+    p.vy += (this.rng.sim.next() - 0.5) * CEILING.shear * 0.6 * p.turb * dt;
+    // above the deck / rim: the air pushes the ship back down
+    if (below < 0) p.vy -= (CEILING.downdraft + CEILING.downdraftPerU * -below) * dt;
+  }
+
+  /**
+   * Swept contact: the motion (lateral x / y + forward s) is split into sub-steps no longer than
+   * CONTACT.sweep x hullR; after each, the hull sphere (ring of samples + centre, each with the gradient
+   * plane) and the two wing-tip spheres are pushed out along the deepest contact normal and the velocity
+   * loses its into-surface part (slide) — or, fast enough, bounces 30 % and takes impact damage.
+   */
+  private moveAndCollide(vx: number, vy: number, vs: number, dt: number): void {
+    const p = this.player, world = this.cfg.world;
+    const dist = Math.hypot(vx, vy, vs) * dt;
+    const n = world ? Math.max(1, Math.ceil(dist / (CONTACT.sweep * CONTACT.hullR))) : 1;
+    const h = dt / n;
+    p.contact = 0;
+    p.impactCd = Math.max(0, p.impactCd - dt);
+    p.waterCd = Math.max(0, p.waterCd - dt);
+    for (let k = 0; k < n; k++) {
+      p.x += vx * h;
+      p.y += vy * h;
+      p.s += vs * h;
+      if (!world) continue;
+      if (this.contactPass(world, h) > 0) {
+        // the rest of the sub-steps move with the response velocity (a roll into a wall ends there)
+        vx = p.vx;
+        vy = p.vy;
+        vs = p.speed;
+      }
+    }
+    if (world) this.waterPass(world, dt);
+  }
+
+  /** one contact resolution at the current position; returns the deepest penetration (u) */
+  private contactPass(world: NonNullable<SimConfig['world']>, h: number): number {
+    const p = this.player, G = world.ground;
+    const wy = world.path.yAt(p.s) + p.y;
+    const R = CONTACT.hullR;
+    let best = 0, nU = 0, nY = 1, nS = 0;
+    // hull: centre + ring (in the s-u plane at the hull's height), each sample's tangent plane
+    for (let i = -1; i < CONTACT.ring; i++) {
+      const a = i < 0 ? 0 : (i / CONTACT.ring) * Math.PI * 2;
+      const du = i < 0 ? 0 : Math.cos(a) * R, ds = i < 0 ? 0 : Math.sin(a) * R;
+      const pen = this.planePen(G, p.s + ds, p.x + du, p.s, p.x, wy, R, _n);
+      if (pen > best) {
+        best = pen;
+        nU = _n[0];
+        nY = _n[1];
+        nS = _n[2];
+      }
+    }
+    // wing tips (bank from the lateral velocity, deterministic; the visual attitude may differ a little)
+    const hs = this.cfg.wingHalfSpan ?? 0;
+    if (hs > 0) {
+      const bank = Math.max(-1, Math.min(1, p.vx / Math.max(1, p.latMax))) * FEEL.bankMax * 0.57; // ~ +-40 deg
+      const cb = Math.cos(bank), sb = Math.sin(bank);
+      for (const side of WING_SIDES) {
+        const tu = p.x + side * hs * cb, ty = wy - side * hs * sb;
+        const pen = this.planePen(G, p.s, tu, p.s, tu, ty, CONTACT.wingR, _n);
+        if (pen > best) {
+          best = pen;
+          nU = _n[0];
+          nY = _n[1];
+          nS = _n[2];
+        }
+      }
+    }
+    if (best <= 0) return 0;
+    // push out along the normal (u, y, s components)
+    p.x += nU * best;
+    p.y += nY * best;
+    p.s += nS * best;
+    p.contact = Math.min(1, Math.max(p.contact, best / R + 0.3));
+    // velocity response: into-surface component removed (slide) or bounced (impact)
+    const vn = p.vx * nU + p.vy * nY + p.speed * nS;
+    if (vn < 0) {
+      const closing = -vn;
+      const k = closing >= CONTACT.impactAt ? 1 + CONTACT.bounce : 1;
+      p.vx -= k * vn * nU;
+      p.vy -= k * vn * nY;
+      const cruise = curveAt(this.level.speedCurve, p.s) || this.level.cruiseSpeed;
+      p.speed = Math.max(cruise * CONTACT.minSpeedShare, p.speed - k * vn * nS);
+      if (closing >= CONTACT.impactAt && p.impactCd <= 0) {
+        const t = Math.min(1, (closing - CONTACT.impactAt) / (CONTACT.impactFull - CONTACT.impactAt));
+        const dmg = CONTACT.impactMin + (CONTACT.impactMax - CONTACT.impactMin) * t;
+        p.impactCd = CONTACT.impactImmunity;
+        this.damagePlayer(dmg, 1, p.x, p.y, p.s);
+        p.hullImmune = Math.max(p.hullImmune, CONTACT.impactImmunity);
+        this.emit(Ev.GroundScrape, -1, p.x, p.y, p.s, dmg, 1);
+        return best;
+      }
+    }
+    // sliding contact at speed: scrape (shield first), a few u/s or more along the surface
+    const tangential = Math.hypot(p.vx - (p.vx * nU + p.vy * nY) * nU, p.vy - (p.vx * nU + p.vy * nY) * nY, p.speed * (1 - Math.abs(nS)));
+    if (tangential > CONTACT.scrapeSpeed) p.scrapeAcc += CONTACT.scrapeDps * h;
+    return best;
+  }
+
+  /**
+   * Penetration of a sphere (centre (cs, cu, cy), radius r) into the tangent plane of the terrain at the
+   * sample (ss, su); `out` = the plane's unit normal (u, y, s). <= 0: no contact.
+   */
+  private planePen(G: SimGround, ss: number, su: number, cs: number, cu: number, cy: number, r: number, out: Float64Array): number {
+    const hh = G.height(ss, su);
+    // quick reject: the sample surface far below the sphere
+    if (hh < cy - r - 6) return 0;
+    const gu = (G.height(ss, su + 0.75) - G.height(ss, su - 0.75)) / 1.5;
+    const gs = (G.height(ss + 0.75, su) - G.height(ss - 0.75, su)) / 1.5;
+    const inv = 1 / Math.sqrt(1 + gu * gu + gs * gs);
+    const nu = -gu * inv, ny = inv, ns = -gs * inv;
+    out[0] = nu;
+    out[1] = ny;
+    out[2] = ns;
+    const d = (cu - su) * nu + (cy - hh) * ny + (cs - ss) * ns;
+    return r - d;
+  }
+
+  /** water: splash + drag + damage (rate-limited) + a bounce up */
+  private waterPass(world: NonNullable<SimConfig['world']>, dt: number): void {
+    const p = this.player, G = world.ground;
+    if (!G.water) return;
+    const wY = G.water(p.s, p.x);
+    if (!(wY === wY)) return; // NaN = dry
+    const wy = world.path.yAt(p.s) + p.y;
+    if (wy - CONTACT.hullR * 0.5 > wY) return;
+    p.speed *= Math.exp(-CONTACT.waterDrag * dt);
+    if (p.vy < CONTACT.waterBounce) p.vy = CONTACT.waterBounce;
+    if (p.waterCd <= 0) {
+      p.waterCd = CONTACT.waterCd;
+      this.damagePlayer(CONTACT.waterDamage, 1, p.x, p.y, p.s);
+      this.emit(Ev.Splash, -1, p.x, p.y, p.s, CONTACT.waterDamage);
+    }
+  }
+
+  /** scrape damage ticks, skim / wall-run / rock close calls */
+  private terrainScore(dt: number): void {
+    const p = this.player, world = this.cfg.world;
+    p.scrapeCd = Math.max(0, p.scrapeCd - dt);
+    p.closeCd = Math.max(0, p.closeCd - dt);
+    p.scrapeTick -= dt;
+    if (p.scrapeAcc > 0 && p.scrapeTick <= 0) {
+      p.scrapeTick = CONTACT.scrapeTick;
+      const dmg = p.scrapeAcc;
+      p.scrapeAcc = 0;
+      this.damagePlayer(dmg, 1, p.x, p.y, p.s);
+      this.emit(Ev.GroundScrape, -1, p.x, p.y, p.s, dmg, 0);
+    }
+    if (!world) return;
+    const G = world.ground;
+    const wy = world.path.yAt(p.s) + p.y;
+    const vClear = wy - G.height(p.s, p.x);
+    // clearance to the nearest surface (ring of probes at 3 u around the hull)
+    const near = Math.min(vClear, wy - Math.max(G.height(p.s, p.x - FREEDOM.closeRock - CONTACT.hullR), G.height(p.s, p.x + FREEDOM.closeRock + CONTACT.hullR)) + FREEDOM.closeRock) - CONTACT.hullR;
+    if (p.contact <= 0 && near < FREEDOM.closeRock - CONTACT.hullR + 1.5 && near > 0 && p.closeCd <= 0) this.closeCall(1);
+    const wall = G.height(p.s, p.x - FREEDOM.wallProbe) > wy || G.height(p.s, p.x + FREEDOM.wallProbe) > wy;
+    const skim = vClear < FREEDOM.skimAt && p.contact <= 0;
+    if (skim || wall) {
+      const before = Math.floor(p.skimT);
+      p.skimT += dt;
+      if (skim) p.skimTime += dt;
+      if (wall) p.wallTime += dt;
+      if (Math.floor(p.skimT) > before) this.score += Math.round(FREEDOM.skimScore * this.combo);
+    } else p.skimT = 0;
+  }
+
+  /** a near miss: score (x combo) + a shield tick + an event (whoosh / HUD) */
+  private closeCall(kind: number): void {
+    const p = this.player;
+    p.closeCd = FREEDOM.closeCooldown;
+    p.closeCalls++;
+    const v = Math.round(FREEDOM.closeScore * this.combo);
+    this.score += v;
+    p.shield = Math.min(this.stats.maxShield, p.shield + FREEDOM.closeShield);
+    this.emit(Ev.CloseCall, -1, p.x, p.y, p.s, kind, v);
   }
 
   // ------------------------------------------------------------------ damage

@@ -1,11 +1,15 @@
 // Shared inputs of the mission camera rigs, written by the mission loop each
 // frame (plain objects: no per-frame allocation), plus the ONE FOV-kick
 // spring every rig reads (switching rigs never resets the speed feel).
-import { Quaternion, Vector3 } from 'three';
+import { Quaternion, Vector3, type Camera } from 'three';
 import { SPEED_FX } from '../../data/speedfx';
 
-/** reticle angles (rad) the look-ahead follows */
-export const rigAim = { yaw: 0, pitch: 0 };
+/** the aim (rad) through the reticle; `cursor`: a human's reticle drawn at the screen cursor (cx, cy NDC);
+ *  `lookAhead`: settings controls.reticleLookAhead (the follow cameras lean toward the aim) */
+export const rigAim = { yaw: 0, pitch: 0, cursor: false, cx: 0, cy: 0, lookAhead: false };
+
+/** the camera the mission rendered with last (QA projections: __G1__.flight) */
+export const rigCamera = { cam: null as Camera | null };
 
 /** flight state for the camera feel */
 export const rigFlight = {
@@ -13,11 +17,21 @@ export const rigFlight = {
   speedRatio: 1,
   boost: false,
   reduceMotion: false,
-  /** ship visual bank (rad, + = left wing up) and the barrel-roll angle */
+  /** ship visual bank (rad, + = left wing up), barrel-roll angle, nose yaw (rad, three rotation.y) + pitch */
   bank: 0,
   roll: 0,
-  /** settings camera.rollCoupling (0..1.4) */
-  rollCoupling: 1,
+  yaw: 0,
+  pitch: 0,
+  /** settings camera.rollStrength (0..1) */
+  rollStrength: 1,
+  /** camera attachment weight: 0 STEADY HORIZON .. 1 FULLY ATTACHED, eased over CAMERA_ATTACH.blend s
+   *  toward the setting (MissionDriver), so a change never cuts */
+  attach: 1,
+  /** clearance (u) of a mission-local point above the terrain (camera collision); null = no world */
+  clearAt: null as ((x: number, y: number, z: number) => number) | null,
+  /** the cockpit interior's roll / pitch relative to the rail (combiner horizon) */
+  interiorRoll: 0,
+  interiorPitch: 0,
   /** cosmetic tunnel bend ahead: look-point offset (u) + bank into it (rad) */
   swayX: 0,
   swayY: 0,
@@ -25,6 +39,14 @@ export const rigFlight = {
   /** lateral acceleration of the ship (u/s^2): cockpit head inertia */
   ax: 0,
   ay: 0,
+  /** the design envelope at the player (u): fallback when no free space is measured (no world) */
+  envA: 18,
+  envB: 10.5,
+  /** measured free space at the path line (u, sim player.freeL / R / Up / Down; 0 = no world) */
+  freeL: 0,
+  freeR: 0,
+  freeUp: 0,
+  freeDown: 0,
 };
 
 /** Critically damped FOV kick (deg): +12 % of the base per +100 % speed over cruise, + boost; none

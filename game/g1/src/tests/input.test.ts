@@ -5,7 +5,7 @@ import { InputAction } from '../input/actions';
 import { emptyInput } from '../game/input';
 import { INPUT, PLAYER } from '../data/mission';
 
-const opts: InputOptions = { sensitivity: 1, invertY: false, deadzone: 0.08, smoothing: 0, autoFire: false };
+const opts: InputOptions = { sensitivity: 1, invertY: false, autoFire: false, steering: 'keyboard', reticleAutoCentre: false };
 const mk = (o: Partial<InputOptions> = {}, b = cloneBindings(DEFAULT_BINDINGS)) => new InputState(() => b, () => ({ ...opts, ...o }));
 
 describe('input state (brief §7 robustness)', () => {
@@ -13,7 +13,7 @@ describe('input state (brief §7 robustness)', () => {
     const s = mk();
     s.keyDown('KeyD', false, false);
     s.keyDown('KeyW', false, false);
-    const o = s.sample(emptyInput(), 0);
+    const o = s.sample(emptyInput());
     expect(o.moveX).toBeCloseTo(Math.SQRT1_2);
     expect(o.moveY).toBeCloseTo(Math.SQRT1_2);
   });
@@ -23,38 +23,38 @@ describe('input state (brief §7 robustness)', () => {
     s.mouseDown(0);
     s.keyDown('KeyA', false, false);
     s.clear();
-    const o = s.sample(emptyInput(), 0);
+    const o = s.sample(emptyInput());
     expect(o.fire).toBe(false);
     expect(o.moveX).toBe(0);
     // the keyup that arrives after a blur must not drive counts negative
     s.keyUp('Space');
     s.keyDown('Space', false, false);
-    expect(s.sample(emptyInput(), 0).fire).toBe(true);
+    expect(s.sample(emptyInput()).fire).toBe(true);
   });
   it('two inputs on one action: releasing one keeps it held', () => {
     const s = mk();
     s.keyDown('Space', false, false);
     s.mouseDown(0);
     s.keyUp('Space');
-    expect(s.sample(emptyInput(), 0).fire).toBe(true);
+    expect(s.sample(emptyInput()).fire).toBe(true);
     s.mouseUp(0);
-    expect(s.sample(emptyInput(), 0).fire).toBe(false);
+    expect(s.sample(emptyInput()).fire).toBe(false);
   });
   it('ignores auto-repeat for edges and never treats modifiers as game keys', () => {
     const s = mk();
     expect(s.keyDown('KeyE', false, false)).toBe(true);
-    expect(s.sample(emptyInput(), 0).roll).toBe(1);
+    expect(s.sample(emptyInput()).roll).toBe(1);
     s.keyDown('KeyE', true, false); // auto-repeat
-    expect(s.sample(emptyInput(), 0).roll).toBe(0);
+    expect(s.sample(emptyInput()).roll).toBe(0);
     expect(s.keyDown('ControlLeft', false, false)).toBe(false);
     expect(s.keyDown('KeyW', false, true)).toBe(false); // Ctrl+W is the browser's
-    expect(s.sample(emptyInput(), 0).moveY).toBe(0);
+    expect(s.sample(emptyInput()).moveY).toBe(0);
   });
   it('honours remapped bindings', () => {
     const b = assignBinding(cloneBindings(DEFAULT_BINDINGS), { action: InputAction.Fire, slot: 0 }, 'KeyJ');
     const s = mk({}, b);
     s.keyDown('KeyJ', false, false);
-    expect(s.sample(emptyInput(), 0).fire).toBe(true);
+    expect(s.sample(emptyInput()).fire).toBe(true);
     s.clear();
     s.keyDown('Space', false, false); // Space now free (swap put it nowhere bound to fire)
     expect(s.isHeld(InputAction.Fire)).toBe(false);
@@ -68,42 +68,83 @@ describe('input state (brief §7 robustness)', () => {
   });
 });
 
-describe('reticle (brief §7 mouse)', () => {
-  it('stays inside the aim cone; invert-Y flips pitch', () => {
-    const s = mk();
-    s.mouseMove(1e6, -1e6, 0);
-    expect(s.yaw).toBeCloseTo(PLAYER.aim.coneX);
-    expect(s.pitch).toBeCloseTo(PLAYER.aim.coneY); // mouse up (negative dy) = pitch up
-    const inv = mk({ invertY: true });
-    inv.mouseMove(0, -1e6, 0);
-    expect(inv.pitch).toBeCloseTo(-PLAYER.aim.coneY);
+describe('reticle + steering schemes (Control / Camera / Boundary addendum)', () => {
+  const mkv = (o: Partial<InputOptions> = {}) => {
+    const s = mk(o);
+    s.setViewport(1920, 1080);
+    return s;
+  };
+  it('KEYBOARD (default): the mouse moves only the reticle, over the whole screen (2 % margin)', () => {
+    const s = mkv();
+    s.mouseMove(100000, -100000, 0);
+    let o = s.sample(emptyInput());
+    expect(o.cursor).toBe(false);
+    expect(o.moveX).toBe(0);
+    expect(o.moveY).toBe(0);
+    expect(o.cursorX).toBe(INPUT.reticleEdge);
+    expect(o.cursorY).toBe(INPUT.reticleEdge);
+    s.mouseMove(-1e6, 1e6, 0);
+    o = s.sample(emptyInput());
+    expect(o.cursorX).toBe(-INPUT.reticleEdge);
+    expect(o.cursorY).toBe(-INPUT.reticleEdge);
+    expect(INPUT.reticleEdge).toBeCloseTo(0.96, 9);
   });
-  it('eases back to centre after the mouse idles (keyboard-only play)', () => {
-    const s = mk();
-    s.mouseMove(200, 0, 0);
-    const y0 = s.yaw;
-    s.update(1 / 60, 0.5); // still recent
-    expect(s.yaw).toBe(y0);
-    for (let t = 0; t < 120; t++) s.update(1 / 60, INPUT.idleRecenter + t / 60);
-    expect(Math.abs(s.yaw)).toBeLessThan(y0 * 0.05);
+  it('KEYBOARD: the movement keys fly the ship and never move the reticle', () => {
+    const s = mkv();
+    s.keyDown('KeyD', false, false);
+    s.keyDown('KeyS', false, false);
+    for (let i = 0; i < 60; i++) s.update(1 / 60, i / 60);
+    const o = s.sample(emptyInput());
+    expect(o.moveX).toBeCloseTo(Math.SQRT1_2);
+    expect(o.moveY).toBeCloseTo(-Math.SQRT1_2);
+    expect(o.cursorX).toBe(0);
+    expect(o.cursorY).toBe(0);
   });
-  it('fine positioning only while the mouse is active and outside the deadzone', () => {
-    const s = mk();
-    s.mouseMove(300, 0, 10);
-    s.update(1 / 60, 10);
-    expect(s.sample(emptyInput(), 10).aimSteer).toBe(true);
-    expect(s.sample(emptyInput(), 10 + INPUT.steerActive + 0.1).aimSteer).toBe(false);
-    const c = mk();
-    c.mouseMove(5, 0, 10); // inside the 8 % deadzone
-    c.update(1 / 60, 10);
-    expect(c.sample(emptyInput(), 10).aimSteer).toBe(false);
+  it('never moved = centred; invert-Y flips the vertical', () => {
+    expect(mkv().sample(emptyInput()).cursorX).toBe(0);
+    const inv = mkv({ invertY: true });
+    inv.mouseMove(0, -200, 0);
+    expect(inv.sample(emptyInput()).cursorY).toBeLessThan(0);
   });
-  it('smoothing lags the sim aim behind the raw (HUD) reticle', () => {
-    const s = mk({ smoothing: 1 });
-    s.mouseMove(300, 0, 0);
-    s.update(1 / 60, 0);
-    const o = s.sample(emptyInput(), 0);
-    expect(o.aimYaw).toBeGreaterThan(0);
-    expect(o.aimYaw).toBeLessThan(s.yaw);
+  it('a half-screen sweep takes a sensible number of counts at sensitivity 1', () => {
+    const s = mkv();
+    s.mouseMove(480 / INPUT.cursorPxPerCount, 0, 0);
+    expect(s.sample(emptyInput()).cursorX).toBeCloseTo(0.5, 6);
+  });
+  it('KEYBOARD + MOUSE: the ship follows the reticle; the keys nudge the reticle (additive)', () => {
+    const s = mkv({ steering: 'keyboardMouse' });
+    s.keyDown('KeyD', false, false);
+    s.update(0.5, 10);
+    let o = s.sample(emptyInput());
+    expect(o.cursor).toBe(true);
+    expect(o.moveX).toBe(0);
+    expect(o.cursorX).toBeCloseTo(INPUT.keyCursorRate * 0.5, 6);
+    s.keyUp('KeyD');
+    s.mouseMove(-200, 0, 10);
+    o = s.sample(emptyInput());
+    expect(o.cursorX).toBeLessThan(INPUT.keyCursorRate * 0.5);
+  });
+  it('reticle auto-centre: off by default; when on, only after the mouse idles', () => {
+    const off = mkv();
+    off.mouseMove(500, 0, 0);
+    const x0 = off.sample(emptyInput()).cursorX;
+    off.update(1, 5);
+    expect(off.sample(emptyInput()).cursorX).toBe(x0);
+    const on = mkv({ reticleAutoCentre: true });
+    on.mouseMove(500, 0, 0);
+    on.update(0.1, 0.5);
+    expect(on.sample(emptyInput()).cursorX).toBe(x0);
+    on.update(1, 5);
+    expect(on.sample(emptyInput()).cursorX).toBeLessThan(x0 * 0.5);
+  });
+  it('the camera-derived aim is what the sim receives (no lag), bounded by the aim cone', () => {
+    const s = mkv();
+    s.setCursorAim(0.6, -0.3);
+    const o = s.sample(emptyInput());
+    expect(o.aimYaw).toBeCloseTo(0.6, 9);
+    expect(o.aimPitch).toBeCloseTo(-0.3, 9);
+    s.setCursorAim(9, -9);
+    expect(s.yaw).toBeCloseTo(PLAYER.aim.coneX, 9);
+    expect(s.pitch).toBeCloseTo(-PLAYER.aim.coneY, 9);
   });
 });

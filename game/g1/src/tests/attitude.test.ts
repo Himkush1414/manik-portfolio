@@ -10,7 +10,7 @@ const LAT = 30;
 function run(a: ShipAttitude, seconds: number, dt: number, vx: (t: number) => number, opts: { rollT?: (t: number) => number } = {}): { minBank: number; maxBank: number } {
   let minBank = Infinity, maxBank = -Infinity;
   for (let t = 0; t < seconds; t += dt) {
-    a.update(dt, vx(t), 0, LAT, 0, 0, opts.rollT ? opts.rollT(t) : -1, 0.55, 1, 0, 0);
+    a.update(dt, vx(t), 0, LAT, opts.rollT ? opts.rollT(t) : -1, 0.55, 1, 0, 0);
     minBank = Math.min(minBank, a.bank);
     maxBank = Math.max(maxBank, a.bank);
   }
@@ -57,7 +57,7 @@ describe('ship attitude', () => {
     const angles: number[] = [];
     for (let t = 0; t <= 0.7; t += 1 / 60) {
       const rollT = t < 0.55 ? t : -1;
-      a.update(1 / 60, 0, 0, LAT, 0, 0, rollT, 0.55, 1, 0, 0);
+      a.update(1 / 60, 0, 0, LAT, rollT, 0.55, 1, 0, 0);
       angles.push(a.roll);
     }
     const min = Math.min(...angles);

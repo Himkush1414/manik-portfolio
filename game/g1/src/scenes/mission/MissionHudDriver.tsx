@@ -13,7 +13,7 @@ import { mission } from './missionRuntime';
 import { hudDom, RING_C } from '../../ui/screens/mission/hudDom';
 import { hudView } from '../../ui/screens/mission/hudView';
 import { rigAim, rigFlight } from '../../render/rigs/rigState';
-import { HUD, PLAYER, RIGS } from '../../data/mission';
+import { HUD, PLAYER } from '../../data/mission';
 import { Ev, type EventReader } from '../../game/core/events';
 import type { HudState } from '../../game/hud';
 import { cockpitFx } from '../cockpit/displays';
@@ -116,11 +116,10 @@ export function MissionHudDriver() {
       for (const k in last) last[k as keyof typeof last] = -2;
       lastXY.fill(-1e4);
     }
-    // combiner attitude, per frame: the camera's roll / pitch relative to the rail (the cockpit rig
-    // rides the ship; reduce-motion rolls the view only RIGS.reduceRoll of the bank, no barrel roll)
-    const att = mission.attitude;
-    cockpitFx.mission.bank = rigFlight.reduceMotion ? att.bank * RIGS.reduceRoll : att.bank + att.roll;
-    cockpitFx.mission.pitch = att.pitch;
+    // combiner attitude, per frame: the cockpit interior's roll / pitch relative to the rail (the cockpit
+    // rig writes them: the view's roll + the shell's roll around it in STEADY HORIZON)
+    cockpitFx.mission.bank = rigFlight.interiorRoll;
+    cockpitFx.mission.pitch = rigFlight.interiorPitch;
     const view = hudView.cockpit ? 'cockpit' : 'overlay';
     if (view !== lastView) d.root.dataset.view = lastView = view;
     if (readerSim !== sim) {
@@ -135,9 +134,16 @@ export function MissionHudDriver() {
 
     // ---- reticle + pipper (convergence distance), in CSS px
     const C = PLAYER.aim.convergence, pl = mission.player;
-    _v.set(pl.position.x + Math.tan(rigAim.yaw) * C, pl.position.y + Math.tan(rigAim.pitch) * C, -C);
-    mission.root.localToWorld(_v);
-    project(camera, size.width, size.height);
+    if (rigAim.cursor) {
+      // CURSOR-FLIGHT: the reticle IS the full-screen cursor (AC2.2); the guns converge under it
+      pos.x = ((rigAim.cx + 1) / 2) * size.width;
+      pos.y = ((1 - rigAim.cy) / 2) * size.height;
+      pos.on = true;
+    } else {
+      _v.set(pl.position.x + Math.tan(rigAim.yaw) * C, pl.position.y + Math.tan(rigAim.pitch) * C, -C);
+      mission.root.localToWorld(_v);
+      project(camera, size.width, size.height);
+    }
     const rx = pos.x, ry = pos.y;
     place(d.reticle, 0);
     _v.set(0, 0, -C);

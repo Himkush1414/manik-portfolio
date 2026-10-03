@@ -274,59 +274,23 @@ shadows, terrain geomorph; gate passed on the RTX 3050 + qa:phase1 green), Creat
      (4) every ceiling is turbulence / cloud / overhang; (5) enemies + hazards use the full width; (6) no
      new hitches, all gates green, perf budgets unchanged. Evidence (stills + logs) in DEV_NOTES.
 
-**F1 WIP state (uncommitted; `git status` shows it; backup `.scratch/f1-wip.patch` + copies of the new
-files in `.scratch/`).** Builds clean, typecheck clean, 152 unit tests green — but NOT gated and NOT
-consistent with addendum 3 yet. What is in it:
-- DONE in WIP and matching addendum 3: sim (`src/game/sim.ts`) has NO envelope clamp / spring / soft floor
-  any more; new swept contact model (`moveAndCollide`, `contactPass`, `planePen`: hull ring of 8 + centre,
-  wing-tip spheres from `SimConfig.wingHalfSpan` (NOT yet passed by MissionLoader — measure the ship
-  model's bbox half-width there), slide / impact / scrape ticks, `waterPass` (needs `SimGround.water`:
-  HeightGrid does not store water yet), `measureFree` (freeL / freeR / freeUp / freeDown at the path
-  line), `ceiling` (turbulence zone, climb authority fade, shear from rng.sim, downdraft above the deck;
-  `SimPath.deckAt` optional, default path y + max(2.4 b, 90)), `terrainScore` (close calls, skim,
-  wall-run), `clampEvents` counter (only a NaN guard increments it). Constants: `CONTACT`, `CEILING`,
-  `FREEDOM`, `ENVELOPES` (design targets) in `src/data/mission.ts`; Ev.CloseCall + Ev.Splash added.
-  Lateral speed = clamp(1.1 a_design, 30, 80) x AGI (feel tuning from the design target, not a limit).
-  Path validator: centre + envelope-top clear, >= 50 % of a 16-point BOX envelope flyable (to be replaced
-  by addendum 3's 40-probe validator in C1). Bank +-70 deg spring (FEEL), aimFollow 0.15.
-- DONE in WIP, needs RENAMING to addendum 3: `InputState` has a full-screen virtual cursor (cx, cy NDC),
-  `setCursorAim` (MissionDriver `cursorAim()` turns the camera ray through the cursor into aim angles —
-  KEEP: this is exactly addendum 3's aim ray), keys nudging the cursor + optional auto-centre (only for
-  the KEYBOARD + MOUSE scheme). Settings field `controls.controlModel: 'cursor' | 'aim'` (default
-  'cursor') + `autoCentre` -> RENAME to `controls.steering: 'keyboard' | 'keyboardMouse'` (default
-  'keyboard'), `reticleAutoCentre` (false), `reticleLookAhead` (false); in 'keyboard' the sample must
-  emit cursor = false and the reticle stays the mouse cursor (HUD already draws the reticle at the
-  cursor when `rigAim.cursor`: make that ALWAYS true for humans). SettingsModal has a "Control model"
-  segmented control -> rename. `camera.rollCoupling` (0-1.4) -> `camera.rollStrength` (0-1) +
-  `camera.attachment` in the v2 migration.
-- WRONG for addendum 3 / to replace: `FollowRig.computeFollow` (exact tilted-camera solve of the OLD
-  follow formula from the envelope; measured in QA: edges 92-97 %, but a nearly-fixed camera) -> replace
-  by the two attachment modes (A rigid mount; B formula with measured freeHalfWidth from
-  `sim.player.freeL/R`). `CockpitRig` bankShare 0.4 -> A: full roll, B: level eye + interior roll
-  <= 25 deg. `rigFlight.envA/envB` feed -> feed free widths instead. `MissionDriver` still uses
-  `envelopeR` for the attitude shudder `press` -> use `sim.player.contact`. `qa-freedom.mjs` asserts the
-  OLD 92 % / 85 % screen extremes with cursor-flight -> rewrite to addendum 3's tests (mouse-only 20 s,
-  attached / steady metrics, clampEvents). `qa-flight.mjs` beats were switched to cursorX/Y forces ->
-  revert to moveX/moveY (keyboard steering default). `src/tests/freedom.test.ts` mostly valid (lateral
-  speed, cursor crossing, bank timing, wall slide, skim, bolt close call); a planned replacement with
-  addendum-3 tests (mouse-never-moves-ship, head-on impact + water, cloud-deck + canyon-rim ceilings)
-  was NOT written yet — the full text of those tests was drafted this session; rewrite them.
-- `src/render/world/grade.ts` (W2b, per-world grade effect) is written but NOT wired into MissionPostFX.
+**F1 status (2026-10-03 session; full log in P2R.0d).** The WIP was resumed from the working tree
+(byte-identical to `.scratch/f1-wip.patch`) and finished against addendum 3. Part 1 = sim boundaries +
+controls / settings v2 + both camera attachments + `qa-freedom` rewrite (gated; see P2R.0d for the push).
+Still open in F1 (part 2): scrape / impact / splash / close-call presentation (sparks + dust by surface,
+grind / splash / whoosh voices, shake), HUD "TURBULENCE" + cloud-deck whiteout, tutorial prompts from the
+real bindings (L1 tutorialHints + HUD), dead Graze-envelope VFX branch removal, terrain-spark direction,
+balance bot re-run. Then W2b.
 
 **FIRST ACTIONS ON RESUME (in order):**
-1. Read this section, `docs/CREATIVE_BIBLE.md`, then `git status` + `git diff --stat` (the F1 WIP).
+1. Read P2R.0d (F1 log: what is pushed, what is open) and this section; `git status` + `git log -3`.
    `export WSLENV=G1_DGPU G1_DGPU=1` before ANY QA; tools/gpu.mjs assertGpu must say RTX 3050.
-2. Add addendum 3 to `docs/CREATIVE_BIBLE.md` as ACs (it overrides §2 cursor-flight default + follow).
-3. Finish F1 per the list above: settings v2 + migration test; keyboard-steers default; camera
-   attachments A / B (+ blend, roll strength, reduce-motion cap, camera collision pull-in); pass
-   wingHalfSpan; HeightGrid water; HUD TURBULENCE + whiteout + shake; tutorial prompt strings from
-   bindings; balance bot re-run; rewrite qa-freedom; unit tests.
-4. Gate F1 (build, typecheck, vitest, qa-freedom + qa-flight all rigs + qa:phase1 on the RTX 3050,
-   screenshots viewed, clampEvents 0), commit by explicit paths, push, ls-remote check. Push in 2-3
-   verified pieces (sim boundaries -> controls / settings -> camera attachments).
-5. Then the re-planned slices: W2b (living sky: TOD / weather timelines, keyframe probes, grade, horizon
-   ridges, cloud DECK visual + whiteout, sky events) -> C1 (chapters + walls within +-140 u + slots /
-   barriers / forks + 40-probe validator + approach strips) -> W3 -> W4 -> E1 -> W5-W9.
+2. Finish F1 part 2 (list above), gate (typecheck, vitest, build, qa-freedom all rigs x attachments,
+   qa-flight all rigs, qa-settings-p2, qa:phase1 on 5198), push.
+3. Then the re-planned slices: W2b (living sky: TOD / weather timelines, keyframe probes, grade — the
+   already-written `src/render/world/grade.ts` is NOT wired yet —, horizon ridges, cloud DECK visual +
+   whiteout, sky events) -> C1 (chapters + walls within +-140 u + slots / barriers / forks + 40-probe
+   validator + approach strips) -> W3 -> W4 -> E1 -> W5-W9.
 
 **PROVISIONAL / COMING NEXT (owner's note):** a reworked, go-overboard version of the post-launchpad
 world (landscape, levels, enemies, story) is coming next from the owner. Treat everything after the
@@ -416,6 +380,57 @@ encounters on top of a world that already feels right.
   * OPEN for W2b: per-world grade, far horizon ridge layers (the valley end
     is empty haze), two depth ranges (or measured proof they're unneeded),
     cloud look (reads a little "cotton ball"), near-ground detail (W3).
+
+### P2R.0d F1 log (Control / Camera / Boundary addendum)
+Session 2026-10-03. Addendum 3 is now in `docs/CREATIVE_BIBLE.md` §2 as AC2.1-AC2.16 (it replaced the
+cursor-flight default + computed follow).
+- **Controls (save v2).** `SAVE_VERSION` 2; migration 1 -> 2 drops every v1 control-model / aim / roll
+  field (and the pre-release v2 names) so they restart from the v2 defaults; bindings + everything else
+  kept (save.test: shipped v1 save, pre-release cursor fields, v2 round trip, bad values).
+  `controls.steering: 'keyboard' | 'keyboardMouse'` (default keyboard), `reticleAutoCentre` (off),
+  `reticleLookAhead` (off); `camera.attachment: 'attached' | 'steady'` (default attached),
+  `camera.rollStrength` 0-1 (reduce-motion caps 0.3). Deadzone / smoothing settings removed (they
+  only fed the 15 % mouse nudge, which is gone). `InputState`: the mouse moves ONLY the reticle (NDC
+  cursor, `INPUT.reticleEdge` 0.96 = 2 % margin); KEYBOARD: keys -> moveX / moveY, never the reticle;
+  KEYBOARD + MOUSE: sim `cursor` steering toward the reticle's point of the measured free space, keys
+  nudge the reticle. The aim is always the camera ray through the reticle (MissionDriver `cursorAim`
+  -> `setCursorAim`, no smoothing). `SimInput.aimSteer` + PLAYER.aim.steer / noseYaw + FEEL.aimFollow
+  deleted: the reticle never turns the ship (nose yaw comes from the motion only).
+- **Sim boundaries** (from the WIP, verified): no envelope clamp / spring / soft floor; swept contact
+  (hull ring 8 + centre, wing tips), slide / scrape / impact, water, measured free space, diegetic
+  ceilings (rim turbulence, cloud deck), `clampEvents`. New this session: `wingHalfSpan` passed by
+  MissionLoader (`wingContactSpan(spec)` = widest wing tip - wingR, halcyon ~5.3 u); `HeightGrid.water`
+  (per-row river surface / centre / reach from `TerrainField.riverAt`, nearest row) feeds `waterPass`.
+  **Perf regression found + fixed:** the WIP had dropped the per-step `ground.fill(s - 60, s + 700)`,
+  so beyond the 400 u prefill EVERY grid query missed into the noise field (45 k misses / s once the
+  ship roams, sim 1.38 ms / frame vs 0.12 in W2a). Restored (+ prefill to 700, grid half-width 240 ->
+  320 so rim probes / a roaming ship stay cached): misses 0, sim 0.06-0.2 ms.
+- **Camera attachments** (`CAMERA_ATTACH`, `FollowRig` rewritten, `CockpitRig`): one weight
+  `rigFlight.attach` (0 steady .. 1 attached) eased over 0.5 s by MissionDriver blends everything.
+  ATTACHED = a rigid boom: pos = ship + q (0, up, back), q = ship pitch + nose yaw + bank x strength
+  (+ 40 % barrel roll), so the ship is fixed on screen (drift measured 0-0.3 %); the ship's lateral bank
+  is capped at 40 deg in this mode (`ShipAttitude.bankLimit`). STEADY = no boom rotation (cosmetic bend
+  sway <= 2 deg), follow from the measured free space on the ship's side, eased 0.35 s, position lag
+  per rig, and an EXACT frame keep for the tilted boom (a high ship is shallower: the linear keep let it
+  reach NDC 0.98). Cockpit: attached = view rides the attitude (+ full barrel roll unless reduce-
+  motion); steady = level eye, `root` (shell / hands / dash) rolls <= 25 deg around it; the combiner
+  horizon now reads `rigFlight.interiorRoll / interiorPitch`. Camera collision: `rigFlight.clearAt`
+  (terrain clearance of a mission-local point) -> pull in to the reduced rig (1.6 up / 8 back x ship
+  scale) with hysteresis; MissionDriver's push-up stays as the last resort. Look-ahead toward the aim
+  only with the setting (default off: the mouse never moves the camera).
+- **Tests:** 170 green (input: mouse-only / keys-only / KEYBOARD + MOUSE / auto-centre / aim; freedom:
+  20 s mouse -> ship 0, no envelope clamp, wall slide within 2 u, head-on impact 6-25 + immunity +
+  no tunnelling at boost, water, cloud deck, canyon rim; simworld: grid water == terrain sample, river
+  dive splash + never under, wing tips touch first; camera: attached drift / roll x strength, steady
+  roll / reach / frame / correlation, mouse never moves the camera, collision pull-in, cockpit modes).
+- **`tools/qa-freedom.mjs` rewritten** (L1, every rig x attachment): real pointer-locked mouse sweep
+  (20 s attached, 6 s steady), keyboard strafes, wall, ceiling, stills `qa/f1/freedom-*`, JSON
+  `qa/f1/freedom.json`. `qa-settings-p2` now seeds a v1 save and checks the in-browser migration and
+  the v2 rows. `qa-flight` beats are keyboard again (the WIP had switched them to cursor forces).
+- Gate evidence for part 1: see the push entry below.
+- Notes: Level 1's valley is far wider than C1's target (a held strafe reached x ~ 476 u before the
+  wall) — C1 brings walls within +-140 u. Holding INTO a wall at full lateral speed is a series of
+  impacts (closing speed > 12 u/s), not a scrape — by design (head-on rule); brushing it is a slide.
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

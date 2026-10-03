@@ -9,8 +9,11 @@ export type SimInput = {
   moveY: number;
   aimYaw: number;
   aimPitch: number;
-  /** mouse fine positioning active (reticle offset steers the ship) */
-  aimSteer: boolean;
+  /** KEYBOARD + MOUSE steering: the ship flies toward the reticle's point (cursorX, cursorY, -1..1) of the
+   *  measured free space; false (default KEYBOARD steering): moveX / moveY only, the mouse just aims */
+  cursor: boolean;
+  cursorX: number;
+  cursorY: number;
   fire: boolean;
   boost: boolean;
   brake: boolean;
@@ -19,7 +22,7 @@ export type SimInput = {
 };
 
 export function emptyInput(): SimInput {
-  return { moveX: 0, moveY: 0, aimYaw: 0, aimPitch: 0, aimSteer: false, fire: false, boost: false, brake: false, roll: 0 };
+  return { moveX: 0, moveY: 0, aimYaw: 0, aimPitch: 0, cursor: false, cursorX: 0, cursorY: 0, fire: false, boost: false, brake: false, roll: 0 };
 }
 
 export function copyInput(src: SimInput, dst: SimInput): SimInput {
@@ -27,7 +30,9 @@ export function copyInput(src: SimInput, dst: SimInput): SimInput {
   dst.moveY = src.moveY;
   dst.aimYaw = src.aimYaw;
   dst.aimPitch = src.aimPitch;
-  dst.aimSteer = src.aimSteer;
+  dst.cursor = src.cursor;
+  dst.cursorX = src.cursorX;
+  dst.cursorY = src.cursorY;
   dst.fire = src.fire;
   dst.boost = src.boost;
   dst.brake = src.brake;

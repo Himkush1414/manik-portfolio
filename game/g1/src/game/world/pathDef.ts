@@ -33,8 +33,10 @@ export const PATH_RULES = {
   maxPitchDeg: 20,
   minClearance: 8,
   maxClearance: 260,
-  /** envelope corners never within this of terrain */
+  /** "flyable" = at least this far above terrain (u) */
   envelopeMargin: 3,
+  /** share of the envelope that must be flyable at every s (terrain inside the rest is real) */
+  envelopeFreeShare: 0.5,
   minWaypointSpacing: 60,
 } as const;
 

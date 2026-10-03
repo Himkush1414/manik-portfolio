@@ -17,7 +17,7 @@ import { DEBUG } from '../../../core/constants';
 import { sfx } from '../../../audio/sfx';
 import { closeModal } from '../hangar/hangarActions';
 import type { CameraMode } from '../../../render/cameraRig';
-import type { AimAssistLevel, SubtitleSize } from '../../../state/schema';
+import type { AimAssistLevel, CameraAttachment, SteeringScheme, SubtitleSize } from '../../../state/schema';
 
 type Tab = 'controls' | 'camera' | 'graphics' | 'audio' | 'access';
 const TABS: { id: Tab; label: string }[] = [
@@ -173,11 +173,23 @@ function Controls() {
       <Row label="Invert Y">
         <Toggle checked={c.invertY} onChange={v => patch('controls', { invertY: v })} label="Invert Y" />
       </Row>
-      <Row label="Deadzone">
-        <Slider value={c.deadzone} min={0} max={0.5} step={0.01} onChange={v => patch('controls', { deadzone: v })} label="Deadzone" format={pct} numeric={false} />
+      <h3 className={s.section}>Flight</h3>
+      <Row label="Ship steering" hint="Keyboard: the movement keys fly the ship and the mouse only aims. Keyboard + mouse: the ship also flies toward the reticle.">
+        <Segmented<SteeringScheme>
+          label="Ship steering"
+          value={c.steering}
+          onChange={v => patch('controls', { steering: v })}
+          options={[
+            { id: 'keyboard', label: 'KEYBOARD' },
+            { id: 'keyboardMouse', label: 'KEYBOARD + MOUSE' },
+          ]}
+        />
       </Row>
-      <Row label="Smoothing">
-        <Slider value={c.smoothing} min={0} max={1} step={0.01} onChange={v => patch('controls', { smoothing: v })} label="Smoothing" format={pct} numeric={false} />
+      <Row label="Reticle auto-centre" hint="The reticle drifts back to the centre when the mouse rests.">
+        <Toggle checked={c.reticleAutoCentre} onChange={v => patch('controls', { reticleAutoCentre: v })} label="Reticle auto-centre" />
+      </Row>
+      <Row label="Reticle look-ahead" hint="The outside cameras lean a little toward where you aim.">
+        <Toggle checked={c.reticleLookAhead} onChange={v => patch('controls', { reticleLookAhead: v })} label="Reticle look-ahead" />
       </Row>
       <h3 className={s.section}>Flight assists</h3>
       <Row label="Aim assist" hint="Gently steers shots toward the nearest target. Applies from the next launch.">
@@ -201,31 +213,26 @@ function Controls() {
   );
 }
 
-/** Reticle that follows the mouse inside the box with the live sensitivity,
- *  invert-Y, deadzone and smoothing applied. */
+/** Reticle that follows the mouse inside the box with the live sensitivity and invert-Y applied. */
 function ReticlePreview() {
   const box = useRef<HTMLDivElement>(null);
   const ret = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const el = box.current!;
-    const target = { x: 0, y: 0 }, cur = { x: 0, y: 0 };
+    const target = { x: 0, y: 0 };
     let raf = 0;
     const move = (e: PointerEvent) => {
       const r = el.getBoundingClientRect();
       const nx = ((e.clientX - r.left) / r.width) * 2 - 1, ny = ((e.clientY - r.top) / r.height) * 2 - 1;
       const c = useSettings.getState().controls;
-      const dz = (v: number) => (Math.abs(v) < c.deadzone ? 0 : Math.sign(v) * ((Math.abs(v) - c.deadzone) / (1 - c.deadzone)));
-      target.x = Math.max(-1, Math.min(1, dz(nx) * c.sensitivity));
-      target.y = Math.max(-1, Math.min(1, dz(ny) * c.sensitivity * (c.invertY ? -1 : 1)));
+      target.x = Math.max(-1, Math.min(1, nx * c.sensitivity));
+      target.y = Math.max(-1, Math.min(1, ny * c.sensitivity * (c.invertY ? -1 : 1)));
     };
     const leave = () => {
       target.x = target.y = 0;
     };
     const tick = () => {
-      const k = 1 - useSettings.getState().controls.smoothing * 0.92;
-      cur.x += (target.x - cur.x) * k;
-      cur.y += (target.y - cur.y) * k;
-      if (ret.current) ret.current.style.transform = `translate(${cur.x * (el.clientWidth / 2 - 12)}px, ${cur.y * (el.clientHeight / 2 - 12)}px)`;
+      if (ret.current) ret.current.style.transform = `translate(${target.x * (el.clientWidth / 2 - 12)}px, ${target.y * (el.clientHeight / 2 - 12)}px)`;
       raf = requestAnimationFrame(tick);
     };
     el.addEventListener('pointermove', move);
@@ -271,8 +278,19 @@ function Camera() {
       <Row label="Camera shake">
         <Slider value={cam.shake} min={0} max={1} step={0.01} onChange={v => patch('camera', { shake: v })} label="Camera shake" format={pct} numeric={false} />
       </Row>
-      <Row label="Roll coupling" hint="How far the camera banks with the ship. Reduce motion caps it at 30%.">
-        <Slider value={cam.rollCoupling} min={0} max={1.4} step={0.05} onChange={v => patch('camera', { rollCoupling: v })} label="Camera roll coupling" format={pct} numeric={false} />
+      <Row label="Attachment" hint="Fully attached: the camera is mounted on the ship and rolls with it. Steady horizon: the camera follows the ship but keeps the horizon level; the ship banks alone.">
+        <Segmented<CameraAttachment>
+          label="Camera attachment"
+          value={cam.attachment}
+          onChange={v => patch('camera', { attachment: v })}
+          options={[
+            { id: 'attached', label: 'FULLY ATTACHED' },
+            { id: 'steady', label: 'STEADY HORIZON' },
+          ]}
+        />
+      </Row>
+      <Row label="Roll strength" hint="How far the view rolls with the ship's bank. Reduce motion caps it at 30%.">
+        <Slider value={cam.rollStrength} min={0} max={1} step={0.05} onChange={v => patch('camera', { rollStrength: v })} label="Camera roll strength" format={pct} numeric={false} />
       </Row>
       <Row label="Helmet frame" hint="Dark visor rim in cockpit view.">
         <Segmented

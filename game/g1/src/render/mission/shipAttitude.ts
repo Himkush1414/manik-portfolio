@@ -2,8 +2,9 @@
 // the sim never reads it. Springs (data/mission.ts FEEL) pull bank / pitch /
 // yaw toward targets made from the lateral velocity, a lead from lateral
 // acceleration (a key tap banks before the velocity builds; a release swings
-// through a small counter-bank = mass), the reticle (nose yaw 30 %) and the
-// envelope (shudder while the shield presses the boundary). The barrel roll
+// through a small counter-bank = mass) and terrain contact (shudder while the
+// hull scrapes / slides). The reticle never moves the ship (Control / Camera /
+// Boundary addendum): the nose yaws into the MOTION only. The barrel roll
 // is a front-loaded eased full turn matching the sim's decaying impulse.
 // Plain numbers in, plain numbers out: unit-testable, no allocation.
 import { FEEL } from '../../data/mission';
@@ -28,6 +29,9 @@ export class ShipAttitude {
   private yawV = 0;
   private vx0 = 0;
   private vy0 = 0;
+  /** lateral bank cap (rad): FEEL.bankMax, less while the camera is FULLY ATTACHED (it rolls with the
+   *  bank: CAMERA_ATTACH.bankMax) — set by the mission loop */
+  bankLimit: number = FEEL.bankMax;
   /** smoothed lateral acceleration (u/s^2): cockpit head inertia reads it */
   ax = 0;
   ay = 0;
@@ -45,10 +49,10 @@ export class ShipAttitude {
 
   /**
    * dt: render seconds (time-scaled); vx / vy: lateral velocity (u/s); lat: max lateral speed;
-   * aimYaw / aimPitch: reticle (rad); rollT: seconds into the roll (-1 = none), rollDur, rollDir;
-   * press: how far past the envelope (0 = inside); life: wobble scale (1, 0.25 reduce-motion, 0 off).
+   * rollT: seconds into the roll (-1 = none), rollDur, rollDir; contact: terrain contact this step
+   * (0..1, sim player.contact); life: wobble scale (1, 0.25 reduce-motion, 0 off).
    */
-  update(dt: number, vx: number, vy: number, lat: number, aimYaw: number, aimPitch: number, rollT: number, rollDur: number, rollDir: number, press: number, life: number): void {
+  update(dt: number, vx: number, vy: number, lat: number, rollT: number, rollDur: number, rollDir: number, contact: number, life: number): void {
     if (dt <= 0) return;
     this.t += dt;
     if (!this.primed) {
@@ -63,10 +67,10 @@ export class ShipAttitude {
     this.vx0 = vx;
     this.vy0 = vy;
     const nx = lat > 0 ? vx / lat : 0, ny = lat > 0 ? vy / lat : 0;
-    const bMax = FEEL.bankMax * 1.15, pMax = FEEL.pitchMax * 1.15;
-    const bankT = clamp(-(nx * FEEL.bankMax + this.ax * FEEL.bankLead), bMax);
-    const pitchT = clamp(ny * FEEL.pitchMax + this.ay * FEEL.pitchLead, pMax) + aimPitch * 0.3;
-    const yawT = aimYaw * 0.3 + nx * FEEL.yawFromVx;
+    const bMax = this.bankLimit * 1.15, pMax = FEEL.pitchMax * 1.15;
+    const bankT = clamp(-(nx * this.bankLimit + this.ax * FEEL.bankLead), bMax);
+    const pitchT = clamp(ny * FEEL.pitchMax + this.ay * FEEL.pitchLead, pMax);
+    const yawT = nx * FEEL.yawFromVx;
     // springs, sub-stepped (stable for any frame time up to the 0.1 s clamp)
     const w = FEEL.spring.omega, z = FEEL.spring.zeta;
     for (let left = dt; left > 1e-6; left -= SUB) {
@@ -84,11 +88,11 @@ export class ShipAttitude {
       const u = Math.min(1, rollT / rollDur);
       this.roll = -rollDir * TAU * (1 - Math.pow(1 - u, FEEL.rollEase));
     } else this.roll = 0;
-    // life: bob + roll / pitch noise (three incommensurate sines), shield shudder at the boundary
+    // life: bob + roll / pitch noise (three incommensurate sines), shudder while in terrain contact
     const W = FEEL.wobble, t = this.t;
     const s1 = Math.sin(t * TAU * W.hz[0]), s2 = Math.sin(t * TAU * W.hz[1] + 1.7), s3 = Math.sin(t * TAU * W.hz[2] + 4.1);
     this.bob = W.amp * life * (0.6 * s1 + 0.4 * s3);
-    this.shudder = Math.max(this.shudder * Math.exp(-dt / FEEL.graze.decay), Math.min(1, press * 8) * FEEL.graze.kick);
+    this.shudder = Math.max(this.shudder * Math.exp(-dt / FEEL.graze.decay), Math.min(1, contact) * FEEL.graze.kick);
     const shake = this.shudder * Math.sin(t * 47) * Math.max(0.25, life);
     this.noiseBank = (W.rollDeg * DEG * (0.55 * s2 + 0.45 * s1) * life) + shake;
     this.noisePitch = W.pitchDeg * DEG * (0.5 * s3 + 0.5 * s2) * life;

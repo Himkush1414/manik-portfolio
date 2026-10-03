@@ -41,8 +41,12 @@ export const enum Ev {
   HazardImpact,
   /** projectile hit something indestructible / the terrain: sparks / surface puff (b = 1: terrain) */
   Spark,
-  /** the player scraped the terrain: a = damage */
+  /** terrain contact: a = damage, b = 1 head-on impact / 0 scrape tick (sparks, dust, grind, shake) */
   GroundScrape,
+  /** near miss (Creative Bible AC9.6): a = kind (0 bolt, 1 rock, 2 trunk), b = score awarded */
+  CloseCall,
+  /** the player hit water: a = damage */
+  Splash,
 }
 
 export class EventRing {

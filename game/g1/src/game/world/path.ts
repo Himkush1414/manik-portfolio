@@ -216,6 +216,8 @@ export class FlightPath {
 
 /** Path rules that need the built path (and optionally the terrain): curvature, pitch, continuity,
  *  envelope clearance. `ground(s, u)` = terrain world height at the path-relative point. */
+const BOX8 = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]] as const;
+
 export function validatePath(p: FlightPath, ground?: (s: number, u: number) => number): string[] {
   const e: string[] = [];
   const rMin = PATH_RULES.curvatureFactor * PATH_RULES.ribbonHalfWidth;
@@ -234,20 +236,29 @@ export function validatePath(p: FlightPath, ground?: (s: number, u: number) => n
   if (worstR < rMin) e.push(`curvature: radius ${worstR.toFixed(0)} u at s=${worstRS} < ${rMin} u`);
   if (worstP > maxPitch) e.push(`pitch: ${((Math.atan(worstP) * 180) / Math.PI).toFixed(1)} deg at s=${worstPS} > ${PATH_RULES.maxPitchDeg}`);
   if (ground) {
+    // Creative Bible AC2.9: terrain INSIDE the envelope is real (soft push / scrape), so the envelope may
+    // dip into the floor or the walls — but the path line itself and the top of the envelope must be
+    // clear, and at least `envelopeFreeShare` of the envelope (16 points: the rim every 45 deg + half
+    // way in) must be flyable
     const f = createFrame(), env = { a: 0, b: 0 };
     for (let s = 0; s < p.length; s += 4) {
       p.frameAt(s, f);
       p.envelopeAt(s, env);
-      // the 8 envelope points (ellipse every 45 deg)
-      for (let k = 0; k < 8; k++) {
-        const ang = (k * Math.PI) / 4;
-        const u = Math.cos(ang) * env.a, v = Math.sin(ang) * env.b;
-        const wy = f.py + f.ry * u + f.uy * v;
-        const g = ground(s, u);
-        if (wy - g < PATH_RULES.envelopeMargin) {
-          e.push(`envelope: point (${u.toFixed(1)}, ${v.toFixed(1)}) only ${(wy - g).toFixed(1)} u above terrain at s=${s}`);
-          return e;
-        }
+      const at = (u: number, v: number) => f.py + f.ry * u + f.uy * v - ground(s, u);
+      const c = at(0, 0), top = at(0, env.b);
+      if (c < PATH_RULES.envelopeMargin || top < PATH_RULES.envelopeMargin) {
+        e.push(`envelope: the path line / envelope top only ${Math.min(c, top).toFixed(1)} u above terrain at s=${s}`);
+        return e;
+      }
+      let free = 0;
+      // the box envelope's rim (edges + corners) and the same half way in
+      for (let k = 0; k < 16; k++) {
+        const [bx, by] = BOX8[k & 7], r = k < 8 ? 1 : 0.5;
+        if (at(bx * env.a * r, by * env.b * r) >= PATH_RULES.envelopeMargin) free++;
+      }
+      if (free / 16 < PATH_RULES.envelopeFreeShare) {
+        e.push(`envelope: only ${free}/16 envelope points flyable at s=${s}`);
+        return e;
       }
     }
   }

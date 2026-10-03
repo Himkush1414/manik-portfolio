@@ -23,7 +23,7 @@ import { MissionWorld } from '../../render/world/MissionWorld';
 import { missionSpace } from '../../render/world/missionSpace';
 import { worldById } from '../../data/worlds/registry';
 import { SPECS } from '../../ships/specs';
-import { cannonMuzzles } from './shipMounts';
+import { cannonMuzzles, wingContactSpan } from './shipMounts';
 import { registerDebug } from '../../debug/debugApi';
 import { setCockpitEye } from './missionCamera';
 
@@ -102,7 +102,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   registerDebug('terrain', { stats: () => ({ ...env.streamer.stats, gridMisses: env.grid.misses, gridQueries: env.grid.queries }) });
   // the first stretch streams in now (the reveal never waits for tiles) + the sim's first grid rows
   await env.prestream(0);
-  env.grid.fill(-60, 400);
+  env.grid.fill(-60, 700);
   // the world's environment probe (sky in world axes -> PMREM; once per world build)
   if (!env.probe.texture) env.probe.capture(gl, env.sky);
   if (!mission.streaks) {
@@ -130,7 +130,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   const pr = useProfile.getState();
   mission.level = level;
   mission.opts = opts;
-  mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god, muzzles: cannonMuzzles(SPECS[pr.selectedShip]), world: { path: env.path, ground: env.grid } });
+  mission.sim = new Sim({ level, ship: pr.selectedShip, tiers: pr.upgrades, seed: opts.seed ?? level.seed, aimAssist: useSettings.getState().controls.aimAssist, god: opts.god, muzzles: cannonMuzzles(SPECS[pr.selectedShip]), wingHalfSpan: wingContactSpan(SPECS[pr.selectedShip]), world: { path: env.path, ground: env.grid } });
   mission.bot = opts.bot ? new Bot(opts.bot, opts.seed ?? level.seed) : null;
   mission.progress = 1;
   mission.prepared = true;

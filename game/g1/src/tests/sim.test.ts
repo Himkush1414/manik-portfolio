@@ -5,7 +5,7 @@ import { Rng } from '../game/core/rng';
 import { Ev } from '../game/core/events';
 import { TEST_LEVEL } from '../levels/testLevel';
 import { EMPTY_TIERS } from '../data/upgrades';
-import { PLAYER, RAIL } from '../data/mission';
+import { PLAYER } from '../data/mission';
 import { STEP } from '../game/core/step';
 
 const make = (seed = 1) => new Sim({ level: TEST_LEVEL, ship: 'halcyon', tiers: { ...EMPTY_TIERS }, seed });
@@ -44,29 +44,24 @@ describe('Sim determinism (brief §3)', () => {
 });
 
 describe('player flight (brief §5, §7)', () => {
-  it('soft envelope: holding hard right never leaves the soft ellipse and emits grazes', () => {
+  it('no invisible limit: without terrain, holding hard right just keeps going (addendum §3)', () => {
     const sim = make();
     const inp: SimInput = { ...emptyInput(), moveX: 1 };
-    const r = sim.events.reader();
-    let maxX = 0, grazes = 0;
-    for (let t = 0; t < 300; t++) {
-      sim.step(inp);
-      maxX = Math.max(maxX, sim.player.x);
-      r.drain(i => void (sim.events.type[i] === Ev.Graze && grazes++));
-    }
-    expect(maxX).toBeLessThanOrEqual(RAIL.envelope.a * (1 + RAIL.envelopeSoft) + 1e-9);
-    expect(maxX).toBeGreaterThan(RAIL.envelope.a * 0.98);
-    expect(grazes).toBeGreaterThan(2);
+    for (let t = 0; t < 300; t++) sim.step(inp);
+    // 5 s at the lateral speed: far beyond any design envelope, no clamp, no spring-back
+    expect(sim.player.x).toBeGreaterThan(sim.player.latMax * 4.5);
+    expect(sim.player.clampEvents).toBe(0);
   });
-  it('stops in about 0.18 s after the key is released', () => {
+  it('stops in about FREEDOM.stopTime (0.12 s) after the key is released', () => {
     const sim = make();
-    for (let t = 0; t < 60; t++) sim.step({ ...emptyInput(), moveX: 1 });
+    for (let t = 0; t < 14; t++) sim.step({ ...emptyInput(), moveX: 1 });
+    expect(Math.abs(sim.player.vx)).toBeGreaterThan(sim.player.latMax * 0.99);
     let n = 0;
     while (Math.abs(sim.player.vx) > 1e-6 && n < 120) {
       sim.step(emptyInput());
       n++;
     }
-    expect(n * STEP).toBeLessThan(0.25);
+    expect(n * STEP).toBeLessThan(0.16);
   });
   it('a roll moves ~6 u sideways and grants projectile i-frames only in its window', () => {
     const sim = make();

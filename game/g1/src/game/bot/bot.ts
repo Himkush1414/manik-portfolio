@@ -43,7 +43,6 @@ export class Bot {
     const p = sim.player;
     const sk = this.skill;
     out.roll = 0;
-    out.aimSteer = false;
     out.brake = false;
     this.weave += STEP;
 

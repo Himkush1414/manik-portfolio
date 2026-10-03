@@ -4,7 +4,7 @@
 // (nose -z). Rail space: x right, y up, forward +.
 //   ship (hx, hy, hz) -> attitude group (-hx, hy, -hz) -> rail (-hx, hy, hz)
 import type { ShipSpec } from '../../ships/types';
-import { PLAYER } from '../../data/mission';
+import { PLAYER, CONTACT } from '../../data/mission';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -41,4 +41,10 @@ export function engineMounts(spec: ShipSpec): Vec3[] {
   const out: Vec3[] = [];
   for (const h of spec.hardpoints) if (h.kind === 'engine') out.push(h.pos);
   return out;
+}
+
+/** The sim's wing-tip contact spheres (r CONTACT.wingR) sit this far out (u) so their outer edge is the
+ *  widest wing tip of the spec (addendum: "wing-tip spheres, ShipSpec span"). */
+export function wingContactSpan(spec: ShipSpec): number {
+  return Math.max(0, Math.abs(wingTips(spec)[0][0]) - CONTACT.wingR);
 }

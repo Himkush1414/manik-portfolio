@@ -2,9 +2,11 @@
 // (?level=test): a ~4 km stretch of ARDEN valley at the L1 cruise speed,
 // no timeline. Unit tests run the sim without the world (envelope segments).
 import type { LevelDef } from './types';
-import { RAIL } from '../data/mission';
+import { RAIL, ENVELOPES } from '../data/mission';
 
-const w = (x: number, z: number, clearance: number, floor: number) => ({ x, z, clearance, envA: RAIL.envelope.a, envB: RAIL.envelope.b, bank: 0, floor });
+// the world path flies the open-plains envelope (Creative Bible AC2.4); `envelope` below is for unit
+// tests that run the sim without the world
+const w = (x: number, z: number, clearance: number, floor: number) => ({ x, z, clearance, envA: ENVELOPES.plains.a, envB: ENVELOPES.plains.b, bank: 0, floor });
 
 export const TEST_LEVEL: LevelDef = {
   id: 'test',

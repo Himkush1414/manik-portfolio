@@ -1,15 +1,19 @@
 // COCKPIT rig (brief §8): the Phase 1 interior flown inside the mission.
 // The cockpit root (its interior, combiner, MFDs and the three mirror
-// cameras) is placed on the flown ship's eye every frame — position from the
-// attitude group, orientation = the ship's attitude — so the interior is
-// rigid with the camera (no swimming) and banks / pitches / rolls with the
-// ship. The eye adds head inertia (+-0.12 u, lagging lateral acceleration)
-// and breathing. Eye FOV 82 x the settings FOV / 75, + the shared speed kick.
-// Reduce-motion: the world rolls only 30 % of the bank and never spins with
-// the barrel roll (the ship itself still rolls, visible in the mirrors).
+// cameras) is placed on the flown ship's eye every frame. The eye adds head
+// inertia (+-0.12 u, lagging lateral acceleration) and breathing. Eye FOV 82
+// x the settings FOV / 75, + the shared speed kick.
+// Camera attachment (Control / Camera / Boundary addendum, blended by
+// rigFlight.attach): FULLY ATTACHED — the whole view rides the ship (pitch,
+// nose yaw) and rolls with its bank x roll strength + the barrel roll, the
+// interior rigid with it; STEADY HORIZON — the eye stays level on the path
+// frame and the shell / hands / dash roll AROUND the view (bank x roll
+// strength, <= 25 deg). Reduce-motion caps the roll strength at 30 % and
+// never spins the view with the barrel roll (the ship still rolls, visible
+// in the mirrors).
 import { Euler, Quaternion, Vector3, type Camera, type Object3D } from 'three';
 import type { CameraRig } from '../cameraRig';
-import { RIGS, COCKPIT_RIG } from '../../data/mission';
+import { RIGS, COCKPIT_RIG, CAMERA_ATTACH } from '../../data/mission';
 import { useSettings } from '../../state/settings.store';
 import { createPose, fovKick, rigFlight, type RigPose } from './rigState';
 import { EYE_PITCH } from '../../scenes/cockpit/cockpitSpec';
@@ -18,9 +22,13 @@ import { cockpitInMission } from '../../scenes/sceneBridge';
 const _e = new Vector3();
 const _h = new Vector3();
 const _q = new Quaternion();
+const _root = new Quaternion();
+const _shell = new Quaternion();
+const _Z = new Vector3(0, 0, 1);
 const _eu = new Euler(0, 0, 0, 'YXZ');
 const _pitch = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), EYE_PITCH);
 const _fwd = new Vector3();
+const _w = new Vector3();
 
 export class CockpitRig implements CameraRig {
   readonly mode = 'cockpit' as const;
@@ -48,14 +56,22 @@ export class CockpitRig implements CameraRig {
     this.t += dt;
     const f = rigFlight;
     const reduce = f.reduceMotion;
-    // ship orientation the interior + camera ride on
-    if (reduce) {
-      _eu.setFromQuaternion(t.quaternion, 'YXZ');
-      _eu.z = f.bank * RIGS.reduceRoll;
-      _q.setFromEuler(_eu);
-    } else _q.copy(t.quaternion);
-    t.updateWorldMatrix(true, false);
-    _e.copy(this.eye).applyMatrix4(t.matrixWorld);
+    const w = f.attach;
+    const strength = reduce ? Math.min(f.rollStrength, RIGS.reduceRoll) : f.rollStrength;
+    // the view: ATTACHED rides the ship's attitude (bank x strength + the barrel roll), STEADY stays level
+    const viewRoll = w * (f.bank * strength + (reduce ? 0 : f.roll));
+    _eu.set(w * f.pitch, w * f.yaw, viewRoll, 'YXZ');
+    _q.setFromEuler(_eu);
+    // the interior: rigid with the view (ATTACHED) / rolling around it (STEADY, <= 25 deg)
+    const lim = CAMERA_ATTACH.steady.interiorRoll;
+    const shell = (1 - w) * Math.max(-lim, Math.min(lim, f.bank * strength));
+    _root.copy(_q).multiply(_shell.setFromAxisAngle(_Z, shell));
+    f.interiorRoll = viewRoll + shell;
+    f.interiorPitch = w * f.pitch;
+    // the eye point on the ship, carried by the view orientation (no swing in STEADY)
+    _e.copy(this.eye).applyQuaternion(_q);
+    t.getWorldPosition(_w);
+    _e.add(_w);
     // head inertia: the head lags lateral acceleration (ship-local), critically smoothed
     const C = COCKPIT_RIG;
     const k = 1 - Math.exp(-dt / C.headTau);
@@ -87,7 +103,7 @@ export class CockpitRig implements CameraRig {
       parent.updateWorldMatrix(true, false);
       parent.worldToLocal(root.position);
     }
-    root.quaternion.copy(_q);
+    root.quaternion.copy(_root);
     root.updateMatrixWorld();
   }
 

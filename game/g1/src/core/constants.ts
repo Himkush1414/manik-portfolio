@@ -2,7 +2,8 @@
 
 export const GAME_TITLE = 'SPACE WAR: DARK EDITION';
 export const SAVE_KEY = 'spacewar.darkedition.save.v1';
-export const SAVE_VERSION = 1;
+/** v2 (Phase 2R F1): controls.steering + reticle options, camera.attachment + rollStrength */
+export const SAVE_VERSION = 2;
 export const IS_DEV = import.meta.env.DEV;
 
 /** Query flags (QA harness + dev shortcuts). Parsed once at startup. */

@@ -99,7 +99,7 @@ export function SimLab() {
           const pl = sim.player, d = Math.max(1, e.s - pl.s), tt = d / ORB.speed;
           sim.enemyShots.spawn(e.s, e.x, e.y, pl.speed - ORB.speed, (pl.x - e.x) / tt, (pl.y - e.y) / tt, 6, ORB.damage, ORB.radius, 2, e.slot);
         }
-        if (MANUAL) InputManager.state.sample(inp, now / 1000);
+        if (MANUAL) InputManager.state.sample(inp);
         else if (bot) bot.think(sim, inp);
         else pilot();
         sim.step(inp);

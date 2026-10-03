@@ -26,10 +26,27 @@ export type ProfileData = {
 export type HelmetFrame = 'off' | 'subtle' | 'full';
 export type AimAssistLevel = 'off' | 'low' | 'med' | 'high';
 export type SubtitleSize = 'small' | 'medium' | 'large';
+/** Control / Camera / Boundary addendum: KEYBOARD steers + the mouse only aims (default), or KEYBOARD +
+ *  MOUSE steers (the ship flies toward the reticle, keys nudge it) */
+export type SteeringScheme = 'keyboard' | 'keyboardMouse';
+/** FULLY ATTACHED (rigid mount, rolls with the ship) or STEADY HORIZON (translates, never rolls) */
+export type CameraAttachment = 'attached' | 'steady';
 
 export type SettingsData = {
-  controls: { bindings: Bindings; sensitivity: number; invertY: boolean; deadzone: number; smoothing: number; aimAssist: AimAssistLevel; autoFire: boolean };
-  camera: { mode: CameraMode; fov: number; shake: number; helmetFrame: HelmetFrame; rollCoupling: number };
+  controls: {
+    bindings: Bindings;
+    sensitivity: number;
+    invertY: boolean;
+    aimAssist: AimAssistLevel;
+    autoFire: boolean;
+    steering: SteeringScheme;
+    /** the reticle eases back to the screen centre after the mouse rests */
+    reticleAutoCentre: boolean;
+    /** the follow cameras look a little toward the reticle */
+    reticleLookAhead: boolean;
+  };
+  /** rollStrength 0..1: share of the ship's bank the camera rolls with (reduce-motion caps it at 30 %) */
+  camera: { mode: CameraMode; fov: number; shake: number; helmetFrame: HelmetFrame; attachment: CameraAttachment; rollStrength: number };
   graphics: {
     preset: Preset;
     autoPicked: boolean;
@@ -70,8 +87,8 @@ export const DEFAULT_PROFILE: ProfileData = {
 
 export function defaultSettings(prefersReducedMotion = false): SettingsData {
   return {
-    controls: { bindings: cloneBindings(DEFAULT_BINDINGS), sensitivity: 1, invertY: false, deadzone: 0.08, smoothing: 0.35, aimAssist: 'low', autoFire: false },
-    camera: { mode: 'cockpit', fov: 75, shake: 0.8, helmetFrame: 'subtle', rollCoupling: 1 },
+    controls: { bindings: cloneBindings(DEFAULT_BINDINGS), sensitivity: 1, invertY: false, aimAssist: 'low', autoFire: false, steering: 'keyboard', reticleAutoCentre: false, reticleLookAhead: false },
+    camera: { mode: 'cockpit', fov: 75, shake: 0.8, helmetFrame: 'subtle', attachment: 'attached', rollStrength: 1 },
     graphics: {
       preset: 'high',
       autoPicked: false,
@@ -159,17 +176,19 @@ function sanitizeSettings(raw: unknown): SettingsData {
       bindings,
       sensitivity: num(c.sensitivity, 0.1, 3, d.controls.sensitivity),
       invertY: bool(c.invertY, false),
-      deadzone: num(c.deadzone, 0, 0.5, d.controls.deadzone),
-      smoothing: num(c.smoothing, 0, 1, d.controls.smoothing),
       aimAssist: c.aimAssist === 'off' || c.aimAssist === 'low' || c.aimAssist === 'med' || c.aimAssist === 'high' ? c.aimAssist : d.controls.aimAssist,
       autoFire: bool(c.autoFire, false),
+      steering: c.steering === 'keyboardMouse' ? 'keyboardMouse' : 'keyboard',
+      reticleAutoCentre: bool(c.reticleAutoCentre, false),
+      reticleLookAhead: bool(c.reticleLookAhead, false),
     },
     camera: {
       mode: isCameraMode(cam.mode) ? cam.mode : d.camera.mode,
       fov: num(cam.fov, 60, 100, d.camera.fov),
       shake: num(cam.shake, 0, 1, d.camera.shake),
       helmetFrame: helmet,
-      rollCoupling: num(cam.rollCoupling, 0, 1.4, d.camera.rollCoupling),
+      attachment: cam.attachment === 'steady' ? 'steady' : 'attached',
+      rollStrength: num(cam.rollStrength, 0, 1, d.camera.rollStrength),
     },
     graphics: {
       preset: isPreset(g.preset) ? g.preset : d.graphics.preset,
@@ -207,6 +226,10 @@ function sanitizeSettings(raw: unknown): SettingsData {
 }
 
 // ---------------------------------------------------------------- migrations
+/** v1 -> v2: fields reset to their v2 defaults (incl. the v2 names, so a pre-release v1 save that already
+ *  carried them restarts from the defaults too) */
+const V1_CONTROLS = ['controlModel', 'autoCentre', 'deadzone', 'smoothing', 'steering', 'reticleAutoCentre', 'reticleLookAhead'];
+const V1_CAMERA = ['rollCoupling', 'attachment', 'rollStrength'];
 /**
  * Ordered migrations: MIGRATIONS[n] upgrades a version-n payload to n+1.
  * v0 = the pre-release shape (flat `{ credits, ship, settings }`), kept so the
@@ -218,6 +241,16 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
     profile: { credits: raw.credits, selectedShip: raw.ship, unlockedShips: raw.unlockedShips, pilot: raw.pilot },
     settings: raw.settings ?? {},
   }),
+  // v1 -> v2 (Control / Camera / Boundary addendum): the mouse no longer steers by default and the camera
+  // attachment is new. Every v1 control-model / aim / roll field goes back to the v2 defaults (keyboard
+  // steering, reticle options off, FULLY ATTACHED at 100 % roll); bindings and the rest are kept.
+  1: raw => {
+    const st = obj(raw.settings);
+    const controls = { ...obj(st.controls) }, camera = { ...obj(st.camera) };
+    for (const k of V1_CONTROLS) delete controls[k];
+    for (const k of V1_CAMERA) delete camera[k];
+    return { ...raw, version: 2, settings: { ...st, controls, camera } };
+  },
 };
 
 /** Parse + migrate + sanitise any stored value into a valid current SaveData. */

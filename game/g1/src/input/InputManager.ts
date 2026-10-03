@@ -32,7 +32,7 @@ class InputManagerImpl {
       () => useSettings.getState().controls.bindings,
       (): InputOptions => {
         const c = useSettings.getState().controls;
-        return { sensitivity: c.sensitivity, invertY: c.invertY, deadzone: c.deadzone, smoothing: c.smoothing, autoFire: c.autoFire };
+        return { sensitivity: c.sensitivity, invertY: c.invertY, autoFire: c.autoFire, steering: c.steering, reticleAutoCentre: c.reticleAutoCentre };
       },
     );
   }

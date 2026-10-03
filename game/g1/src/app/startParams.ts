@@ -33,8 +33,15 @@ import { enterMission, prewarmMission, pauseMission, resumeMission, missionToHan
 import { isBotSkill } from '../data/bot';
 import { Ev } from '../game/core/events';
 import { autoLaunch } from './mission/autoLaunch';
-import { PLAYER } from '../data/mission';
+import { PLAYER, INPUT } from '../data/mission';
+import { settingsSnapshot } from '../state/settings.store';
 import { mission } from '../scenes/mission/missionRuntime';
+import { InputManager } from '../input/InputManager';
+import { rigCamera, rigFlight } from '../render/rigs/rigState';
+import { hudDom } from '../ui/screens/mission/hudDom';
+import { Euler, Vector3, type PerspectiveCamera } from 'three';
+import { useSettings } from '../state/settings.store';
+import type { EventReader } from '../game/core/events';
 
 let applied = false;
 
@@ -91,6 +98,64 @@ export function applyStartParams(): void {
     state: () => ({ flow: flow.state, prepared: mission.prepared, progress: mission.progress, level: mission.level?.id ?? null }),
     /** camera rig: active mode, blend in progress, cockpit interior shown */
     rig: () => ({ mode: mission.rig.mode, blending: mission.rig.blending, interior: cockpitInMission.on }),
+  });
+  /** the live (migrated) settings (tools/qa-settings-p2.mjs) */
+  registerDebug('settings', { get: () => settingsSnapshot() });
+  // Control / Camera / Boundary addendum (tools/qa-freedom.mjs): drive the REAL reticle (as the mouse
+  // would) and read back where the ship centre and the HUD reticle land on screen (NDC, y up)
+  const _w = new Vector3();
+  const _eu = new Euler(0, 0, 0, 'YXZ');
+  const counts = { scrape: 0, impact: 0, splash: 0, close: 0 };
+  let evSim: unknown = null, evReader: EventReader | null = null;
+  registerDebug('flight', {
+    cursor: (x: number, y: number) => {
+      const E = INPUT.reticleEdge;
+      InputManager.state.cx = Math.max(-E, Math.min(E, x));
+      InputManager.state.cy = Math.max(-E, Math.min(E, y));
+    },
+    /** live settings change (QA): e.g. ('camera', { attachment: 'steady' }) */
+    settings: (section: 'camera' | 'controls', patch: Record<string, unknown>) => useSettings.getState().patch(section, patch as never),
+    /** terrain-contact / water / close-call events since the last call */
+    events: () => {
+      const sim = mission.sim;
+      if (!sim) return null;
+      if (evSim !== sim) {
+        evSim = sim;
+        evReader = sim.events.reader();
+      }
+      const E = sim.events;
+      evReader?.drain(i => {
+        const t = E.type[i];
+        if (t === Ev.GroundScrape) counts[E.b[i] === 1 ? 'impact' : 'scrape']++;
+        else if (t === Ev.Splash) counts.splash++;
+        else if (t === Ev.CloseCall) counts.close++;
+      });
+      const out = { ...counts };
+      counts.scrape = counts.impact = counts.splash = counts.close = 0;
+      return out;
+    },
+    probe: () => {
+      const cam = rigCamera.cam, s = mission.sim;
+      if (!cam || !s) return null;
+      mission.player.getWorldPosition(_w).project(cam);
+      const ship = { x: _w.x, y: _w.y, z: _w.z };
+      const r = (hudDom.reticle as HTMLElement | null)?.getBoundingClientRect();
+      const W = window.innerWidth, H = window.innerHeight;
+      const p = s.player, O = mission.root.position, c = cam.position;
+      _eu.setFromQuaternion(cam.quaternion, 'YXZ');
+      const lx = c.x - O.x, ly = c.y - O.y, lz = c.z - O.z;
+      return {
+        ship,
+        reticle: r ? { x: ((r.left + r.width / 2) / W) * 2 - 1, y: 1 - ((r.top + r.height / 2) / H) * 2 } : null,
+        input: { cx: InputManager.state.cx, cy: InputManager.state.cy, yaw: InputManager.state.yaw, pitch: InputManager.state.pitch },
+        sim: { s: p.s, x: p.x, y: p.y, contact: p.contact, freeL: p.freeL, freeR: p.freeR, freeUp: p.freeUp, freeDown: p.freeDown, turb: p.turb, deck: p.deck, ceilingKind: p.ceilingKind, clampEvents: p.clampEvents, closeCalls: p.closeCalls, skim: p.skimTime, wall: p.wallTime, hull: p.hull, shield: p.shield, lat: p.latMax },
+        att: { bank: mission.attitude.bank, roll: mission.attitude.roll, attach: rigFlight.attach, strength: rigFlight.rollStrength, interiorRoll: rigFlight.interiorRoll },
+        mode: mission.rig.mode,
+        blending: mission.rig.blending,
+        cam: { local: [lx, ly, lz], roll: _eu.z, pitch: _eu.x, yaw: _eu.y, clearance: rigFlight.clearAt ? rigFlight.clearAt(lx, ly, lz) : null, fov: (cam as PerspectiveCamera).fov },
+        shipLocal: [mission.player.position.x, mission.player.position.y, mission.player.position.z],
+      };
+    },
   });
   registerDebug('sim', {
     state: () => {

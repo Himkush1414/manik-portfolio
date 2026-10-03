@@ -53,17 +53,35 @@ world takes part.
 
 ## 2. FREEDOM OF FLIGHT [P0]
 
+**CONTROL, CAMERA & BOUNDARY ADDENDUM (2026-10-02) — overrides the cursor-flight default and the
+computed-follow camera this section first specified (AC2.3 / AC2.6 / AC2.1 old) wherever they conflict.**
+
 | # | Acceptance criterion | Proof |
 |---|---|---|
-| AC2.1 | Third + chase: ship reaches >= 92 % of the horizontal half-width and >= 85 % of the vertical half-height of the screen at the envelope extremes | `qa-freedom` flies to all 8 extremes (4 edges + 4 corners) per camera, projects the ship's centre, asserts; stills saved |
-| AC2.2 | The reticle spans the ENTIRE screen in every camera (incl. cockpit) | same tool moves the cursor to the 4 screen corners, asserts the reticle reaches them |
-| AC2.3 | CURSOR-FLIGHT is the default control model: pointer-lock relative motion drives a screen-bounded virtual cursor; ship target = cursor NDC x (a, b); snappy critically damped follow; cannons converge on the reticle; WASD/arrows nudge the same target; AIM (legacy) selectable; optional idle auto-centre | settings test + sim test (target tracking, convergence) |
-| AC2.4 | Envelope per chapter archetype (a / b in u): plains 70/38, foothills 48/30, forest 34/22, gorge 26/18, slot 12/18, pass 60/45, arena 60/34; blended across transitions | LevelDef validator + sim test |
-| AC2.5 | Lateral speed = clamp(1.1 a, 30, 80) x AGI: a full plain crossing <= 1.8 s; slot reaction < 0.8 s | sim test measures both |
-| AC2.6 | Camera follow is COMPUTED: lateral clamp(1 - 0.92 W/a, 0.25, 0.9), vertical clamp(1 - 0.85 H/b, 0.25, 0.9), W/H = frustum half-extents at the ship's depth; cockpit: strong lateral view translation + sway | unit test of the formula; AC2.1 proves the result |
-| AC2.7 | Bank up to +-70 deg, reached in 0.18 s, nose into the motion | attitude test (time to 90 % of target) |
-| AC2.8 | 30 s of flying with zero enemies is already fun | founder review of a capture; `qa-freedom --showreel` |
-| AC2.9 | Terrain inside the envelope is real: soft push + sparks in the margin, scrape damage past it; edge-hugging pays (close calls, wall-run) | sim tests (push, scrape, wall-run timer) |
+| AC2.1 | Default control scheme **KEYBOARD STEERS / MOUSE AIMS**: the mouse moves ONLY the reticle — never the ship, never the camera (no reticle look-ahead by default, the old 15 % mouse nudge is gone); the ship moves only with the movement keys (+ roll, boost, brake); fire = Mouse 1 or Space | `qa-freedom` 20 s of real pointer-locked mouse per rig: sim x / y change by exactly 0, camera never moves relative to the ship; unit tests (input -> sim 20 s, rig with / without mouse) |
+| AC2.2 | The reticle spans the whole screen in every camera (2 % margin, NDC +-0.96), pointer lock + relative motion x sensitivity; never moved = centred; aim ray = camera through the reticle, cannons converge on that point (assist target, else 120 u) | `qa-freedom` reticle extents per rig; input tests |
+| AC2.3 | Optional scheme **KEYBOARD + MOUSE STEERS**: the ship flies (critically damped) toward the reticle's point in the MEASURED free space, kept >= 4 u inside terrain; the keys nudge the reticle (additive) | sim + input tests |
+| AC2.4 | Settings (Controls tab, persisted, live): Ship steering KEYBOARD / KEYBOARD + MOUSE, Reticle auto-centre (off), Reticle look-ahead (off). Camera tab: Attachment FULLY ATTACHED / STEADY HORIZON, Roll strength 0-100 % (reduce-motion caps 30 %). Save v2 with a migration (v1 control / camera fields -> v2 defaults) | save tests, `qa-settings-p2` (v1 seed migrated in the browser, every control by real input, persisted) |
+| AC2.5 | **FULLY ATTACHED** (default), all 3 rigs, 0.5 s blend: rigid mount, follow 1.0, ship drift <= 3 % of the screen; camera roll = ship bank x roll strength within 5 % (lateral bank capped +-40 deg in this mode), pitch + nose yaw follow, 40 % of a barrel roll; cockpit: the whole view rolls | camera unit tests; `qa-freedom` drift + roll error per rig |
+| AC2.6 | **STEADY HORIZON**: translates with the ship, never rolls / pitches / yaws (<= 2 deg cosmetic sway); the ship banks alone up to +-70 deg; lateral follow = clamp(1 - 0.85 W / min(free half-width, 60), 0.35, 0.9) (vertical the same with H), free space MEASURED on the ship's side; the ship reaches >= 80 % of the half-width at the widest free section, never leaves the frame, camera lateral motion correlates >= 0.55 with the ship's; cockpit: eye level, the shell / hands / dash roll around the view <= 25 deg | camera unit tests; `qa-freedom` steady metrics per rig |
+| AC2.7 | Camera collision changes distance / height only, never lateral: near terrain the follow rigs pull in to the reduced rig (1.6 up / 8 back, x ship scale); the camera never comes within 2 u of terrain | camera unit test; `qa-freedom` wall phase (min camera clearance) |
+| AC2.8 | **NO INVISIBLE LIMITS**: no envelope clamp, spring-back, soft boundary, soft-floor push, screen-edge clamp or cursor-mapped limit anywhere; envelope numbers are design targets + validator inputs only; `clampEvents` = 0 across 3 full runs per level | sim tests; `qa-freedom` + soak |
+| AC2.9 | Contact = swept sphere vs heightfield (ring >= 8 + gradient normal, no tunnelling at boost), wing-tip spheres (r 1.2, ShipSpec span), hull r 1.8; push out along the normal + SLIDE; scrape = sparks + dust by surface + grind + shake, shield first, 3 / s; head-on 6-25 by closing speed + 30 % bounce + 0.6 s immunity; water = splash + drag + 8 dmg + bounce; <= 0.15 ms / frame, zero allocation | sim tests (wall slide, impact, water, wing tips); perf (sim section) |
+| AC2.10 | **CEILINGS ARE DIEGETIC**: overhangs, arches, rock bridges, hanging roots; open-top canyons = RIDGE TURBULENCE from ~30 u below the rim (shear, dust plumes, howl, shake, HUD "TURBULENCE", climb authority -> 0 at the rim); open sky = a visible dense CLOUD DECK (whiteout, heavy turbulence, lightning, forced descent) | sim tests (deck, rim); `qa-freedom` ceiling phase; stills |
+| AC2.11 | Walls within +-140 u in EVERY chapter (plains framed by escarpments / ridges / rock fins / forest walls at 60-140 u) — C1 | validator: >= 40 lateral / vertical probes per s; fail if a probe escapes > 160 u without a diegetic cap, if the path centre is within 6 u of terrain, or a wall cannot be reached within 2 u without camera clipping |
+| AC2.12 | Spawner lanes = fractions of the measured free half-width (cap 90 u); enemies target the real position; wall-huggers draw flankers + rockfall — E1 | spawner tests |
+| AC2.13 | Lateral speed = clamp(1.1 a_design, 30, 80) x AGI (feel tuning from the design target, never a limit): a full plain crossing <= 1.8 s, slot reaction < 0.8 s | sim test |
+| AC2.14 | Bank up to +-70 deg (STEADY) / +-40 deg (ATTACHED), reached in ~0.18 s, nose into the motion | attitude test |
+| AC2.15 | 30 s of flying with zero enemies is already fun; tutorial prompts come from the REAL bindings ("MOVE: W A S D", "AIM: MOUSE") | founder review; prompt tests |
+| AC2.16 | Edge-hugging pays: close calls (rock / bolt within 3 u), skim, wall-run | sim tests |
+
+**DONE WHEN** (addendum): (1) default: the mouse never moves the ship or the camera; (2) both attachments
+pass in all 3 rigs; (3) fly within 2 u of a wall, scrape + slide, no invisible stop (clampEvents 0, 3 runs
+/ level); (4) every ceiling is turbulence / cloud / overhang; (5) enemies + hazards use the full width;
+(6) no new hitches, all gates green, perf budgets unchanged. Evidence (stills + logs) in DEV_NOTES.
+
+Envelope per chapter archetype (a / b in u, DESIGN TARGETS — the terrain is the boundary): plains 70/38,
+river 56/32, foothills 48/30, forest 34/22, gorge 26/18, slot 12/18, pass 60/45, reveal 60/45, arena 60/34.
 
 **[BEYOND]** Flight feel extras: (a) *wingtip vapour* trails when banking
 hard at speed; (b) *ground-effect* — below 15 u the ship's shadow appears on
@@ -232,7 +250,7 @@ and becomes a bridge I fly UNDER on the way out.
 | # | Acceptance criterion | Proof |
 |---|---|---|
 | AC8.1 | Each boss: foreshadow, landscape arrival, >= 2 phases with a rule-changing twist, death as a landscape event, release | capture + boss script validator |
-| AC8.2 | Boss arena envelope 60/34 (L10 phase 2 opens to 60/45) | sim test |
+| AC8.2 | Boss arena envelope 60/34 design target, real arena walls (L10 phase 2 opens to 60/45) | sim test |
 | AC8.3 | Bigger than the screen, readable, fair (every lethal attack telegraphs >= 0.8 s) | fairness tests |
 
 ---
@@ -345,8 +363,8 @@ silhouetting a leviathan; bioluminescent sea.
 
 ## 13. Founder playtest (all must pass; evidence in DEV_NOTES)
 
-1. First 10 s after the dive: both screen edges reached in every camera;
-   the landscape visibly slides. (`qa-freedom`)
+1. First 10 s after the dive: the mouse only aims; the keys fly the ship; both camera attachments
+   pass in every rig; the landscape visibly slides. (`qa-freedom`)
 2. Within 45 s: >= 3 distinct landscape types; a mountain ahead visibly grew.
    (`qa-approach` strip)
 3. Each level: forest slalom / narrow-obstacle chapter, narrowing gorge, slot

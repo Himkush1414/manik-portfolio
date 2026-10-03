@@ -10,10 +10,10 @@ import { onSimEvent } from '../../app/mission/missionFlow';
 import { InputManager } from '../../input/InputManager';
 import { useFlow, isSimLive } from '../../app/flow';
 import { perfMon } from '../../render/perfMon';
-import { rigAim, rigFlight } from '../../render/rigs/rigState';
-import { PLAYER, RIGS, GROUND } from '../../data/mission';
+import { rigAim, rigFlight, rigCamera } from '../../render/rigs/rigState';
+import { PLAYER, RIGS, GROUND, CAMERA_ATTACH, FEEL } from '../../data/mission';
 import type { EventReader } from '../../game/core/events';
-import { curveAt, envelopeAt, ellipseR } from '../../game/rail';
+import { curveAt } from '../../game/rail';
 import { STEP } from '../../game/core/step';
 import { SPEED_FX, SPEED_REF } from '../../data/speedfx';
 import { missionSpace } from '../../render/world/missionSpace';
@@ -23,12 +23,43 @@ import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
 import { updateCockpitLights } from './missionCamera';
 import { cockpitFx } from '../cockpit/displays';
+import { Vector3, type Camera } from 'three';
+import type { InputState } from '../../input/inputState';
+
+const _ray = new Vector3();
+const _o = new Vector3();
+/**
+ * The aim ray (Control / Camera / Boundary addendum): the cannons converge on the point under the
+ * full-screen reticle — the camera ray through it meets the convergence plane (PLAYER.aim.convergence
+ * ahead of the ship, mission space); the aim angles to it from the ship are what the sim fires along.
+ * Uses the camera as last rendered (the reticle is drawn exactly there: what you see is where you shoot).
+ */
+function cursorAim(cam: Camera, ist: InputState): void {
+  const pl = mission.player.position, C = PLAYER.aim.convergence;
+  _o.setFromMatrixPosition(cam.matrixWorld);
+  _ray.set(ist.cx, ist.cy, 0.5).unproject(cam).sub(_o).normalize();
+  _o.sub(mission.root.position);
+  if (_ray.z > -1e-3) return;
+  const t = (pl.z - C - _o.z) / _ray.z;
+  ist.setCursorAim(Math.atan2(_o.x + _ray.x * t - pl.x, C), Math.atan2(_o.y + _ray.y * t - pl.y, C));
+}
+
+/** clearance (u) above the terrain of a mission-local point (camera collision: rigFlight.clearAt) */
+function clearAt(lx: number, ly: number, lz: number): number {
+  const world = mission.env, sim = mission.sim;
+  if (!world || !sim) return Infinity;
+  const p = sim.player, ps = p.prevS + (p.s - p.prevS) * mission.stepper.alpha;
+  const r = missionSpace.r;
+  const wy = missionSpace.py + r[1] * lx + r[4] * ly + r[7] * lz;
+  return wy - world.groundY(ps - lz, lx);
+}
 
 let reader: EventReader | null = null;
-const _env = { a: 0, b: 0 };
 let readerSim: unknown = null;
 /** speed-line gain eased toward the active view's (follows the rig blend) */
 let streakGain = 1;
+/** linear progress of the camera attachment blend (0 steady .. 1 attached) */
+let attachT = 1;
 
 export function MissionDriver() {
   useFrame((state, dt) => {
@@ -40,14 +71,19 @@ export function MissionDriver() {
     }
     const now = performance.now() / 1000;
     const flowState = useFlow.getState().state;
-    InputManager.state.update(dt, now);
+    const ist = InputManager.state;
+    ist.update(dt, now);
+    ist.setViewport(state.size.width, state.size.height);
+    const human = !mission.bot;
+    rigCamera.cam = state.camera;
+    if (human) cursorAim(state.camera, ist);
 
     // ---- fixed steps
     const n = isSimLive(flowState) ? mission.stepper.advance(dt, mission.timeScale) : 0;
     perfMon.begin('sim');
     for (let i = 0; i < n; i++) {
       if (mission.bot) mission.bot.think(sim, mission.input);
-      else InputManager.state.sample(mission.input, now);
+      else ist.sample(mission.input);
       if (mission.qaForce) Object.assign(mission.input, mission.qaForce);
       sim.step(mission.input);
     }
@@ -60,20 +96,24 @@ export function MissionDriver() {
     const p = sim.player, a = mission.stepper.alpha;
     const x = p.prevX + (p.x - p.prevX) * a, y = p.prevY + (p.y - p.prevY) * a;
     const pl = mission.player;
-    // attitude: bank against lateral velocity, pitch with vertical, nose yaw toward the reticle, barrel roll
+    // attitude: bank against lateral velocity, pitch with vertical, nose into the motion, barrel roll —
+    // the mouse never moves the ship (addendum): the reticle only aims
     // a human's reticle is the raw late-latched one; the bot / QA-forced aim is what the sim consumed
     const simAim = !!mission.bot || (mission.qaForce !== null && 'aimYaw' in mission.qaForce);
-    const aimYaw = simAim ? mission.input.aimYaw : InputManager.state.yaw;
-    const aimPitch = simAim ? mission.input.aimPitch : InputManager.state.pitch;
+    const aimYaw = simAim ? mission.input.aimYaw : ist.yaw;
+    const aimPitch = simAim ? mission.input.aimPitch : ist.pitch;
     // springs toward bank / pitch / yaw targets (render/mission/shipAttitude.ts, data FEEL); the
-    // roll time is interpolated so the barrel roll is smooth above 60 Hz
-    // the envelope the sim uses: the world path's (Phase 2R), else the level's segments
-    const env = mission.env ? mission.env.path.envelopeAt(p.s, _env) : envelopeAt(sim.level.envelope, p.s, _env);
-    const press = Math.max(0, ellipseR(x, y, env.a, env.b) - 1);
+    // roll time is interpolated so the barrel roll is smooth above 60 Hz; terrain contact shudders it
     const rollT = p.rollT >= 0 ? p.rollT + a * STEP : -1;
     const reduceLife = useSettings.getState().accessibility.reduceMotion ? 0.25 : 1;
     const att = mission.attitude;
-    att.update(dt * mission.timeScale, p.vx, p.vy, sim.stats.lateralSpeed, aimYaw, aimPitch, rollT, PLAYER.roll.duration, p.rollDir, press, reduceLife);
+    // camera attachment weight (0 STEADY .. 1 FULLY ATTACHED), eased so a settings change blends
+    const st = useSettings.getState();
+    const want = st.camera.attachment === 'attached' ? 1 : 0;
+    attachT = want > attachT ? Math.min(want, attachT + dt / CAMERA_ATTACH.blend) : Math.max(want, attachT - dt / CAMERA_ATTACH.blend);
+    rigFlight.attach = attachT * attachT * (3 - 2 * attachT);
+    att.bankLimit = FEEL.bankMax + (CAMERA_ATTACH.bankMax - FEEL.bankMax) * rigFlight.attach;
+    att.update(dt * mission.timeScale, p.vx, p.vy, p.latMax || sim.stats.lateralSpeed, rollT, PLAYER.roll.duration, p.rollDir, p.contact, reduceLife);
     mission.rollVis = att.roll;
     pl.position.set(x, y + att.bob, 0);
     pl.rotation.set(att.pitch + att.noisePitch, -att.yaw, att.bank + att.roll + att.noiseBank, 'YXZ');
@@ -84,7 +124,6 @@ export function MissionDriver() {
 
     // ---- world: mission space moves to the player (path frame), tiles stream + turn into it, sun
     mission.time += dt * mission.timeScale;
-    const st = useSettings.getState();
     const reduce = st.accessibility.reduceMotion;
     const ps = p.prevS + (p.s - p.prevS) * a;
     const world = mission.env;
@@ -118,11 +157,24 @@ export function MissionDriver() {
     // ---- camera: the reticle the HUD shows is the raw (late-latched) one
     rigAim.yaw = aimYaw;
     rigAim.pitch = aimPitch;
+    rigAim.cursor = human && !simAim;
+    rigAim.cx = ist.cx;
+    rigAim.cy = ist.cy;
     rigFlight.bank = att.bank;
     rigFlight.roll = att.roll;
+    rigFlight.yaw = -att.yaw;
+    rigFlight.pitch = att.pitch;
+    rigFlight.clearAt = world ? clearAt : null;
     rigFlight.ax = att.ax;
     rigFlight.ay = att.ay;
-    rigFlight.rollCoupling = useSettings.getState().camera.rollCoupling;
+    rigFlight.rollStrength = st.camera.rollStrength;
+    rigAim.lookAhead = st.controls.reticleLookAhead;
+    rigFlight.envA = p.envA;
+    rigFlight.envB = p.envB;
+    rigFlight.freeL = p.freeL;
+    rigFlight.freeR = p.freeR;
+    rigFlight.freeUp = p.freeUp;
+    rigFlight.freeDown = p.freeDown;
     mission.rig.update(dt);
     if (world) {
       // terrain-aware camera: never closer to the ground than GROUND.cameraClearance (mission-local

@@ -127,6 +127,17 @@ export class TerrainField {
     return out;
   }
 
+  /** the river at s: water surface world Y (NaN: no river here), channel centre u, and how far from the
+   *  centre (u) water can stand — `compose` wets exactly the points under the surface inside that reach */
+  riverAt(s: number, out: { y: number; centre: number; reach: number }): { y: number; centre: number; reach: number } {
+    this.row(s);
+    const wet = !!this.def.river && this.riverHalf > 0;
+    out.y = wet ? this.floorY - 0.6 : NaN;
+    out.centre = this.centre;
+    out.reach = wet ? this.riverHalf * 1.3 : 0;
+    return out;
+  }
+
   /** world (x, z) of the path-relative point (s, u) (after row(s)) */
   worldXZ(s: number, u: number, out: { x: number; z: number }): { x: number; z: number } {
     this.row(s);
@@ -207,6 +218,8 @@ export class TerrainField {
   }
 }
 
+const _riv = { y: NaN, centre: 0, reach: 0 };
+
 /**
  * CPU height grid for sim / bot / camera / creature queries (§5 SIM QUERIES): 5 u cells, bilinear
  * between corner heights. Corners come from a ring cache filled from the same pure function; a miss
@@ -220,15 +233,22 @@ export class HeightGrid {
   private readonly halfU: number;
   private readonly data: Float64Array;
   private readonly rowKey: Float64Array;
+  /** per row: river surface Y (NaN = none), channel centre u, wet reach (TerrainField.riverAt) */
+  private readonly rowWaterY: Float64Array;
+  private readonly rowRiverC: Float64Array;
+  private readonly rowRiverR: Float64Array;
   misses = 0;
   queries = 0;
 
   /** `halfU`: lateral half-extent covered (u); `rows`: s rows kept (ring) */
-  constructor(private readonly field: TerrainField, halfU = 240, rows = 256) {
+  constructor(private readonly field: TerrainField, halfU = 320, rows = 256) {
     this.cols = Math.ceil((2 * halfU) / HeightGrid.CELL) + 1;
     this.rows = rows;
     this.data = new Float64Array(this.cols * rows);
     this.rowKey = new Float64Array(rows).fill(NaN);
+    this.rowWaterY = new Float64Array(rows);
+    this.rowRiverC = new Float64Array(rows);
+    this.rowRiverR = new Float64Array(rows);
     this.halfU = halfU;
   }
 
@@ -243,6 +263,10 @@ export class HeightGrid {
     if (this.rowKey[slot] !== r) {
       const C = HeightGrid.CELL, base = slot * this.cols;
       for (let c = 0; c < this.cols; c++) this.data[base + c] = this.field.height(r * C, -this.halfU + c * C);
+      this.field.riverAt(r * C, _riv);
+      this.rowWaterY[slot] = _riv.y;
+      this.rowRiverC[slot] = _riv.centre;
+      this.rowRiverR[slot] = _riv.reach;
       this.rowKey[slot] = r;
     }
     return slot;
@@ -265,5 +289,25 @@ export class HeightGrid {
     const ts = fs - r, tu = fu - c;
     const h00 = this.corner(r, c), h01 = this.corner(r, c + 1), h10 = this.corner(r + 1, c), h11 = this.corner(r + 1, c + 1);
     return (h00 * (1 - tu) + h01 * tu) * (1 - ts) + (h10 * (1 - tu) + h11 * tu) * ts;
+  }
+
+  /** water surface world Y at path-relative (s, u), NaN where dry (the sim's splash / drag; nearest row) */
+  water(s: number, u: number): number {
+    const r = Math.round(s / HeightGrid.CELL);
+    const slot = ((r % this.rows) + this.rows) % this.rows;
+    let y: number, c: number, reach: number;
+    if (this.rowKey[slot] === r) {
+      y = this.rowWaterY[slot];
+      c = this.rowRiverC[slot];
+      reach = this.rowRiverR[slot];
+    } else {
+      this.misses++;
+      this.field.riverAt(r * HeightGrid.CELL, _riv);
+      y = _riv.y;
+      c = _riv.centre;
+      reach = _riv.reach;
+    }
+    if (!(y === y) || Math.abs(u - c) >= reach) return NaN;
+    return this.height(s, u) < y ? y : NaN;
   }
 }

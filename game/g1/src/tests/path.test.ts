@@ -63,12 +63,14 @@ describe('FlightPath (Phase 2R §4)', () => {
     expect(validatePath(steep).some(m => m.startsWith('pitch'))).toBe(true);
   });
 
-  it('checks the envelope against terrain', () => {
-    const p = new FlightPath({ datum: 0, waypoints: [wp(0, 0, { clearance: 12 }), wp(0, -1000, { clearance: 12 }), wp(0, -2000, { clearance: 12 }), wp(0, -3000, { clearance: 12 })] });
-    // flat ground at the floor: the lower envelope edge (12 - 10.5 = 1.5 u) is inside the 3 u margin
-    expect(validatePath(p, () => 0).some(m => m.startsWith('envelope'))).toBe(true);
-    const ok = new FlightPath({ datum: 0, waypoints: p.def.waypoints.map(w => ({ ...w, envB: 8 })) });
-    expect(validatePath(ok, () => 0)).toEqual([]);
+  it('checks the envelope against terrain (terrain inside it is allowed, a buried envelope is not)', () => {
+    const at = (clearance: number, envB: number) => new FlightPath({ datum: 0, waypoints: [0, -1000, -2000, -3000].map(z => wp(0, z, { clearance, envB, envA: 40 })) });
+    // flat ground: a 38 u half-height at 12 u clearance dips into the floor below — fine (soft floor)
+    expect(validatePath(at(12, 38), () => 0)).toEqual([]);
+    // the path line itself too low
+    expect(validatePath(at(2, 10), () => 0).some(m => m.startsWith('envelope'))).toBe(true);
+    // walls everywhere beyond |u| > 8: most of the envelope is inside rock
+    expect(validatePath(at(30, 20), (_s, u) => (Math.abs(u) > 8 ? 500 : 0)).some(m => m.startsWith('envelope'))).toBe(true);
   });
 });
 
