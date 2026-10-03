@@ -18,6 +18,9 @@ import { CloudDeck } from './cloudDeck';
 import { cloudDeckOffset } from '../../game/sim';
 import { AP_UNIFORMS, setAtmosphere } from './atmosphere';
 import { TodTimeline, createTodState } from './tod';
+
+/** the env probe is recaptured each time the sun has moved this far (deg) */
+const ENV_RECAPTURE_DEG = 1;
 import { missionGrade, setWorldGrade } from './grade';
 import { MISSION_ORIGIN } from '../../scenes/sceneBridge';
 import { missionSpace } from './missionSpace';
@@ -89,6 +92,7 @@ export class MissionWorld {
     setAtmosphere(def);
     setWorldGrade(def);
     this.applyTod(0);
+    this.probeEl = this.tod.sunEl;
   }
 
   /** the time of day at rail position s -> every shared uniform that carries it */
@@ -130,6 +134,8 @@ export class MissionWorld {
   /** per frame, with the player's interpolated rail position */
   private readonly skyAt = new Vector3();
   private lastS = 0;
+  /** sun elevation of the environment probe's last capture */
+  private probeEl = NaN;
   private readonly env = { a: 0, b: 0 };
 
   update(ps: number): void {
@@ -138,6 +144,11 @@ export class MissionWorld {
     missionSpace.update(ps);
     this.probe.update();
     this.applyTod(ps);
+    // keyframe probes: the sky moved enough since the last capture -> recapture (time-sliced)
+    if (Math.abs(this.tod.sunEl - this.probeEl) > ENV_RECAPTURE_DEG && !this.probe.busy && this.probe.texture) {
+      this.probeEl = this.tod.sunEl;
+      this.probe.recapture();
+    }
     this.streamer.update(ps, this.place);
     missionSpace.dirToLocal(this.sunWorld.x, this.sunWorld.y, this.sunWorld.z, this.sunLocal);
   }

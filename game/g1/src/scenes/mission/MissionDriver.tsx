@@ -130,6 +130,12 @@ export function MissionDriver() {
     const ps = p.prevS + (p.s - p.prevS) * a;
     const world = mission.env;
     world?.update(ps);
+    // keyframe env probe: one cube face / the prefilter per frame while a recapture runs, then rebind
+    if (world) {
+      world.probe.advance(state.gl);
+      const fresh = world.probe.takeFresh();
+      if (fresh) state.scene.environment = fresh;
+    }
     // the actors' linear fog follows the time of day's far haze
     if (world && state.scene.fog) (state.scene.fog as Fog).color.copy(world.tod.hazeFar);
     // ---- speed sensation: streaks, radial blur + edge CA, FOV, gust rumble

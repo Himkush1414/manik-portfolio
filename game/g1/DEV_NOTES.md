@@ -31,7 +31,7 @@ look (§19 founder test, side-by-side stills).
 | W1 | path + rail frame + TerrainField + worker pipeline + ribbon renderer + ARDEN terrain material + camera/sim adaptation; DELETE the tunnel | DONE — GATE PASSED (60 fps fly-through, lateTiles 0, no hitch) | ec5fc39, 5c58aac, b3fb796, c438325 |
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
 | F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
-| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | IN PROGRESS — piece 1 (TOD + grade + black-frame fix) + piece 2 (visible cloud deck + lightning glow, horizon ridges) pushed; next: keyframe env probes + blend, sky events, moon phases, the Meridian — P2R.0e | (see git log) |
+| W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | IN PROGRESS — piece 1 (TOD + grade + black-frame fix) + piece 2 (visible cloud deck + lightning glow, horizon ridges) + piece 3 (keyframe env probes) pushed; next: sky events (shooting stars, aurora, eclipse, planet-rise), moon phases, the Meridian, weather timeline — P2R.0e | (see git log) |
 | C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
@@ -539,6 +539,22 @@ cursor-flight default + computed follow).
   angles (edge-on it drew a bright line across the valley). Gate piece 2 (prod, RTX 3050): 182 tests;
   qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-17.0, render +0.2 ms, programs 107 constant;
   qa-tod third + cockpit (160 frames swept, 0 black); consoles clean.
+
+- **Piece 3: keyframe environment probes.** The sky probe (all reflections + sky ambient of ship,
+  cockpit, terrain) was captured once at the dawn state, so the late morning was lit by a dawn sky.
+  `WorldEnvProbe` now keeps its capture rig alive (cube target, cube camera, PMREM generator, a probe sky
+  material that SHARES the live sky's uniforms so a capture always sees the current time of day) and two
+  ping-pong PMREMs, both allocated in prepare (the generator only allocates its ping-pong buffer on a
+  target-less call: prepare makes two). When the sun has moved > 1 deg since the last capture,
+  MissionWorld starts a recapture; MissionDriver advances it ONE cube face per frame, then the prefilter
+  into the spare target, then rebinds `scene.environment` (same size + format: no program key change).
+  Chosen over blending two env maps in the BRDF (would need uniform injection into three's built-in
+  programs). Measured (qa-tod, 12 s of flight through the sunrise with a recapture in it): 60 fps, p95
+  16.8, p99 16.9, 0 long tasks; programs 108 constant (the persistent probe material is compiled in
+  prepare). Note (pre-existing, for C1 / W3): distant terraced / strata cliff walls moiré at LOD2.
+  Gate piece 3 (prod, RTX 3050): 182 tests; qa-freedom 6 / 6; qa-flight 3 rigs 60 fps, p95 16.8-16.9,
+  p99 <= 17.1, programs 108 + textures 105 constant; qa-tod third + cockpit (0 black, flight 0 long
+  tasks); consoles clean.
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

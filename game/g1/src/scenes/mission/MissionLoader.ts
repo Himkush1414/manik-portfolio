@@ -101,7 +101,7 @@ async function run(level: LevelDef, opts: MissionOptions): Promise<void> {
   }
   const env = mission.env;
   missionSpace.bind(env.path);
-  registerDebug('tod', { state: () => ({ sunEl: +env.tod.sunEl.toFixed(2), exposure: +(missionGrade.exposure * missionGrade.tod).toFixed(3), stars: +env.tod.stars.toFixed(2), daylight: +env.daylight().toFixed(2), zenith: '#' + env.tod.zenith.getHexString() }) });
+  registerDebug('tod', { state: () => ({ sunEl: +env.tod.sunEl.toFixed(2), exposure: +(missionGrade.exposure * missionGrade.tod).toFixed(3), stars: +env.tod.stars.toFixed(2), daylight: +env.daylight().toFixed(2), zenith: '#' + env.tod.zenith.getHexString(), probeCaptures: env.probe.captures }) });
   registerDebug('terrain', { stats: () => ({ ...env.streamer.stats, gridMisses: env.grid.misses, gridQueries: env.grid.queries }) });
   // the first stretch streams in now (the reveal never waits for tiles) + the sim's first grid rows
   await env.prestream(0);

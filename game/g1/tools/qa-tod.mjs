@@ -41,6 +41,15 @@ for (const s of at) {
   await p.screenshot({ path: file });
   points.push({ s, tod, fps: tb.avgFps, p95: tb.p95, file });
 }
+// continuous flight through the sunrise (keyframe env probes recapture as the sun climbs): frame times
+await p.evaluate(m => window.__G1__.mission.jump(m), 600);
+await p.waitForTimeout(1500);
+const cap0 = (await p.evaluate(() => window.__G1__.tod.state())).probeCaptures;
+await p.evaluate(() => window.__G1__.perf.reset('tod-fly'));
+await p.waitForTimeout(12000);
+const fly = await p.evaluate(() => window.__G1__.perf.table());
+const cap1 = (await p.evaluate(() => window.__G1__.tod.state())).probeCaptures;
+const flight = { avgFps: fly.avgFps, p95: fly.p95, p99: fly.p99, max: fly.max ?? null, longTasks: fly.longTasks.length, probeCaptures: cap1 - cap0 };
 // whole-level black-frame sweep (an all-black 1920x1080 PNG is ~20 kB; a real frame is > 500 kB)
 const lengthM = Number(opt('length', '10200'));
 const blackAt = [];
@@ -57,8 +66,8 @@ for (let s = 0; s < lengthM - 200; s += sweep) {
 const info1 = await p.evaluate(() => window.__G1__.info());
 const constant = ['programs', 'textures', 'geometries'].every(k => info0[k] === info1[k]);
 const rising = points.every((q, i) => i === 0 || !q.tod || !points[i - 1].tod || q.tod.sunEl >= points[i - 1].tod.sunEl);
-const r = { gpu, level, mode, sweptFrames, blackAt, points, programs: [info0.programs, info1.programs], constant, rising, logs };
+const r = { gpu, level, mode, flight, sweptFrames, blackAt, points, programs: [info0.programs, info1.programs], constant, rising, logs };
 writeFileSync(`${out}/tod-${level}-${mode}.json`, JSON.stringify(r, null, 1));
 console.log(JSON.stringify(r, null, 1));
 await b.close();
-process.exit(constant && !logs.length && !blackAt.length && points.every(q => q.fps >= 58 && q.tod) ? 0 : 1);
+process.exit(constant && !logs.length && !blackAt.length && flight.avgFps >= 58 && flight.longTasks === 0 && points.every(q => q.fps >= 58 && q.tod) ? 0 : 1);
