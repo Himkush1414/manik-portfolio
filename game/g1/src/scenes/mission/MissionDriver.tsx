@@ -23,6 +23,7 @@ import { missionPost } from '../../render/MissionPostFX';
 import { CameraShaker } from '../../render/CameraShaker';
 import { updateCockpitLights } from './missionCamera';
 import { cockpitFx } from '../cockpit/displays';
+import { composeAttitude } from '../../render/mission/shipAttitude';
 import { flightFeedback } from './flightFeedback';
 import { Vector3, type Camera, type Fog } from 'three';
 import type { InputState } from '../../input/inputState';
@@ -118,7 +119,9 @@ export function MissionDriver() {
     att.update(dt * mission.timeScale, p.vx, p.vy, p.latMax || sim.stats.lateralSpeed, rollT, PLAYER.roll.duration, p.rollDir, p.contact, reduceLife);
     mission.rollVis = att.roll;
     pl.position.set(x, y + att.bob, 0);
-    pl.rotation.set(att.pitch + att.noisePitch, -att.yaw, att.bank + att.roll + att.noiseBank, 'YXZ');
+    // orientation by QUATERNION composition (Planet 1 §1.2): yaw * pitch * bank * roll about the LOCAL
+    // forward axis — the roll angle is never lerped as an Euler, and 2 pi == 0 at its end
+    composeAttitude(pl.quaternion, -att.yaw, att.pitch + att.noisePitch, att.bank + att.noiseBank, att.roll);
     if (mission.ship) {
       mission.ship.setEngineLevel(p.boosting ? 1 : p.braking ? 0.25 : 0.6);
       mission.ship.update(state.clock.elapsedTime);

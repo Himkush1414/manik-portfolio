@@ -8,6 +8,7 @@ import { Ev, type EventReader } from '../../game/core/events';
 import type { Sim } from '../../game/sim';
 import { CONTACT, FLIGHT_FX } from '../../data/mission';
 import { CameraShaker } from '../../render/CameraShaker';
+import { fovKick } from '../../render/rigs/rigState';
 import { sfx } from '../../audio/sfx';
 
 let reader: EventReader | null = null;
@@ -60,6 +61,11 @@ function onEvent(slot: number): void {
     case Ev.Splash:
       CameraShaker.addTrauma(FLIGHT_FX.splashTrauma);
       sfx.play('splash');
+      break;
+    case Ev.Roll:
+      // the barrel roll: a whoosh + a subtle FOV punch (no flash; the vapour ribbons run off the wing tips)
+      sfx.play('whoosh');
+      fovKick.vel += FLIGHT_FX.rollFovKick;
       break;
     case Ev.CloseCall:
       flightFeedback.callout = FLIGHT_FX.calloutLife;

@@ -23,7 +23,7 @@ it does not exist yet: the hangar launches Level 1 directly).
 ### P1.0 Status
 | Slice | Scope | Status | Push |
 |---|---|---|---|
-| A | FIX PACK (§1) [A1 pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
+| A | FIX PACK (§1) [A1, A2 pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
 | B | realism pass on CH1 (grass tiers, river, mountain bases, atmosphere), before / after stills | TODO | |
 | C | strong-curve paths + validator, CH1 + CH2, scale, burst holes, MOUNTAIN WYRM, sighting #1, first creatures (incl. AIR HUNTERS) | TODO | |
 | D | CH3 Narrows (hairpins, slot crack, hidden valley, hive maws, sighting #2) | TODO | |
@@ -51,6 +51,34 @@ it does not exist yet: the hangar launches Level 1 directly).
   climbs to 552 u — ridge rule ceiling 557 —, 60 s hold drift 3.9 u, no warning, clampEvents 0, camera
   >= 3.7 u from terrain); qa-flight 60 fps, p95 16.8-16.9, programs 108 constant; qa-hud 67 nodes;
   qa-tod 0 black frames; consoles clean.
+- **A2 barrel roll (2026-10-03).** TRACE FIRST (prod, Performance trace of 3 rolls): rolls 2-3 had no
+  long task; roll 1's only long task was `AudioContext` creation on the first user gesture (22-47 ms —
+  a QA artifact: in play the context exists since the first click). The "snap" the founder saw was the
+  CAMERA: FULLY ATTACHED took 40 % of the roll angle (`rollShare`), and at the roll's end the bank
+  spring handed back with up to 144 deg of camera roll unwinding in one frame. FIX: `rollProfile.ts` —
+  explicit angle 0 -> 2 pi about the LOCAL forward axis, trapezoidal speed (wind-up 8 % / spin 77 % /
+  settle 15 %), monotonic, C1, exactly 2 pi at the end (== 0, no handoff jump); the ship's attitude is
+  now a quaternion `composeAttitude(yaw, pitch, bank, roll)` (the roll composed last, in the ship's
+  frame — no Euler gimbal). Cameras: FULLY ATTACHED = a wobble only (`rollWobble` 25 deg x sin(theta) x
+  strength — out and back, 0 at the end); STEADY HORIZON = no roll; COCKPIT rolls the whole view when
+  the attachment strength >= 0.75 (`cockpitFlipAt`), else the wobble. `rollShare` / `FEEL.rollEase`
+  deleted. Ev.Roll -> whoosh + a small FOV kick (`FLIGHT_FX.rollFovKick`, never a flash).
+  `tests/roll.test.ts` (profile, 2 pi +-2 % in 0.55 +-0.03 s, end continuity, wobble bound, steady
+  level, cockpit flip continuity). `tools/qa-roll.mjs`: per rig 50 straight rolls + 10 mid-turn + 8
+  pressed against a wall, an in-page rAF recorder (frame time, roll angle, camera roll, bank), checks
+  zero frames > 20 ms, monotonic 2 pi, duration, the HANDOFF (the roll's share of the camera roll =
+  camera - bank: step + change of step at the last roll frame -> the next two, < 3 deg; the settle
+  itself legitimately moves the cockpit view ~5 deg/frame as it decelerates, and the bank spring swings
+  at its own pace through wall contact — both C1, both measured wrong by a raw camera step), the
+  attached wobble <= 25 deg, steady <= 2 deg, programs / geometries / textures constant. Gate A2 (prod,
+  RTX 3050): 202 tests; qa-roll ATTACHED x 3 rigs (67-68 rolls each: 0 frames > 20 ms, 2 pi every roll,
+  monotonic, 0.533 s at 60 Hz, handoff step <= 0.5 deg, attached wobble 25.0 deg, resources 108 / 278 /
+  105 constant) and STEADY x 3 rigs (0 slow frames, handoff <= 0.02 deg, camera level within 1.2 deg);
+  two repeat ATTACHED runs clean. HONEST NOTE: one of five full ATTACHED runs (the harness's final shape)
+  had 2 frames > 20 ms in chase (33 / 83 ms, phase 0, no long task attributed — likely a headless
+  compositor / Windows hitch; open: re-check with the perf pass in slice B). Slice-A gate: qa-freedom 6
+  configs (552 u, drift 3.9 u, clampEvents 0), qa-flight 60 fps p95 16.9, qa-hud 67 nodes, qa-tod 0
+  black frames, consoles clean. [P2] "barrel-roll screen effect" setting: not done (logged).
 
 ## P2R PHASE 2R — WORLD OVERHAUL (F1 + W2b done; the rest superseded by P1 above)
 

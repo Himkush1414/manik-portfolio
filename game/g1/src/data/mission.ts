@@ -97,6 +97,8 @@ export const FLIGHT_FX = {
   /** impact louder than this share of impactMax = the heavy voice */
   heavyAt: 0.5,
   calloutLife: 0.9,
+  /** barrel roll: FOV kick (deg / s of spring velocity) — a subtle punch, never a flash */
+  rollFovKick: 26,
 } as const;
 
 /** The HUD's flight layer (scenes/mission/hudFlight.ts): the close-call callout rises `calloutRise` px; the
@@ -325,7 +327,7 @@ export const RIGS = {
 /** Camera attachment (Control / Camera / Boundary addendum), every rig, blended over `blend` s.
  *  FULLY ATTACHED (default): a rigid mount — follow 1.0, the ship holds its spot on screen; the camera
  *  takes the ship's pitch + nose yaw and rolls with its bank x roll strength (the lateral bank is capped
- *  at `bankMax` in this mode), `rollShare` of a barrel roll; the cockpit view rolls whole.
+ *  at `bankMax` in this mode), a barrel roll is a small wobble (`rollWobble`); the cockpit view rolls whole.
  *  STEADY HORIZON: the camera translates with the ship and never rolls / pitches / yaws (<= `swayMax` of
  *  cosmetic sway); the ship banks alone up to FEEL.bankMax; follow = clamp(1 - edge W / min(free, cap),
  *  min, max) laterally (H vertically), W / H the frustum half-extents at the ship's depth, `free` the
@@ -336,7 +338,10 @@ export const RIGS = {
 export const CAMERA_ATTACH = {
   blend: 0.5,
   bankMax: 40 * DEG,
-  rollShare: 0.4,
+  /** barrel roll (Planet 1 §1.2): the attached camera WOBBLES (<= rollWobble x sin(theta)), never whirls;
+   *  the cockpit flips with the ship at roll strength >= cockpitFlipAt (else the same wobble) */
+  rollWobble: 25 * DEG,
+  cockpitFlipAt: 0.75,
   steady: { edge: 0.85, cap: 60, min: 0.35, max: 0.9, keep: 0.9, tau: 0.35, swayMax: 2 * DEG, interiorRoll: 25 * DEG },
   reduced: { up: 1.6, back: 8 },
   clearance: 2,
@@ -403,8 +408,6 @@ export const FEEL = {
   spring: { omega: 19, zeta: 0.74 },
   /** acceleration estimate smoothing (s) */
   accelTau: 0.05,
-  /** barrel roll visual: eased (front-loaded like the impulse), full turn */
-  rollEase: 1.6,
   /** idle life: tiny bob + roll noise in the corridor's turbulence (reduce-motion: 25 %) */
   wobble: { amp: 0.06, rollDeg: 0.8, pitchDeg: 0.35, hz: [0.37, 0.61, 0.83] as const },
   /** shudder while the hull is in terrain contact (s of decay) */

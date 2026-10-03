@@ -59,7 +59,11 @@ export class CockpitRig implements CameraRig {
     const w = f.attach;
     const strength = reduce ? Math.min(f.rollStrength, RIGS.reduceRoll) : f.rollStrength;
     // the view: ATTACHED rides the ship's attitude (bank x strength + the barrel roll), STEADY stays level
-    const viewRoll = w * (f.bank * strength + (reduce ? 0 : f.roll));
+    // a flip is a flip in the cockpit (the world rolls with the view, eased by the roll profile); below
+    // FLIP strength, or under reduce-motion, the same <= 25 deg wobble as the follow rigs
+    const A = CAMERA_ATTACH;
+    const rollTerm = reduce ? 0 : strength >= A.cockpitFlipAt ? f.roll : A.rollWobble * Math.sin(f.roll) * strength;
+    const viewRoll = w * (f.bank * strength + rollTerm);
     _eu.set(w * f.pitch, w * f.yaw, viewRoll, 'YXZ');
     _q.setFromEuler(_eu);
     // the interior: rigid with the view (ATTACHED) / rolling around it (STEADY, <= 25 deg)

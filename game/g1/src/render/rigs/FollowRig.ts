@@ -7,7 +7,7 @@
 // rigFlight.attach (0 steady .. 1 attached) so a change never cuts:
 //  - FULLY ATTACHED: a rigid boom. The camera sits at ship + q (0, up, back)
 //    and looks along q, q = the ship's pitch + nose yaw + bank x roll
-//    strength (+ 40 % of a barrel roll): the ship holds its spot on screen
+//    strength (a barrel roll is a <= 25 deg wobble): the ship holds its spot on screen
 //    and the world rolls and slides past it.
 //  - STEADY HORIZON: the boom never turns (<= 2 deg cosmetic sway); it
 //    translates a computed share of the ship's offset, from the MEASURED
@@ -102,7 +102,9 @@ export class FollowRig implements CameraRig {
     this.cy = keepY(this.cy + (ty - this.cy) * kp);
     // ---- FULLY ATTACHED: the boom turns with the ship (rigid: no lag, the attitude is already sprung)
     const strength = f.reduceMotion ? Math.min(f.rollStrength, RIGS.reduceRoll) : f.rollStrength;
-    _e.set(w * f.pitch, w * f.yaw, w * (f.bank * strength + f.roll * A.rollShare * (f.reduceMotion ? 0 : 1)), 'YXZ');
+    // the barrel roll is a WOBBLE here (<= 25 deg x sin(theta)): never a whirl, never a snap (Planet 1 §1.2)
+    const wobble = f.reduceMotion ? 0 : A.rollWobble * Math.sin(f.roll) * strength;
+    _e.set(w * f.pitch, w * f.yaw, w * (f.bank * strength + wobble), 'YXZ');
     _q.setFromEuler(_e);
     const bx = o.x + this.cx + (sx - this.cx) * w, by = o.y + this.cy + (sy - this.cy) * w, bz = o.z + t.position.z;
     _boom.set(0, up, back).applyQuaternion(_q);

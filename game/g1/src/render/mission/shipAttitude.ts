@@ -8,6 +8,16 @@
 // is a front-loaded eased full turn matching the sim's decaying impulse.
 // Plain numbers in, plain numbers out: unit-testable, no allocation.
 import { FEEL } from '../../data/mission';
+import { Quaternion, Vector3 } from 'three';
+import { rollAngle } from './rollProfile';
+
+const _qa = new Quaternion(), _qb = new Quaternion();
+const _AX = new Vector3(1, 0, 0), _AY = new Vector3(0, 1, 0), _AZ = new Vector3(0, 0, 1);
+/** q = yaw(Y) * pitch(X) * bank(Z) * roll(Z, LOCAL forward): the barrel roll composed last, in the ship's
+ *  own frame, by quaternion multiplication (Planet 1 §1.2) — never an Euler lerp */
+export function composeAttitude(q: Quaternion, yaw: number, pitch: number, bank: number, roll: number): Quaternion {
+  return q.setFromAxisAngle(_AY, yaw).multiply(_qa.setFromAxisAngle(_AX, pitch)).multiply(_qb.setFromAxisAngle(_AZ, bank)).multiply(_qa.setFromAxisAngle(_AZ, roll));
+}
 
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -83,11 +93,9 @@ export class ShipAttitude {
       this.yawV += (wy * wy * (yawT - this.yaw) - 2 * wy * this.yawV) * h;
       this.yaw += this.yawV * h;
     }
-    // barrel roll: eased like the impulse (fast start, soft finish)
-    if (rollT >= 0 && rollDur > 0) {
-      const u = Math.min(1, rollT / rollDur);
-      this.roll = -rollDir * TAU * (1 - Math.pow(1 - u, FEEL.rollEase));
-    } else this.roll = 0;
+    // barrel roll (Planet 1 §1.2): an explicit angle 0 -> 2 pi about the local forward axis (wind-up /
+    // spin / settle profile), unwrapped while it runs; 2 pi == 0, so its end is no snap
+    this.roll = rollT >= 0 && rollDur > 0 ? rollAngle(rollT, rollDur, -rollDir) : 0;
     // life: bob + roll / pitch noise (three incommensurate sines), shudder while in terrain contact
     const W = FEEL.wobble, t = this.t;
     const s1 = Math.sin(t * TAU * W.hz[0]), s2 = Math.sin(t * TAU * W.hz[1] + 1.7), s3 = Math.sin(t * TAU * W.hz[2] + 4.1);
