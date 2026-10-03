@@ -7,6 +7,7 @@
 import { Color, Vector3, type DirectionalLight, type Mesh } from 'three';
 import { FlightPath } from '../../game/world/path';
 import { HeightGrid, TerrainField } from '../../game/world/terrain';
+import { terrainOptions } from '../../game/world/chapters';
 import type { LevelDef } from '../../levels/types';
 import type { WorldDef } from '../../data/worlds/types';
 import { TerrainStreamer } from './TerrainStreamer';
@@ -66,7 +67,7 @@ export class MissionWorld {
 
   constructor(readonly level: LevelDef, readonly def: WorldDef, preset: Preset) {
     this.path = new FlightPath(level.path);
-    this.field = new TerrainField(def.terrain, this.path, { seed: level.terrainSeed, widthKeys: level.widthKeys });
+    this.field = new TerrainField(def.terrain, this.path, terrainOptions(level));
     this.grid = new HeightGrid(this.field);
     const { material, uniforms } = createTerrainMaterial(def);
     this.uniforms = uniforms;
@@ -74,7 +75,7 @@ export class MissionWorld {
     const tiles = (d: number) => Math.max(0, Math.ceil((2 * d) / TILE_LEN));
     const total = Math.ceil((v.ahead + v.behind) / TILE_LEN) + 2;
     const l0 = tiles(v.lodDist[0]) + 2, l1 = tiles(v.lodDist[1]) + 3;
-    this.streamer = new TerrainStreamer({ terrain: def.terrain, path: level.path, seed: level.terrainSeed, widthKeys: level.widthKeys, material, lodDist: v.lodDist, ahead: v.ahead, behind: v.behind, pool: [Math.max(1, l0), l1, Math.max(4, total - tiles(v.lodDist[1]) + 4)] });
+    this.streamer = new TerrainStreamer({ terrain: def.terrain, path: level.path, options: terrainOptions(level), material, lodDist: v.lodDist, ahead: v.ahead, behind: v.behind, pool: [Math.max(1, l0), l1, Math.max(4, total - tiles(v.lodDist[1]) + 4)] });
     // the cockpit mirrors' reduced world pass sees the terrain (MIRROR_WORLD_LAYER)
     for (const m of this.streamer.meshes) m.layers.enable(MIRROR_WORLD_LAYER);
     // geomorph ranges: a tile is fully its coarser LOD by the nearest point a coarser tile can start

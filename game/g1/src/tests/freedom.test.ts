@@ -279,4 +279,20 @@ describe('real boundaries (Control / Camera / Boundary addendum)', () => {
     expect(maxY).toBeGreaterThan(rim - CEILING.zone);
     expect(sim.player.turb).toBeGreaterThan(0.5);
   });
+
+  it('a canyon whose rim DROPS ahead: the climb cap anticipates it, the ship never ends up above the rim', () => {
+    const tan = Math.tan((75 * Math.PI) / 180);
+    // rim 80 u, falling to 40 u from s = 400 over 60 m
+    const rimAt = (s: number) => (s < 400 ? 80 : s > 460 ? 40 : 80 - ((s - 400) / 60) * 40);
+    const ground: SimGround = { height: (s, u) => Math.min(rimAt(s), Math.abs(u) < 20 ? -40 : -40 + (Math.abs(u) - 20) * tan) };
+    const sim = make(60, 34, { path: pathAt(), ground });
+    let worst = -Infinity;
+    for (let n = 0; n < 900 && sim.player.s < 900; n++) {
+      sim.step(keys(0, 1));
+      worst = Math.max(worst, sim.player.y - rimAt(sim.player.s));
+      expect(sim.player.ceilNow).toBeCloseTo(rimAt(sim.player.s), -1); // the rim right here (within ~5 u: probe spacing)
+    }
+    expect(sim.player.s).toBeGreaterThan(600);
+    expect(worst).toBeLessThan(2);
+  });
 });

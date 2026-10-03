@@ -8,6 +8,7 @@
 // Meshes sit relative to a floating origin set every frame.
 import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Group, Mesh, Sphere, Vector3, type Material } from 'three';
 import { TILE_LEN, tileIndices, tileLayout, allocTile, tileTransfer, type Lod, type TileBuffers } from '../../game/world/tiles';
+import type { TerrainOptions } from '../../game/world/terrain';
 import type { TerrainDef } from '../../data/worlds/types';
 import type { PathDef } from '../../game/world/pathDef';
 import type { TerrainWorkerGen, TerrainWorkerInit, TerrainWorkerResult } from './terrain.worker';
@@ -15,8 +16,8 @@ import type { TerrainWorkerGen, TerrainWorkerInit, TerrainWorkerResult } from '.
 export type StreamerOptions = {
   terrain: TerrainDef;
   path: PathDef;
-  seed: number;
-  widthKeys?: readonly (readonly [number, number])[];
+  /** the level's TerrainField options (seed, width keys / chapters: game/world/chapters terrainOptions) */
+  options: TerrainOptions;
   material: Material;
   /** tile-centre distance limits for LOD 0 / LOD 1 (beyond = LOD 2) */
   lodDist: readonly [number, number];
@@ -94,7 +95,7 @@ export class TerrainStreamer {
       this.stats.genMsMax = Math.max(this.stats.genMsMax, m.ms);
     };
     const o = this.opts;
-    const init: TerrainWorkerInit = { type: 'init', terrain: o.terrain, path: o.path, seed: o.seed, widthKeys: o.widthKeys };
+    const init: TerrainWorkerInit = { type: 'init', terrain: o.terrain, path: o.path, options: o.options };
     this.worker.postMessage(init);
     return new Promise(r => (this.readyResolve = r));
   }

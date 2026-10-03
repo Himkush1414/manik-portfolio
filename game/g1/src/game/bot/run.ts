@@ -3,6 +3,7 @@
 import { Sim } from '../sim';
 import { FlightPath } from '../world/path';
 import { HeightGrid, TerrainField } from '../world/terrain';
+import { terrainOptions } from '../world/chapters';
 import { worldById } from '../../data/worlds/registry';
 import { Ev } from '../core/events';
 import { Bot } from './bot';
@@ -43,7 +44,7 @@ export function runLevel(o: RunOptions): RunResult {
   let world: { path: FlightPath; ground: HeightGrid } | undefined;
   if (def) {
     const path = new FlightPath(o.level.path);
-    const field = new TerrainField(def.terrain, path, { seed: o.level.terrainSeed, widthKeys: o.level.widthKeys });
+    const field = new TerrainField(def.terrain, path, terrainOptions(o.level));
     world = { path, ground: new HeightGrid(field) };
   }
   const sim = new Sim({ level: o.level, ship: o.ship, tiers: o.tiers, seed: o.seed, world, wingHalfSpan: o.wingHalfSpan });

@@ -13,6 +13,18 @@ export const LEVEL_01: LevelDef = {
   worldId: 'arden',
   path: ARDEN_01_PATH,
   widthKeys: ARDEN_01_WIDTH,
+  // the journey (Creative Bible §12 L1, C1): every chapter framed by real walls within +-140 u (AC2.11)
+  chapters: [
+    { atM: 0, kind: 'plains', name: 'Marrow plains' },
+    { atM: 1700, kind: 'foothills', name: 'Foothills' },
+    { atM: 2600, kind: 'forest', name: 'Thornwood' },
+    { atM: 3300, kind: 'pass', name: 'Orrin vista' },
+    { atM: 4050, kind: 'gorge', name: 'The Narrowing', halfWidth: 46, blend: 500 },
+    { atM: 5650, kind: 'river', name: 'Below the dam' },
+    { atM: 6900, kind: 'pass', name: 'Village ridge' },
+    { atM: 8050, kind: 'reveal', name: 'The hidden valley' },
+    { atM: 8900, kind: 'arena', name: 'Landing basin' },
+  ],
   terrainSeed: 101,
   seed: 101,
   // the path is ~10.8 km incl. the 600 m lead-in and the lead-out over the basin

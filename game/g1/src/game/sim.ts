@@ -80,6 +80,9 @@ export class Player {
   freeR = 0;
   freeUp = 0;
   freeDown = 0;
+  /** the ceiling right HERE (u above the path line: the rim at this s / the deck), vs freeUp which takes
+   *  the lowest rim ahead (the climb cap anticipates it) — QA: the ship never above ceilNow */
+  ceilNow = 0;
   /** ceiling: 0..1 turbulence, 0..1 into the cloud deck's base (whiteout), kind (0 rim, 1 deck) */
   turb = 0;
   deck = 0;
@@ -613,20 +616,29 @@ export class Sim {
     p.freeDown = Math.max(0, py - G.height(s, 0));
     // ceiling: the cloud deck, or a canyon rim when both walls are within reach and below the deck
     const deck = world.path.deckAt ? world.path.deckAt(s) : py + cloudDeckOffset(p.envB);
-    let ceil = deck, kind = 1;
+    let ceil = deck, kind = 1, here = deck;
     if (l < max && r < max) {
-      let topL = -Infinity, topR = -Infinity;
-      for (const d of CEILING.rimProbe) {
-        topL = Math.max(topL, G.height(s, -(l + d)));
-        topR = Math.max(topR, G.height(s, r + d));
+      // the rim = the LOWER wall top, and the lowest of it over the next rimAhead metres: the climb cap
+      // anticipates a rim that drops ahead (else the ship flies forward into the air above a lower rim)
+      // (PATH-relative: the ship rides the rail, so where the path climbs ahead the clearance shrinks)
+      let rimRel = Infinity, rimHere = Infinity;
+      for (let a = 0; a <= CEILING.rimAhead; a += CEILING.rimAheadStep) {
+        let topL = -Infinity, topR = -Infinity;
+        for (const d of CEILING.rimProbe) {
+          topL = Math.max(topL, G.height(s + a, -(l + d)));
+          topR = Math.max(topR, G.height(s + a, r + d));
+        }
+        rimRel = Math.min(rimRel, Math.min(topL, topR) - world.path.yAt(s + a));
+        if (a === 0) rimHere = Math.min(topL, topR);
       }
-      const rim = Math.min(topL, topR);
-      if (rim < deck) {
-        ceil = rim;
+      here = Math.min(here, rimHere);
+      if (py + rimRel < deck) {
+        ceil = py + rimRel;
         kind = 0;
       }
     }
     p.freeUp = Math.max(0, ceil - py);
+    p.ceilNow = Math.max(0, here - py);
     p.ceilingKind = kind;
   }
 
@@ -640,14 +652,16 @@ export class Sim {
     // inside the cloud base: the whiteout builds over the last deckFog u below the deck
     p.deck = p.ceilingKind === 1 ? Math.min(1, Math.max(0, 1 - below / CEILING.deckFog)) : 0;
     if (p.turb <= 0) return;
-    // climb authority: the rising-air shear eats the climb as the rim / deck nears
-    const cap = lim * Math.max(0, below) / CEILING.zone;
-    if (p.vy > cap) p.vy = cap;
     // shear: deterministic gusts (sim stream)
     p.vx += (this.rng.sim.next() - 0.5) * 2 * CEILING.shear * p.turb * dt;
     p.vy += (this.rng.sim.next() - 0.5) * CEILING.shear * 0.6 * p.turb * dt;
     // above the deck / rim: the air pushes the ship back down
     if (below < 0) p.vy -= (CEILING.downdraft + CEILING.downdraftPerU * -below) * dt;
+    // climb authority LAST (no gust can lift past it): the rising-air shear eats the climb as the rim /
+    // deck nears, and ABOVE it the cap turns negative with the overshoot — a forced descent no held key
+    // can out-climb
+    const cap = (lim * below) / CEILING.zone;
+    if (p.vy > cap) p.vy = cap;
   }
 
   /**

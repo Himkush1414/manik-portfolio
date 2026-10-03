@@ -32,7 +32,7 @@ look (§19 founder test, side-by-side stills).
 | W2a | sky dome + bodies, aerial perspective, env probe, cumulus + cloud shadows, terrain geomorph | DONE — GATE PASSED | 47446da |
 | F1 | **FREEDOM OF FLIGHT, re-scoped by the CONTROL / CAMERA / BOUNDARY ADDENDUM** (see P2R.0w): keyboard steers + mouse aims (default), optional keyboard+mouse steering, full-screen reticle, two camera attachments, NO invisible limits (terrain contact + diegetic ceilings), settings v2 | DONE — GATE PASSED (controls + save v2, real boundaries, both camera attachments, contact feedback, HUD flight layer + tutorial, terrain soak); deferrals listed in P2R.0d | 362bbb8, e34b66a, 521869c, + 2c |
 | W2b | **living sky (§5, §6)**: TODTimeline + WeatherTimeline (uniform-only), keyframe env probes time-sliced in prepare + blend, per-world grade, horizon ridge layers, sky events (eclipse, shooting stars, planet-rise, aurora), nebula / moon phases, the Meridian in orbit, two depth ranges decision | DONE — TOD + weather timeline, grade, black-frame fixes, visible cloud deck, horizon ridges, keyframe probes, sky events (P2R.0e) | d9e7309, 42bda0b, f3c8e30, + piece 4 |
-| C1 | **chapters (§3, §4)**: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
+| C1 | **chapters (§3, §4)** [IN PROGRESS — piece 1: chapter model + bounds validator, L1 100 % framed; P2R.0f]: chapter timeline in TerrainField (width / wall height / steepness / floor type curves, 200-500 u blends), barrier massifs + fissures, slot cracks (<= 1 u columns, 82 deg cap), dense corridor columns, forks (lane profiles), envelope + speed from chapters, `qa-approach` strips, LevelDef v3 + validator | TODO | |
 | W3 | water, rocks/cliffs (triplanar CC0), near-field detail, arches / tunnels meshes + colliders, set-piece framework | TODO | |
 | W4 | vegetation (kits, LOD, impostors, wind) + TRUNK COLLIDERS + slalom patterns + brush + birds / wildlife reacting | TODO | |
 | E1 | **encounters (§7, §9) = old 2D-2J merged**: enemy registry + parts / weak points, AI behaviours, spawner + entrance patterns, encounter grammar, hive maws + bomb-spores, cliff-clingers, wyrm, husks, rifts [P1], feedback hierarchy, charge lock-on [P1], nova [P1], HUD additions, results + medals | TODO | |
@@ -582,6 +582,44 @@ cursor-flight default + computed follow).
   visible cloud deck, horizon ridges, keyframe env probes, sky events, the Meridian). Per-world specials
   ride with their worlds (W7 KHARAN: twin suns + eclipse; W8 STORMWARD: storm / rain / aurora). The
   'two depth ranges' question: not needed so far (far = 6500 u, no z-fighting seen on the ridges / deck).
+
+### P2R.0f C1 log (landscape chapters)
+- **Piece 1: chapters + the boundary validator (2026-10-03).** `game/world/bounds.ts` `validateBounds`
+  (AC2.11): >= 40 probes per second of flight at cruise, lateral rays from the path line at three
+  heights (0, +-b/2) out to 160 u; fails on any lateral escape (no lateral diegetic cap exists; vertical
+  is capped by the deck / rims) or the path centre within 6 u of terrain. Level 1 BEFORE: 22.7 % framed
+  (both walls > 160 u away for most of the level). `LevelDef.chapters` (`ChapterDef`: atM, archetype,
+  optional halfWidth / wallHeight / steep / rim / blend) + `CHAPTERS` presets per archetype +
+  `game/world/chapters.ts` (resolve, smoothstep blend centred on each chapter start, `terrainOptions(level)`
+  used by EVERY TerrainField builder: main thread, tile worker init, bot runner, tests). TerrainField with
+  chapters: floor half-width from the curve, wall height per chapter (+-15 % per side), steepness drives
+  the wall run (0 rolling .. 1 cliff, the old gorge formula), `rim` = minimum wall share (no low saddle
+  for a lateral escape), valley-edge bays capped at +18 % (spurs still jut in fully). Level 1 re-authored
+  as 9 chapters on its path beats (Marrow plains, foothills, Thornwood, Orrin vista pass, the Narrowing
+  gorge, below the dam, village-ridge pass, the hidden valley, landing basin): AFTER 100 % framed, widest
+  free half-width 152-160 u, path centre >= 16 u clear, never the same archetype twice, blends 350-500 u
+  (tests/chapters.test.ts; the validator also proves it catches the unframed test corridor).
+  Lessons: a pass climb (path 120-140 u above the floor) must be a SADDLE between tall walls (narrow +
+  steep), else the walls are below the flight line; wide plains need steep low escarpments.
+- **Sim bug found by the framed canyons + fixed.** With real walls the ceiling over L1's canyons is the
+  RIM (kind 0), and qa-freedom's ceiling phase overshot it by 11 u: the climb cap looked only at the rim
+  at the current s (a rim dropping ahead left the ship in the air above it), and above the ceiling the
+  cap clamped vy to 0 while a held climb key re-accelerated it each step (the downdraft alone crawled at
+  ~2.5 u/s). Fixes: the rim is the lowest over the next 90 m (CEILING.rimAhead, every 15 m: 30 m missed noisy dips, 3.9 u over in qa-freedom), and the cap
+  is lim x below / zone with NO floor at 0 — above the ceiling it turns negative with the overshoot (a
+  forced descent); the gusts are applied BEFORE the cap; the look-ahead is PATH-relative (the ship rides
+  the rail: where the path climbs ahead the clearance shrinks). Test "a canyon whose rim DROPS ahead"
+  (red 38 u above -> green < 2 u). Residual on real terrain (reproduced headlessly): up to ~3.8 u above
+  the LOCAL rim estimate while already in forced descent — the rim is estimated from probes beyond the
+  wall face found on a 3 u scan, so the estimate itself steps by a few u; qa-freedom tolerates 5 u for
+  rims (2 u for the exact cloud deck). Exposed `player.ceilNow` (the ceiling right here) for QA.
+- **FOUNDER REVIEW FLAG.** Framing within +-140-160 u at flight altitude (addendum) makes even the plains
+  read as a wide corridor (stills `qa/c1b/tod-l01-third-*.png`): the Bible's "sweep from one screen edge
+  to the other" over open plains and the addendum's walls-within-140 pull against each other. The
+  chapters now differ in width / wall height / steepness (foothills read naturally), but the rest of the
+  variety has to come from WALL CHARACTER (low escarpments, forest walls, rock fins, terraces, ruins —
+  C1 piece 2 + W3 / W4) and per-chapter ground / flora / light palettes (AC3.8). Owner call wanted on
+  whether plains may open wider than 160 u where a diegetic frame exists (e.g. a forest wall).
 
 ### P2R.1 State at handover (2026-10-02, before any 2R code)
 

@@ -14,11 +14,15 @@ import type { TerrainDef } from '../../data/worlds/types';
 import type { FlightPath, PathFrame } from './path';
 import { createFrame } from './path';
 import { Simplex2, erodedFbm, fbm, ridged, warp, noiseOut } from './noise';
+import { chapterAt, type ChapterKey, type ChapterState } from './chapters';
 
 export type TerrainOptions = {
   seed: number;
   /** authored floor half-width keys [s, halfWidth] (gorges, basins); else noise inside floorHalfWidth */
   widthKeys?: readonly (readonly [number, number])[];
+  /** C1 landscape chapters (resolved, game/world/chapters.ts): when present they set the floor half-width,
+   *  wall height, steepness and minimum wall per s (and replace widthKeys) */
+  chapters?: readonly ChapterKey[];
 };
 
 export type TerrainSample = {
@@ -60,6 +64,9 @@ export class TerrainField {
   private readonly n2: Simplex2;
   private readonly n3: Simplex2;
   private readonly widthKeys: readonly (readonly [number, number])[] | null;
+  private readonly chapters: readonly ChapterKey[] | null;
+  /** this row's chapter numbers (chapters only): steepness 0..1 + minimum wall share */
+  private readonly ch: ChapterState = { halfWidth: 0, wallHeight: 0, steep: 0, rim: 0 };
   private readonly strata: { bands: number; sharpness: number; tilt: number } | null;
   private readonly terraces: { step: number; smooth: number } | null;
   // per-row cache
@@ -80,6 +87,7 @@ export class TerrainField {
     this.n2 = new Simplex2(opts.seed ^ 0x9e3779b9);
     this.n3 = new Simplex2(opts.seed ^ 0x85ebca6b);
     this.widthKeys = opts.widthKeys && opts.widthKeys.length ? opts.widthKeys : null;
+    this.chapters = opts.chapters && opts.chapters.length ? opts.chapters : null;
     const st = def.modifiers.find(m => m.kind === 'strata');
     this.strata = st && st.kind === 'strata' ? st : null;
     const te = def.modifiers.find(m => m.kind === 'terraces');
@@ -93,7 +101,9 @@ export class TerrainField {
     const d = this.def, p = this.path;
     p.frameAt(s, this.f);
     this.floorY = p.floorAt(s);
-    if (this.widthKeys) {
+    if (this.chapters) {
+      this.halfW = chapterAt(this.chapters, s, this.ch).halfWidth;
+    } else if (this.widthKeys) {
       const k = this.widthKeys;
       let i = 0;
       while (i < k.length - 2 && k[i + 1][0] < s) i++;
@@ -107,9 +117,16 @@ export class TerrainField {
     // the river / valley centre meanders a little inside the floor (the path stays over the floor)
     const m = fbm(this.n2, s / Math.max(200, d.meander.wavelength * 0.35), 11.7, 2);
     this.centre = m * Math.min(this.halfW * 0.15, 28);
-    const span = d.wallHeight[1] - d.wallHeight[0];
-    this.wallL = d.wallHeight[0] + span * (0.5 + 0.5 * fbm(this.n3, s / 900, 1.9, 3));
-    this.wallR = d.wallHeight[0] + span * (0.5 + 0.5 * fbm(this.n3, s / 900, 7.4, 3));
+    if (this.chapters) {
+      // the chapter's wall height, varied +-15 % per side so the two walls never mirror
+      const W = this.ch.wallHeight;
+      this.wallL = W * (1 + 0.15 * fbm(this.n3, s / 900, 1.9, 3));
+      this.wallR = W * (1 + 0.15 * fbm(this.n3, s / 900, 7.4, 3));
+    } else {
+      const span = d.wallHeight[1] - d.wallHeight[0];
+      this.wallL = d.wallHeight[0] + span * (0.5 + 0.5 * fbm(this.n3, s / 900, 1.9, 3));
+      this.wallR = d.wallHeight[0] + span * (0.5 + 0.5 * fbm(this.n3, s / 900, 7.4, 3));
+    }
     const r = d.river;
     this.riverHalf = r ? 0.5 * (r.width[0] + (r.width[1] - r.width[0]) * (0.5 + 0.5 * fbm(this.n3, s / 700, 4.2, 2))) : 0;
   }
@@ -154,7 +171,8 @@ export class TerrainField {
     const wallH = side === 0 ? this.wallL : this.wallR;
     // ---- valley edge, perturbed in WORLD space per side: spurs jut in, bays recede
     const edgeN = fbm(this.n2, wx / 520 + side * 41.3, wz / 520, 3);
-    const W = Math.max(this.riverHalf + 30, this.halfW * (1 + 0.32 * edgeN));
+    // spurs jut in, bays recede; with chapters a bay recedes at most +18 % (the walls must frame the line)
+    const W = Math.max(this.riverHalf + 30, this.halfW * (1 + 0.32 * (this.chapters ? Math.min(edgeN, 0.56) : edgeN)));
     // ---- floor: rolling floodplain rising gently to the edge, river channel carved in
     // floor relief: low world-space hills, rising toward the valley sides (no distance-based benches:
     // anything that is a pure function of the distance to the river draws stripes along it)
@@ -181,10 +199,12 @@ export class TerrainField {
       far = sstep(150, 900, beyond);
       const peakH = d.peaks.height[0] + (d.peaks.height[1] - d.peaks.height[0]) * broad;
       const amp = wallH * (0.55 + 0.6 * broad) * (1 - far) + peakH * far;
-      const field = amp * (0.25 + 0.75 * rid);
+      // chapters set a minimum wall share (no low saddle for a lateral escape); else the raw ridges
+      const rim = this.chapters ? this.ch.rim : 0.25;
+      const field = amp * (rim + (1 - rim) * rid);
       // side profile: slope steepness varies (gentle hillsides vs cliff bands from a rock mask);
       // narrows (half-width near the gorge range) turn the sides into steep rock
-      const gorge = 1 - sstep(d.gorgeHalfWidth[1], d.floorHalfWidth[0], this.halfW);
+      const gorge = this.chapters ? this.ch.steep : 1 - sstep(d.gorgeHalfWidth[1], d.floorHalfWidth[0], this.halfW);
       rockMask = Math.max(gorge, sstep(0.05, 0.45, fbm(this.n3, wx / 700 + 9.1, wz / 700, 3) + (d.cliffs.sharpen - 0.5) * 0.6));
       // in a gorge the apron vanishes and the rock rises almost vertically from the floor edge
       const run = (wallH * (1.25 - 0.85 * rockMask) + d.cliffs.screeApron) * (1 - gorge) + (wallH * 0.16 + 6) * gorge;

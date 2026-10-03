@@ -88,6 +88,10 @@ export const CEILING = {
   deckFog: 12,
   /** a rim is measured from the walls' tops within this many u beyond the wall face */
   rimProbe: [6, 24, 48] as const,
+  /** ... and taken as the lowest over the next rimAhead m (every rimAheadStep): a rim that drops ahead
+   *  caps the climb before the ship gets there */
+  rimAhead: 90,
+  rimAheadStep: 15,
 } as const;
 
 /** Feel of terrain contact + ceilings (addendum §3): camera trauma per event, sustained rumble levels
@@ -159,6 +163,25 @@ export const ENVELOPES = {
   arena: { a: 60, b: 34 },
 } as const;
 export type EnvelopeArchetype = keyof typeof ENVELOPES;
+
+/** Chapter presets per archetype (C1; Creative Bible §3): floor half-width (u), wall height (u), steepness
+ *  (0 rolling hills .. 1 cliff: shortens the wall's run), rim (minimum wall share: no low saddle a lateral
+ *  probe escapes through). Chosen so the walls stand within +-160 u of the line at flight altitude
+ *  (AC2.11, `validateBounds`) AND the chapters read differently: plains / reveal wide with LOW
+ *  escarpments (the far peaks stay visible), foothills rolling and tall, forest closer, gorge / slot
+ *  tight cliffs, pass a saddle between peaks. */
+export const CHAPTERS: Record<EnvelopeArchetype, { halfWidth: number; wallHeight: number; steep: number; rim: number }> = {
+  plains: { halfWidth: 104, wallHeight: 180, steep: 0.6, rim: 0.74 },
+  river: { halfWidth: 102, wallHeight: 200, steep: 0.55, rim: 0.66 },
+  foothills: { halfWidth: 86, wallHeight: 270, steep: 0.42, rim: 0.62 },
+  forest: { halfWidth: 70, wallHeight: 230, steep: 0.6, rim: 0.62 },
+  gorge: { halfWidth: 40, wallHeight: 320, steep: 0.95, rim: 0.75 },
+  slot: { halfWidth: 8, wallHeight: 300, steep: 1, rim: 0.85 },
+  pass: { halfWidth: 70, wallHeight: 400, steep: 0.72, rim: 0.78 },
+  reveal: { halfWidth: 106, wallHeight: 250, steep: 0.64, rim: 0.76 },
+  arena: { halfWidth: 116, wallHeight: 240, steep: 0.7, rim: 0.7 },
+};
+export const CHAPTER_BLEND = 350;
 
 /** Freedom of flight (Creative Bible §2). */
 export const FREEDOM = {

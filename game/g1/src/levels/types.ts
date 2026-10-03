@@ -1,3 +1,4 @@
+import type { EnvelopeArchetype } from '../data/mission';
 import type { PathDef } from '../game/world/pathDef';
 // LevelDef (brief §14). Phase 3 GENERATES 50 of these, so everything is plain
 // data: no functions, no class instances, numbers in metres along the rail
@@ -76,6 +77,25 @@ export type LevelDef = {
   todTimeline?: readonly TodKey[];
   /** authored sky moments (Creative Bible AC5.4 / AC6.2 / AC6.5), by rail position */
   skyEvents?: readonly SkyEvent[];
+  /** the level as a JOURNEY of landscape chapters (Creative Bible §3, AC3.1 / AC3.2 / AC2.11): each
+   *  sets the valley's floor half-width, wall height, steepness and minimum wall (from its archetype's
+   *  preset, data/mission.ts CHAPTERS, unless overridden), blended into the next over `blend` m. When
+   *  present it replaces widthKeys. */
+  chapters?: readonly ChapterDef[];
+};
+
+/** one landscape chapter (C1) */
+export type ChapterDef = {
+  atM: number;
+  kind: EnvelopeArchetype;
+  name?: string;
+  /** floor half-width (u), wall height (u), steepness 0 rolling .. 1 cliff, minimum wall share 0..1 */
+  halfWidth?: number;
+  wallHeight?: number;
+  steep?: number;
+  rim?: number;
+  /** blend INTO this chapter over this many metres centred on atM (200-500) */
+  blend?: number;
 };
 
 /** A sky moment: a world body moving (planet-rise over a ridge), shooting stars (fading with the stars),

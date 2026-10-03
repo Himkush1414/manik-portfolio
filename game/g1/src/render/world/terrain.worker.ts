@@ -4,12 +4,12 @@
 // buffers with each request, so steady-state generation allocates nothing.
 /// <reference lib="webworker" />
 import { FlightPath } from '../../game/world/path';
-import { TerrainField } from '../../game/world/terrain';
+import { TerrainField, type TerrainOptions } from '../../game/world/terrain';
 import { allocTile, generateTile, tileLayout, tileTransfer, type Lod, type TileBuffers } from '../../game/world/tiles';
 import type { TerrainDef } from '../../data/worlds/types';
 import type { PathDef } from '../../game/world/pathDef';
 
-export type TerrainWorkerInit = { type: 'init'; terrain: TerrainDef; path: PathDef; seed: number; widthKeys?: readonly (readonly [number, number])[] };
+export type TerrainWorkerInit = { type: 'init'; terrain: TerrainDef; path: PathDef; options: TerrainOptions };
 export type TerrainWorkerGen = { type: 'gen'; id: number; tile: number; s0: number; lod: Lod; buffers?: TileBuffers };
 export type TerrainWorkerResult = { type: 'tile'; id: number; tile: number; lod: Lod; origin: { x: number; y: number; z: number }; sphere: [number, number, number, number]; ms: number; buffers: TileBuffers };
 
@@ -19,7 +19,7 @@ self.onmessage = (e: MessageEvent<TerrainWorkerInit | TerrainWorkerGen>) => {
   const m = e.data;
   if (m.type === 'init') {
     const path = new FlightPath(m.path);
-    field = new TerrainField(m.terrain, path, { seed: m.seed, widthKeys: m.widthKeys });
+    field = new TerrainField(m.terrain, path, m.options);
     self.postMessage({ type: 'ready', length: path.length });
     return;
   }

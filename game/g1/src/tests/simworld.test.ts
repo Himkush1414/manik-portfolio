@@ -7,6 +7,7 @@ import { SPECS } from '../ships/specs';
 import { TEST_LEVEL } from '../levels/testLevel';
 import { LEVEL_01 } from '../levels/level01';
 import { worldById } from '../data/worlds/registry';
+import { terrainOptions } from '../game/world/chapters';
 import { emptyInput } from '../game/input';
 import { CONTACT } from '../data/mission';
 import { Ev } from '../game/core/events';
@@ -15,7 +16,7 @@ import { EMPTY_TIERS } from '../data/upgrades';
 function worldFor(level = TEST_LEVEL) {
   const def = worldById(level.worldId)!;
   const path = new FlightPath(level.path);
-  const field = new TerrainField(def.terrain, path, { seed: level.terrainSeed, widthKeys: level.widthKeys });
+  const field = new TerrainField(def.terrain, path, terrainOptions(level));
   return { path, field, grid: new HeightGrid(field) };
 }
 const mk = (w: ReturnType<typeof worldFor>, god = false) => new Sim({ level: TEST_LEVEL, ship: 'halcyon', tiers: { ...EMPTY_TIERS }, seed: 7, god, world: { path: w.path, ground: w.grid } });

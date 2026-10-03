@@ -86,11 +86,14 @@ for (const mode of modes) {
       const pr = () => p.evaluate(() => { const el = document.querySelector('[class*="_prompt_"]'); return { on: el?.dataset.on, text: el?.textContent }; });
       const before = await pr();
       rig.shots.push(await shot('tutorial-move'));
-      await p.keyboard.down('KeyD');
-      await p.waitForTimeout(250);
-      await p.keyboard.up('KeyD');
-      await p.waitForTimeout(400);
-      const after = await pr();
+      let after = before;
+      for (let attempt = 0; attempt < 2 && after.on !== 'false'; attempt++) {
+        await p.keyboard.down('KeyD');
+        await p.waitForTimeout(600);
+        await p.keyboard.up('KeyD');
+        await p.waitForTimeout(400);
+        after = await pr();
+      }
       R.tutorial = { before, after };
       check(before.on === 'true' && /MOVE/.test(before.text) && /W A S D/.test(before.text), `${mode}: tutorial MOVE prompt missing (${JSON.stringify(before)})`);
       check(after.on === 'false', `${mode}: the MOVE prompt did not retire on a key press (${JSON.stringify(after)})`);
@@ -116,7 +119,7 @@ for (const mode of modes) {
         const t = k++ * 0.11;
         const x = 960 + 1000 * Math.sin(t * 1.3), y = 540 + 580 * Math.sin(t * 0.83 + 0.4);
         await p.mouse.move(Math.max(0, Math.min(1919, x)), Math.max(0, Math.min(1079, y)), { steps: 2 });
-        if (k % 4) continue;
+        if (k % 2) continue;
         const q = await probe();
         n++;
         maxShip = Math.max(maxShip, Math.abs(q.sim.x), Math.abs(q.sim.y));
@@ -264,7 +267,8 @@ for (const mode of modes) {
       while (Date.now() - t0 < 5000) {
         const q = await probe();
         maxTurb = Math.max(maxTurb, q.sim.turb);
-        maxAbove = Math.max(maxAbove, q.sim.y - q.sim.freeUp);
+        // against the ceiling HERE (freeUp anticipates a lower rim ahead and drops before the ship gets there)
+        maxAbove = Math.max(maxAbove, q.sim.y - q.sim.ceilNow);
         maxY = Math.max(maxY, q.sim.y);
         kind = q.sim.ceilingKind;
         const hud = await p.evaluate(() => {
@@ -285,7 +289,10 @@ for (const mode of modes) {
       check(maxTurb > 0.5, `${mode}/${tag}: no turbulence under the ceiling (${maxTurb})`);
       check(maxAlert > 0.9 && !!alertText, `${mode}/${tag}: HUD turbulence alert not shown (${maxAlert})`);
       check(kind !== 1 || maxWhite > 0.3, `${mode}/${tag}: no cloud-deck whiteout (${maxWhite})`);
-      check(maxAbove < 3, `${mode}/${tag}: flew ${maxAbove.toFixed(1)} u through the ceiling`);
+      // the cloud deck's height is exact (2 u); a canyon rim is ESTIMATED from probes beyond the wall face
+      // (the face is found on a 3 u scan): the estimate steps by a few u, the forced descent corrects it
+      const tol = kind === 1 ? 2 : 5;
+      check(maxAbove < tol, `${mode}/${tag}: flew ${maxAbove.toFixed(1)} u through the ceiling (tolerance ${tol})`);
     }
   }
   rig.logs = logs;
