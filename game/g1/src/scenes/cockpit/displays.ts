@@ -14,7 +14,10 @@ export const cockpitFx = {
   hudMode: 'off' as 'off' | 'boot' | 'briefing' | 'select' | 'standby' | 'launch' | 'mission',
   /** Phase 2 mission (hudMode 'mission'): live data for the MFDs + combiner, written by the mission
    *  HUD driver (fractions 0..1 unless noted); the displays never import mission code */
-  mission: { shield: 1, hull: 1, energy: 1, boostLocked: false, rollCd: 0, progress: 0, speed: 0, score: 0, combo: 1, target: false, targetHp: 0, bank: 0, pitch: 0, reduceFlash: false },
+  mission: { shield: 1, hull: 1, energy: 1, boostLocked: false, rollCd: 0, progress: 0, speed: 0, score: 0, combo: 1, target: false, targetHp: 0, bank: 0, pitch: 0, reduceFlash: false,
+    /** flight data (Planet 1 §1.3): ship heading + bank (deg, planet frame), altitude above the valley floor +
+     *  ground clearance (u) */
+    heading: 0, shipBank: 0, alt: 0, clr: 0 },
   /** Phase 2 launch: countdown digit (3, 2, 1; 0 = LAUNCH), catapult speed (u/s), FOV kick (deg), camera view */
   count: 3,
   launchSpeed: 0,
@@ -32,6 +35,12 @@ export const BRIEFING_TEXT: string[] = [MISSION_01.header, '', MISSION_01.saluta
 export const BRIEFING_CHARS = BRIEFING_TEXT.reduce((a, l) => a + l.length, 0);
 
 const HUD_COL = '#ffb07a';
+/** combiner flight data (Planet 1 §1.3) */
+const LADDER = [-30, -20, -10, -5, 0, 5, 10, 20, 30] as const;
+const BANK_TICKS = [-60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60] as const;
+const HEAD_LABEL: string[] = Array.from({ length: 36 }, (_, i) => (i === 0 ? 'N' : i === 9 ? 'E' : i === 18 ? 'S' : i === 27 ? 'W' : String(i * 10).padStart(3, '0')));
+const DASHED = [10, 8];
+const SOLID: number[] = [];
 const MFD_COL = '#9fe0ff';
 const HOT = '#ff8a3d';
 const DANGER = '#ff5a6e';
@@ -117,7 +126,7 @@ export function createDisplays(): Displays {
   const hudSig = (t: number): string => {
     const M = cockpitFx.mission;
     const warn = M.hull < 0.25 || M.shield < 0.25 ? (M.reduceFlash ? 2 : Math.sin(t * 8) > -0.3 ? 1 : 0) : 0;
-    return `${Math.round(M.bank * 114.6)}|${Math.round(M.pitch * 114.6)}|${Math.round(M.speed)}|${M.score}|${M.combo}|${Math.round(M.energy * 40)}|${M.boostLocked ? 1 : 0}|${warn}|${cockpitFx.power.hud.toFixed(2)}`;
+    return `${Math.round(M.bank * 114.6)}|${Math.round(M.pitch * 114.6)}|${Math.round(M.heading * 2)}|${Math.round(M.shipBank)}|${Math.round(M.alt)}|${Math.round(M.clr)}|${Math.round(M.speed)}|${M.score}|${M.combo}|${Math.round(M.energy * 40)}|${M.boostLocked ? 1 : 0}|${warn}|${cockpitFx.power.hud.toFixed(2)}`;
   };
 
   const frame = (g: CanvasRenderingContext2D, w: number, h: number, title: string, col: string) => {
@@ -338,26 +347,96 @@ export function createDisplays(): Displays {
     g.font = '500 18px "JetBrains Mono", monospace';
     const mode = cockpitFx.hudMode, M = cockpitFx.mission, live = mode === 'mission';
     // pitch ladder: in the mission it stays world-level — the view rolls with the ship (+bank = CCW from
-    // behind), so the ladder turns the other way on screen (+ = clockwise on a canvas); 70 px per 5 deg
+    // behind), so the ladder turns the other way on screen (+ = clockwise on a canvas); 14 px per deg.
+    // Planet 1 §1.3: +-5 / 10 / 20 / 30 + the horizon (M.pitch includes the rail's climb: world-true),
+    // dashed below the horizon, end ticks toward it
     g.save();
     if (live) {
       g.translate(w / 2, h / 2);
       g.rotate(M.bank);
       g.translate(-w / 2, -h / 2 + (M.pitch * 180) / Math.PI * 14);
     }
-    for (let k = -2; k <= 2; k++) {
-      if (!k) continue;
-      const y = h / 2 - k * 70;
-      g.globalAlpha = p * 0.5;
+    for (let i = 0; i < LADDER.length; i++) {
+      const k = LADDER[i];
+      if (!live && Math.abs(k) > 10) continue;
+      const y = h / 2 - k * 14;
+      g.globalAlpha = p * (k ? 0.5 : 0.65);
+      g.setLineDash(k < 0 ? DASHED : SOLID);
       g.beginPath();
-      g.moveTo(w / 2 - 150, y);
-      g.lineTo(w / 2 - 60, y);
-      g.moveTo(w / 2 + 60, y);
-      g.lineTo(w / 2 + 150, y);
+      const g0 = k ? 60 : 40, g1 = k ? 150 : 230;
+      g.moveTo(w / 2 - g1, y);
+      g.lineTo(w / 2 - g0, y);
+      g.moveTo(w / 2 + g0, y);
+      g.lineTo(w / 2 + g1, y);
+      if (k) {
+        const t = k > 0 ? 10 : -10;
+        g.moveTo(w / 2 - g0, y);
+        g.lineTo(w / 2 - g0, y + t);
+        g.moveTo(w / 2 + g0, y);
+        g.lineTo(w / 2 + g0, y + t);
+      }
       g.stroke();
-      g.fillText(`${k * 5}`, w / 2 + 160, y + 6);
+      g.setLineDash(SOLID);
+      if (k) g.fillText(`${k}`, w / 2 + 160, y + 6);
     }
     g.restore();
+    if (live) {
+      // heading tape under the energy bar: +-30 deg, ticks every 5, labels every 10 (N / E / S / W)
+      const hd = M.heading, ty = 104, half = 200, ppd = half / 30;
+      g.globalAlpha = p * 0.8;
+      g.beginPath();
+      g.moveTo(w / 2 - half, ty);
+      g.lineTo(w / 2 + half, ty);
+      for (let t = Math.ceil((hd - 30) / 5) * 5; t <= hd + 30; t += 5) {
+        const x = w / 2 + (t - hd) * ppd;
+        g.moveTo(x, ty);
+        g.lineTo(x, ty - (((t % 10) + 10) % 10 === 0 ? 10 : 5));
+      }
+      g.moveTo(w / 2, ty + 3);
+      g.lineTo(w / 2 - 6, ty + 12);
+      g.moveTo(w / 2, ty + 3);
+      g.lineTo(w / 2 + 6, ty + 12);
+      g.stroke();
+      g.textAlign = 'center';
+      g.font = '500 16px "JetBrains Mono", monospace';
+      for (let t = Math.ceil((hd - 26) / 10) * 10; t <= hd + 26; t += 10) {
+        if (Math.abs(t - hd) < 5) continue;
+        g.fillText(HEAD_LABEL[((Math.round(t / 10) % 36) + 36) % 36], w / 2 + (t - hd) * ppd, ty - 14);
+      }
+      g.font = '600 20px "JetBrains Mono", monospace';
+      g.globalAlpha = p;
+      g.fillText(String(Math.round(hd) % 360).padStart(3, '0'), w / 2, ty + 32);
+      // bank arc at the bottom (0 / 10 / 20 / 30 / 45 / 60), the pointer at the ship's bank
+      const R = 250, cx = w / 2, cy = h / 2;
+      g.globalAlpha = p * 0.6;
+      g.beginPath();
+      g.arc(cx, cy, R, Math.PI / 2 - (60 * Math.PI) / 180, Math.PI / 2 + (60 * Math.PI) / 180);
+      for (let i = 0; i < BANK_TICKS.length; i++) {
+        const t = BANK_TICKS[i], a = Math.PI / 2 - (t * Math.PI) / 180, L = t % 30 === 0 ? 14 : 8;
+        g.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+        g.lineTo(cx + Math.cos(a) * (R + L), cy + Math.sin(a) * (R + L));
+      }
+      g.stroke();
+      const b = Math.max(-75, Math.min(75, M.shipBank)), a = Math.PI / 2 - (b * Math.PI) / 180;
+      const px = cx + Math.cos(a) * (R - 4), py = cy + Math.sin(a) * (R - 4), nx = Math.cos(a), ny = Math.sin(a);
+      g.globalAlpha = p;
+      g.beginPath();
+      g.moveTo(px, py);
+      g.lineTo(px - nx * 14 - ny * 8, py - ny * 14 + nx * 8);
+      g.lineTo(px - nx * 14 + ny * 8, py - ny * 14 - nx * 8);
+      g.closePath();
+      g.fill();
+      // altitude + ground clearance, right of the ladder
+      g.textAlign = 'right';
+      g.font = '500 16px "JetBrains Mono", monospace';
+      g.fillText('ALT', w - 150, h / 2 - 8);
+      g.fillText('CLR', w - 150, h / 2 + 20);
+      g.font = '600 22px "JetBrains Mono", monospace';
+      g.fillText(String(Math.round(M.alt)), w - 60, h / 2 - 8);
+      g.fillText(String(Math.max(0, Math.round(M.clr))), w - 60, h / 2 + 20);
+      g.textAlign = 'left';
+      g.font = '500 18px "JetBrains Mono", monospace';
+    }
     g.globalAlpha = p;
     g.strokeRect(w / 2 - 44, 20, 88, 30);
     g.textAlign = 'center';

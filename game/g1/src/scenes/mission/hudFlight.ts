@@ -4,6 +4,7 @@
 // reticle, the skim / wall-run streak, and the tutorial prompt — its text built from the player's REAL
 // bindings and steering scheme (input/prompts.ts), shown until the action is performed. Writes only
 // when a value changed; no allocation per frame except the prompt text when the hint changes.
+import { cockpitFx } from '../cockpit/displays';
 import { mission } from './missionRuntime';
 import { hudDom } from '../../ui/screens/mission/hudDom';
 import { flightFeedback } from './flightFeedback';
@@ -50,7 +51,10 @@ export function hudFlight(sim: Sim, dt: number, rx: number, ry: number): void {
   if (world && altT <= 0) {
     altT = 0.1;
     const wy = world.path.yAt(p.s) + p.y;
-    const alt = `${Math.round(wy - world.path.floorAt(p.s))}`, clr = `${Math.max(0, Math.round(wy - world.groundY(p.s, p.x)))}`;
+    const altV = wy - world.path.floorAt(p.s), clrV = Math.max(0, wy - world.groundY(p.s, p.x));
+    cockpitFx.mission.alt = altV;
+    cockpitFx.mission.clr = clrV;
+    const alt = `${Math.round(altV)}`, clr = `${Math.round(clrV)}`;
     if (d.alt && alt !== lastAlt) d.alt.textContent = lastAlt = alt;
     if (d.clr && clr !== lastClr) d.clr.textContent = lastClr = clr;
   }

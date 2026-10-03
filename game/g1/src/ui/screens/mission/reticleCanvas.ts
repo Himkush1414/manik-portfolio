@@ -11,6 +11,7 @@
 // rebuilt at <= 20 Hz (`setText`), never per frame; no allocation per frame.
 import type { ReticleStyle } from '../../../state/schema';
 import { angleBetween, azEl, offsetPoint, screenToDir, type P2, type V3 } from '../../../render/mission/reticleMath';
+import { flightData, type FlightDataIn } from './flightData';
 
 const FROST = 'rgba(232, 236, 255, 0.92)';
 const ICE = 'rgba(127, 209, 255, 0.85)';
@@ -74,9 +75,10 @@ export class ReticleCanvas {
 
   /**
    * Per frame. rx/ry: the reticle (CSS px); bx/by/bon: the ship's boresight pipper; fov: the camera's
-   * vertical FOV (deg). `show` false clears and stops.
+   * vertical FOV (deg). `show` false clears and stops. `fd`: the flight data to draw under it (null in the
+   * cockpit, where the combiner carries it).
    */
-  draw(w: number, h: number, fov: number, rx: number, ry: number, bx: number, by: number, bon: boolean, o: ReticleOpts, show: boolean): void {
+  draw(w: number, h: number, fov: number, rx: number, ry: number, bx: number, by: number, bon: boolean, o: ReticleOpts, show: boolean, fd: FlightDataIn | null = null): void {
     const g = this.g;
     if (!g) return;
     this.fit(w, h);
@@ -90,6 +92,8 @@ export class ReticleCanvas {
     this.offset.el = _ae.el;
     this.offset.total = bon ? angleBetween(_a, _b) : 0;
     if (!show) return;
+    // flight data first (dim, under the reticle): the overlay views only — the cockpit combiner carries it
+    if (fd) flightData.draw(g, w, h, fov, fd, o.brightness);
     // size x the viewport unit (the CSS --u: 1 at 1920 x 1080), floored so 720p stays legible
     const k = o.size * Math.max(0.85, Math.min(w / 1920, h / 1080)), alpha = o.brightness;
     if (k !== this.fontK) {

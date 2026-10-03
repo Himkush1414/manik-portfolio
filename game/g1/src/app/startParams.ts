@@ -7,6 +7,10 @@
 //   ?screen=briefing|camera|cockpit        run the real launch flow (sped up) to it
 //   ?unlock=all  ?credits=<n>              save edits: only with ?debug=1
 // Default: the full boot sequence (flow stays in boot.black until it starts).
+import { missionSpace } from '../render/world/missionSpace';
+import { cockpitFx } from '../scenes/cockpit/displays';
+import { fd as hudFd } from '../scenes/mission/MissionHudDriver';
+import { heading, localToWorldDir } from '../render/mission/flightAttitude';
 import { reticleCanvas } from '../ui/screens/mission/reticleCanvas';
 import { QUERY } from '../core/constants';
 import { flow } from './flow';
@@ -156,6 +160,7 @@ export function applyStartParams(): void {
         cam: { local: [lx, ly, lz], roll: _eu.z, pitch: _eu.x, yaw: _eu.y, clearance: rigFlight.clearAt ? rigFlight.clearAt(lx, ly, lz) : null, fov: (cam as PerspectiveCamera).fov },
         shipLocal: [mission.player.position.x, mission.player.position.y, mission.player.position.z],
         reticleOffset: { az: reticleCanvas.offset.az, el: reticleCanvas.offset.el, total: reticleCanvas.offset.total },
+        flightData: { heading: hudFd.heading, bank: hudFd.bank, pathHeading: heading(localToWorldDir(missionSpace.r, { x: 0, y: 0, z: -1 }, { x: 0, y: 0, z: 0 })), combiner: { pitch: cockpitFx.mission.pitch, alt: cockpitFx.mission.alt, clr: cockpitFx.mission.clr } },
       };
     },
   });

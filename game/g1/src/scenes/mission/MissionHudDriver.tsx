@@ -7,7 +7,7 @@
 // 20 Hz HUD refresh (hud.seq): bars (transform scaleX), numbers (text only
 // when changed), danger / lock flags, rings.
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector3, type Camera, type PerspectiveCamera } from 'three';
+import { Quaternion, Vector3, type Camera, type PerspectiveCamera } from 'three';
 import { stage } from '../Stage';
 import { mission } from './missionRuntime';
 import { hudDom, RING_C } from '../../ui/screens/mission/hudDom';
@@ -20,6 +20,9 @@ import { cockpitFx } from '../cockpit/displays';
 import { useSettings } from '../../state/settings.store';
 import { hudFlight, hudFlightRemount } from './hudFlight';
 import { reticleCanvas, type ReticleOpts } from '../../ui/screens/mission/reticleCanvas';
+import { flightData, type FlightDataIn } from '../../ui/screens/mission/flightData';
+import { bankAngle, elevation, heading, localToWorldDir, rotate } from '../../render/mission/flightAttitude';
+import { missionSpace } from '../../render/world/missionSpace';
 
 const _v = new Vector3();
 const pos = { x: 0, y: 0, on: false };
@@ -32,6 +35,13 @@ let hitT = 0, killT = 0;
 const last = { score: -1, combo: -1, credits: -1, pct: -1, shield: -1, hull: -1, speed: -1, target: -2 };
 const lastXY = new Float32Array(4);
 const ropts: ReticleOpts = { style: 'tactical', size: 1, brightness: 0.9, degrees: true };
+// flight data (Planet 1 §1.3): ship + camera attitude in the planet frame, per frame, no allocation
+const _sq = new Quaternion(), _cq = new Quaternion();
+const _fw = { x: 0, y: 0, z: -1 }, _rt = { x: 1, y: 0, z: 0 }, _t = { x: 0, y: 0, z: 0 };
+const FWD = { x: 0, y: 0, z: -1 }, RIGHT = { x: 1, y: 0, z: 0 };
+/** the latest flight data (also read by the QA probe) */
+export const fd: FlightDataIn = { heading: 0, bank: 0, camFwW: { x: 0, y: 0, z: -1 }, camQ: _cq, r: missionSpace.r };
+const DEG = Math.PI / 180;
 
 /** world point -> CSS px in `pos` (on = in front of the camera) */
 function project(cam: Camera, w: number, h: number): void {
@@ -120,10 +130,23 @@ export function MissionHudDriver() {
       lastXY.fill(-1e4);
       hudFlightRemount();
     }
+    // flight data: ship heading / bank in the planet frame (world = B local), the camera's world forward
+    const r = missionSpace.r;
+    mission.player.getWorldQuaternion(_sq);
+    localToWorldDir(r, rotate(_sq, FWD, false, _t), _fw);
+    localToWorldDir(r, rotate(_sq, RIGHT, false, _t), _rt);
+    fd.heading = heading(_fw);
+    fd.bank = bankAngle(_fw, _rt);
+    camera.getWorldQuaternion(_cq);
+    localToWorldDir(r, rotate(_cq, FWD, false, _t), fd.camFwW);
     // combiner attitude, per frame: the cockpit interior's roll / pitch relative to the rail (the cockpit
-    // rig writes them: the view's roll + the shell's roll around it in STEADY HORIZON)
-    cockpitFx.mission.bank = rigFlight.interiorRoll;
-    cockpitFx.mission.pitch = rigFlight.interiorPitch;
+    // rig writes them: the view's roll + the shell's roll around it in STEADY HORIZON); the pitch gets the
+    // rail's own climb so the combiner ladder is world-true (the path frame never banks)
+    const M = cockpitFx.mission;
+    M.bank = rigFlight.interiorRoll;
+    M.pitch = rigFlight.interiorPitch + elevation(localToWorldDir(r, FWD, _t)) * DEG;
+    M.heading = fd.heading;
+    M.shipBank = fd.bank;
     const view = hudView.cockpit ? 'cockpit' : 'overlay';
     if (view !== lastView) d.root.dataset.view = lastView = view;
     if (readerSim !== sim) {
@@ -160,7 +183,7 @@ export function MissionHudDriver() {
     ropts.size = hs.reticleSize;
     ropts.brightness = hs.reticleBrightness;
     ropts.degrees = hs.reticleDegrees;
-    reticleCanvas.draw(size.width, size.height, (camera as PerspectiveCamera).fov, rx, ry, pos.x, pos.y, pos.on, ropts, true);
+    reticleCanvas.draw(size.width, size.height, (camera as PerspectiveCamera).fov, rx, ry, pos.x, pos.y, pos.on, ropts, true, hudView.cockpit ? null : fd);
 
     // ---- markers
     if (hitT > 0 || killT > 0) {
@@ -196,6 +219,7 @@ export function MissionHudDriver() {
       lastSeq = h.seq;
       bars(h);
       reticleCanvas.setText(C * HUD.speedScale);
+      flightData.setText(fd.heading);
     }
   }, 0.5);
   return null;

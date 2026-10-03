@@ -3,6 +3,8 @@
 // third-person view, and TACTICAL in the cockpit at 1920. Checks: the canvas draws (drawn-pixel count per
 // style: tactical > minimal > 0, classic > 0); AZ / EL read + right / + up when the aim is forced right /
 // up, the total offset > 4 deg there (boresight line + label), ~0 at rest; HUD node count; consoles clean.
+// FLIGHT DATA (A3b): heading tracks the path heading, bank + steering right / - left, stills level /
+// banked / banked + climbing; the cockpit combiner gets ALT / CLR.
 // Stills for the legibility review.
 //   node tools/qa-reticle.mjs [origin] [--out qa/a3]
 import { chromium } from 'playwright';
@@ -76,6 +78,24 @@ for (const [w, h] of sizes) {
   R.classic = { px: await drawn(p) };
   await shot('classic');
   await p.evaluate(() => window.__G1__.sim.force(null));
+  // FLIGHT DATA: heading tape / ladder / bank arc (the overlay): heading tracks the path, bank sign
+  await hudSet(p, { reticle: 'tactical', reticleSize: 1 });
+  await p.waitForTimeout(400);
+  const fdOf = () => p.evaluate(() => window.__G1__.flight.probe().flightData);
+  R.fdLevel = await fdOf();
+  await shot('flight-level');
+  await p.evaluate(() => window.__G1__.sim.force({ moveX: 1 }));
+  await p.waitForTimeout(500);
+  R.fdRight = await fdOf();
+  await shot('flight-bank-right');
+  await p.evaluate(() => window.__G1__.sim.force({ moveX: -1, moveY: 1 }));
+  await p.waitForTimeout(900);
+  R.fdLeftClimb = await fdOf();
+  await shot('flight-bank-left-climb');
+  await p.evaluate(() => window.__G1__.sim.force(null));
+  const wrapD = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+  check(wrapD(R.fdLevel.heading, R.fdLevel.pathHeading) < 20, `${tag}: heading ${R.fdLevel.heading.toFixed(1)} vs path ${R.fdLevel.pathHeading.toFixed(1)}`);
+  check(R.fdRight.bank > 5 && R.fdLeftClimb.bank < -5, `${tag}: bank signs ${R.fdRight.bank.toFixed(1)} / ${R.fdLeftClimb.bank.toFixed(1)} (right +, left -)`);
   R.logs = logs;
   // which way is "right" for the aim: the sim's aimYaw sign -> the reticle's screen side
   check(R.idle.px > 0 && R.minimal.px > 0 && R.classic.px > 0, `${tag}: a style drew nothing ${JSON.stringify([R.idle.px, R.minimal.px, R.classic.px])}`);
@@ -94,7 +114,8 @@ for (const [w, h] of sizes) {
   const { b, p, logs } = await session(1920, 1080, 'cockpit');
   await p.evaluate(a => window.__G1__.sim.force({ aimYaw: a[0], aimPitch: a[1] }), [-10 * DEG, 5 * DEG]);
   await p.waitForTimeout(600);
-  result.runs.cockpit = { px: await drawn(p), ...(await probe(p)), logs };
+  result.runs.cockpit = { px: await drawn(p), ...(await probe(p)), fd: await p.evaluate(() => window.__G1__.flight.probe().flightData), logs };
+  check(result.runs.cockpit.fd.combiner.alt > 5 && result.runs.cockpit.fd.combiner.clr > 5, `cockpit: combiner ALT / CLR ${JSON.stringify(result.runs.cockpit.fd.combiner)}`);
   await p.screenshot({ path: `${out}/reticle-cockpit-aimed.png` });
   check(result.runs.cockpit.px > 0, 'cockpit: reticle drew nothing');
   check(!logs.length, `cockpit: console ${JSON.stringify(logs.slice(0, 3))}`);

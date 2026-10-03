@@ -23,7 +23,7 @@ it does not exist yet: the hangar launches Level 1 directly).
 ### P1.0 Status
 | Slice | Scope | Status | Push |
 |---|---|---|---|
-| A | FIX PACK (§1) [A1, A2, A3a pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
+| A | FIX PACK (§1) [A1, A2, A3a, A3b pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
 | B | realism pass on CH1 (grass tiers, river, mountain bases, atmosphere), before / after stills | TODO | |
 | C | strong-curve paths + validator, CH1 + CH2, scale, burst holes, MOUNTAIN WYRM, sighting #1, first creatures (incl. AIR HUNTERS) | TODO | |
 | D | CH3 Narrows (hairpins, slot crack, hidden valley, hive maws, sighting #2) | TODO | |
@@ -105,6 +105,24 @@ it does not exist yet: the hangar launches Level 1 directly).
   Gate A3a (prod, RTX 3050): 210 tests; qa-reticle 3 resolutions + cockpit clean; slice-A gate: freedom 6
   configs (552 u, drift 3.9 u, clampEvents 0), qa-flight 60 fps p95 16.8-16.9 (programs 108), qa-hud 68
   nodes 60 fps, qa-tod 0 black frames, consoles clean.
+- **A3b flight data (2026-10-03).** `render/mission/flightAttitude.ts` (pure): scene <-> planet frame
+  (world = B local, missionSpace.r = B^T), heading (0 = N = world -Z, 90 = E = +X), elevation, bank (+ =
+  rolled right), quaternion rotate, and `rungOnScreen` — a pitch-ladder rung at elevation e on the
+  camera's heading, projected exactly through the camera, with the horizon's screen angle there (so the
+  ladder is degree-true and lies along the TRUE horizon whatever the camera rolls). OVERLAY (third /
+  chase; `ui/screens/mission/flightData.ts`, drawn on the reticle canvas UNDER the reticle): heading tape
+  under the ROUTE panel (+-30 deg, ticks 5 / 10, N / E / S / W, boxed readout at 20 Hz), ladder +-5 /
+  10 / 20 / 30 + horizon (dashed below, end ticks toward the horizon, faded past the centre band), bank
+  arc 0 / 10 / 20 / 30 / 45 / 60 with the ship-bank pointer. Speed + ALT / CLR stay the existing
+  readouts (BOOST panel, ALT box) — no duplicates. COCKPIT (diegetic, the combiner): the ladder grew to
+  +-5 / 10 / 20 / 30 + horizon (dashed below), its pitch now includes the rail's climb (world-true; the
+  path frame never banks so the verified view-roll rotation stays), heading tape under the energy bar,
+  bank arc at the bottom with the pointer, ALT / CLR right; the redraw key gained heading / bank / alt /
+  clr (still <= one canvas upload per frame). `tests/flightData.test.ts` (8). qa-reticle gained flight
+  data: heading == path heading at rest, bank +40 steering right / -40 left, stills level / banked /
+  banked + climbing, cockpit combiner ALT / CLR live. Gate A3b (prod, RTX 3050): 218 tests; qa-reticle
+  clean (3 resolutions + cockpit); slice-A gate: freedom 6 configs (552 u, drift 3.9 u, clampEvents 0),
+  qa-flight 60 fps p95 16.9 (programs 108), qa-hud 68 nodes, qa-tod 0 black frames, consoles clean.
 
 ## P2R PHASE 2R — WORLD OVERHAUL (F1 + W2b done; the rest superseded by P1 above)
 
