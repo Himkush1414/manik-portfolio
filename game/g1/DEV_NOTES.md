@@ -23,7 +23,7 @@ it does not exist yet: the hangar launches Level 1 directly).
 ### P1.0 Status
 | Slice | Scope | Status | Push |
 |---|---|---|---|
-| A | FIX PACK (§1) [A1, A2, A3a, A3b pushed]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
+| A | FIX PACK (§1) [A1, A2, A3a, A3b pushed; A3c UNCOMMITTED, see P1.H]: A1 vertical freedom (delete turbulence / forced descent / whiteout / TURBULENCE HUD, service ceiling >= 400 u, edge-of-atmosphere visuals, altitude + clearance readouts, air-hunter trigger), A2 barrel roll (trace the cause, quaternion 360, cameras), A3 tactical reticle + flight data, A4 nothing regenerates (stats / upgrades / save migration, pickups at risk, checkpoint restore 60 %), A5 ScarField, A6 DisturbanceField | IN PROGRESS | |
 | B | realism pass on CH1 (grass tiers, river, mountain bases, atmosphere), before / after stills | TODO | |
 | C | strong-curve paths + validator, CH1 + CH2, scale, burst holes, MOUNTAIN WYRM, sighting #1, first creatures (incl. AIR HUNTERS) | TODO | |
 | D | CH3 Narrows (hairpins, slot crack, hidden valley, hive maws, sighting #2) | TODO | |
@@ -31,6 +31,30 @@ it does not exist yet: the hangar launches Level 1 directly).
 | F | CH5 Waterfall + CH6 Underdeep (cave fields, speed ramp) | TODO | |
 | G | CH7 Rift + CH8 Nest + the MARROW QUEEN | TODO | |
 | H | story + polish (holo-briefing, comms, storytelling, results, balance to targets, perf, soak, qa:planet1, docs) | TODO | |
+
+### P1.H HANDOFF (2026-10-03, session stopped by the owner)
+PUSHED (main): A1 vertical freedom (317b4ca), A2 barrel roll (dfe13f9), A3a tactical reticle core
+(d6a59e6), A3b flight data (076893c) — each fully gated (tests, qa-* on the RTX 3050, stills, consoles).
+NOT PUSHED: A3c lead pipper — code complete and in the WORKING TREE (src/game/lead.ts, src/game/hudLead.ts,
+src/tests/lead.test.ts; edits in src/game/sim.ts [Enemy vx/vy/vs], src/scenes/mission/MissionHudDriver.tsx,
+src/ui/screens/mission/reticleCanvas.ts, src/app/startParams.ts [sim.spawn / clearEnemies / probe.lead],
+tools/qa-reticle.mjs [lead phase]); backup `game/g1/.scratch/a3c-wip.patch` (tracked files only — the 3
+new files are untracked, keep them). Verified so far: tsc clean, 225 tests, prod build, qa-reticle PASS (3
+resolutions + cockpit, lead phase). MISSING: the slice-A gate (`.scratch/gate-a.sh qa/a3cg`) was stopped
+mid-run at the owner's request — never push A3c before it passes.
+FIRST ACTIONS ON RESUME: (1) `export WSLENV=G1_DGPU G1_DGPU=1`; (2) `git status` — the A3c files above
+must be present (else `git apply .scratch/a3c-wip.patch`; the 3 new files are in the tree untracked);
+(3) build at the repo root (`npm run build`), start the QA preview `npx vite preview --port 5198
+--strictPort` from the repo root (record its PID; port 5173 is the owner's dev server — never touch it;
+a preview on 4174 (PID 7319 at handoff) is NOT ours — leave it); (4) `npx tsc --noEmit -p .`, `npx vitest
+run`, `node tools/qa-reticle.mjs --out qa/a3c`, `bash .scratch/gate-a.sh qa/a3cg`; (5) if all pass:
+commit the A3c paths explicitly (author Himkush1414 <light.dark14143@gmail.com>), push, confirm with `git
+ls-remote origin refs/heads/main`, mark A3 pushed in P1.0. THEN: A4 nothing regenerates (P1-1.5:
+remove PLAYER.shield regen/delay + stats shieldRegen/shieldDelay + the SHIELD MATRIX text -> capacity
++12 %/tier + pickup efficiency +5 %/tier, save migration + tests; REPAIR KIT / SHIELD CELL pickups at
+risk; checkpoint restore max(value, 60 %); boost-energy regen is NOT shield/hull and stays), A5
+ScarField, A6 DisturbanceField, then slices B-H (docs/PLANET1_BIBLE.md, docs/PLANET1_PROMPT.md).
+Cadence: 2-3 verified pushes per step; never skip the gate.
 
 ### P1.1 Slice A log (fix pack)
 - **A1 vertical freedom (2026-10-03).** DELETED: ridge turbulence, climb-authority fade, forced descent,
@@ -123,6 +147,20 @@ it does not exist yet: the hangar launches Level 1 directly).
   banked + climbing, cockpit combiner ALT / CLR live. Gate A3b (prod, RTX 3050): 218 tests; qa-reticle
   clean (3 resolutions + cockpit); slice-A gate: freedom 6 configs (552 u, drift 3.9 u, clampEvents 0),
   qa-flight 60 fps p95 16.9 (programs 108), qa-hud 68 nodes, qa-tod 0 black frames, consoles clean.
+- **A3c lead pipper (2026-10-03) — UNCOMMITTED (working tree + `.scratch/a3c-wip.patch`; gate cut short, see P1.H).** `game/lead.ts` (pure): bolts fly at PLAYER.bullet.speed RELATIVE to
+  the ship (the sim adds p.speed to vs), so the intercept solves |r + v t| = speed t in the ship's rail
+  frame (earliest positive root; none when the target outruns the bolts). `game/hudLead.ts`: the target
+  = the last-hit one (hud.targetSlot) while it stays in the window, else the enemy nearest the gun aim
+  ray within 12 deg, 20 u .. 1.5 x bolt range; a holding enemy keeps pace. SIM: `Enemy.vx / vy / vs`
+  (rail frame, integrated in updateEnemies, 0 by default — determinism hashes unchanged): the start of
+  creature motion (slice C writes them); the lead reads exact velocities. HUD: an ice ring + dot where
+  the bolts meet the target, a thin line from the target, TTI "0.53 s" (20 Hz text); dashed + dim beyond
+  bolt range; TACTICAL + MINIMAL (CLASSIC: none). QA hooks `sim.spawn({ds, x, y, vx, vy, vs, hold})`
+  (offsets relative to the ship) + `sim.clearEnemies()`; probe `lead`. HONEST NOTE: enemies are not
+  RENDERED in missions yet (SimLab / tests only) — the pipper is verified against spawned targets and
+  goes live in play when slice C's creatures arrive. Target-lock brackets (P1-1.3d) come with the combat
+  slices as planned. `tests/lead.test.ts` (7). qa-reticle lead phase: crossing target led right, TTI
+  0.53 s, in range; 420 u target tracked out of range (dashed); none -> off; 3 resolutions.
 
 ## P2R PHASE 2R — WORLD OVERHAUL (F1 + W2b done; the rest superseded by P1 above)
 
