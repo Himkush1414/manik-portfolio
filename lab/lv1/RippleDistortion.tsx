@@ -399,7 +399,19 @@ const RippleDistortion = ({
       const fieldH = Math.max(2, Math.round(height * scale));
       displacementTarget.setSize(fieldW, fieldH);
       compositeUniforms.uTexel.value = [1 / fieldW, 1 / fieldH];
+      needsPaint = true;
     };
+
+    // Off screen (the footer this sits in is the very bottom of the page),
+    // the two render passes below are skipped — they used to run every
+    // frame for the whole visit. A resize still gets one repaint (setSize
+    // clears the canvas), so it's never blank when it scrolls back in.
+    let onScreen = true;
+    let needsPaint = true;
+    const io = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+    });
+    io.observe(mount);
 
     const ro = new ResizeObserver(resize);
     ro.observe(mount);
@@ -489,6 +501,9 @@ const RippleDistortion = ({
         opacities[i] = wave.opacity;
       }
 
+      if (!onScreen && !needsPaint) return;
+      needsPaint = false;
+
       geometry.attributes.iOffset.needsUpdate = true;
       geometry.attributes.iScale.needsUpdate = true;
       geometry.attributes.iOpacity.needsUpdate = true;
@@ -502,6 +517,7 @@ const RippleDistortion = ({
       disposed = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      io.disconnect();
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerdown', onDown);
       uniformsRef.current = null;

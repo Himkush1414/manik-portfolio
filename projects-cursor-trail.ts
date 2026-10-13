@@ -108,9 +108,17 @@ if (canvas && !coarsePointer) {
       ctx!.fill();
     }
 
+    // Only clear when something was drawn last frame: this full-viewport,
+    // mix-blend-mode canvas sits over every view, and clearing it every
+    // frame (even already-empty, on Home/About/Skills) still invalidated
+    // and re-composited its blend layer 60x/s for nothing.
+    let painted = false;
     function frame() {
       requestAnimationFrame(frame);
-      ctx!.clearRect(0, 0, canvas!.width / dpr, canvas!.height / dpr);
+      if (painted) {
+        ctx!.clearRect(0, 0, canvas!.width / dpr, canvas!.height / dpr);
+        painted = false;
+      }
 
       if (mobileMQ.matches || !isScopedViewActive()) {
         hasMoved = false;
@@ -122,6 +130,7 @@ if (canvas && !coarsePointer) {
       y += (targetY - y) * EASE;
 
       drawRoundedSquare(x, y);
+      painted = true;
     }
     requestAnimationFrame(frame);
   }

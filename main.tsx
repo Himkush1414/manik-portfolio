@@ -18,6 +18,7 @@ import navLogo from './assets/logo.png';
 import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import { slowScroll } from './scroll-speed';
+import { tallTouchMQ } from './tall-touch';
 import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
 import type { LogoItem } from './LogoLoop';
 import './lv2.css';
@@ -190,8 +191,12 @@ const stack = document.querySelector<HTMLElement>('.lv2-stack');
 const stackRows = Array.from(document.querySelectorAll<HTMLElement>('.lv2-row'));
 if (stack && stackRows.length === 3) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Not on tall touch viewports (phone "Desktop site" mode / portrait
+  // tablets, see tall-touch.ts): there the pinned 100vh stage would be a
+  // portrait-tall frame around a landscape composition, so the section
+  // flows instead, exactly as it already does on a short desktop window.
   const canPin = () =>
-    !reduce && window.innerWidth > 900 && window.innerHeight >= 620;
+    !reduce && window.innerWidth > 900 && window.innerHeight >= 620 && !tallTouchMQ.matches;
 
   const sstep = (a: number, b: number, x: number) => {
     const t = Math.min(Math.max((x - a) / (b - a || 1), 0), 1);
@@ -280,7 +285,7 @@ if (reveal && revealPanel && revealStage) {
 
   const reduceR = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canPinR = () =>
-    !reduceR && window.innerWidth > 900 && window.innerHeight >= 620;
+    !reduceR && window.innerWidth > 900 && window.innerHeight >= 620 && !tallTouchMQ.matches;
   const ssR = (a: number, b: number, x: number) => {
     const t = Math.min(Math.max((x - a) / (b - a || 1), 0), 1);
     return t * t * (3 - 2 * t);

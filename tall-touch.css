@@ -1,0 +1,140 @@
+/* ============================================================
+   TALL TOUCH VIEWPORTS — phone "Desktop site" mode / portrait tablets
+   (see tall-touch.ts for the full rationale; keep the query in sync).
+
+   Every rule below is a copy of an existing vh-based declaration with only
+   its vh measure swapped for --tt-vh (0.75vw: the height of a 4:3 desktop
+   frame at this width). Selectors are the originals prefixed with `html`,
+   in the originals' own source order, so they win over the rule they
+   replace while every higher-specificity original (pinned / flow variants,
+   breakpoints) keeps winning exactly as before. Nothing outside this query
+   changes — desktop and phone layouts never match it.
+
+   main.tsx also skips the scroll-pins under this query (a 100vh pinned
+   stage can't be proportional in a portrait frame), so §2/§3 use the
+   site's existing flow layout here — the same one a short desktop window
+   gets.
+   ============================================================ */
+@media (pointer: coarse) and (min-width: 861px) and (max-aspect-ratio: 4/3) {
+  :root { --tt-vh: 0.75vw; }
+
+  /* ---- lv2.css — §1 hero ---- */
+  html .lv2-hero { min-height: calc(var(--tt-vh) * 100); }
+  html .lv2-tint { height: calc(var(--tt-vh) * 64); }
+  html .lv2-shell {
+    padding-bottom: clamp(36px, calc(var(--tt-vh) * 5), 60px);
+    min-height: calc(var(--tt-vh) * 100);
+  }
+  html .lv2-col--left {
+    padding-top: calc(var(--tt-vh) * 15);
+    padding-bottom: calc(var(--tt-vh) * 6);
+  }
+  html .lv2-col--mid { padding-top: calc(var(--tt-vh) * 12); }
+  html .lv2-effect { max-height: min(calc(var(--tt-vh) * 80), 920px); }
+  html .lv2-col--right {
+    padding-top: calc(var(--tt-vh) * 13);
+    padding-bottom: calc(var(--tt-vh) * 6);
+  }
+
+  /* ---- lv2.css — §2 stack ---- */
+  html .lv2-stack__pin { min-height: calc(var(--tt-vh) * 100); }
+  html .lv2-stack__inner { min-height: calc(var(--tt-vh) * 100); }
+  html .lv2-stack__lead {
+    padding-top: clamp(52px, calc(var(--tt-vh) * 8), 92px);
+    padding-bottom: clamp(44px, calc(var(--tt-vh) * 7), 84px);
+  }
+  html .lv2-stack__rule { margin-top: clamp(22px, calc(var(--tt-vh) * 3.4), 38px); }
+  html .lv2-stack__rows {
+    gap: clamp(28px, calc(var(--tt-vh) * 4), 56px);
+    padding-top: clamp(20px, calc(var(--tt-vh) * 3.2), 36px);
+  }
+  html .lv2-stack__media {
+    margin-top: clamp(24px, calc(var(--tt-vh) * 4), 56px);
+    margin-bottom: clamp(20px, calc(var(--tt-vh) * 3), 44px);
+  }
+
+  /* ---- lv2.css — §3 reveal ---- */
+  html .lv2-reveal__pin { min-height: calc(var(--tt-vh) * 100); }
+  html .lv2-reveal:not(.is-pin-ready) .lv2-reveal__panel {
+    min-height: clamp(300px, calc(var(--tt-vh) * 44), 460px);
+    padding-top: clamp(52px, calc(var(--tt-vh) * 10), 96px);
+    padding-bottom: clamp(52px, calc(var(--tt-vh) * 10), 96px);
+  }
+  html .lv2-reveal:not(.is-pin-ready) .lv2-reveal__stage {
+    padding-top: clamp(46px, calc(var(--tt-vh) * 9), 90px);
+    padding-bottom: clamp(46px, calc(var(--tt-vh) * 9), 90px);
+  }
+  html body.lv2 .lv2-reveal::after { height: calc(var(--tt-vh) * 20); }
+  /* the frame-based panel height lands on a fractional pixel, and the
+     pin's own white->blue background (built for the pinned desktop view,
+     fully covered by the panel + stage in this flow layout) bled through
+     the antialiased panel/stage seam as a 1px white line — give it the
+     colour both sides of that seam already share */
+  html .lv2-reveal:not(.is-pin-ready) .lv2-reveal__pin {
+    background-color: #01040A;
+    background-image: none;
+  }
+
+  /* ---- lv2.css — flow (unpinned) stack ---- */
+  html .lv2-stack:not(.is-pin-ready) .lv2-stack__inner {
+    padding-top: clamp(44px, calc(var(--tt-vh) * 8), 80px);
+    padding-bottom: clamp(52px, calc(var(--tt-vh) * 9), 88px);
+  }
+  html .lv2-stack:not(.is-pin-ready) .lv2-stack__rows {
+    gap: clamp(26px, calc(var(--tt-vh) * 4.5), 44px);
+    padding-bottom: clamp(28px, calc(var(--tt-vh) * 5), 44px);
+  }
+  html .lv2-stack:not(.is-pin-ready) .lv2-stack__media {
+    height: clamp(340px, calc(var(--tt-vh) * 52), 520px);
+    margin-top: clamp(18px, calc(var(--tt-vh) * 3), 30px);
+  }
+
+  @media (max-width: 1200px) {
+    html .lv2-col--left {
+      padding-top: calc(var(--tt-vh) * 12);
+      padding-bottom: calc(var(--tt-vh) * 5);
+    }
+    html .lv2-col--right {
+      padding-top: calc(var(--tt-vh) * 11);
+      padding-bottom: calc(var(--tt-vh) * 5);
+    }
+  }
+  @media (max-width: 1080px) {
+    html .lv2-col--left {
+      padding-top: calc(var(--tt-vh) * 7);
+      padding-bottom: clamp(20px, calc(var(--tt-vh) * 4), 40px);
+    }
+    html .lv2-col--mid { padding-top: 0; }
+    html .lv2-col--right { padding-top: 0; padding-bottom: 0; }
+  }
+  @media (max-width: 900px) {
+    html .lv2-cols { row-gap: clamp(28px, calc(var(--tt-vh) * 5), 46px); }
+    html .lv2-col--left { padding-top: calc(var(--tt-vh) * 6); padding-bottom: 2px; }
+    html .lv2-stack__rule { margin-top: clamp(18px, calc(var(--tt-vh) * 3), 30px); }
+    html body.lv2 .lv2-reveal::after { height: calc(var(--tt-vh) * 15); }
+  }
+
+  /* ---- styles.css + lab/lv1/lab.css — §4 footer ---- */
+  html .hero { height: calc(var(--tt-vh) * 100); }
+  html .content { padding-top: clamp(28px, calc(var(--tt-vh) * 6), 74px); }
+  html .badge { margin-top: clamp(28px, calc(var(--tt-vh) * 7), 80px); }
+  html .watermark { height: clamp(260px, calc(var(--tt-vh) * 42), 500px); }
+  html #ripple-root,
+  html #ripple-fade { height: clamp(220px, calc(var(--tt-vh) * 39), 460px); }
+
+  /* ---- skillsfun.css — Skill & Fun ----
+     The hero and the figure section stay full-screen (the hero is a
+     centred poster, and page 2 must keep exactly the hero's height — it
+     sits behind it and is revealed through it). Only the figure itself is
+     re-proportioned: 84% of a portrait-tall section turned it into a tall
+     sliver cropped out of the photo. */
+  html .skillsfun-page2__portrait { height: min(84%, calc(var(--tt-vh) * 84)); }
+  html .skillsfun-about { padding-top: clamp(56px, calc(var(--tt-vh) * 9), 110px); }
+  html .skillsfun-about__inner { padding-bottom: clamp(64px, calc(var(--tt-vh) * 10), 120px); }
+  html .skillsfun-about__marquee {
+    padding-top: clamp(28px, calc(var(--tt-vh) * 5), 48px);
+    padding-bottom: clamp(28px, calc(var(--tt-vh) * 5), 48px);
+  }
+  html .skillsfun-navgrid { padding-bottom: clamp(72px, calc(var(--tt-vh) * 11), 130px); }
+  html .skillsfun-navgrid__connect { margin-top: clamp(56px, calc(var(--tt-vh) * 9), 110px); }
+}

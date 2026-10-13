@@ -117,6 +117,14 @@ const InfiniteSpiral = ({
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
 
+    // what the cards were last written for — the per-card style writes below
+    // (transform, opacity, a blur filter, z-index on every card) are skipped
+    // while the spiral is off screen or has come to rest, instead of being
+    // re-applied with identical values (and re-invalidating style) 60x/s.
+    let paintedProgress = NaN;
+    let paintedWidth = 0;
+    let paintedHeight = 0;
+
     const render = (time: number) => {
       const delta = Math.min((time - previousTime) / 1000, 0.05);
       previousTime = time;
@@ -138,6 +146,15 @@ const InfiniteSpiral = ({
       const half = count / 2;
       const width = Math.max(bounds.width, 1);
       const height = Math.max(bounds.height, 1);
+      const settled =
+        Math.abs(progressRef.current - paintedProgress) < 1e-4 && width === paintedWidth && height === paintedHeight;
+      if ((!visibleRef.current && !Number.isNaN(paintedProgress)) || settled) {
+        frameId = requestAnimationFrame(render);
+        return;
+      }
+      paintedProgress = progressRef.current;
+      paintedWidth = width;
+      paintedHeight = height;
       const fit = Math.min(1, width / (cardWidth * 2.8), height / (cardHeight * 2.35));
       const responsiveRadius = Math.min(radius, Math.max(72, width * 0.36)) * fit;
       const fadeStart = clamp(1 - edgeFade, 0, 0.98);

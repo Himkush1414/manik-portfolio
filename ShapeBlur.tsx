@@ -231,6 +231,9 @@ const ShapeBlur: FC<ShapeBlurProps> = ({
       quad.scale.set(w, h, 1);
       vResolution.set(w, h).multiplyScalar(dpr);
       material.uniforms.u_pixelRatio.value = dpr;
+      // setSize() clears the canvas; repaint now so a resize while the loop
+      // is paused off screen can't leave it blank when it scrolls back in
+      renderer.render(scene, camera);
     };
 
     resize();
@@ -242,8 +245,19 @@ const ShapeBlur: FC<ShapeBlurProps> = ({
     });
     ro.observe(mount);
 
+    // Paused while scrolled out of view: the loop used to keep rendering the
+    // full-size WebGL quad every frame for the whole visit, long after the
+    // hero had scrolled away. Resumes (with a fresh clock, so the mouse
+    // damping doesn't jump) as soon as any of it is back on screen.
+    let onScreen = true;
+    let looping = false;
     const update = () => {
       if (!active) return;
+      if (!onScreen) {
+        looping = false;
+        return;
+      }
+      looping = true;
       time = performance.now() * 0.001;
       const dt = time - lastTime;
       lastTime = time;
@@ -255,12 +269,22 @@ const ShapeBlur: FC<ShapeBlurProps> = ({
     };
     update();
 
+    const io = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+      if (onScreen && !looping && active) {
+        lastTime = performance.now() * 0.001;
+        update();
+      }
+    });
+    io.observe(mount);
+
     return () => {
       active = false;
 
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resize);
       ro.disconnect();
+      io.disconnect();
       document.removeEventListener('mousemove', onPointerMove);
       document.removeEventListener('pointermove', onPointerMove);
       if (mount.contains(renderer.domElement)) {

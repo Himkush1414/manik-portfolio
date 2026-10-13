@@ -85,8 +85,12 @@ let lastX = 0;
 function viewportWidth() {
   return document.documentElement.clientWidth;
 }
+// The section's own height, not the document's: identical everywhere the
+// section fills the screen, but on tall touch viewports (phone "Desktop
+// site" mode, see ../tall-touch.ts) about/tall-touch.css letterboxes it into
+// a 4:3 frame, and THE WORK's box should grow to fill that frame.
 function viewportHeight() {
-  return document.documentElement.clientHeight;
+  return about.clientHeight;
 }
 
 // Cumulative virtual-scroll thresholds. B2 is where "THE WORK" reaches rest
@@ -261,7 +265,12 @@ if (IS_MOBILE_LAYOUT) {
 if (!IS_MOBILE_LAYOUT) {
   startLoop();
 
-  about.addEventListener(
+  // Input is read from the window, not #about: on desktop #about covers the
+  // whole viewport so the two are the same, but on tall touch viewports
+  // (about/tall-touch.css) it's letterboxed, and a swipe that starts on the
+  // bars above/below it has to drive the track too.
+
+  window.addEventListener(
     'wheel',
     e => {
       e.preventDefault();
@@ -275,31 +284,40 @@ if (!IS_MOBILE_LAYOUT) {
   );
 
   let touchStartX = 0;
+  let touchStartY = 0;
   let touchStartTarget = 0;
   let touching = false;
-  about.addEventListener(
+  window.addEventListener(
     'touchstart',
     e => {
       if (e.touches.length !== 1) return;
       touching = true;
       touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
       touchStartTarget = target;
     },
     { passive: true }
   );
-  about.addEventListener(
+  window.addEventListener(
     'touchmove',
     e => {
       if (!touching || e.touches.length !== 1) return;
       e.preventDefault();
+      // Dominant axis, same as the wheel handler above: this layout also
+      // runs on touch screens (tablets, phones in "Desktop site" mode),
+      // where the natural gesture is a vertical swipe — reading only the
+      // horizontal delta left a swipe up/down doing nothing at all while
+      // preventDefault() above still blocked any native scroll.
       const dx = touchStartX - e.touches[0].clientX;
-      target = touchStartTarget + dx * 1.6;
+      const dy = touchStartY - e.touches[0].clientY;
+      const d = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
+      target = touchStartTarget + d * 1.6;
       clampTarget();
       startLoop();
     },
     { passive: false }
   );
-  about.addEventListener('touchend', () => {
+  window.addEventListener('touchend', () => {
     touching = false;
   });
 

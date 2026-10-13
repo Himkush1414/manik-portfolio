@@ -49,8 +49,12 @@ const container = document.getElementById('skillsfun-hero') as HTMLElement | nul
 // [visibility:hidden] section wouldn't otherwise stop a JS-driven rAF
 // loop the way it stops a CSS animation, so this is the explicit pause.
 let active = true;
+// set whenever the canvas needs a fresh frame even though no strip is
+// moving (relaid out / resized, or the loop re-activated) — see frame()
+let needsRender = true;
 export function setHeroActive(v: boolean) {
   active = v;
+  if (v) needsRender = true;
 }
 
 // called from main.ts on "Move Next" — flips every strip on its own
@@ -236,6 +240,7 @@ if (canvas && container) {
     count = i;
     mesh.count = count;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    needsRender = true;
   }
   layout();
 
@@ -307,6 +312,7 @@ if (canvas && container) {
   };
 
   let lastTime = performance.now();
+  let idle = false;
   function frame(time: number) {
     requestAnimationFrame(frame);
     if (!active || width <= 0) return;
@@ -338,15 +344,23 @@ if (canvas && container) {
       return;
     }
 
+    // At rest (no cursor over the hero — always the case on touch — and
+    // every strip already eased back flat), each frame would redraw the
+    // exact same image; the canvas keeps showing the last one, so skip.
+    if (!mouseActive && idle && !needsRender) return;
+
     const easeAmount = 1 - Math.exp(-EASE_RATE * dt);
     const mouseEaseAmount = 1 - Math.exp(-MOUSE_EASE_RATE * dt);
 
     if (mouseActive) smoothMouseX += (mouseWorldX - smoothMouseX) * mouseEaseAmount;
 
+    let maxProximity = 0;
     for (let i = 0; i < count; i++) {
       const dist = mouseActive ? Math.abs(stripX[i] - smoothMouseX) : Infinity;
       const target = smoothstep(1 - dist / PROXIMITY_RADIUS);
       proximity[i] += (target - proximity[i]) * easeAmount;
+      if (!mouseActive && proximity[i] < 1e-4) proximity[i] = 0;
+      if (proximity[i] > maxProximity) maxProximity = proximity[i];
 
       dummy.position.set(stripX[i], 0, stripZ[i]);
       dummy.rotation.set(0, proximity[i] * MAX_ROTATION, 0);
@@ -356,6 +370,8 @@ if (canvas && container) {
     }
     mesh.instanceMatrix.needsUpdate = true;
     renderer.render(scene, camera);
+    idle = maxProximity === 0;
+    needsRender = false;
   }
   requestAnimationFrame(frame);
 }

@@ -896,6 +896,19 @@ body.lv2 .lv2-reveal::after {
   .lv2-item { padding: 20px clamp(96px, 13vw, 150px) 20px 0; }
 }
 
+/* ---- 861-1080: the footer's social column (20% of the row here) is too
+   narrow for its "Social" label and the absolutely-positioned "Back to top"
+   control to share one line — they overlapped below ~1050px. Lift the
+   control just above the label instead, still right-aligned, so every
+   column's label stays on the same baseline. (<=860 has its own stacked
+   treatment in styles.css.) ---- */
+@media (min-width: 861px) and (max-width: 1080px) {
+  body.lv2 #lv2-footer .backtotop {
+    top: auto;
+    bottom: calc(100% + 14px);
+  }
+}
+
 /* ---- <=900: single column; effect box centred, item list below ---- */
 @media (max-width: 900px) {
   .lv2-cols { grid-template-columns: 1fr; row-gap: clamp(28px, 5vh, 46px); }
