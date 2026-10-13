@@ -3,6 +3,27 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Phone "Desktop site" mode / portrait tablets — flags the <html> element
+     before first paint (and again on resize/rotate) for tall-touch.css and
+     main.tsx; see tall-touch.ts for the rationale. Inline on purpose: it
+     must run before the first layout, not after the module bundle loads. -->
+<script>
+  (function () {
+    var d = document.documentElement;
+    function sync() {
+      var w = d.clientWidth, h = d.clientHeight;
+      var coarse = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+      var touch = coarse || navigator.maxTouchPoints > 0;
+      // Desktop-site signature: the page is laid out wider than the screen
+      // it is shown on (viewport meta ignored, ~980px scaled down to fit)
+      var zoomedOut = touch && screen.width > 0 && w > screen.width * 1.05;
+      d.classList.toggle('ds-zoomed', zoomedOut);
+      d.classList.toggle('tt-frame', w >= 861 && h >= w * 0.75 && (coarse || zoomedOut));
+    }
+    sync();
+    window.addEventListener('resize', sync);
+  })();
+</script>
 <title>Manik Rana</title>
 <meta name="description" content="Manik Rana — portfolio." />
 <link rel="icon" type="image/png" href="assets/logo.png" />

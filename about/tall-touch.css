@@ -1,6 +1,7 @@
 /* ============================================================
    TALL TOUCH VIEWPORTS — phone "Desktop site" mode / portrait tablets
-   (see ../tall-touch.ts; keep the query in sync).
+   (see ../tall-touch.ts; the classes are set on <html> before first
+   paint by the inline script in index.html).
 
    The desktop About is a full-screen horizontal track of 100vw x 100vh
    panels, each composed for a landscape screen. In a portrait-tall
@@ -12,36 +13,39 @@
    the bars. Making .about a containing block (transform) keeps its own
    fixed children (sidebar, menu, contact links) inside that frame too.
    Every vh measure inside the section is re-measured against the frame
-   (--tt-vh = 0.75vw). The mobile layout (<=720px) never matches.
+   (--tt-vh = 0.75vw). The mobile layout (<=720px) never gets the class.
    ============================================================ */
-@media (pointer: coarse) and (min-width: 861px) and (max-aspect-ratio: 4/3) {
-  html body.lv5 {
-    --tt-vh: 0.75vw;
-    background: #211E1B;
-  }
-
-  html .about {
-    inset: auto 0;
-    top: calc(50% - var(--tt-vh) * 50);
-    height: calc(var(--tt-vh) * 100);
-    transform: translateZ(0);
-  }
-
-  html #sm-root .staggered-menu-panel {
-    padding-top: clamp(20px, calc(var(--tt-vh) * 4), 40px);
-    padding-bottom: clamp(70px, calc(var(--tt-vh) * 18), 232px);
-  }
-  html #sm-root .sm-panel-list { gap: clamp(16px, calc(var(--tt-vh) * 4.5), 60px); }
-  html #sm-root .sm-panel-item { font-size: clamp(40px, min(11vw, calc(var(--tt-vh) * 12)), 160px); }
-
-  html .panel { height: calc(var(--tt-vh) * 100); }
-  html .panel--about { padding-top: clamp(90px, calc(var(--tt-vh) * 13), 150px); }
-  html .ch2__list-wrap,
-  html .ch4__list-wrap { top: clamp(90px, calc(var(--tt-vh) * 13), 150px); }
-  html .ch2__item,
-  html .ch4__item {
-    padding-top: clamp(10px, calc(var(--tt-vh) * 1.6), 18px);
-    padding-bottom: clamp(10px, calc(var(--tt-vh) * 1.6), 18px);
-  }
-  html .next__heading { margin-bottom: clamp(24px, calc(var(--tt-vh) * 4), 48px); }
+html.ds-zoomed {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
+
+html.tt-frame body.lv5 {
+  --tt-vh: 0.75vw;
+  background: #211E1B;
+}
+
+html.tt-frame .about {
+  inset: auto 0;
+  top: calc(50% - var(--tt-vh) * 50);
+  height: calc(var(--tt-vh) * 100);
+  transform: translateZ(0);
+}
+
+html.tt-frame #sm-root .staggered-menu-panel {
+  padding-top: clamp(20px, calc(var(--tt-vh) * 4), 40px);
+  padding-bottom: clamp(70px, calc(var(--tt-vh) * 18), 232px);
+}
+html.tt-frame #sm-root .sm-panel-list { gap: clamp(16px, calc(var(--tt-vh) * 4.5), 60px); }
+html.tt-frame #sm-root .sm-panel-item { font-size: clamp(40px, min(11vw, calc(var(--tt-vh) * 12)), 160px); }
+
+html.tt-frame .panel { height: calc(var(--tt-vh) * 100); }
+html.tt-frame .panel--about { padding-top: clamp(90px, calc(var(--tt-vh) * 13), 150px); }
+html.tt-frame .ch2__list-wrap,
+html.tt-frame .ch4__list-wrap { top: clamp(90px, calc(var(--tt-vh) * 13), 150px); }
+html.tt-frame .ch2__item,
+html.tt-frame .ch4__item {
+  padding-top: clamp(10px, calc(var(--tt-vh) * 1.6), 18px);
+  padding-bottom: clamp(10px, calc(var(--tt-vh) * 1.6), 18px);
+}
+html.tt-frame .next__heading { margin-bottom: clamp(24px, calc(var(--tt-vh) * 4), 48px); }

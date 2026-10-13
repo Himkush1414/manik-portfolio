@@ -41,6 +41,7 @@
 // skillsfun.ts for how this pauses (setHeroActive(false)) the instant
 // the flip to the figure section completes.
 import * as THREE from 'three';
+import { canvasPixelRatio } from './tall-touch';
 
 const canvas = document.getElementById('skillsfun-strip-field') as HTMLCanvasElement | null;
 const container = document.getElementById('skillsfun-hero') as HTMLElement | null;
@@ -164,7 +165,7 @@ if (canvas && container) {
   // and never rotate past MAX_ROTATION (88deg) during normal hover, so
   // there's never an actual transparent gap until triggerFlipReveal.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(canvasPixelRatio(2));
   renderer.setClearColor(0x15100d, 0);
 
   const scene = new THREE.Scene();

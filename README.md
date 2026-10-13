@@ -109,3 +109,9 @@ bare URL during development.
 `npm run build` produces a static `dist/` directory (one HTML entry per
 route listed above, plus hashed JS/CSS assets) that can be served by any
 static host.
+
+The build also compiles `/game/g1/` (its own Vite app with its own
+`package.json`), so its dependencies must be installed too:
+`npm ci && npm ci --prefix game/g1`. `vercel.json` sets exactly that as the
+install command; with a root-only install the build stops with an explicit
+error instead of deploying.

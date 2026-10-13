@@ -30,6 +30,11 @@ function pickSource() {
   if (IS_MOBILE_LAYOUT) return SRC_HD;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   if (conn?.saveData) return SRC_HD;
+  // A phone in "Desktop site" mode (see ../tall-touch.ts) gets this desktop
+  // layout, but its screen.* x DPR (e.g. 390x844 @3 = 1170x2532) says "4K"
+  // while the whole 980px page is scaled down to ~1170 physical px across —
+  // the 32MB 2160p file would be pure waste over a phone connection.
+  if (document.documentElement.classList.contains('ds-zoomed')) return SRC_HD;
   const dpr = window.devicePixelRatio || 1;
   const physW = Math.round(window.screen.width * dpr);
   const physH = Math.round(window.screen.height * dpr);

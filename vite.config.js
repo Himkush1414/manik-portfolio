@@ -96,6 +96,14 @@ const gameG1Build = () => ({
   name: "game-g1-build",
   apply: "build",
   async closeBundle() {
+    // game/g1 has its own package.json; a root-only install (which is all a
+    // host like Vercel does by default) leaves its deps missing, and every
+    // production deploy then failed on an unresolved @fontsource import.
+    // vercel.json's installCommand installs both — fail loudly if not.
+    const { existsSync } = await import("fs");
+    if (!existsSync(resolve(__dirname, "game/g1/node_modules"))) {
+      throw new Error("game/g1 dependencies are not installed — run `npm ci --prefix game/g1` before `npm run build` (see vercel.json).");
+    }
     const { build } = await import("vite");
     await build({ configFile: resolve(__dirname, "game/g1/vite.config.ts"), logLevel: "warn" });
   },

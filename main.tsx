@@ -18,7 +18,7 @@ import navLogo from './assets/logo.png';
 import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import { slowScroll } from './scroll-speed';
-import { tallTouchMQ } from './tall-touch';
+import { isTallTouch } from './tall-touch';
 import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
 import type { LogoItem } from './LogoLoop';
 import './lv2.css';
@@ -94,6 +94,14 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 
 const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+// Layout width for one-off size choices. window.innerWidth is the *visual*
+// viewport, which on a phone in "Desktop site" mode (see tall-touch.ts)
+// shrinks whenever the page is pinch-zoomed in — a reload at 2x zoom would
+// read ~490 on a 980px layout and pick phone-sized pieces. On desktop
+// innerWidth (which includes the scrollbar, like media queries do) is never
+// smaller than clientWidth, so this is exactly innerWidth there.
+const layoutWidth = () => Math.max(window.innerWidth, document.documentElement.clientWidth);
+
 const mount = document.getElementById('shapeblur-mount');
 if (mount) {
   const mountShapeBlur = () => {
@@ -139,7 +147,7 @@ const spiralMount = document.getElementById('spiral-mount');
 if (spiralMount) {
   // scale the spiral geometry down on narrow screens (the component already
   // adapts its radius to its container, but the cards are a fixed px size)
-  const vw = window.innerWidth;
+  const vw = layoutWidth();
   const sp =
     vw <= 480
       ? { card: 88, radius: 104, spacing: 50, per: 7 }
@@ -196,7 +204,7 @@ if (stack && stackRows.length === 3) {
   // portrait-tall frame around a landscape composition, so the section
   // flows instead, exactly as it already does on a short desktop window.
   const canPin = () =>
-    !reduce && window.innerWidth > 900 && window.innerHeight >= 620 && !tallTouchMQ.matches;
+    !reduce && window.innerWidth > 900 && window.innerHeight >= 620 && !isTallTouch();
 
   const sstep = (a: number, b: number, x: number) => {
     const t = Math.min(Math.max((x - a) / (b - a || 1), 0), 1);
@@ -285,7 +293,7 @@ if (reveal && revealPanel && revealStage) {
 
   const reduceR = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canPinR = () =>
-    !reduceR && window.innerWidth > 900 && window.innerHeight >= 620 && !tallTouchMQ.matches;
+    !reduceR && window.innerWidth > 900 && window.innerHeight >= 620 && !isTallTouch();
   const ssR = (a: number, b: number, x: number) => {
     const t = Math.min(Math.max((x - a) / (b - a || 1), 0), 1);
     return t * t * (3 - 2 * t);
@@ -606,9 +614,9 @@ const footerBlockSection = document.getElementById('lv2-footer');
 if (footerBlock && footerBlockSection) {
   const reduceFB = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // a smaller lift on phones so it settles within the shorter viewport
-  let RISE_PX = window.innerWidth <= 600 ? 44 : 80;
+  let RISE_PX = layoutWidth() <= 600 ? 44 : 80;
   window.addEventListener('resize', () => {
-    RISE_PX = window.innerWidth <= 600 ? 44 : 80;
+    RISE_PX = layoutWidth() <= 600 ? 44 : 80;
   });
   let fbTicking = false;
   const applyFooterBlock = () => {
