@@ -115,3 +115,25 @@ The build also compiles `/game/g1/` (its own Vite app with its own
 `npm ci && npm ci --prefix game/g1`. `vercel.json` sets exactly that as the
 install command; with a root-only install the build stops with an explicit
 error instead of deploying.
+
+## Phone "Desktop site" QA
+
+Chrome's "Desktop site" on a phone ignores the viewport meta and lays the
+page out 980px wide, scaled down to the touch screen (980 x ~2120 portrait,
+980 x ~450 landscape). An inline `<head>` script flags that case with
+`html.ds-zoomed` before first paint (see `tall-touch.ts`); the fixes that
+only this mode needs are scoped to that class in `tall-touch.css` and
+`about/tall-touch.css`, so desktops and normal phones never see them.
+
+`tools/qa-desktop-site.mjs` emulates the mode (DPR-3 touch phone, desktop
+UA, viewport meta stripped) in both orientations and checks those layouts
+— no horizontal overflow or console errors, the footer form clear of the
+link columns, the Skill & Fun headline clear of MOVE NEXT, About's
+Chapter I portrait inside its panel — saving screenshots as it goes:
+
+```bash
+npm run build && npm run preview    # http://localhost:4173
+node tools/qa-desktop-site.mjs http://localhost:4173 --out qa-desktop-site
+```
+
+It uses the Playwright installed by `npm ci --prefix game/g1`.
