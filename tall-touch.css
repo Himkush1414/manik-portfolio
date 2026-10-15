@@ -161,3 +161,13 @@ html.tt-frame .skillsfun-navgrid__connect { margin-top: clamp(56px, calc(var(--t
    NAVIGATION column's text. A small inner gutter separates them; the
    30px title still fits on one line. */
 html.ds-zoomed body.lv2 #lv2-footer .col--signup { padding-right: 20px; }
+
+/* Skill & Fun hero: the headline is clamp(64px, 13vw, 190px) and each line
+   is nowrap. At 980px that's 127px, which runs "ENDS." under the MOVE
+   NEXT rail tab on the right edge; in landscape (980 x ~450) the two lines
+   also fill the whole hero and land on the S+F mark. Sized by width and
+   height here (11vw clears the rail; 22vh keeps two lines inside a short
+   landscape hero); the mark gets the same height cap. Portrait keeps its
+   16vw mark. */
+html.ds-zoomed .skillsfun-hero__headline { font-size: clamp(48px, min(11vw, 22vh), 190px); }
+html.ds-zoomed .skillsfun-hero__watermark { font-size: clamp(64px, min(16vw, 26vh), 240px); }
