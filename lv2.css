@@ -1158,16 +1158,17 @@ body.lv2 .lv3-returnnav {
    footer underneath with a mask over that same band — it ends above the
    letters, so only background is ever blended. A light side feather covers
    ultra-wide screens, where the canvas is narrower than the viewport. The
-   mask replaces #ripple-fade, so that overlay is switched off here. */
+   mask replaces #ripple-fade, so that overlay is switched off here.
+
+   That top band is where a ring lifts the letters' tops (cap line ~25% down
+   the canvas), and a CSS mask can't tell text from water: the lifted tops
+   were flattened by the taper and faded by the mask, so the revealed name
+   looked cut off along its top. The top fade now happens in the canvas
+   itself (edgeAlphaTop, main.tsx) — same 0/6/12/18/23% ramp, but text
+   pixels stay opaque — and only the side feather is left here. */
 body.lv2 #ripple-root {
-  -webkit-mask-image:
-    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.16) 6%, rgba(0, 0, 0, 0.5) 12%, rgba(0, 0, 0, 0.86) 18%, #000 23%),
-    linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.16) 6%, rgba(0, 0, 0, 0.5) 12%, rgba(0, 0, 0, 0.86) 18%, #000 23%),
-    linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
 }
 body.lv2 #ripple-fade { display: none; }
 

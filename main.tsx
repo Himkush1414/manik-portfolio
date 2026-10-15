@@ -536,6 +536,7 @@ if (rippleMount) {
             tintAmount={0.06}
             highlightColor="#e2efff"
             edgeFadeTop={0.26}
+            edgeAlphaTop={0.23}
             style={{ pointerEvents: 'none' }}
           />
         );

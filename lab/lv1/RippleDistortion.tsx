@@ -80,6 +80,7 @@ uniform float uGlint;
 uniform float uTintAmount;
 uniform float uGrayscale;
 uniform float uEdgeTop;
+uniform float uEdgeAlphaTop;
 
 const float TAU = 6.283185307179586;
 
@@ -91,16 +92,37 @@ vec2 coverUV(vec2 uv) {
   return (uv * uResolution - offset) / scaledSize;
 }
 
+// Canvas alpha over the top uEdgeAlphaTop of the canvas: the same
+// piecewise-linear ramp as the CSS mask it replaces (0, .16, .5, .86, 1 at
+// 0/6/12/18/23 of 23 parts).
+float edgeAlpha(float t) {
+  if (t >= 1.0) return 1.0;
+  if (t < 0.26087) return 0.16 * t / 0.26087;
+  if (t < 0.52174) return mix(0.16, 0.5, (t - 0.26087) / 0.26087);
+  if (t < 0.78261) return mix(0.5, 0.86, (t - 0.52174) / 0.26087);
+  return mix(0.86, 1.0, (t - 0.78261) / 0.21739);
+}
+
 void main() {
-  float amount = texture2D(uDisplacement, vUv).r;
+  float raw = texture2D(uDisplacement, vUv).r;
+  float fromTop = 1.0 - vUv.y;
+  float amount = raw;
   // Optional: taper the ripple to nothing over the top uEdgeTop of the
   // canvas, so rings never get sliced off by its hard top edge (0 = off).
-  if (uEdgeTop > 0.0) amount *= smoothstep(0.0, uEdgeTop, 1.0 - vUv.y);
+  if (uEdgeTop > 0.0) amount *= smoothstep(0.0, uEdgeTop, fromTop);
   vec2 base = coverUV(vUv);
 
-  float theta = amount * uSwirl * TAU;
+  // What the displacement moves. With the alpha top edge on, the taper
+  // above only shades the water (grayscale/tint): the image itself is
+  // displaced by the full field down to a thin band at the very top, so
+  // text lifted above its cap line by a ring is drawn whole instead of
+  // being flattened against the taper.
+  float warp = amount;
+  if (uEdgeAlphaTop > 0.0) warp = raw * smoothstep(0.0, uEdgeAlphaTop * 0.4, fromTop);
+
+  float theta = warp * uSwirl * TAU;
   vec2 dir = vec2(sin(theta), cos(theta));
-  vec2 push = dir * amount * uStrength;
+  vec2 push = dir * warp * uStrength;
 
   vec3 color;
   if (uDispersion > 0.001) {
@@ -111,6 +133,9 @@ void main() {
   } else {
     color = texture2D(uTexture, base + push).rgb;
   }
+
+  // bright (text) pixels of the displaced image, before any shading
+  float ink = smoothstep(0.2, 0.42, dot(color, vec3(0.2126, 0.7152, 0.0722)));
 
   if (uGrayscale > 0.001) {
     // Scoped to the ripple field so only the distorted area under the cursor
@@ -133,7 +158,13 @@ void main() {
     color += uHighlight * clamp((raw - flatSpec) / max(1.0 - flatSpec, 0.0001), 0.0, 1.0) * uGlint;
   }
 
-  gl_FragColor = vec4(color, 1.0);
+  // The top edge fades into whatever is behind the canvas, except where
+  // the displaced image is text: that stays opaque, so text lifted into
+  // the fade band isn't faded away with the background.
+  float alpha = 1.0;
+  if (uEdgeAlphaTop > 0.0) alpha = max(edgeAlpha(fromTop / uEdgeAlphaTop), ink);
+
+  gl_FragColor = vec4(color, alpha);
 }
 `;
 
@@ -162,6 +193,12 @@ export interface RippleDistortionProps {
   /** Fraction (0-1) of the canvas height, from its top edge, over which the
    *  ripple fades out. 0 (default) leaves the edge untouched. */
   edgeFadeTop?: number;
+  /** Fraction (0-1) of the canvas height, from its top edge, over which the
+   *  canvas itself fades to transparent (in place of a CSS mask), keeping
+   *  bright text opaque; edgeFadeTop then shades the water only, so text
+   *  the ripple lifts toward the top edge renders whole. 0 (default) = off,
+   *  opaque canvas. Set it at mount: it picks the canvas's alpha mode. */
+  edgeAlphaTop?: number;
   className?: string;
   style?: CSSProperties;
 }
@@ -200,6 +237,7 @@ interface CompositeUniforms {
   uTintAmount: { value: number };
   uGrayscale: { value: number };
   uEdgeTop: { value: number };
+  uEdgeAlphaTop: { value: number };
   [key: string]: { value: unknown };
 }
 
@@ -247,6 +285,7 @@ const RippleDistortion = ({
   quality = 'low',
   enabled = true,
   edgeFadeTop = 0,
+  edgeAlphaTop = 0,
   className = '',
   style
 }: RippleDistortionProps) => {
@@ -270,7 +309,7 @@ const RippleDistortion = ({
     let renderer: Renderer;
     try {
       renderer = new Renderer({
-        alpha: false,
+        alpha: edgeAlphaTop > 0,
         antialias: false,
         dpr: Math.min(window.devicePixelRatio || 1, 2)
       });
@@ -283,7 +322,7 @@ const RippleDistortion = ({
       console.error('[RippleDistortion] no WebGL context');
       return;
     }
-    gl.clearColor(0, 0, 0, 1);
+    gl.clearColor(0, 0, 0, edgeAlphaTop > 0 ? 0 : 1);
     const canvas = gl.canvas;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
@@ -369,7 +408,8 @@ const RippleDistortion = ({
       uGlint: { value: glint },
       uTintAmount: { value: tintAmount },
       uGrayscale: { value: grayscale ? 1 : 0 },
-      uEdgeTop: { value: edgeFadeTop }
+      uEdgeTop: { value: edgeFadeTop },
+      uEdgeAlphaTop: { value: edgeAlphaTop }
     };
 
     const compositeMesh = new Mesh(gl, {
@@ -541,7 +581,8 @@ const RippleDistortion = ({
     u.composite.uHighlight.value = hexToRGB(highlightColor);
     u.composite.uTint.value = hexToRGB(tint);
     u.composite.uEdgeTop.value = edgeFadeTop;
-  }, [rings, strength, swirl, dispersion, glint, tintAmount, grayscale, highlightColor, tint, edgeFadeTop]);
+    u.composite.uEdgeAlphaTop.value = edgeAlphaTop;
+  }, [rings, strength, swirl, dispersion, glint, tintAmount, grayscale, highlightColor, tint, edgeFadeTop, edgeAlphaTop]);
 
   return (
     <div
