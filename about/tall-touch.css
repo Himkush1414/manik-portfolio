@@ -49,3 +49,20 @@ html.tt-frame .ch4__item {
   padding-bottom: clamp(10px, calc(var(--tt-vh) * 1.6), 18px);
 }
 html.tt-frame .next__heading { margin-bottom: clamp(24px, calc(var(--tt-vh) * 4), 48px); }
+
+/* ---- Desktop site in landscape (html.ds-zoomed, layout ~980 x 450) ----
+   CHAPTER I stacks label, paragraph, quote and then the portrait in one
+   column; that stack needs ~650px, so in a ~450px-high panel the photo was
+   pushed off the bottom and only the top of the head showed. Here the
+   photo moves out of the column into the panel's empty left half, top-
+   aligned with the intro (clear of CHAPTER I above and the aside below),
+   and the text column keeps its exact place. */
+@media (max-height: 560px) {
+  html.ds-zoomed .panel--about .panel__intro-copy { position: relative; }
+  html.ds-zoomed .panel--about .panel__portrait {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 5vw);
+    width: clamp(150px, 17vw, 220px);
+  }
+}
