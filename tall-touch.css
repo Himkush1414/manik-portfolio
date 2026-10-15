@@ -148,3 +148,16 @@ html.tt-frame .skillsfun-about__marquee {
 }
 html.tt-frame .skillsfun-navgrid { padding-bottom: clamp(72px, calc(var(--tt-vh) * 11), 130px); }
 html.tt-frame .skillsfun-navgrid__connect { margin-top: clamp(56px, calc(var(--tt-vh) * 9), 110px); }
+
+/* ============================================================
+   DESKTOP SITE ONLY (html.ds-zoomed) — fixes for the widths/heights that
+   only this mode produces: a 980px layout (Chrome's Desktop-site default)
+   that's either very tall (portrait) or only ~450px high (landscape).
+   Desktops and normal phones never get the class.
+   ============================================================ */
+
+/* §4 footer: at <=1200px the sign-up column is 40% of the row with no
+   gutter, so at 980px the SIGN UP button ends flush against the
+   NAVIGATION column's text. A small inner gutter separates them; the
+   30px title still fits on one line. */
+html.ds-zoomed body.lv2 #lv2-footer .col--signup { padding-right: 20px; }
