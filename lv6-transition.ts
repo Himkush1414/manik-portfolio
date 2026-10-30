@@ -259,6 +259,13 @@ document.getElementById('lv7-footer-contact')?.addEventListener('click', e => {
   e.preventDefault();
   goTo('contact');
 });
+// The Projects CTA's "Contact Me" — same destination as its fluid circle
+// beside it (a[href="#contact"], handled above); its mailto: href stays
+// as the no-JS fallback.
+document.getElementById('lv7-book-call')?.addEventListener('click', e => {
+  e.preventDefault();
+  goTo('contact');
+});
 // Home's own footer "Contact" link (see chat reply — nav cross-check):
 // was a bare href="#contact" with no matching id anywhere on the page and
 // no click handler, so it silently did nothing. Same fix/pattern as every
