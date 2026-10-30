@@ -171,6 +171,18 @@
   -webkit-text-stroke: 1.5px currentColor;
 }
 
+/* small group label above each list ("Website", "Apps"): the heading's
+   own display face, much smaller */
+.lv7-projects__group {
+  margin: 0 0 14px;
+  font-family: var(--lv7-font-display);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .lv7-list {
   list-style: none;
   margin: 0;
