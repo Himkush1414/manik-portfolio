@@ -19,7 +19,7 @@ import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import { slowScroll } from './scroll-speed';
 import { isTallTouch } from './tall-touch';
-import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
+import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel, SiExpo } from 'react-icons/si';
 import type { LogoItem } from './LogoLoop';
 import './lv2.css';
 import tailwindHref from './tailwind.css?url';
@@ -835,6 +835,11 @@ const projTechLogos: LogoItem[] = [
   { node: <SiSupabase color={PROJ_ICON_COLOR} title="Supabase" />, title: 'Supabase', ariaLabel: 'Supabase' },
   { node: <SiVite color={PROJ_ICON_COLOR} title="Vite" />, title: 'Vite', ariaLabel: 'Vite' },
   { node: <SiVercel color={PROJ_ICON_COLOR} title="Vercel" />, title: 'Vercel', ariaLabel: 'Vercel' },
+  // app development, as used by the Mindtier and Lamplight apps (both
+  // Expo / React Native). React Native's official mark is the React atom;
+  // Expo sits between it and React where the loop wraps.
+  { node: <SiReact color={PROJ_ICON_COLOR} title="React Native" />, title: 'React Native', ariaLabel: 'React Native' },
+  { node: <SiExpo color={PROJ_ICON_COLOR} title="Expo" />, title: 'Expo', ariaLabel: 'Expo' },
 ];
 // Deferred like the other decorative mounts above — #lv7-logoloop-mount
 // lives inside #proj-root, which stays display:none until the user
