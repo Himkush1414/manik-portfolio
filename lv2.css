@@ -211,11 +211,22 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
 }
 
 /* Orb (nav-orb.ts): the round Contact button right of "Skills", on both
-   navs. The canvas covers the pill's own circle; the pill keeps its size,
-   border and shadow, and its gradient shows until the first frame. */
-body.lv2 .nav__menu .nav__orb {
+   navs. Same size, position and hover lift as before. The circle is cut
+   once, here (border-radius + overflow: hidden), around a canvas drawn at
+   full device resolution; the edge is a 1px solid ring in the hero box's
+   lightest blue, with no soft shadow, backdrop blur or translucent border
+   around it to read as a halo. The base fill (the hero box's own gradient)
+   shows until the first frame. */
+body.lv2 .nav .nav__menu .pill.nav__orb,
+body.lv2 .nav .nav__menu .pill.nav__orb:hover {
   position: relative;
   overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid #205FA4;
+  background: linear-gradient(180deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 body.lv2 .nav__orb-canvas {
   position: absolute;
@@ -223,7 +234,6 @@ body.lv2 .nav__orb-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.6s ease;

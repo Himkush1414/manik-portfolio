@@ -1,122 +1,153 @@
-// Navbar orb — the round button right of "Skills" (both the hero nav and
-// the slide-down return nav) drawn as a Siri-style orb: a few luminous
-// wave ribbons flowing through a deep-navy sphere, blended additively so
-// they bloom where they cross.
+// Navbar orb — the round Contact button right of "Skills" (both the hero
+// nav and the slide-down return nav): slow liquid wave bands flowing
+// through a deep-blue circle, in the hero effect box's own four blues
+// (lv2.css .lv2-effect / hero-wave.ts) plus faint white highlights.
 //
-// Canvas 2D at the button's own ~42px size, so each frame is a handful of
-// small path fills. The loop only runs while that orb is on screen (the
-// return nav's is parked off the top of the viewport until the footer) and
-// the tab is visible; prefers-reduced-motion gets one still frame.
+// Crisp edge: the canvas backing store is its CSS size x devicePixelRatio
+// (capped at 3, re-measured on resize and DPR change) and every frame fills
+// the whole rectangle opaquely — the circle itself is cut by the button's
+// CSS border-radius + overflow: hidden (lv2.css), so there is exactly one
+// clip and nothing on the boundary is faded, masked or blurred.
+//
+// The loop only runs while that orb is on screen (the return nav's is
+// parked off the top of the viewport until the footer) and the tab is
+// visible; prefers-reduced-motion gets one still frame.
 import { canvasPixelRatio } from './tall-touch';
 
-interface Wave {
-  color: [number, number, number];
-  freq: number;
-  speed: number;
-  amp: number;
+// .lv2-effect's gradient stops (dark -> light)
+const BLUE = ['#060F1C', '#0A2036', '#103C69', '#205FA4'];
+const BLUE_RGB: [number, number, number][] = [
+  [6, 15, 28],
+  [10, 32, 54],
+  [16, 60, 105],
+  [32, 95, 164]
+];
+
+interface Band {
+  level: number; // resting surface height, 0 top .. 1 bottom
+  color: number; // index into BLUE_RGB
+  alpha: number;
+  amp: number; // fraction of height
+  k1: number; // wave counts across the orb
+  k2: number;
+  s1: number; // rad/s
+  s2: number;
   phase: number;
 }
 
-// Siri-style hues, deepened to sit on the site's navy (#0A1E38 / #12335C)
-// next to its #5C87BC accent blue.
-const WAVES: Wave[] = [
-  { color: [92, 135, 188], freq: 1.0, speed: 0.9, amp: 0.78, phase: 0.0 },
-  { color: [56, 196, 255], freq: 1.4, speed: -1.25, amp: 0.66, phase: 1.7 },
-  { color: [148, 98, 255], freq: 1.2, speed: 1.05, amp: 0.6, phase: 3.1 },
-  { color: [255, 84, 170], freq: 1.7, speed: -0.8, amp: 0.48, phase: 4.4 },
+// back to front: each band is a sheet of liquid below a two-sine surface,
+// drifting at its own speed; stacked alphas lighten towards the bottom
+const BANDS: Band[] = [
+  { level: 0.34, color: 2, alpha: 0.8, amp: 0.09, k1: 0.8, k2: 1.6, s1: 0.5, s2: -0.3, phase: 0.0 },
+  { level: 0.52, color: 3, alpha: 0.45, amp: 0.085, k1: 1.1, k2: 2.0, s1: -0.38, s2: 0.26, phase: 2.1 },
+  { level: 0.7, color: 3, alpha: 0.5, amp: 0.07, k1: 1.4, k2: 2.5, s1: 0.3, s2: -0.44, phase: 4.2 }
 ];
 
-function drawOrb(ctx: CanvasRenderingContext2D, size: number, t: number, energy: number) {
-  const r = size / 2;
+const rgba = (i: number, a: number) => {
+  const [r, g, b] = BLUE_RGB[i];
+  return `rgba(${r},${g},${b},${a})`;
+};
+
+function drawOrb(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, energy: number) {
+  if (!w || !h) return;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  ctx.clearRect(0, 0, size, size);
 
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(r, r, r, 0, Math.PI * 2);
-  ctx.clip();
-
-  // deep sphere
-  const bg = ctx.createRadialGradient(r * 0.85, r * 0.7, r * 0.1, r, r, r);
-  bg.addColorStop(0, '#12335C');
-  bg.addColorStop(1, '#0A1E38');
+  // deep base, opaque edge to edge
+  const bg = ctx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, BLUE[1]);
+  bg.addColorStop(0.5, BLUE[1]);
+  bg.addColorStop(1, BLUE[2]);
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, w, h);
 
-  // soft colour glows orbiting inside the sphere, under the ribbons
-  ctx.globalCompositeOperation = 'lighter';
-  WAVES.forEach((w, i) => {
-    const a = t * (0.35 + i * 0.12) * (i % 2 ? -1 : 1) + w.phase;
-    const gx = r + Math.cos(a) * r * 0.45;
-    const gy = r + Math.sin(a * 1.3) * r * 0.45;
-    const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, r * 0.8);
-    const [cr, cg, cb] = w.color;
-    glow.addColorStop(0, `rgba(${cr},${cg},${cb},0.38)`);
-    glow.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, size, size);
-  });
+  // the wave field sways gently around the centre, so the bands flow
+  // rather than slide sideways
+  const cx = w / 2;
+  const cy = h / 2;
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.sin(t * 0.21) * 0.22 - 0.12);
+  ctx.translate(-cx, -cy);
 
-  // the wave field drifts round slowly, so the ribbons flow rather than slide
-  ctx.translate(r, r);
-  ctx.rotate(Math.sin(t * 0.23) * 0.5 + t * 0.08);
-  ctx.globalCompositeOperation = 'lighter';
+  const steps = 36;
+  const x0 = -w * 0.25;
+  const x1 = w * 1.25;
+  const surface = (b: Band, x: number) => {
+    const u = x / w;
+    const amp = b.amp * h * energy;
+    return (
+      h * (b.level + 0.025 * Math.sin(t * 0.37 + b.phase)) +
+      amp * Math.sin(u * Math.PI * 2 * b.k1 + t * b.s1 + b.phase) +
+      amp * 0.45 * Math.sin(u * Math.PI * 2 * b.k2 + t * b.s2 + b.phase * 1.7)
+    );
+  };
 
-  const steps = 28;
-  for (const w of WAVES) {
-    // each ribbon breathes on its own slow cycle
-    const amp = r * w.amp * energy * (0.65 + 0.35 * Math.sin(t * 0.7 + w.phase));
-    const [cr, cg, cb] = w.color;
-    const grad = ctx.createLinearGradient(-r, 0, r, 0);
-    grad.addColorStop(0, `rgba(${cr},${cg},${cb},0)`);
-    grad.addColorStop(0.5, `rgba(${cr},${cg},${cb},0.55)`);
-    grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
-    ctx.fillStyle = grad;
+  for (const b of BANDS) {
+    ctx.beginPath();
+    ctx.moveTo(x0, h * 1.4);
+    for (let i = 0; i <= steps; i++) {
+      const x = x0 + ((x1 - x0) * i) / steps;
+      ctx.lineTo(x, surface(b, x));
+    }
+    ctx.lineTo(x1, h * 1.4);
+    ctx.closePath();
+    // each sheet is lit along its surface and deepens below it
+    const top = h * (b.level - b.amp);
+    const fill = ctx.createLinearGradient(0, top, 0, h);
+    fill.addColorStop(0, rgba(b.color, b.alpha));
+    fill.addColorStop(1, rgba(b.color - 1, b.alpha * 0.6));
+    ctx.fillStyle = fill;
+    ctx.fill();
 
-    // a lens between the wave and its mirror, pinched to nothing at both
-    // ends (the classic Siri waveform envelope)
+    // a luminous crest: a wide additive blue glow with a fine white core
     ctx.beginPath();
     for (let i = 0; i <= steps; i++) {
-      const u = i / steps;
-      const x = (u * 2 - 1) * r * 1.1;
-      const env = Math.pow(1 - Math.pow(u * 2 - 1, 2), 1.6);
-      const y = Math.sin(u * Math.PI * 2 * w.freq + t * w.speed + w.phase) * amp * env;
+      const x = x0 + ((x1 - x0) * i) / steps;
+      const y = surface(b, x);
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
-    for (let i = steps; i >= 0; i--) {
-      const u = i / steps;
-      const x = (u * 2 - 1) * r * 1.1;
-      const env = Math.pow(1 - Math.pow(u * 2 - 1, 2), 1.6);
-      const y = -Math.sin(u * Math.PI * 2 * w.freq + t * w.speed * 0.8 + w.phase + 0.9) * amp * env * 0.8;
-      ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fill();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = rgba(3, 0.55);
+    ctx.lineWidth = w / 22;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = w / 110;
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
   }
-
-  // glassy finish: top-left sheen and a soft dark rim
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // gentle inner glow drifting slowly through the lower half — fully
+  // transparent well inside the edge, so it never touches the boundary
+  const r = Math.min(w, h) / 2;
+  const gx = cx + Math.sin(t * 0.29) * r * 0.28;
+  const gy = cy + r * 0.25 + Math.cos(t * 0.23) * r * 0.12;
+  const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, r * 0.8);
+  glow.addColorStop(0, rgba(3, 0.5 * energy));
+  glow.addColorStop(1, rgba(3, 0));
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  // soft white glint, upper left
   ctx.globalCompositeOperation = 'source-over';
-  const sheen = ctx.createRadialGradient(r * 0.62, r * 0.42, 0, r * 0.62, r * 0.42, r * 0.9);
-  sheen.addColorStop(0, 'rgba(255,255,255,0.32)');
-  sheen.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = sheen;
-  ctx.fillRect(0, 0, size, size);
-  const rim = ctx.createRadialGradient(r, r, r * 0.62, r, r, r);
-  rim.addColorStop(0, 'rgba(6,15,28,0)');
-  rim.addColorStop(1, 'rgba(6,15,28,0.55)');
-  ctx.fillStyle = rim;
-  ctx.fillRect(0, 0, size, size);
-  ctx.restore();
+  const hx = cx - r * 0.34;
+  const hy = cy - r * 0.46;
+  const hl = ctx.createRadialGradient(hx, hy, 0, hx, hy, r * 0.32);
+  hl.addColorStop(0, 'rgba(255,255,255,0.14)');
+  hl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.fillRect(0, 0, w, h);
 }
 
 function startOrb(canvas: HTMLCanvasElement, host: HTMLElement, reduceMQ: MediaQueryList) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  let size = 0;
+  let w = 0;
+  let h = 0;
+  let dpr = 0;
   let onScreen = false;
   let raf = 0;
   let last = 0;
@@ -124,22 +155,34 @@ function startOrb(canvas: HTMLCanvasElement, host: HTMLElement, reduceMQ: MediaQ
   let energy = 1;
   let energyTarget = 1;
 
+  // backing store = CSS size x DPR, both axes (the button is 40 x 41.5 CSS
+  // px inside its border, not square)
   const resize = () => {
-    const css = canvas.getBoundingClientRect().width;
-    const px = Math.max(1, Math.round(css * canvasPixelRatio(2)));
-    if (px !== canvas.width) {
-      canvas.width = canvas.height = px;
+    const rect = canvas.getBoundingClientRect();
+    dpr = canvasPixelRatio(3);
+    const pw = Math.max(1, Math.round(rect.width * dpr));
+    const ph = Math.max(1, Math.round(rect.height * dpr));
+    if (pw !== canvas.width || ph !== canvas.height) {
+      canvas.width = pw;
+      canvas.height = ph;
     }
-    size = px;
+    w = pw;
+    h = ph;
+  };
+  const redraw = () => {
+    resize();
+    if (!raf) drawOrb(ctx, w, h, t, energy);
   };
 
   const frame = (now: number) => {
     raf = requestAnimationFrame(frame);
     const dt = last ? Math.min(now - last, 50) / 1000 : 1 / 60;
     last = now;
+    // cheap catch-all for DPR changes the listeners below can miss
+    if (canvasPixelRatio(3) !== dpr) resize();
     t += dt;
-    energy += (energyTarget - energy) * Math.min(1, dt * 6);
-    drawOrb(ctx, size, t, energy);
+    energy += (energyTarget - energy) * Math.min(1, dt * 4);
+    drawOrb(ctx, w, h, t, energy);
   };
 
   const sync = () => {
@@ -151,24 +194,37 @@ function startOrb(canvas: HTMLCanvasElement, host: HTMLElement, reduceMQ: MediaQ
       cancelAnimationFrame(raf);
       raf = 0;
     }
-    if (!run && reduceMQ.matches) drawOrb(ctx, size, t, 1);
+    if (!run && reduceMQ.matches) drawOrb(ctx, w, h, t, 1);
   };
 
   resize();
-  drawOrb(ctx, size, t, energy);
+  drawOrb(ctx, w, h, t, energy);
   canvas.classList.add('is-ready');
 
-  // a little more energy while hovered / focused
-  const lift = (on: boolean) => () => (energyTarget = on ? 1.3 : 1);
+  // the waves rise a little while hovered / focused
+  const lift = (on: boolean) => () => (energyTarget = on ? 1.35 : 1);
   host.addEventListener('pointerenter', lift(true));
   host.addEventListener('pointerleave', lift(false));
   host.addEventListener('focus', lift(true));
   host.addEventListener('blur', lift(false));
 
-  new ResizeObserver(() => {
-    resize();
-    if (!raf) drawOrb(ctx, size, t, energy);
-  }).observe(canvas);
+  new ResizeObserver(redraw).observe(canvas);
+  // DPR changes (browser zoom, moving to another screen) don't resize the
+  // element, so watch the current resolution and re-arm after each change
+  const watchDpr = () => {
+    matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener(
+      'change',
+      () => {
+        redraw();
+        watchDpr();
+      },
+      { once: true }
+    );
+  };
+  watchDpr();
+  // pinch zoom under Desktop site changes canvasPixelRatio too (tall-touch.ts)
+  window.visualViewport?.addEventListener('resize', redraw);
+
   new IntersectionObserver(entries => {
     onScreen = entries[entries.length - 1].isIntersecting;
     sync();
