@@ -1226,7 +1226,9 @@ a.skillsfun-navgrid__box {
 }
 .skillsfun-footer__copy { margin: 0; color: #666666; }
 .skillsfun-footer__legal { display: flex; gap: 18px; }
-.skillsfun-footer__legal span { color: #666666; cursor: default; } /* inert — see chat reply */
+.skillsfun-footer__legal a { color: #666666; text-decoration: none; transition: color 0.18s ease; } /* open the Legal view (lv6-transition.ts) */
+.skillsfun-footer__legal a:hover,
+.skillsfun-footer__legal a:focus-visible { color: #111111; }
 
 @media (max-width: 640px) {
   .skillsfun-footer__logo { width: 44px; height: 44px; }

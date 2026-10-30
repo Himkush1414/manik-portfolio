@@ -9,18 +9,20 @@
 // import.
 import type { StripColor } from './strip-transition';
 
-export type ViewId = 'home' | 'projects' | 'contact' | 'about' | 'skills';
+export type ViewId = 'home' | 'projects' | 'contact' | 'about' | 'skills' | 'legal';
 
 // The four original values are lv7's own (Home's navy "iceberg" gradient,
 // About's dark warm background, Projects/Contact's shared light
 // background nudged a few percent so the wipe stays visible even between
 // two same-family crossings). Skills' own value is its section's darkest
 // cool-teal tone (see skillsfun.css's --skillsfun-darkest), not borrowed
-// from any of the other four.
+// from any of the other four. Legal shares the Projects/Contact ground
+// (legal.css), so it leaves with their colour too.
 export const LEAVE_COLOR: Record<ViewId, StripColor> = {
   home: { gradient: 'linear-gradient(180deg, #0A1E38 0%, #12335C 100%)' },
   about: { solid: '#3A3632' },
   projects: { solid: '#D7D4CC' },
   contact: { solid: '#D7D4CC' },
   skills: { solid: '#0B1417' },
+  legal: { solid: '#D7D4CC' },
 };

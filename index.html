@@ -26,7 +26,7 @@
 </script>
 <title>Manik Rana</title>
 <meta name="description" content="Manik Rana — portfolio." />
-<link rel="icon" type="image/png" href="assets/logo.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="assets/favicon.png" />
 <!-- Self-hosted (see fonts.css / assets/fonts/) — was Google Fonts, but the
      stylesheet + font-file hop through fonts.googleapis.com/fonts.gstatic.com
      added ~1.7s of sequential request-chain latency before First Contentful
@@ -38,6 +38,7 @@
 <link rel="stylesheet" href="./lv6-transition.css" />
 <link rel="stylesheet" href="./projects.css" />
 <link rel="stylesheet" href="./skillsfun.css" />
+<link rel="stylesheet" href="./legal.css" />
 <link rel="stylesheet" href="./home-loader.css" />
 <!-- Phone "Desktop site" mode / portrait tablets only — see tall-touch.ts. -->
 <link rel="stylesheet" href="./tall-touch.css" />
@@ -128,7 +129,7 @@
      inside the footer. Toggled by main.tsx (.is-in). -->
 <nav class="nav lv3-returnnav" id="lv3-returnnav" aria-hidden="true" inert>
   <a class="nav__brand" href="#lv2-footer" aria-label="Manik Rana — home">
-    <img src="assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
+    <span class="nav__logo nav__logo--mr" aria-hidden="true"></span>
     <span class="nav__wordmark">Manik Rana</span>
   </a>
   <button class="nav__toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="returnnav-menu">
@@ -138,8 +139,8 @@
     <a class="pill" href="/about">About</a>
     <a class="pill" href="#projects">Projects</a>
     <a class="pill" href="#skills">Skills</a>
-    <a class="pill pill--icon" href="/about" aria-label="Enter">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+    <a class="pill pill--icon nav__orb" href="#contact" aria-label="Contact">
+      <canvas class="nav__orb-canvas" aria-hidden="true"></canvas>
     </a>
   </div>
 </nav>
@@ -161,7 +162,7 @@
     <!-- top nav -->
     <nav class="nav lv2-nav">
       <a class="nav__brand" href="/" aria-label="Manik Rana — home">
-        <img src="assets/logo.png" width="512" height="512" alt="" class="nav__logo" />
+        <span class="nav__logo nav__logo--mr" aria-hidden="true"></span>
         <span class="nav__wordmark">Manik Rana</span>
       </a>
       <button class="nav__toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="heronav-menu">
@@ -171,8 +172,8 @@
         <a class="pill" href="/about">About</a>
         <a class="pill" href="#projects">Projects</a>
         <a class="pill" href="#skills">Skills</a>
-        <a class="pill pill--icon" href="/about" aria-label="Enter">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+        <a class="pill pill--icon nav__orb" href="#contact" aria-label="Contact">
+          <canvas class="nav__orb-canvas" aria-hidden="true"></canvas>
         </a>
       </div>
     </nav>
@@ -181,7 +182,7 @@
     <div class="lv2-cols">
       <section class="lv2-col lv2-col--left">
         <span class="lv2-marker" aria-hidden="true"></span>
-        <h1 class="lv2-headline">Code for<br />Fun</h1>
+        <h1 class="lv2-headline">Built to<br />Ship</h1>
         <p class="lv2-lead">
           I have been building things on the web since I was a teenager, mostly
           because it is fun. Games, tools, small experiments, the odd
@@ -193,6 +194,7 @@
 
       <section class="lv2-col lv2-col--mid">
         <div class="lv2-effect">
+          <canvas class="lv2-effect__wave" id="hero-wave" aria-hidden="true"></canvas>
           <div class="lv2-effect__mount" id="shapeblur-mount"></div>
           <div class="lv2-effect__logo" id="effect-logo-slot" aria-hidden="true">
             <picture>
@@ -344,19 +346,22 @@
     <div class="content">
       <span class="content__marker" aria-hidden="true"></span>
 
-      <!-- Left: sign up -->
+      <!-- Left: contact call-to-action (replaces the old email sign-up
+           form). Both buttons open the Contact view through the same
+           strip transition as the nav tabs — wired in lv6-transition.ts. -->
       <div class="col col--signup">
-        <h1 class="signup__title">Sign up to stay in the loop:</h1>
-        <form class="signup__form" action="#" method="post" novalidate>
-          <input type="email" class="signup__input" placeholder="Enter your email" aria-label="Email address" />
-          <button type="submit" class="btn-signup">
-            <span>Sign up</span>
+        <div class="footer-cta">
+          <button type="button" class="footer-cta__btn footer-cta__btn--solid" id="lv2-footer-cta-contact">
+            <span>Contact Me</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
           </button>
-        </form>
+          <button type="button" class="footer-cta__btn footer-cta__btn--ghost" id="lv2-footer-cta-signup">
+            <span>Sign Up</span>
+          </button>
+        </div>
 
         <div class="badge">
-          <img src="assets/logo.png" width="512" height="512" alt="" class="badge__mark" />
+          <img src="./effect-logo.png" width="640" height="459" alt="" class="badge__mark" />
           <p class="badge__text">
             OPEN TO NEW PROJECTS<br />
             FRONTEND &middot; CREATIVE DEV &middot; UI ENGINEERING
@@ -731,6 +736,105 @@
 </div>
 <!-- ===================== /#proj-root ===================== -->
 
+<!-- ===================== LEGAL — Privacy Policy + Terms of Use, one page
+     with an in-page switch. Opened from every footer's "Privacy Policy" /
+     "Terms of Use" links through the same strip transition as the other
+     views (lv6-transition.ts); #privacy lands on the first section, #terms
+     on the second. Styled in legal.css with the Projects/Contact palette.
+     Content describes only what the site's code actually does. ===================== -->
+<div id="legal-root">
+  <header class="legal-bar">
+    <a class="legal-bar__brand" href="/" aria-label="Manik Rana — home">
+      <span class="nav__logo--mr" aria-hidden="true"></span>
+      <span>Manik Rana</span>
+    </a>
+    <nav class="legal-bar__links" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="legal">
+    <div class="legal__top">
+      <h1 class="legal__heading">LEGAL</h1>
+      <p class="legal__updated">Last updated: October 2026</p>
+    </div>
+
+    <div class="legal__switch" role="tablist" aria-label="Legal documents">
+      <button class="legal__tab" type="button" role="tab" id="legal-tab-privacy" data-section="privacy"
+              aria-controls="legal-privacy" aria-selected="true">Privacy Policy</button>
+      <button class="legal__tab" type="button" role="tab" id="legal-tab-terms" data-section="terms"
+              aria-controls="legal-terms" aria-selected="false" tabindex="-1">Terms of Use</button>
+    </div>
+
+    <section class="legal__panel" id="legal-privacy" role="tabpanel" aria-labelledby="legal-tab-privacy">
+      <h2>Privacy Policy</h2>
+      <p>This is the personal portfolio of Manik Rana, a developer based in Dehradun, India. This page explains plainly what the site does, and doesn&rsquo;t do, with your information.</p>
+
+      <h3>What I collect</h3>
+      <p>Very little. There are no accounts, sign-ups, analytics, advertising or tracking on this site, and it doesn&rsquo;t set any cookies. The only personal information I receive is what you choose to send me by email.</p>
+
+      <h3>The contact form</h3>
+      <p>The message form on the Contact page is checked in your browser only. What you type into it isn&rsquo;t sent to me or stored anywhere. To reach me, use the email or social links on that page.</p>
+
+      <h3>Email</h3>
+      <p>If you email me, I receive your email address and whatever you write, and I use it only to reply to you. I don&rsquo;t add you to a mailing list or share it with anyone.</p>
+
+      <h3>Storage in your browser</h3>
+      <p>The intro animation stores one small flag in your browser&rsquo;s session storage so it doesn&rsquo;t replay on every page load. It is cleared when you close the tab. The experimental game at <code>/game/g1/</code> saves its settings and progress in your browser&rsquo;s local storage. Both stay on your device, and you can clear them from your browser settings at any time.</p>
+
+      <h3>Third-party services</h3>
+      <ul>
+        <li><strong>Vercel</strong> hosts the site. Like any web host, it processes technical request data such as your IP address and browser type to deliver pages and keep the service secure. See <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel&rsquo;s privacy policy</a>.</li>
+        <li><strong>LottieFiles</strong> serves the intro animation from <code>lottie.host</code> the first time you open the site in a session, so that server receives an ordinary request from your browser.</li>
+        <li>Fonts, images and videos are served from this site itself, not from Google Fonts or another external provider.</li>
+      </ul>
+
+      <h3>Links to other sites</h3>
+      <p>Links to LinkedIn, GitHub, Instagram, email and the live project sites take you to services with their own privacy policies.</p>
+
+      <h3>Questions</h3>
+      <p>Get in touch through the <a href="#contact">Contact</a> page.</p>
+    </section>
+
+    <section class="legal__panel" id="legal-terms" role="tabpanel" aria-labelledby="legal-tab-terms" hidden>
+      <h2>Terms of Use</h2>
+      <p>By using this site you agree to these terms. If you don&rsquo;t agree, please don&rsquo;t use it.</p>
+
+      <h3>Ownership</h3>
+      <p>Unless stated otherwise, the content, design and code of this site are &copy; 2026 Manik Rana. You&rsquo;re welcome to look around and share links. Please ask before copying or reusing substantial parts.</p>
+      <p>The source code is public on <a href="https://github.com/Himkush1414/manik-portfolio" target="_blank" rel="noopener">GitHub</a>. Being able to read it doesn&rsquo;t grant a licence to reuse it. The open-source libraries and components it builds on (such as React, three.js, GSAP, OGL and several React Bits components) and its fonts stay under their own licences. Names and logos of tools and companies shown here belong to their owners.</p>
+
+      <h3>Design credit</h3>
+      <p>The design of this site is inspired by award-winning websites, the kind featured on Awwwards, and by examples I studied while building it. It is not entirely my own original idea.</p>
+
+      <h3>No warranty</h3>
+      <p>The site and everything on it is provided &ldquo;as is&rdquo;, without warranties of any kind. I try to keep it accurate and working, but I can&rsquo;t promise it will always be available, error-free or up to date.</p>
+
+      <h3>Use at your own risk</h3>
+      <p>You use this site at your own risk. As far as the law allows, I&rsquo;m not liable for any loss or damage that comes from using it or relying on its content.</p>
+
+      <h3>Third-party links</h3>
+      <p>The site links to websites I don&rsquo;t control, including the live project sites and social profiles. I&rsquo;m not responsible for their content, availability or practices.</p>
+
+      <h3>Changes</h3>
+      <p>I may update these terms and the privacy policy. The date at the top of this page shows when they last changed.</p>
+
+      <h3>Questions</h3>
+      <p>Get in touch through the <a href="#contact">Contact</a> page.</p>
+    </section>
+
+    <footer class="legal__foot">
+      <p>&copy; 2026 Manik Rana &middot; Dehradun, India</p>
+      <a href="/">Back to Home</a>
+    </footer>
+  </main>
+</div>
+<!-- ===================== /#legal-root ===================== -->
+
 <!-- ===================== SKILL & FUN — ported from /lab/lv9's own hero
      -> "Move Next" flip transition -> figure section -> About -> 4-box
      nav grid + Connect -> footer (see chat reply), as a fifth toggled
@@ -1032,8 +1136,8 @@
     <div class="skillsfun-footer__bottom">
       <p class="skillsfun-footer__copy">&copy; 2026 | Manik Rana</p>
       <div class="skillsfun-footer__legal">
-        <span>Privacy Policy</span>
-        <span>Terms of Use</span>
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#terms">Terms of Use</a>
       </div>
     </div>
   </footer>

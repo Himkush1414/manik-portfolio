@@ -210,6 +210,113 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
   border-color: rgba(255, 255, 255, 0.46);
 }
 
+/* Orb (nav-orb.ts): the round Contact button right of "Skills", on both
+   navs. Same size, position and hover lift as before. The circle is cut
+   once, here (border-radius + overflow: hidden), around a canvas drawn at
+   full device resolution; the edge is a 1px solid ring in the hero box's
+   lightest blue, with no soft shadow, backdrop blur or translucent border
+   around it to read as a halo. The base fill (the hero box's own gradient)
+   shows until the first frame. */
+body.lv2 .nav .nav__menu .pill.nav__orb,
+body.lv2 .nav .nav__menu .pill.nav__orb:hover {
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid #205FA4;
+  background: linear-gradient(180deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+body.lv2 .nav__orb-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+body.lv2 .nav__orb-canvas.is-ready { opacity: 1; }
+
+/* Brand mark: the hero's own MR logo (effect-logo.png, white on
+   transparent), painted through a mask in the wordmark's ink so it reads
+   on the light hero and the frosted return nav alike. The PNG itself is
+   used as-is; 26px tall keeps the old 30px icon's visual weight. */
+body.lv2 .nav__logo--mr {
+  width: 36px;
+  height: 26px;
+  background-color: #0B1220;
+  -webkit-mask: url("./effect-logo.png") center / contain no-repeat;
+  mask: url("./effect-logo.png") center / contain no-repeat;
+}
+/* the footer badge carries the same mark; it is wider than the old square
+   icon, so it keeps its own aspect ratio instead of styles.css's 30x30 */
+body.lv2 #lv2-footer .badge__mark {
+  width: 38px;
+  height: auto;
+}
+
+/* Footer call-to-action: "Contact Me" + "Sign Up", in place of the old
+   email sign-up form. Same type, navy fill and input-style ghost border
+   as that form's button/field (styles.css .btn-signup / .signup__input),
+   with softer corners. */
+body.lv2 #lv2-footer .footer-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 560px;
+}
+body.lv2 #lv2-footer .footer-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+body.lv2 #lv2-footer .footer-cta__btn:active { transform: translateY(1px); }
+body.lv2 #lv2-footer .footer-cta__btn:focus-visible {
+  outline: 2px solid #5C7FB8;
+  outline-offset: 2px;
+}
+body.lv2 #lv2-footer .footer-cta__btn--solid { background: var(--navy-pill); }
+body.lv2 #lv2-footer .footer-cta__btn--solid:hover { background: #1E2F4E; }
+body.lv2 #lv2-footer .footer-cta__btn--ghost {
+  background: var(--input-fill);
+  border-color: rgba(58, 78, 110, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+body.lv2 #lv2-footer .footer-cta__btn--ghost:hover {
+  border-color: #5C7FB8;
+  background: rgba(15, 27, 46, 0.78);
+}
+body.lv2 #lv2-footer .footer-cta__btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* phones: the two buttons share the row equally */
+@media (max-width: 560px) {
+  body.lv2 #lv2-footer .footer-cta__btn { flex: 1 1 0; padding-inline: 16px; }
+}
+
 .lv2-cols {
   position: relative;
   z-index: 2;
@@ -271,6 +378,20 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
   overflow: hidden;
   background: linear-gradient(178deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
 }
+/* fluid colour flow (hero-wave.ts) under ShapeBlur and the logo — fades in
+   over the identical CSS gradient once its first frame is drawn */
+.lv2-effect__wave {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+.lv2-effect__wave.is-ready { opacity: 1; }
 .lv2-effect__mount {
   position: absolute;
   inset: 0;
@@ -1241,6 +1362,23 @@ body.lv2 #lv2-footer .watermark__fill {
 @media (max-width: 860px) {
   body.lv2 #lv2-footer .hero__depth { height: 44vw; }
   body.lv2 #lv2-footer .hero__depth2 { height: 22vw; }
+}
+
+/* the phone footer's name sat on the page's very bottom edge inside a box
+   ~2x its own height: a dead gap above it, and its lower half lost to the
+   base fade + depth blur, so it read as cut off. The box now takes the
+   SVG's own 1920:400 ratio and lifts the baseline off the edge, so the blur
+   only softens the base again. (<=860 only — Desktop site lays out >=980.) */
+@media (max-width: 860px) {
+  body.lv2 #lv2-footer .watermark {
+    height: auto;
+    margin-top: clamp(8px, 3vw, 20px);
+    padding-bottom: 7vw;
+  }
+  body.lv2 #lv2-footer .watermark__svg {
+    height: auto;
+    aspect-ratio: 1920 / 400;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

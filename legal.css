@@ -1,0 +1,178 @@
+/* ============================================================
+   LEGAL — Privacy Policy + Terms of Use (#legal-root, index.html).
+   A sixth inline view beside Home/Projects/Contact/About/Skills, shown by
+   lv6-transition.ts. Same palette and type as the Projects/Contact views
+   (projects.css: #E3E1DC ground, #111 ink, Bebas Neue display, Sora body),
+   scoped under #legal-root so nothing leaks into the other views.
+   ============================================================ */
+#legal-root {
+  --legal-bg: #E3E1DC;
+  --legal-ink: #111111;
+  --legal-line: rgba(17, 17, 17, 0.16);
+  --legal-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --legal-font-body: 'Sora', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --legal-gutter: clamp(20px, 4vw, 64px);
+
+  display: none;
+  min-height: 100vh;
+  background: var(--legal-bg);
+  color: var(--legal-ink);
+  font-family: var(--legal-font-body);
+}
+#legal-root.is-active { display: block; }
+
+/* ---- top bar: brand + the site's destinations ---- */
+.legal-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 28px;
+  padding: clamp(18px, 3vh, 28px) var(--legal-gutter);
+}
+.legal-bar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  text-decoration: none;
+}
+#legal-root .legal-bar__brand .nav__logo--mr { background-color: var(--legal-ink); }
+.legal-bar__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.legal-bar__links a {
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.18s ease;
+}
+.legal-bar__links a:hover,
+.legal-bar__links a:focus-visible { opacity: 1; }
+
+/* ---- page ---- */
+.legal {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: clamp(28px, 7vh, 72px) var(--legal-gutter) 32px;
+}
+.legal__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+.legal__heading {
+  margin: 0;
+  font-family: var(--legal-font-display);
+  font-weight: 400;
+  font-size: clamp(72px, 13vw, 150px);
+  line-height: 0.9;
+}
+.legal__updated {
+  margin: 0 0 0.6em;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+/* in-page switch between the two documents */
+.legal__switch {
+  display: inline-flex;
+  gap: 4px;
+  margin: clamp(28px, 5vh, 48px) 0 clamp(24px, 4vh, 40px);
+  padding: 4px;
+  border: 1px solid var(--legal-line);
+  border-radius: 999px;
+}
+.legal__tab {
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--legal-ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.legal__tab:hover { background: rgba(17, 17, 17, 0.06); }
+.legal__tab[aria-selected="true"] {
+  background: var(--legal-ink);
+  color: var(--legal-bg);
+}
+.legal__tab:focus-visible {
+  outline: 2px solid var(--legal-ink);
+  outline-offset: 2px;
+}
+
+.legal__panel h2 {
+  margin: 0 0 18px;
+  font-family: var(--legal-font-display);
+  font-weight: 400;
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1;
+}
+.legal__panel h3 {
+  margin: 34px 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+.legal__panel p,
+.legal__panel li {
+  max-width: 68ch;
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.7;
+  opacity: 0.85;
+}
+.legal__panel ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.legal__panel li { margin-bottom: 8px; }
+.legal__panel a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.legal__panel code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(17, 17, 17, 0.07);
+  font-size: 0.9em;
+}
+
+.legal__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 24px;
+  margin-top: clamp(48px, 8vh, 88px);
+  padding-top: 20px;
+  border-top: 1px solid var(--legal-line);
+  font-size: 13px;
+}
+.legal__foot p { margin: 0; opacity: 0.7; }
+.legal__foot a { color: inherit; }
+
+@media (max-width: 560px) {
+  /* all five links on one row under the brand on a phone */
+  .legal-bar__links { gap: 8px clamp(10px, 3.2vw, 14px); }
+  .legal-bar__links a { font-size: 11.5px; letter-spacing: 0.8px; }
+  .legal__switch { display: flex; }
+  .legal__tab { flex: 1 1 0; padding-inline: 12px; }
+}

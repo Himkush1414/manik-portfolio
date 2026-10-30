@@ -51,7 +51,7 @@ point, each declared explicitly in `vite.config.js`'s `build.rollupOptions.input
 
 | Route | What it is |
 |---|---|
-| `/` | The live main site — hero, scroll-pinned "stack" section, a sliding "Creative Design" panel, and a footer with a signup form. Includes a "Skill & Fun" section (`skillsfun*` files) toggled in-place as a fifth view alongside Home/Projects/Contact/About, itself a full port of `/lab/lv9/`'s hero → transition → figure section → About → nav grid. |
+| `/` | The live main site — hero, scroll-pinned "stack" section, a sliding "Creative Design" panel, and a footer with Contact Me / Sign Up buttons. Includes a "Skill & Fun" section (`skillsfun*` files) toggled in-place as a fifth view alongside Home/Projects/Contact/About, itself a full port of `/lab/lv9/`'s hero → transition → figure section → About → nav grid. A sixth view, Legal (`legal.css`), holds the Privacy Policy and Terms of Use, opened from every footer's legal links (`/#privacy`, `/#terms`). |
 | `/about/` | The live About page: a placeholder dashboard fades out, then a full-screen, horizontally scroll-driven panel sequence takes over. A deployed copy of `/lab/lv5/`'s content at its own real path. |
 | `/lab/lv1/` | Experiment: the watermark cursor effect swapped for the OGL-based `RippleDistortion` effect. |
 | `/lab/lv3/` | A copy of the main site with an enhanced footer — bubble-burst effect, a rising watermark, and a site nav that slides back in once you reach the bottom. |
@@ -127,7 +127,7 @@ only this mode needs are scoped to that class in `tall-touch.css` and
 
 `tools/qa-desktop-site.mjs` emulates the mode (DPR-3 touch phone, desktop
 UA, viewport meta stripped) in both orientations and checks those layouts
-— no horizontal overflow or console errors, the footer form clear of the
+— no horizontal overflow or console errors, the footer buttons clear of the
 link columns, the Skill & Fun headline clear of MOVE NEXT, About's
 Chapter I portrait inside its panel — saving screenshots as it goes:
 

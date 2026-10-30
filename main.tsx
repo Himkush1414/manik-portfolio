@@ -139,6 +139,38 @@ if (mount) {
   else window.addEventListener('load', runIdle);
 }
 
+// ---- §1 hero box fluid colour flow (behind ShapeBlur + the logo) ----
+// Deferred like ShapeBlur: the box's CSS gradient is already the first
+// frame's colours, so starting late changes nothing visible.
+const heroWave = document.getElementById('hero-wave') as HTMLCanvasElement | null;
+if (heroWave) {
+  const mountWave = () => {
+    import('./hero-wave')
+      .then(({ startHeroWave }) => startHeroWave(heroWave))
+      .catch(err => console.error('[lab/lv2] hero wave failed to start:', err));
+  };
+  const runIdleWave = () => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(mountWave, { timeout: 1500 });
+    else setTimeout(mountWave, 0);
+  };
+  if (document.readyState === 'complete') runIdleWave();
+  else window.addEventListener('load', runIdleWave);
+}
+
+// ---- navbar orb (the round Contact button on both navs) ----
+// Deferred too; the pill's own gradient circle shows until it starts.
+{
+  const runIdleOrbs = () => {
+    const start = () => void import('./nav-orb').then(({ startNavOrbs }) => startNavOrbs());
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(start, { timeout: 1500 });
+    else setTimeout(start, 0);
+  };
+  if (document.readyState === 'complete') runIdleOrbs();
+  else window.addEventListener('load', runIdleOrbs);
+}
+
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
 // Dynamically imported and deferred like ShapeBlur just above — purely
 // decorative, and #spiral-mount (position:absolute; inset:0, same as
@@ -537,6 +569,8 @@ if (rippleMount) {
             highlightColor="#e2efff"
             edgeFadeTop={0.26}
             edgeAlphaTop={0.23}
+            revealOnRipple
+            spawnFadeTop={0.3}
             style={{ pointerEvents: 'none' }}
           />
         );
