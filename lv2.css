@@ -1354,6 +1354,23 @@ body.lv2 #lv2-footer .watermark__fill {
   body.lv2 #lv2-footer .hero__depth2 { height: 22vw; }
 }
 
+/* the phone footer's name sat on the page's very bottom edge inside a box
+   ~2x its own height: a dead gap above it, and its lower half lost to the
+   base fade + depth blur, so it read as cut off. The box now takes the
+   SVG's own 1920:400 ratio and lifts the baseline off the edge, so the blur
+   only softens the base again. (<=860 only — Desktop site lays out >=980.) */
+@media (max-width: 860px) {
+  body.lv2 #lv2-footer .watermark {
+    height: auto;
+    margin-top: clamp(8px, 3vw, 20px);
+    padding-bottom: 7vw;
+  }
+  body.lv2 #lv2-footer .watermark__svg {
+    height: auto;
+    aspect-ratio: 1920 / 400;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.lv2 #lv2-footer .watermark__sheen { display: none; }
   body.lv2 #lv2-footer .watermark::before { animation: none; opacity: 0.8; }
