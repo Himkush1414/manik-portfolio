@@ -210,6 +210,26 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
   border-color: rgba(255, 255, 255, 0.46);
 }
 
+/* Orb (nav-orb.ts): the round Contact button right of "Skills", on both
+   navs. The canvas covers the pill's own circle; the pill keeps its size,
+   border and shadow, and its gradient shows until the first frame. */
+body.lv2 .nav__menu .nav__orb {
+  position: relative;
+  overflow: hidden;
+}
+body.lv2 .nav__orb-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+body.lv2 .nav__orb-canvas.is-ready { opacity: 1; }
+
 /* Brand mark: the hero's own MR logo (effect-logo.png, white on
    transparent), painted through a mask in the wordmark's ink so it reads
    on the light hero and the frosted return nav alike. The PNG itself is

@@ -158,6 +158,19 @@ if (heroWave) {
   else window.addEventListener('load', runIdleWave);
 }
 
+// ---- navbar orb (the round Contact button on both navs) ----
+// Deferred too; the pill's own gradient circle shows until it starts.
+{
+  const runIdleOrbs = () => {
+    const start = () => void import('./nav-orb').then(({ startNavOrbs }) => startNavOrbs());
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(start, { timeout: 1500 });
+    else setTimeout(start, 0);
+  };
+  if (document.readyState === 'complete') runIdleOrbs();
+  else window.addEventListener('load', runIdleOrbs);
+}
+
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
 // Dynamically imported and deferred like ShapeBlur just above — purely
 // decorative, and #spiral-mount (position:absolute; inset:0, same as
