@@ -13,7 +13,9 @@
 // Checks, per orientation: <html> gets ds-zoomed; no horizontal overflow; no
 // console errors; the footer CONTACT ME / SIGN UP buttons clear the link columns; the
 // Skill & Fun headline clears the MOVE NEXT rail; About's Chapter I portrait
-// sits inside its panel (landscape). Screenshots go to --out.
+// sits inside its panel (landscape); the navbar orb is drawn in its original
+// 42x43.5 box; /#terms opens the Legal page's Terms section with no overflow.
+// Screenshots go to --out.
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 
@@ -142,6 +144,45 @@ for (const orient of ['portrait', 'landscape']) {
     });
     check(g.figT >= g.panelT && g.figB <= g.panelB + 1, `${orient} about: Chapter I portrait inside its panel`);
     await p.screenshot({ path: `${out}/${orient}-about-ch1.png` });
+    await p.close();
+  }
+
+  // home — navbar orb: drawn, inside the layout, its original 42x43.5 box
+  {
+    const p = await open('/');
+    const g = await p.evaluate(() => {
+      const orb = document.querySelector('.lv2-nav .nav__orb');
+      const r = orb?.getBoundingClientRect();
+      return {
+        w: r?.width,
+        h: r?.height,
+        right: r?.right,
+        cw: document.documentElement.clientWidth,
+        ready: !!orb?.querySelector('.nav__orb-canvas.is-ready'),
+        label: orb?.getAttribute('aria-label')
+      };
+    });
+    check(g.ready && g.label === 'Contact', `${orient} home: navbar orb drawn, labelled Contact`);
+    check(g.w === 42 && g.h === 43.5 && g.right <= g.cw, `${orient} home: navbar orb keeps its 42x43.5 box inside the layout`);
+    await p.close();
+  }
+
+  // Legal — both sections reachable, nothing wider than the layout
+  {
+    const p = await open('/#terms');
+    await common(p, 'legal');
+    const g = await p.evaluate(() => {
+      const sw = document.querySelector('#legal-root .legal__switch')?.getBoundingClientRect();
+      return {
+        active: document.getElementById('legal-root')?.classList.contains('is-active'),
+        terms: !document.getElementById('legal-terms')?.hidden,
+        switchR: sw?.right,
+        cw: document.documentElement.clientWidth
+      };
+    });
+    check(g.active && g.terms, `${orient} legal: /#terms opens the Terms of Use section`);
+    check(g.switchR <= g.cw, `${orient} legal: section switch inside the layout`);
+    await p.screenshot({ path: `${out}/${orient}-legal.png` });
     await p.close();
   }
   await ctx.close();
