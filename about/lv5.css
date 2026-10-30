@@ -215,6 +215,43 @@ body.lv5 img { max-width: 100%; display: block; }
 #sm-root .sm-panel-list:not(:hover) li:nth-child(2) .sm-panel-item { color: #F5F3EF; }
 #sm-root .sm-panel-item:hover { color: #F5F3EF; }
 
+/* hover / keyboard-focus underline under each item's text (and the corner
+   contact links below): a currentColor bar on the label's ::after, scaled
+   in from the left and back out toward the right, so it matches the lit
+   colour, spans exactly the text and never shifts layout. It sits inside
+   the label's own box — the item's <li> clips anything below it. */
+#sm-root .sm-panel-itemLabel,
+#sm-root .menu-links a {
+  position: relative;
+}
+#sm-root .sm-panel-itemLabel::after,
+#sm-root .menu-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.06em;
+  height: max(2px, 0.025em);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.35s ease-out;
+  pointer-events: none;
+}
+#sm-root .sm-panel-item:hover .sm-panel-itemLabel::after,
+#sm-root .sm-panel-item:focus-visible .sm-panel-itemLabel::after,
+#sm-root .menu-links a:hover::after,
+#sm-root .menu-links a:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+@media (prefers-reduced-motion: reduce) {
+  #sm-root .sm-panel-itemLabel::after,
+  #sm-root .menu-links a::after {
+    transition: none;
+  }
+}
+
 /* ---- contact links, revealed by the menu's "Contact" item ---- */
 .contact-links {
   position: fixed;
@@ -241,6 +278,50 @@ body.lv5 img { max-width: 100%; display: block; }
   transition: opacity 0.15s ease;
 }
 .contact-links a:hover { opacity: 1; }
+
+/* ---- the menu's own corner contact links (Email / GitHub / LinkedIn /
+   Instagram) — moved into the menu panel by menu.tsx, so they ride its
+   slide-in/out and its `inert` while closed. Same type and colour as
+   .contact-links above, uppercase and right-aligned in the panel's
+   bottom-right corner, clear of the items (the panel's bottom padding).
+   While the "Contact" item's .contact-links row is showing in that same
+   corner, they lift above it instead of overlapping. ---- */
+.menu-links { display: none; }
+#sm-root .menu-links {
+  position: absolute;
+  right: var(--edge);
+  bottom: var(--edge);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px clamp(16px, 2.4vw, 32px);
+  max-width: calc(100% - 2 * var(--edge));
+  transition: transform 0.3s ease;
+}
+#sm-root .menu-links.is-raised { transform: translateY(-32px); }
+#sm-root .menu-links a {
+  display: inline-block;
+  padding-bottom: 4px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #F5F3EF;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
+#sm-root .menu-links a:hover,
+#sm-root .menu-links a:focus-visible { opacity: 1; }
+#sm-root .menu-links a::after {
+  /* stop at the last letter, not its trailing letter-spacing */
+  right: 0.14em;
+  bottom: 0;
+  height: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #sm-root .menu-links { transition: none; }
+}
 
 /* ---- horizontal track ---- */
 .about__track {
