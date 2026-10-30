@@ -210,13 +210,16 @@ body.lv2 .lv3-returnnav .nav__menu .pill--icon:hover {
   border-color: rgba(255, 255, 255, 0.46);
 }
 
-/* Orb (nav-orb.ts): the round Contact button right of "Skills", on both
-   navs. Same size, position and hover lift as before. The circle is cut
-   once, here (border-radius + overflow: hidden), around a canvas drawn at
-   full device resolution; the edge is a 1px solid ring in the hero box's
+/* Orb (nav-orb.ts / fluid-orb.ts): the round Contact button right of
+   "Skills", on both navs. Same size and position as before. The circle is
+   cut once, here (border-radius + overflow: hidden), around a canvas drawn
+   at full device resolution; the edge is a 1px solid ring in the hero box's
    lightest blue, with no soft shadow, backdrop blur or translucent border
    around it to read as a halo. The base fill (the hero box's own gradient)
-   shows until the first frame. */
+   shows until the first frame. Its hover scale is a lerped inline transform
+   set by fluid-orb.ts each frame, so the pills' 1px hover lift and
+   transform transition are off here (and it stays put under
+   prefers-reduced-motion, where that script never sets one). */
 body.lv2 .nav .nav__menu .pill.nav__orb,
 body.lv2 .nav .nav__menu .pill.nav__orb:hover {
   position: relative;
@@ -227,6 +230,8 @@ body.lv2 .nav .nav__menu .pill.nav__orb:hover {
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+  transform: none;
+  transition: none;
 }
 body.lv2 .nav__orb-canvas {
   position: absolute;
