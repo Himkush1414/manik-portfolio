@@ -425,8 +425,9 @@
   flex: 0 0 auto;
 }
 
-/* "Contact Me", text only (no photo), 54px tall as the avatar version
-   was (--lv7-cta-h, shared with anything placed beside it). The button's text colour is
+/* "Contact Me" (text only, no photo) + its fluid-wave circle on one row.
+   Both share --lv7-cta-h, so the circle is always exactly the button's
+   height (54px, as the avatar version was). The button's text colour is
    set here by id: `#proj-root a { color: inherit }` above otherwise hands
    it the section's cream, invisible on the cream button. That global rule
    and every other button stay as they are. */
@@ -442,6 +443,39 @@
   text-transform: uppercase;
 }
 #proj-root #lv7-book-call { color: var(--lv7-ink); }
+
+/* The circle (projects-cta-orb.ts / fluid-orb.ts): cut once by
+   border-radius + overflow: hidden around a canvas at full device
+   resolution, with a solid 1px cream ring — no blur, shadow or soft edge.
+   Its hover scale + magnetic drift is a lerped inline transform set each
+   frame, so no CSS transform transition here. */
+.lv7-cta__orb {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: var(--lv7-cta-h);
+  height: var(--lv7-cta-h);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--lv7-bg);
+  background: linear-gradient(180deg, var(--lv7-ink) 0%, var(--lv7-bg) 100%);
+  cursor: pointer;
+}
+.lv7-cta__orb:focus-visible {
+  outline: 2px solid var(--lv7-bg);
+  outline-offset: 3px;
+}
+.lv7-cta__orb-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.lv7-cta__orb-canvas.is-ready { opacity: 1; }
 
 @media (max-width: 640px) {
   .lv7-cta { padding: 110px var(--lv7-gutter); }

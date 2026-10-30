@@ -171,6 +171,20 @@ if (heroWave) {
   else window.addEventListener('load', runIdleOrbs);
 }
 
+// ---- Projects CTA circle (beside "Contact Me") ----
+// Same deferral; it lives in #proj-root, hidden until Projects opens, and
+// only animates while on screen.
+{
+  const runIdleCtaOrb = () => {
+    const start = () => void import('./projects-cta-orb').then(({ startProjectsCtaOrb }) => startProjectsCtaOrb());
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(start, { timeout: 1500 });
+    else setTimeout(start, 0);
+  };
+  if (document.readyState === 'complete') runIdleCtaOrb();
+  else window.addEventListener('load', runIdleCtaOrb);
+}
+
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
 // Dynamically imported and deferred like ShapeBlur just above — purely
 // decorative, and #spiral-mount (position:absolute; inset:0, same as

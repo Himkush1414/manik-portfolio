@@ -275,6 +275,7 @@ export function startFluidOrb(host: HTMLElement, canvas: HTMLCanvasElement, opts
 
     // hover zone: the host's box plus `pad` px, fine pointers only
     let target = focused ? 1 : 0;
+    let inZone = false;
     let tu = 0.5;
     let tv = 0.62;
     if (fineMQ.matches && pointer.mouse) {
@@ -286,10 +287,13 @@ export function startFluidOrb(host: HTMLElement, canvas: HTMLCanvasElement, opts
         pointer.y <= r.bottom + pad
       ) {
         target = 1;
+        inZone = true;
         tu = Math.min(1.2, Math.max(-0.2, (pointer.x - r.left) / r.width));
         tv = Math.min(1.2, Math.max(-0.2, 1 - (pointer.y - r.top) / r.height));
       }
-      if (magnet && target) {
+      // drift follows the pointer only while it is in the zone (keyboard
+      // focus alone excites the orb in place)
+      if (magnet && inZone) {
         const cx = r.left + r.width / 2 - driftX;
         const cy = r.top + r.height / 2 - driftY;
         const ddx = pointer.x - cx;
@@ -300,7 +304,7 @@ export function startFluidOrb(host: HTMLElement, canvas: HTMLCanvasElement, opts
         driftY += ((ddy / len) * magnet * pull * ex - driftY) * Math.min(1, dt * 10);
       }
     }
-    if (magnet && !target) {
+    if (magnet && !inZone) {
       driftX += (0 - driftX) * (1 - Math.exp(-dt / 0.2));
       driftY += (0 - driftY) * (1 - Math.exp(-dt / 0.2));
     }
