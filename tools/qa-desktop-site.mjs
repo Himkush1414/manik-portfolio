@@ -11,7 +11,7 @@
 // game/g1's install (npm ci --prefix game/g1).
 //
 // Checks, per orientation: <html> gets ds-zoomed; no horizontal overflow; no
-// console errors; the footer SIGN UP button clears the link columns; the
+// console errors; the footer CONTACT ME / SIGN UP buttons clear the link columns; the
 // Skill & Fun headline clears the MOVE NEXT rail; About's Chapter I portrait
 // sits inside its panel (landscape). Screenshots go to --out.
 import { createRequire } from 'node:module';
@@ -93,14 +93,12 @@ for (const orient of ['portrait', 'landscape']) {
     await p.evaluate(() => document.getElementById('lv2-footer')?.scrollIntoView({ block: 'end' }));
     await p.waitForTimeout(1500);
     const g = await p.evaluate(() => {
-      const btn = document.querySelector('#lv2-footer .btn-signup')?.getBoundingClientRect();
+      const btns = [...document.querySelectorAll('#lv2-footer .footer-cta__btn')].map(b => b.getBoundingClientRect());
       const link = document.querySelector('#lv2-footer .col--links')?.getBoundingClientRect();
-      const title = document.querySelector('#lv2-footer .signup__title');
-      const lh = title ? parseFloat(getComputedStyle(title).lineHeight) : 0;
-      return { btnR: btn?.right, linkL: link?.left, titleLines: title ? Math.round(title.getBoundingClientRect().height / lh) : 0 };
+      return { btnR: Math.max(...btns.map(b => b.right)), oneRow: btns.length === 2 && btns[0].top === btns[1].top, linkL: link?.left };
     });
-    check(g.linkL - g.btnR >= 12, `${orient} footer: SIGN UP clears the link column (gap ${Math.round(g.linkL - g.btnR)}px)`);
-    check(g.titleLines === 1, `${orient} footer: sign-up title on one line`);
+    check(g.linkL - g.btnR >= 12, `${orient} footer: CONTACT ME / SIGN UP clear the link column (gap ${Math.round(g.linkL - g.btnR)}px)`);
+    check(g.oneRow, `${orient} footer: CONTACT ME / SIGN UP on one row`);
     await p.screenshot({ path: `${out}/${orient}-home-footer.png` });
     await p.close();
   }
