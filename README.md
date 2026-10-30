@@ -51,7 +51,7 @@ point, each declared explicitly in `vite.config.js`'s `build.rollupOptions.input
 
 | Route | What it is |
 |---|---|
-| `/` | The live main site — hero, scroll-pinned "stack" section, a sliding "Creative Design" panel, and a footer with Contact Me / Sign Up buttons. Includes a "Skill & Fun" section (`skillsfun*` files) toggled in-place as a fifth view alongside Home/Projects/Contact/About, itself a full port of `/lab/lv9/`'s hero → transition → figure section → About → nav grid. |
+| `/` | The live main site — hero, scroll-pinned "stack" section, a sliding "Creative Design" panel, and a footer with Contact Me / Sign Up buttons. Includes a "Skill & Fun" section (`skillsfun*` files) toggled in-place as a fifth view alongside Home/Projects/Contact/About, itself a full port of `/lab/lv9/`'s hero → transition → figure section → About → nav grid. A sixth view, Legal (`legal.css`), holds the Privacy Policy and Terms of Use, opened from every footer's legal links (`/#privacy`, `/#terms`). |
 | `/about/` | The live About page: a placeholder dashboard fades out, then a full-screen, horizontally scroll-driven panel sequence takes over. A deployed copy of `/lab/lv5/`'s content at its own real path. |
 | `/lab/lv1/` | Experiment: the watermark cursor effect swapped for the OGL-based `RippleDistortion` effect. |
 | `/lab/lv3/` | A copy of the main site with an enhanced footer — bubble-burst effect, a rising watermark, and a site nav that slides back in once you reach the bottom. |
