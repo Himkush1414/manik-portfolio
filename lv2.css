@@ -348,6 +348,20 @@ body.lv2 #lv2-footer .footer-cta__btn svg {
   overflow: hidden;
   background: linear-gradient(178deg, #060F1C 0%, #0A2036 38%, #103C69 74%, #205FA4 100%);
 }
+/* fluid colour flow (hero-wave.ts) under ShapeBlur and the logo — fades in
+   over the identical CSS gradient once its first frame is drawn */
+.lv2-effect__wave {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+.lv2-effect__wave.is-ready { opacity: 1; }
 .lv2-effect__mount {
   position: absolute;
   inset: 0;
