@@ -19,7 +19,7 @@ import watermarkSource from './lab/lv1/watermark-source.jpg';
 import { setScrollLock } from './scroll-lock';
 import { slowScroll } from './scroll-speed';
 import { isTallTouch } from './tall-touch';
-import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel } from 'react-icons/si';
+import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiSupabase, SiVite, SiVercel, SiExpo, SiJavascript, SiKotlin, SiGradle, SiGnubash } from 'react-icons/si';
 import type { LogoItem } from './LogoLoop';
 import './lv2.css';
 import tailwindHref from './tailwind.css?url';
@@ -169,6 +169,20 @@ if (heroWave) {
   };
   if (document.readyState === 'complete') runIdleOrbs();
   else window.addEventListener('load', runIdleOrbs);
+}
+
+// ---- Projects CTA circle (beside "Contact Me") ----
+// Same deferral; it lives in #proj-root, hidden until Projects opens, and
+// only animates while on screen.
+{
+  const runIdleCtaOrb = () => {
+    const start = () => void import('./projects-cta-orb').then(({ startProjectsCtaOrb }) => startProjectsCtaOrb());
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    if (idle) idle(start, { timeout: 1500 });
+    else setTimeout(start, 0);
+  };
+  if (document.readyState === 'complete') runIdleCtaOrb();
+  else window.addEventListener('load', runIdleCtaOrb);
 }
 
 // ---- §2 InfiniteSpiral (right side of the pinned stack section) ----
@@ -821,6 +835,15 @@ const projTechLogos: LogoItem[] = [
   { node: <SiSupabase color={PROJ_ICON_COLOR} title="Supabase" />, title: 'Supabase', ariaLabel: 'Supabase' },
   { node: <SiVite color={PROJ_ICON_COLOR} title="Vite" />, title: 'Vite', ariaLabel: 'Vite' },
   { node: <SiVercel color={PROJ_ICON_COLOR} title="Vercel" />, title: 'Vercel', ariaLabel: 'Vercel' },
+  // app development, as used by the Mindtier and Lamplight apps (both
+  // Expo / React Native). React Native's official mark is the React atom;
+  // Expo sits between it and React where the loop wraps.
+  { node: <SiReact color={PROJ_ICON_COLOR} title="React Native" />, title: 'React Native', ariaLabel: 'React Native' },
+  { node: <SiExpo color={PROJ_ICON_COLOR} title="Expo" />, title: 'Expo', ariaLabel: 'Expo' },
+  { node: <SiJavascript color={PROJ_ICON_COLOR} title="JavaScript" />, title: 'JavaScript', ariaLabel: 'JavaScript' },
+  { node: <SiKotlin color={PROJ_ICON_COLOR} title="Kotlin" />, title: 'Kotlin', ariaLabel: 'Kotlin' },
+  { node: <SiGradle color={PROJ_ICON_COLOR} title="Gradle" />, title: 'Gradle', ariaLabel: 'Gradle' },
+  { node: <SiGnubash color={PROJ_ICON_COLOR} title="Bash" />, title: 'Bash', ariaLabel: 'Bash' },
 ];
 // Deferred like the other decorative mounts above — #lv7-logoloop-mount
 // lives inside #proj-root, which stays display:none until the user
