@@ -283,7 +283,9 @@ body.lv5 img { max-width: 100%; display: block; }
    Instagram) — moved into the menu panel by menu.tsx, so they ride its
    slide-in/out and its `inert` while closed. Same type and colour as
    .contact-links above, uppercase and right-aligned in the panel's
-   bottom-right corner, clear of the items (the panel's bottom padding). ---- */
+   bottom-right corner, clear of the items (the panel's bottom padding).
+   While the "Contact" item's .contact-links row is showing in that same
+   corner, they lift above it instead of overlapping. ---- */
 .menu-links { display: none; }
 #sm-root .menu-links {
   position: absolute;
@@ -294,7 +296,9 @@ body.lv5 img { max-width: 100%; display: block; }
   justify-content: flex-end;
   gap: 10px clamp(16px, 2.4vw, 32px);
   max-width: calc(100% - 2 * var(--edge));
+  transition: transform 0.3s ease;
 }
+#sm-root .menu-links.is-raised { transform: translateY(-32px); }
 #sm-root .menu-links a {
   display: inline-block;
   padding-bottom: 4px;
@@ -314,6 +318,9 @@ body.lv5 img { max-width: 100%; display: block; }
   right: 0.14em;
   bottom: 0;
   height: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #sm-root .menu-links { transition: none; }
 }
 
 /* ---- horizontal track ---- */

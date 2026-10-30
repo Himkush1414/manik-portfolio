@@ -68,6 +68,7 @@ if (smMount) {
   const hideContactLinks = () => {
     contactLinks?.classList.remove('is-open');
     contactLinks?.setAttribute('aria-hidden', 'true');
+    menuLinks?.classList.remove('is-raised');
   };
 
   // lv5 triggers/closes this menu exclusively through its own hamburger
@@ -100,6 +101,8 @@ if (smMount) {
       const willOpen = !contactLinks?.classList.contains('is-open');
       contactLinks?.classList.toggle('is-open', willOpen);
       contactLinks?.setAttribute('aria-hidden', String(!willOpen));
+      // the corner links make room above that row rather than overlap it
+      menuLinks?.classList.toggle('is-raised', willOpen);
       return;
     }
     hideContactLinks();
