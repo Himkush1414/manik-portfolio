@@ -248,6 +248,32 @@
   display: block;
 }
 
+/* Apps group: the second list's label sits clear of the websites list */
+.lv7-list + .lv7-projects__group { margin-top: 56px; }
+
+/* App rows: same thumb box and sizing as the website rows, holding two
+   real app screenshots portrait, each in a simple phone frame (ink
+   bezel on the section's cream) instead of one landscape screenshot. */
+.lv7-row__thumb--phones {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--lv7-bg);
+}
+.lv7-phone {
+  flex: 0 0 auto;
+  display: block;
+  height: calc(100% - 16px);
+  aspect-ratio: 1 / 2;
+  border: 3px solid var(--lv7-ink);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--lv7-ink);
+}
+.lv7-phone picture { display: block; width: 100%; height: 100%; }
+.lv7-row__thumb .lv7-phone img { object-position: top center; }
+
 .lv7-row__name {
   flex: 1 1 auto;
   margin: 0;
