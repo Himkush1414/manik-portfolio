@@ -344,16 +344,19 @@
     <div class="content">
       <span class="content__marker" aria-hidden="true"></span>
 
-      <!-- Left: sign up -->
+      <!-- Left: contact call-to-action (replaces the old email sign-up
+           form). Both buttons open the Contact view through the same
+           strip transition as the nav tabs — wired in lv6-transition.ts. -->
       <div class="col col--signup">
-        <h1 class="signup__title">Sign up to stay in the loop:</h1>
-        <form class="signup__form" action="#" method="post" novalidate>
-          <input type="email" class="signup__input" placeholder="Enter your email" aria-label="Email address" />
-          <button type="submit" class="btn-signup">
-            <span>Sign up</span>
+        <div class="footer-cta">
+          <button type="button" class="footer-cta__btn footer-cta__btn--solid" id="lv2-footer-cta-contact">
+            <span>Contact Me</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
           </button>
-        </form>
+          <button type="button" class="footer-cta__btn footer-cta__btn--ghost" id="lv2-footer-cta-signup">
+            <span>Sign Up</span>
+          </button>
+        </div>
 
         <div class="badge">
           <img src="./effect-logo.png" width="640" height="459" alt="" class="badge__mark" />

@@ -213,6 +213,11 @@ document.getElementById('lv2-footer-contact')?.addEventListener('click', e => {
   e.preventDefault();
   goTo('contact');
 });
+// Home footer's "Contact Me" / "Sign Up" buttons (in place of the old
+// email sign-up form) — both lead to the Contact view.
+for (const id of ['lv2-footer-cta-contact', 'lv2-footer-cta-signup']) {
+  document.getElementById(id)?.addEventListener('click', () => goTo('contact'));
+}
 // Skill & Fun's four Contact-flavoured controls (see chat reply) — all
 // inert on lv9's own standalone copy (nowhere to send them there); real
 // here, same destination as every other Contact trigger on the site.

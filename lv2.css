@@ -228,6 +228,65 @@ body.lv2 #lv2-footer .badge__mark {
   height: auto;
 }
 
+/* Footer call-to-action: "Contact Me" + "Sign Up", in place of the old
+   email sign-up form. Same type, navy fill and input-style ghost border
+   as that form's button/field (styles.css .btn-signup / .signup__input),
+   with softer corners. */
+body.lv2 #lv2-footer .footer-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 560px;
+}
+body.lv2 #lv2-footer .footer-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+body.lv2 #lv2-footer .footer-cta__btn:active { transform: translateY(1px); }
+body.lv2 #lv2-footer .footer-cta__btn:focus-visible {
+  outline: 2px solid #5C7FB8;
+  outline-offset: 2px;
+}
+body.lv2 #lv2-footer .footer-cta__btn--solid { background: var(--navy-pill); }
+body.lv2 #lv2-footer .footer-cta__btn--solid:hover { background: #1E2F4E; }
+body.lv2 #lv2-footer .footer-cta__btn--ghost {
+  background: var(--input-fill);
+  border-color: rgba(58, 78, 110, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+body.lv2 #lv2-footer .footer-cta__btn--ghost:hover {
+  border-color: #5C7FB8;
+  background: rgba(15, 27, 46, 0.78);
+}
+body.lv2 #lv2-footer .footer-cta__btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* phones: the two buttons share the row equally */
+@media (max-width: 560px) {
+  body.lv2 #lv2-footer .footer-cta__btn { flex: 1 1 0; padding-inline: 16px; }
+}
+
 .lv2-cols {
   position: relative;
   z-index: 2;
