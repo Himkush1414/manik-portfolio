@@ -35,6 +35,7 @@ const projViewContact = document.getElementById('proj-view-contact');
 const frameWrap = document.getElementById('lv6-about-frame-wrap');
 const frame = document.getElementById('lv6-about-frame') as HTMLIFrameElement | null;
 const skillsRoot = document.getElementById('skillsfun-root');
+const legalRoot = document.getElementById('legal-root');
 
 // The About iframe used to carry a literal src="/about/" in the markup, so
 // its entire document — HTML, CSS, JS, images — loaded eagerly as part of
@@ -80,6 +81,7 @@ function showOnly(view: ViewId) {
   frameWrap?.classList.toggle('is-visible', view === 'about');
   frameWrap?.setAttribute('aria-hidden', String(view !== 'about'));
   skillsRoot?.classList.toggle('is-active', view === 'skills');
+  legalRoot?.classList.toggle('is-active', view === 'legal');
   window.scrollTo(0, 0);
 
   // Bug fix (see chat reply — "ghost nav on return to Home"): #home-root's
@@ -137,7 +139,7 @@ async function playTransition(leaving: ViewId, arriving: ViewId) {
 function goTo(target: ViewId) {
   if (target === 'about') ensureAboutFrameLoaded();
   if (target === current) {
-    if (target === 'home' || target === 'projects' || target === 'skills') window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (target === 'home' || target === 'projects' || target === 'skills' || target === 'legal') window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
   if (playing) {
@@ -146,6 +148,44 @@ function goTo(target: ViewId) {
   }
   playTransition(current, target);
 }
+
+// ---- legal page: Privacy Policy / Terms of Use switch ----
+type LegalSection = 'privacy' | 'terms';
+const legalTabs = Array.from(document.querySelectorAll<HTMLButtonElement>('#legal-root .legal__tab'));
+
+function setLegalSection(section: LegalSection) {
+  for (const tab of legalTabs) {
+    const on = tab.dataset.section === section;
+    tab.setAttribute('aria-selected', String(on));
+    tab.tabIndex = on ? 0 : -1;
+    const panel = document.getElementById(tab.getAttribute('aria-controls') || '');
+    if (panel) panel.hidden = !on;
+  }
+}
+
+// From anywhere else, pick the section while Legal is still hidden and
+// cross over with the strip transition; already on Legal, just switch.
+function openLegal(section: LegalSection) {
+  if (current === 'legal' && !playing) {
+    setLegalSection(section);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  setLegalSection(section);
+  goTo('legal');
+}
+
+legalTabs.forEach((tab, i) => {
+  tab.addEventListener('click', () => setLegalSection(tab.dataset.section as LegalSection));
+  // arrow keys move between the two tabs (WAI-ARIA tabs pattern)
+  tab.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const next = legalTabs[(i + (e.key === 'ArrowRight' ? 1 : legalTabs.length - 1)) % legalTabs.length];
+    setLegalSection(next.dataset.section as LegalSection);
+    next.focus();
+  });
+});
 
 // ---- wiring ----
 // Every real "Home"/"About"/"Projects"/"Skills" link already on the page
@@ -187,7 +227,14 @@ document.addEventListener('click', e => {
     goTo('skills');
     return;
   }
-  // the navbar orb (both navs)
+  // every footer's "Privacy Policy" / "Terms of Use" link
+  const legal = target.closest('a[href="#privacy"], a[href="#terms"]');
+  if (legal) {
+    e.preventDefault();
+    openLegal(legal.getAttribute('href') === '#terms' ? 'terms' : 'privacy');
+    return;
+  }
+  // the navbar orb (both navs) and the Legal page's own Contact links
   const contact = target.closest('a[href="#contact"]');
   if (contact) {
     e.preventDefault();
@@ -311,4 +358,8 @@ if (location.hash === '#projects') {
 } else if (location.hash === '#contact') {
   showOnly('contact');
   current = 'contact';
+} else if (location.hash === '#privacy' || location.hash === '#terms') {
+  setLegalSection(location.hash === '#terms' ? 'terms' : 'privacy');
+  showOnly('legal');
+  current = 'legal';
 }
