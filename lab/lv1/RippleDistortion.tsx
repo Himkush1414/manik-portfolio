@@ -81,6 +81,7 @@ uniform float uTintAmount;
 uniform float uGrayscale;
 uniform float uEdgeTop;
 uniform float uEdgeAlphaTop;
+uniform float uReveal;
 
 const float TAU = 6.283185307179586;
 
@@ -163,6 +164,11 @@ void main() {
   // the fade band isn't faded away with the background.
   float alpha = 1.0;
   if (uEdgeAlphaTop > 0.0) alpha = max(edgeAlpha(fromTop / uEdgeAlphaTop), ink);
+  // Reveal mode: at rest only the image's text is drawn (the page shows
+  // through everywhere else), and the water appears only where the ripple
+  // field is — its alpha follows the field's own soft falloff, so there is
+  // no canvas rectangle to see and it eases away as the waves decay.
+  if (uReveal > 0.5) alpha = max(ink, smoothstep(0.0, 0.08, amount));
 
   gl_FragColor = vec4(color, alpha);
 }
@@ -193,6 +199,14 @@ export interface RippleDistortionProps {
   /** Fraction (0-1) of the canvas height, from its top edge, over which the
    *  ripple fades out. 0 (default) leaves the edge untouched. */
   edgeFadeTop?: number;
+  /** Transparent at rest except the image's text; the ripple field fades the
+   *  image in only where (and as strongly as) it is active. Set it at mount:
+   *  it picks the canvas's alpha mode. Default false (opaque canvas). */
+  revealOnRipple?: boolean;
+  /** Fraction (0-1) of the canvas height, from its top edge, over which newly
+   *  spawned waves weaken toward zero, so the effect tapers off as the cursor
+   *  rises out of the top instead of stopping at the edge. 0 (default) = off. */
+  spawnFadeTop?: number;
   /** Fraction (0-1) of the canvas height, from its top edge, over which the
    *  canvas itself fades to transparent (in place of a CSS mask), keeping
    *  bright text opaque; edgeFadeTop then shades the water only, so text
@@ -211,6 +225,7 @@ interface WaveConfig {
   clickStrength: number;
   trigger: RippleTrigger;
   enabled: boolean;
+  spawnFadeTop: number;
 }
 
 interface Wave {
@@ -238,6 +253,7 @@ interface CompositeUniforms {
   uGrayscale: { value: number };
   uEdgeTop: { value: number };
   uEdgeAlphaTop: { value: number };
+  uReveal: { value: number };
   [key: string]: { value: unknown };
 }
 
@@ -286,6 +302,8 @@ const RippleDistortion = ({
   enabled = true,
   edgeFadeTop = 0,
   edgeAlphaTop = 0,
+  revealOnRipple = false,
+  spawnFadeTop = 0,
   className = '',
   style
 }: RippleDistortionProps) => {
@@ -293,7 +311,7 @@ const RippleDistortion = ({
   const configRef = useRef<WaveConfig>({} as WaveConfig);
   const uniformsRef = useRef<RippleUniforms | null>(null);
 
-  configRef.current = { brushSize, spread, fade, spacing, clickStrength, trigger, enabled };
+  configRef.current = { brushSize, spread, fade, spacing, clickStrength, trigger, enabled, spawnFadeTop };
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -309,7 +327,7 @@ const RippleDistortion = ({
     let renderer: Renderer;
     try {
       renderer = new Renderer({
-        alpha: edgeAlphaTop > 0,
+        alpha: edgeAlphaTop > 0 || revealOnRipple,
         antialias: false,
         dpr: Math.min(window.devicePixelRatio || 1, 2)
       });
@@ -322,7 +340,7 @@ const RippleDistortion = ({
       console.error('[RippleDistortion] no WebGL context');
       return;
     }
-    gl.clearColor(0, 0, 0, edgeAlphaTop > 0 ? 0 : 1);
+    gl.clearColor(0, 0, 0, edgeAlphaTop > 0 || revealOnRipple ? 0 : 1);
     const canvas = gl.canvas;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
@@ -409,7 +427,8 @@ const RippleDistortion = ({
       uTintAmount: { value: tintAmount },
       uGrayscale: { value: grayscale ? 1 : 0 },
       uEdgeTop: { value: edgeFadeTop },
-      uEdgeAlphaTop: { value: edgeAlphaTop }
+      uEdgeAlphaTop: { value: edgeAlphaTop },
+      uReveal: { value: revealOnRipple ? 1 : 0 }
     };
 
     const compositeMesh = new Mesh(gl, {
@@ -457,7 +476,7 @@ const RippleDistortion = ({
     ro.observe(mount);
     resize();
 
-    const setNewWave = (x: number, y: number, power: number) => {
+    const setNewWave = (x: number, y: number, power: number, strength = 1) => {
       const cfg = configRef.current;
       const wave = waves[current];
       current = (current + 1) % MAX_WAVES;
@@ -466,7 +485,7 @@ const RippleDistortion = ({
       wave.scale = START_SCALE * power;
       wave.target = START_SCALE * Math.max(1, cfg.spread) * power;
       wave.size = Math.max(1, cfg.brushSize);
-      wave.opacity = 1;
+      wave.opacity = strength;
     };
 
     const localPoint = (clientX: number, clientY: number): [number, number] | null => {
@@ -488,7 +507,13 @@ const RippleDistortion = ({
       if (!point) return;
       const step = Math.max(1, cfg.spacing);
       if (Math.abs(point[0] - previousX) > step || Math.abs(point[1] - previousY) > step) {
-        setNewWave(point[0], point[1], 1);
+        // weaker waves toward the top edge (spawnFadeTop), eased in
+        let strength = 1;
+        if (cfg.spawnFadeTop > 0) {
+          const t = Math.min(1, (height - point[1]) / (height * cfg.spawnFadeTop));
+          strength = t * t * (3 - 2 * t);
+        }
+        if (strength > 0.01) setNewWave(point[0], point[1], 1, strength);
         previousX = point[0];
         previousY = point[1];
       }
