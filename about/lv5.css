@@ -279,6 +279,43 @@ body.lv5 img { max-width: 100%; display: block; }
 }
 .contact-links a:hover { opacity: 1; }
 
+/* ---- the menu's own corner contact links (Email / GitHub / LinkedIn /
+   Instagram) — moved into the menu panel by menu.tsx, so they ride its
+   slide-in/out and its `inert` while closed. Same type and colour as
+   .contact-links above, uppercase and right-aligned in the panel's
+   bottom-right corner, clear of the items (the panel's bottom padding). ---- */
+.menu-links { display: none; }
+#sm-root .menu-links {
+  position: absolute;
+  right: var(--edge);
+  bottom: var(--edge);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px clamp(16px, 2.4vw, 32px);
+  max-width: calc(100% - 2 * var(--edge));
+}
+#sm-root .menu-links a {
+  display: inline-block;
+  padding-bottom: 4px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #F5F3EF;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+}
+#sm-root .menu-links a:hover,
+#sm-root .menu-links a:focus-visible { opacity: 1; }
+#sm-root .menu-links a::after {
+  /* stop at the last letter, not its trailing letter-spacing */
+  right: 0.14em;
+  bottom: 0;
+  height: 1px;
+}
+
 /* ---- horizontal track ---- */
 .about__track {
   display: flex;

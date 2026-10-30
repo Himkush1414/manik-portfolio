@@ -16,6 +16,7 @@ import navLogo from '../assets/logo.png';
 
 const smMount = document.getElementById('sm-root');
 const contactLinks = document.getElementById('contact-links');
+const menuLinks = document.getElementById('menu-links');
 
 if (smMount) {
   // "Home", "Projects" and "Skills" are real links off lv5 entirely (the
@@ -48,6 +49,18 @@ if (smMount) {
       closeOnClickAway={false}
     />
   );
+
+  // The corner contact links (about/index.html #menu-links) live inside the
+  // panel so they slide with it and go inert with it — moved in as soon as
+  // the component has mounted, no change to the component itself.
+  if (menuLinks) {
+    const placeMenuLinks = () => {
+      const panel = smMount.querySelector('.staggered-menu-panel');
+      if (panel) panel.appendChild(menuLinks);
+      else requestAnimationFrame(placeMenuLinks);
+    };
+    requestAnimationFrame(placeMenuLinks);
+  }
 
   const closeMenu = () => {
     (document.querySelector('#sm-root .sm-toggle') as HTMLElement | null)?.click();
