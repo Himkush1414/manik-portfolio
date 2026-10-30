@@ -221,6 +221,12 @@ body.lv2 .nav__logo--mr {
   -webkit-mask: url("./effect-logo.png") center / contain no-repeat;
   mask: url("./effect-logo.png") center / contain no-repeat;
 }
+/* the footer badge carries the same mark; it is wider than the old square
+   icon, so it keeps its own aspect ratio instead of styles.css's 30x30 */
+body.lv2 #lv2-footer .badge__mark {
+  width: 38px;
+  height: auto;
+}
 
 .lv2-cols {
   position: relative;
