@@ -569,6 +569,8 @@ if (rippleMount) {
             highlightColor="#e2efff"
             edgeFadeTop={0.26}
             edgeAlphaTop={0.23}
+            revealOnRipple
+            spawnFadeTop={0.3}
             style={{ pointerEvents: 'none' }}
           />
         );
