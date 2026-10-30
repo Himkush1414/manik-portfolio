@@ -630,13 +630,13 @@
       <section class="lv7-cta" aria-label="Get in touch">
         <p class="lv7-cta__kicker">Let&rsquo;s talk!</p>
         <h2 class="lv7-cta__headline">READY FOR YOUR<br />NEW WEBSITE?</h2>
-        <a class="lv7-cta__btn lv7-cta__btn--avatar" id="lv7-book-call" href="mailto:manikrana831@gmail.com">
-          <picture>
-            <source srcset="./contact-photo.webp" type="image/webp" />
-            <img class="lv7-cta__avatar" src="./contact-photo.jpg" alt="" width="160" height="160" />
-          </picture>
-          <span>Contact Me</span>
-        </a>
+        <!-- "Contact Me" opens the Contact view through lv6-transition.ts's
+             goTo('contact') -->
+        <div class="lv7-cta__actions">
+          <a class="lv7-cta__btn lv7-cta__btn--text" id="lv7-book-call" href="mailto:manikrana831@gmail.com">
+            <span>Contact Me</span>
+          </a>
+        </div>
       </section>
     </section>
 

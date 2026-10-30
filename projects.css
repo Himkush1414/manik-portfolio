@@ -425,6 +425,24 @@
   flex: 0 0 auto;
 }
 
+/* "Contact Me", text only (no photo), 54px tall as the avatar version
+   was (--lv7-cta-h, shared with anything placed beside it). The button's text colour is
+   set here by id: `#proj-root a { color: inherit }` above otherwise hands
+   it the section's cream, invisible on the cream button. That global rule
+   and every other button stay as they are. */
+.lv7-cta__actions {
+  --lv7-cta-h: 54px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.lv7-cta__btn--text {
+  height: var(--lv7-cta-h);
+  padding: 0 34px;
+  text-transform: uppercase;
+}
+#proj-root #lv7-book-call { color: var(--lv7-ink); }
+
 @media (max-width: 640px) {
   .lv7-cta { padding: 110px var(--lv7-gutter); }
 }
