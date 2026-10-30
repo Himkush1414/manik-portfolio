@@ -187,6 +187,13 @@ document.addEventListener('click', e => {
     goTo('skills');
     return;
   }
+  // the navbar orb (both navs)
+  const contact = target.closest('a[href="#contact"]');
+  if (contact) {
+    e.preventDefault();
+    goTo('contact');
+    return;
+  }
   // The brand/logo link (both the hero nav's own "Home" and the ported
   // Projects page's own logo, which now means "go to the real Home" in
   // this integration rather than lv7's standalone "return to Projects").
@@ -301,4 +308,7 @@ if (location.hash === '#projects') {
 } else if (location.hash === '#skills') {
   showOnly('skills');
   current = 'skills';
+} else if (location.hash === '#contact') {
+  showOnly('contact');
+  current = 'contact';
 }
