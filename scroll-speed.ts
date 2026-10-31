@@ -97,4 +97,14 @@ export function slowScroll(speed: number, ease: number) {
     target = clamp(target);
     current = clamp(current);
   });
+  // Another module just moved the page under us (e.g. a view swapped out
+  // content above the viewport and re-set the scroll position in the same
+  // frame). Drop the in-flight animation and re-sync, or the next loop frame
+  // would scrollTo() its stale position on the changed page.
+  window.addEventListener('scroll-speed:sync', () => {
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    rafId = null;
+    animating = false;
+    target = current = window.scrollY;
+  });
 }

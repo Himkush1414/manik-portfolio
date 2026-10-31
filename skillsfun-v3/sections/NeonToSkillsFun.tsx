@@ -102,10 +102,26 @@ export function NeonToSkillsFun({ onRevealed, backRef }: { onRevealed: () => voi
     }
   }, [mode, backRef])
 
+  // The mode swap changes the page height (the runway above the section comes
+  // and goes), so the scroll position is set in the same commit, before paint:
+  // instantly, with scroll anchoring off for that frame. Then the site's wheel
+  // smoother (scroll-speed.ts) is told to re-sync. Without that, its next
+  // animation frame scrolled to its stale pre-swap target, which the browser
+  // clamped to the bottom of the now-shorter page: the footer.
   useLayoutEffect(() => {
     if (pendingScroll.current === null) return
-    window.scrollTo(0, pendingScroll.current)
+    const html = document.documentElement
+    const prevAnchor = html.style.overflowAnchor
+    const prevBehavior = html.style.scrollBehavior
+    html.style.overflowAnchor = 'none'
+    html.style.scrollBehavior = 'auto'
+    window.scrollTo({ top: pendingScroll.current, left: 0, behavior: 'instant' })
     pendingScroll.current = null
+    window.dispatchEvent(new Event('scroll-speed:sync'))
+    requestAnimationFrame(() => {
+      html.style.overflowAnchor = prevAnchor
+      html.style.scrollBehavior = prevBehavior
+    })
   }, [mode])
 
   // section mode: the first screen is simply the page
@@ -141,7 +157,9 @@ export function NeonToSkillsFun({ onRevealed, backRef }: { onRevealed: () => voi
       const scrolled = -r.top
       const pT = Math.min(1, Math.max(0, scrolled / (FADE_VH * vh)))
       const irisRaw = (scrolled - (FADE_VH + HOLD_VH) * vh) / (IRIS_VH * vh)
-      return { pT, eT: Math.min(1, Math.max(0, irisRaw / IRIS_SETTLE)) }
+      // px of scroll left before the sticky viewport releases the section
+      const pinnedLeft = r.bottom - vh
+      return { pT, eT: Math.min(1, Math.max(0, irisRaw / IRIS_SETTLE)), pinnedLeft, vh }
     }
 
     const applyIris = (v: number) => {
@@ -167,7 +185,7 @@ export function NeonToSkillsFun({ onRevealed, backRef }: { onRevealed: () => voi
     const tick = (now: number) => {
       raf = 0
       if (done) return
-      const { pT, eT } = targets()
+      const { pT, eT, pinnedLeft, vh } = targets()
       // real elapsed time, so a long frame never stalls the scrub
       const dt = last ? Math.min(0.5, (now - last) / 1000) : 1 / 60
       last = now
@@ -181,7 +199,10 @@ export function NeonToSkillsFun({ onRevealed, backRef }: { onRevealed: () => voi
       if (pT > 0.6) startSectionScripts()
       ctl.current.wake?.()
       if (import.meta.env.DEV) (window as unknown as { __scrub?: number[] }).__scrub = [p, e]
-      if (e >= 0.9999) {
+      // hand off when the (smoothed) iris is open, or as soon as its target is
+      // reached and the pin is about to release, so the swap happens while the
+      // section still sits exactly at the top of the viewport
+      if (e >= 0.9999 || (eT >= 1 && pinnedLeft < vh * 0.25)) {
         // fully open: hand off for good. Keep the page where it is on screen,
         // minus everything above it that is about to be removed.
         done = true
