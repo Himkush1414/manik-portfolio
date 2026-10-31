@@ -24,3 +24,17 @@ the four boxes and the rising-lines footer.
   `#terms`, `#contact`) handled by `lv6-transition.ts`'s document-level click
   handler. The section's Contact buttons go through `a[href="#contact"]`, because
   `lv6-transition.ts` binds their ids before this view exists.
+
+## Click-test
+
+`skillsfun-v3/qa/click-test.mjs` drives a built site with Playwright + Chrome. It
+covers Home → Skills tab → ignition → scroll reveal → section, re-entering the
+view, and a direct `/#skills` load. It also clicks every exit (figure menu and
+Contact, Let's Connect, the three box links, Connect with Me, every footer link),
+the logo's way back to the start, and the colour picker. It reports pass/fail per
+step, plus console errors and horizontal scroll:
+
+    npm run build
+    python3 -m http.server 4173 --directory dist      # or any static server
+    node skillsfun-v3/qa/click-test.mjs http://localhost:4173/ qa-out 1440 900
+    node skillsfun-v3/qa/click-test.mjs http://localhost:4173/ qa-out-m 390 844
