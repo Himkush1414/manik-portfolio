@@ -51,13 +51,13 @@ import './projects-nav';
   const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
   const runIdleSkillsFun = () => (idle ? idle(loadSkillsFun, { timeout: 1500 }) : setTimeout(loadSkillsFun, 0));
   if (location.hash === '#skills') loadSkillsFun();
-  document.addEventListener(
-    'click',
-    e => {
-      if ((e.target as Element | null)?.closest?.('a[href="#skills"], a[href="/#skills"]')) loadSkillsFun();
-    },
-    true,
-  );
+  // pointerover warms the chunk while the pointer is still on its way to a
+  // Skills link; click covers keyboard and touch
+  const onSkillsIntent = (e: Event) => {
+    if ((e.target as Element | null)?.closest?.('a[href="#skills"], a[href="/#skills"]')) loadSkillsFun();
+  };
+  document.addEventListener('pointerover', onSkillsIntent, { passive: true });
+  document.addEventListener('click', onSkillsIntent, true);
   if (document.readyState === 'complete') runIdleSkillsFun();
   else window.addEventListener('load', runIdleSkillsFun);
 }
