@@ -9,3 +9,18 @@ the four boxes and the rising-lines footer.
   unwrapped, so it can't reach any other view and the global CSS can't override it.
   It is generated; it's not meant to be edited by hand.
 - `fonts/`: Inter 900, the one face the global `fonts.css` doesn't already load.
+
+## How it's wired into the page
+
+- `index.html` keeps the view container, `<div id="skillsfun-root">`. Its old static
+  markup and the old `skillsfun.css` link are gone; the old files themselves are
+  still in the repo, unused (no cleanup in this port).
+- `main.tsx` lazy-loads `skillsfun-v3/mount.tsx`: on idle after `load`, or straight
+  away when the page opens on `#skills` or a Skills link is clicked first.
+- `mount.tsx` renders `SkillsFunV3` into the container. `lv6-transition.ts` still
+  shows and hides it, so the Skills tab, the strip transition and every exit keep
+  working. Each time the view is entered again it restarts at the tube light.
+- Exits are plain links (`/`, `/about`, `#projects`, `#skills`, `#privacy`,
+  `#terms`, `#contact`) handled by `lv6-transition.ts`'s document-level click
+  handler. The section's Contact buttons go through `a[href="#contact"]`, because
+  `lv6-transition.ts` binds their ids before this view exists.
