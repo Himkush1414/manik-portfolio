@@ -42,10 +42,22 @@ import './projects-nav';
 // stays display:none until the user actually clicks through to it.
 // Deferred the same way as ShapeBlur/RippleDistortion above: it's still
 // preloaded well before any realistic click, just off the critical path.
+// Skills & Fun v3 (skillsfun-v3/, ported from the hand-built lab) replaces it:
+// a React view mounted into #skillsfun-root, loaded the same deferred way. It
+// is also loaded straight away when the page opens on #skills or the Skills
+// link is used before the idle load, so the view is never shown empty.
 {
-  const loadSkillsFun = () => void import('./skillsfun');
+  const loadSkillsFun = () => void import('./skillsfun-v3/mount');
   const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
   const runIdleSkillsFun = () => (idle ? idle(loadSkillsFun, { timeout: 1500 }) : setTimeout(loadSkillsFun, 0));
+  if (location.hash === '#skills') loadSkillsFun();
+  // pointerover warms the chunk while the pointer is still on its way to a
+  // Skills link; click covers keyboard and touch
+  const onSkillsIntent = (e: Event) => {
+    if ((e.target as Element | null)?.closest?.('a[href="#skills"], a[href="/#skills"]')) loadSkillsFun();
+  };
+  document.addEventListener('pointerover', onSkillsIntent, { passive: true });
+  document.addEventListener('click', onSkillsIntent, true);
   if (document.readyState === 'complete') runIdleSkillsFun();
   else window.addEventListener('load', runIdleSkillsFun);
 }
