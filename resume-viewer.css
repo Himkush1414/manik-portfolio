@@ -1,0 +1,171 @@
+/* ============================================================
+   RESUME VIEWER — modal opened from the footers' "Resume" links
+   (resume-viewer.ts). Same palette and type as the Projects/Contact and
+   Legal views (#E3E1DC ground, #111 ink, Bebas Neue display, Sora body).
+   ============================================================ */
+.resume-viewer {
+  --rv-bg: #E3E1DC;
+  --rv-ink: #111111;
+  --rv-line: rgba(17, 17, 17, 0.16);
+  --rv-font-display: 'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --rv-font-body: 'Sora', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0px, 3vw, 40px);
+  font-family: var(--rv-font-body);
+  color: var(--rv-ink);
+}
+.resume-viewer[hidden] { display: none; }
+
+.resume-viewer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.72);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.resume-viewer.is-open .resume-viewer__backdrop { opacity: 1; }
+
+.resume-viewer__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 980px);
+  height: 100%;
+  max-height: 100%;
+  background: var(--rv-bg);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  transform: translateY(16px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+}
+.resume-viewer.is-open .resume-viewer__panel { transform: none; opacity: 1; }
+
+.resume-viewer__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 14px clamp(16px, 2.4vw, 24px);
+  border-bottom: 1px solid var(--rv-line);
+}
+.resume-viewer__title {
+  margin: 0;
+  font-family: var(--rv-font-display);
+  font-size: clamp(30px, 3.4vw, 40px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+.resume-viewer__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resume-viewer__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--rv-ink);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+.resume-viewer__btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.resume-viewer__short { display: none; }
+.resume-viewer__btn--solid { background: var(--rv-ink); color: var(--rv-bg); }
+.resume-viewer__btn--solid:hover,
+.resume-viewer__btn--solid:focus-visible { opacity: 0.82; }
+.resume-viewer__btn--ghost { background: transparent; color: var(--rv-ink); }
+.resume-viewer__btn--ghost:hover,
+.resume-viewer__btn--ghost:focus-visible { background: var(--rv-ink); color: var(--rv-bg); }
+
+.resume-viewer__close {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--rv-line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rv-ink);
+  cursor: pointer;
+  transition: border-color 0.18s ease;
+}
+.resume-viewer__close:hover,
+.resume-viewer__close:focus-visible { border-color: var(--rv-ink); }
+.resume-viewer__close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.resume-viewer :focus-visible { outline: 2px solid var(--rv-ink); outline-offset: 2px; }
+
+.resume-viewer__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #525659;
+}
+.resume-viewer__frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.resume-viewer__fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  background: var(--rv-bg);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.resume-viewer__fallback p { margin: 0; }
+
+@media (max-width: 640px) {
+  .resume-viewer { padding: 0; }
+  .resume-viewer__panel { border-radius: 0; }
+  .resume-viewer__btn { height: 36px; padding: 0 14px; font-size: 11.5px; }
+  .resume-viewer__long { display: none; }
+  .resume-viewer__short { display: inline; }
+  .resume-viewer__close { width: 36px; height: 36px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-viewer__backdrop,
+  .resume-viewer__panel { transition: none; }
+}
