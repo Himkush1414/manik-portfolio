@@ -14,6 +14,8 @@
 // - The AudioContext is only created inside a click/tap (browsers block
 //   audio before one), suspended while the hero is off screen or the tab is
 //   hidden, and closed on dispose. Off by default.
+// - The speaker toggle (mountToggle below) sits in the hero's top-right
+//   corner, under the menu/Contact row. Its choice is kept in localStorage.
 
 const THRESHOLD = 140 // px/s of a string tip
 const FULL = 620 // px/s that counts as a full-strength hit
@@ -40,7 +42,7 @@ export interface WindChime {
 
 type AudioCtor = typeof AudioContext
 
-export function createWindChime(maxStrings: number): WindChime {
+export function createWindChime(maxStrings: number, host?: HTMLElement): WindChime {
   const Ctor: AudioCtor | undefined =
     window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext
   const armed = new Uint8Array(maxStrings).fill(1)
@@ -130,7 +132,7 @@ export function createWindChime(maxStrings: number): WindChime {
     lastNote = now
   }
 
-  return {
+  const api: WindChime = {
     feel(i, speed) {
       if (speed > THRESHOLD) {
         if (!armed[i]) return
@@ -161,8 +163,83 @@ export function createWindChime(maxStrings: number): WindChime {
     },
     dispose() {
       removeUnlock()
+      unmountToggle()
       if (ctx) void ctx.close().catch(() => {})
       ctx = null
     },
+  }
+  const unmountToggle = host ? mountToggle(host, api) : () => {}
+  return api
+}
+
+// ---- speaker toggle ----
+const STORE_KEY = 'sf3-wind-chime'
+const ICON_ON =
+  '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+const ICON_OFF =
+  '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+const CSS = `
+#skillsfun-root .sf3-chime-toggle{position:absolute;z-index:4;right:var(--skillsfun-gutter,24px);width:36px;height:36px;display:grid;place-items:center;padding:0;margin:0;border:0;border-radius:50%;background:rgba(0,0,0,.82);color:#fff;cursor:pointer;pointer-events:auto;transition:background .2s,opacity .2s;opacity:.8}
+#skillsfun-root .sf3-chime-toggle[aria-pressed="true"]{opacity:1}
+#skillsfun-root .sf3-chime-toggle:hover{background:#000;opacity:1}
+#skillsfun-root .sf3-chime-toggle:focus{outline:none}
+#skillsfun-root .sf3-chime-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px rgba(0,0,0,.55)}
+`
+
+function readStored(): boolean {
+  try {
+    return window.localStorage.getItem(STORE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function store(on: boolean) {
+  try {
+    window.localStorage.setItem(STORE_KEY, on ? '1' : '0')
+  } catch {
+    /* storage unavailable: the choice just isn't remembered */
+  }
+}
+
+function mountToggle(host: HTMLElement, chime: WindChime): () => void {
+  const style = document.createElement('style')
+  style.textContent = CSS
+  document.head.appendChild(style)
+
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.className = 'sf3-chime-toggle'
+  const render = () => {
+    const on = chime.enabled()
+    btn.setAttribute('aria-pressed', String(on))
+    btn.setAttribute('aria-label', on ? 'Wind chime sound: on' : 'Wind chime sound: off')
+    btn.title = on ? 'Sound on' : 'Sound off'
+    btn.innerHTML = on ? ICON_ON : ICON_OFF
+  }
+  // just under the hero's menu/Contact row, on the same right gutter
+  const place = () => {
+    const bar = host.querySelector<HTMLElement>('.skillsfun-page2__topbar')
+    const top = bar ? bar.offsetTop + bar.offsetHeight + 12 : 72
+    btn.style.top = `${top}px`
+  }
+  const onClick = () => {
+    const next = !chime.enabled()
+    chime.setEnabled(next, true)
+    store(next)
+    render()
+  }
+
+  if (readStored()) chime.setEnabled(true, false)
+  render()
+  host.appendChild(btn)
+  place()
+  btn.addEventListener('click', onClick)
+  window.addEventListener('resize', place)
+
+  return () => {
+    btn.removeEventListener('click', onClick)
+    window.removeEventListener('resize', place)
+    btn.remove()
+    style.remove()
   }
 }

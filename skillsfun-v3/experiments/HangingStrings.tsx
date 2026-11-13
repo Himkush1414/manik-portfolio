@@ -71,7 +71,7 @@ export function HangingStrings() {
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const hoverMq = window.matchMedia('(hover: hover) and (pointer: fine)')
-    const chime = reduced ? null : createWindChime(MAX_STRINGS) // SOUND
+    const chime = reduced ? null : createWindChime(MAX_STRINGS, hero) // SOUND
 
     // per-string state, allocated once for the maximum count
     const xs = new Float32Array(MAX_STRINGS)
