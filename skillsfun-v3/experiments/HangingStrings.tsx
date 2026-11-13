@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createWindChime } from './windChime' // SOUND
 
 // EXPERIMENT: hanging strings across the top of the Skills & Fun figure hero
 // (#skillsfun-page2). Fully self-contained. To remove it, delete this file
@@ -17,6 +18,7 @@ import { useEffect } from 'react'
 //   neighbours, so a push travels sideways as a wave. A mouse/pen parts the
 //   strings (pointermove on the hero). Touch: a gentle idle sway plus a push
 //   while dragging, with no cursor logic.
+// - Optional wind chime (windChime.ts), off by default. // SOUND
 // - One rAF loop, paused while the hero is off screen or the tab is hidden.
 //   No shadowBlur, no per-frame allocations. prefers-reduced-motion: static.
 
@@ -69,6 +71,7 @@ export function HangingStrings() {
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const hoverMq = window.matchMedia('(hover: hover) and (pointer: fine)')
+    const chime = reduced ? null : createWindChime(MAX_STRINGS) // SOUND
 
     // per-string state, allocated once for the maximum count
     const xs = new Float32Array(MAX_STRINGS)
@@ -191,6 +194,7 @@ export function HangingStrings() {
       for (let i = 0; i < n; i++) {
         vel[i] += acc[i] * dt
         off[i] += vel[i] * dt
+        if (chime) chime.feel(i, vel[i] < 0 ? -vel[i] : vel[i]) // SOUND
         const lim = len[i] * 0.42
         if (off[i] > lim) { off[i] = lim; vel[i] *= -0.3 }
         else if (off[i] < -lim) { off[i] = -lim; vel[i] *= -0.3 }
@@ -266,13 +270,17 @@ export function HangingStrings() {
     ro.observe(word)
     const io = new IntersectionObserver(entries => {
       visible = entries[entries.length - 1].isIntersecting
+      chime?.setActive(visible && !document.hidden) // SOUND
       if (visible) {
         readColor()
         refresh()
       }
     })
     io.observe(hero)
-    const onVis = () => wake()
+    const onVis = () => {
+      chime?.setActive(visible && !document.hidden) // SOUND
+      wake()
+    }
     document.addEventListener('visibilitychange', onVis)
     if (!reduced) {
       hero.addEventListener('pointermove', onPointerMove, { passive: true })
@@ -295,6 +303,7 @@ export function HangingStrings() {
       hero.removeEventListener('touchend', onTouchEnd)
       hero.removeEventListener('touchcancel', onTouchEnd)
       canvas.remove()
+      chime?.dispose() // SOUND
     }
   }, [])
   return null
