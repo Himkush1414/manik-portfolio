@@ -17,6 +17,8 @@ const NAV = [
   { label: 'About', href: '/about' },
   { label: 'Skills', href: '#skills' },
   { label: 'Contact', href: '#contact', id: 'skillsfun-footer-contact' },
+  // same file and in-page viewer (resume-viewer.ts, [data-resume]) as the other footers
+  { label: 'Resume', href: '/resume.pdf', resume: true },
 ]
 const SOCIAL = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/manik-rana-752154277', external: true },
@@ -216,6 +218,7 @@ export const GlassFooter = forwardRef<GlassFooterHandle, { onFrame?: (info: { li
                     <a
                       href={it.href}
                       id={'id' in it ? it.id : undefined}
+                      data-resume={'resume' in it ? '' : undefined}
                       target={'external' in it && it.external ? '_blank' : undefined}
                       rel={'external' in it && it.external ? 'noopener' : undefined}
                     >
