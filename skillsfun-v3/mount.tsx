@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './sf3.css'
 import './connect-curtain.css'
+import './creative-type.css'
 import { SkillsFunV3 } from './SkillsFunV3'
 
 // Mounts the Skills & Fun view into the page's #skillsfun-root, the view

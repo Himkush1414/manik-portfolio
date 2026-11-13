@@ -1,0 +1,68 @@
+/* "CREATIVE DESIGN", the big word behind the figure on Skills & Fun page 2
+   (page2.html). Restyled only: the tube light, the iris reveal, the
+   .entry-rise entrance and the scroll parallax (skillsfun-page2.ts, inline
+   transform) are all untouched.
+
+   - Anton (OFL, self-hosted like the section's Inter 900): tall, condensed
+     and heavy, plus a hairline stroke in the same colour for extra weight.
+   - Matte and dusty: a flat off-white with a faint static grain (SVG
+     turbulence) clipped to the letters. No glow, gloss or gradient.
+   - One piece with the bottom of the hero: the letters stand on the hero's
+     bottom edge, on a thin floor of the same material, in the tone of the
+     light section that follows (#f5f5f5), so the word reads as rising out
+     of it. As the parallax pushes the word down it sinks into that edge.
+   - Phones (portrait): the figure's head and shoulders fill the lower half,
+     so behind them any text was buried. The word wraps to two lines, sized
+     by width, and sits just above the head, the crown overlapping the
+     bottom of DESIGN a little (the figure box is 52vh tall, bottom
+     anchored, so its top is 52vh up from the hero's bottom edge). */
+@font-face {
+  font-family: "Anton";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/anton-latin-400-normal.woff2") format("woff2");
+}
+
+#skillsfun-root p.skillsfun-page2__bigtext {
+  --cd-ink: #ebe8e3;
+  --cd-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .30 0 0 0 0 .28 0 0 0 1.6 -.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  font-family: "Anton", "Bebas Neue", "Arial Narrow", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 0.86;
+  /* one line spanning ~96% of the width, so most letters clear the neck */
+  font-size: clamp(56px, min(15.4vw, 34vh), 300px);
+  bottom: -0.105em;
+  color: var(--cd-ink);
+  background: var(--cd-grain) 0 0 / 160px 160px, var(--cd-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.014em var(--cd-ink);
+  text-shadow: none;
+}
+/* the floor the letters stand on: a thin strip of the same material along
+   the hero's bottom edge, right on top of the light section that follows */
+#skillsfun-root p.skillsfun-page2__bigtext::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.105em;
+  height: 0.035em;
+  background: var(--cd-grain) 0 0 / 160px 160px, var(--cd-ink);
+  pointer-events: none;
+}
+
+@media (width <= 599px) and (orientation: portrait) {
+  #skillsfun-root p.skillsfun-page2__bigtext {
+    white-space: normal;
+    font-size: 23vw;
+    line-height: 0.84;
+    bottom: calc(52vh - 0.3em);
+  }
+  #skillsfun-root p.skillsfun-page2__bigtext::after {
+    display: none;
+  }
+}
