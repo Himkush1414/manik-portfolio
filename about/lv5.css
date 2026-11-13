@@ -802,6 +802,22 @@ body.lv5 img { max-width: 100%; display: block; }
 .is-rising {
   animation: lv5-curtain-rise 2.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+/* Hover devices (main.ts, riseIn/riseOut): the same rise and exit legs as
+   the keyframes above (each 30% of 2.1s = 0.63s, same easing), as state
+   instead of a one-shot timeline. .is-shown holds in view for as long as
+   it's set, and .is-gone carries on off the top. */
+.preview-ph.is-shown,
+.ch3__col-bg.is-shown,
+.ch3__col-cover.is-shown {
+  transform: translateY(0%);
+  transition: transform 0.63s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.preview-ph.is-gone,
+.ch3__col-bg.is-gone,
+.ch3__col-cover.is-gone {
+  transform: translateY(-100%);
+  transition: transform 0.63s cubic-bezier(0.22, 1, 0.36, 1);
+}
 
 .ch2__caption,
 .ch4__caption {

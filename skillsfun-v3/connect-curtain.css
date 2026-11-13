@@ -1,0 +1,37 @@
+/* "Connect with Me" (rest.html, above the Skills & Fun footer): curtain lift.
+   The button's own background becomes the colour underneath, a royal blue
+   from the portrait's palette (white label on it ~6.9:1). A ::before
+   "curtain" in the button's original #171717 covers it, under the label,
+   so at rest the button looks exactly as before. On hover the curtain
+   slides up and away (500ms) and drops back down on leave.
+   Hover-capable pointers only (touch keeps the plain button). Reduced
+   motion swaps instantly. Selectors carry one extra type selector so they
+   outrank sf3.css's own #skillsfun-root rules for this button. */
+@media (hover: hover) and (pointer: fine) {
+  #skillsfun-root button.skillsfun-navgrid__connect-btn,
+  #skillsfun-root button.skillsfun-navgrid__connect-btn:hover {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: #2350c8;
+  }
+  #skillsfun-root button.skillsfun-navgrid__connect-btn::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background: #171717;
+    transform: translateY(0);
+    transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+    pointer-events: none;
+  }
+  #skillsfun-root button.skillsfun-navgrid__connect-btn:hover::before,
+  #skillsfun-root button.skillsfun-navgrid__connect-btn:focus-visible::before {
+    transform: translateY(-101%);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  #skillsfun-root button.skillsfun-navgrid__connect-btn::before {
+    transition: none;
+  }
+}

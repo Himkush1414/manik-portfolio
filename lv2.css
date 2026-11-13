@@ -992,6 +992,23 @@ body.lv2 .lv2-reveal::after {
   margin-top: clamp(18px, 3vh, 30px);
   align-self: stretch;
 }
+/* Phones/tablets: the spiral's box is only ~300px tall here, so its
+   overflow:hidden hard-cut the cards and their drop shadows at the box edge,
+   which read as a visible frame around the strip. Feather all four edges
+   instead (the clip stays, it's just invisible now). Desktop (pinned, >900px)
+   never matches this rule and is unchanged. */
+@media (max-width: 900px) {
+  .lv2-stack:not(.is-pin-ready) .lv2-spiral {
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0, #000 16%, #000 84%, transparent 100%),
+      linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to bottom, transparent 0, #000 16%, #000 84%, transparent 100%),
+      linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
+    mask-composite: intersect;
+  }
+}
 
 /* ---- wide (>1600): widen the frames, keep the proportions ---- */
 @media (min-width: 1600px) {

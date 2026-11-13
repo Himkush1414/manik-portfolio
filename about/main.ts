@@ -354,31 +354,82 @@ function triggerRise(el: HTMLElement) {
   el.classList.add('is-rising');
 }
 
+// ---------------------------------------------------------------
+// Hover-driven state (mouse / trackpad). The one-shot .is-rising animation
+// above always finishes by sliding off the top on its own (~1.5s in), so on
+// a hover device the image vanished while the cursor was still resting on
+// its item. Here visibility follows the cursor instead: .is-shown rises an
+// element in and keeps it there for as long as it stays shown; .is-gone
+// continues it off the top. Both are CSS transitions (lv5.css) with the
+// same 0.63s rise/exit timing and easing as the curtain keyframes, and an
+// interrupted transition carries on from wherever it currently is. No
+// timers anywhere. Touch screens keep the original .is-rising behaviour.
+// ---------------------------------------------------------------
+const canHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+// back to the hidden-below rest position, instantly (no transition)
+function snapBelow(el: HTMLElement) {
+  el.style.transition = 'none';
+  el.classList.remove('is-shown', 'is-gone', 'is-rising', 'is-active');
+  void el.offsetWidth;
+  el.style.transition = '';
+}
+function riseIn(el: HTMLElement) {
+  el.classList.remove('is-rising', 'is-active');
+  if (el.classList.contains('is-shown')) return;
+  // still on its way out (or already parked above): restart from below
+  if (el.classList.contains('is-gone')) snapBelow(el);
+  el.classList.add('is-shown');
+}
+function riseOut(el: HTMLElement) {
+  el.classList.remove('is-rising', 'is-active');
+  if (!el.classList.contains('is-shown')) return;
+  el.classList.remove('is-shown');
+  el.classList.add('is-gone');
+}
+// once an element has fully left through the top, park it below again
+function parkWhenGone(el: HTMLElement) {
+  el.addEventListener('transitionend', e => {
+    if (e.target === el && e.propertyName === 'transform' && el.classList.contains('is-gone')) snapBelow(el);
+  });
+}
+
 // "CHAPTER II" / "CHAPTER IV": a list of items paired with a single preview
 // box that shows whichever item's image the cursor is currently over. At
 // rest — nothing hovered — no item is active, so the box sits on its empty
 // "diagonal line" placeholder (.preview-empty, painted behind every
 // .preview-ph so it's automatically all that's visible once none of them
 // are covering it; see lv5.css). Hovering a title rises that item's image
-// in; leaving the whole list (not just switching between items) rises the
+// in and holds it there; moving to another title swaps to that one;
+// leaving the whole list (not just switching between items) rises the
 // current one back out and returns to that empty state.
 function wireHoverPreview(listSelector: string, stackSelector: string) {
   const list = document.querySelector<HTMLElement>(listSelector);
   const stack = document.querySelector<HTMLElement>(stackSelector);
   if (!list || !stack) return;
   let activeKey: string | null = null;
+  const card = (key: string | null) =>
+    key ? stack.querySelector<HTMLElement>(`[data-key="${key}"]`) : null;
+  stack.querySelectorAll<HTMLElement>('.preview-ph').forEach(parkWhenGone);
 
   function setActive(key: string | null) {
     if (key === activeKey) return;
-    const prev = activeKey ? stack!.querySelector<HTMLElement>(`[data-key="${activeKey}"]`) : null;
-    const next = key ? stack!.querySelector<HTMLElement>(`[data-key="${key}"]`) : null;
-    if (prev) {
-      prev.classList.remove('is-active');
-      triggerRise(prev);
-    }
-    if (next) {
-      next.classList.add('is-active');
-      triggerRise(next);
+    const prev = card(activeKey);
+    const next = card(key);
+    if (canHover.matches) {
+      if (prev) riseOut(prev);
+      if (next) riseIn(next);
+    } else {
+      // touch: unchanged original behaviour
+      if (prev) {
+        prev.classList.remove('is-active', 'is-shown', 'is-gone');
+        triggerRise(prev);
+      }
+      if (next) {
+        next.classList.remove('is-shown', 'is-gone');
+        next.classList.add('is-active');
+        triggerRise(next);
+      }
     }
     activeKey = key;
   }
@@ -393,19 +444,56 @@ wireHoverPreview('.ch4__list', '.ch4__preview-stack');
 
 // "CHAPTER III": each column reveals its own background independently on
 // hover — cursor-driven, not tied to scroll position at all. Leaving
-// doesn't just let the reveal vanish/snap back down: it triggers a SECOND
-// rise (.ch3__col-cover, a solid sheet matching the panel's own
-// background) that climbs up from the bottom the same way the reveal
-// did, covering/hiding it — so both the show and the hide read as the
-// same bottom-to-top motion, never a reverse.
+// doesn't just let the reveal vanish/snap back down: a SECOND sheet
+// (.ch3__col-cover, solid, matching the panel's own background) climbs up
+// from the bottom the same way the reveal did, covering it — so both the
+// show and the hide read as the same bottom-to-top motion, never a reverse.
+// On a hover device the reveal stays up for as long as the cursor is in the
+// column; once the cover has fully risen both sheets park below again
+// (invisible: the cover matches the panel). Coming back while the cover is
+// still rising sends the cover on up, uncovering the photo again.
 document.querySelectorAll<HTMLElement>('.ch3__col').forEach(col => {
   const bg = col.querySelector<HTMLElement>('.ch3__col-bg');
   const cover = col.querySelector<HTMLElement>('.ch3__col-cover');
   if (!bg) return;
-  col.addEventListener('mouseenter', () => triggerRise(bg));
+  let inside = false;
+  parkWhenGone(bg);
   if (cover) {
-    col.addEventListener('mouseleave', () => triggerRise(cover));
+    parkWhenGone(cover);
+    cover.addEventListener('transitionend', e => {
+      if (e.target !== cover || e.propertyName !== 'transform') return;
+      if (!inside && cover.classList.contains('is-shown')) {
+        snapBelow(bg);
+        snapBelow(cover);
+      }
+    });
   }
+  col.addEventListener('mouseenter', () => {
+    inside = true;
+    if (!canHover.matches) {
+      bg.classList.remove('is-shown', 'is-gone');
+      triggerRise(bg);
+      return;
+    }
+    if (cover && cover.classList.contains('is-shown') && bg.classList.contains('is-shown')) {
+      riseOut(cover);
+    } else {
+      riseIn(bg);
+    }
+  });
+  col.addEventListener('mouseleave', () => {
+    inside = false;
+    if (!canHover.matches) {
+      if (cover) {
+        cover.classList.remove('is-shown', 'is-gone');
+        triggerRise(cover);
+      }
+      return;
+    }
+    if (!bg.classList.contains('is-shown')) return;
+    if (cover) riseIn(cover);
+    else riseOut(bg);
+  });
 });
 
 // ---------------------------------------------------------------

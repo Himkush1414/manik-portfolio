@@ -1,0 +1,61 @@
+/* "CREATIVE DESIGN", the big word behind the figure on Skills & Fun page 2
+   (page2.html). Restyled only: the tube light, the iris reveal, the
+   .entry-rise entrance and the scroll parallax (skillsfun-page2.ts, inline
+   transform) are all untouched.
+
+   - Anton (OFL, self-hosted like the section's Inter 900): condensed, heavy.
+   - Full width at every size: the word is an inline SVG whose viewBox is
+     exactly the ink box of the string (page2.html) with
+     preserveAspectRatio="none" and a fixed textLength, so the letters touch
+     both screen edges and never wrap or overflow. The box height sets the
+     letter height, so they come out much taller than the font's own
+     proportions (a tall block).
+   - Fill: flat solid cream, the same colour as the light section the hero
+     opens onto (.skillsfun-about, background #f5f5f5 in sf3.css).
+   - One piece with the bottom of the hero: the letters stand on the hero's
+     bottom edge on a thin floor of the same cream, which merges into that
+     section. As the parallax pushes the word down it sinks into the edge. */
+@font-face {
+  font-family: "Anton";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/anton-latin-400-normal.woff2") format("woff2");
+}
+
+#skillsfun-root p.skillsfun-page2__bigtext {
+  --cd-cream: #f5f5f5; /* = .skillsfun-about background (sf3.css) */
+  width: 100%;
+  height: clamp(140px, min(12vw + 18vh, 40vh), 440px);
+  bottom: 0;
+  font-size: 0;
+  line-height: 0;
+  letter-spacing: 0;
+}
+#skillsfun-root .skillsfun-page2__bigtext-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+#skillsfun-root .skillsfun-page2__bigtext-svg text {
+  font-family: "Anton", "Bebas Neue", "Arial Narrow", sans-serif;
+  font-weight: 400;
+  font-size: 2048px; /* = Anton's units per em, so the viewBox is in font units */
+  letter-spacing: 0;
+  fill: var(--cd-cream);
+  stroke: var(--cd-cream);
+  stroke-width: 20px;
+  stroke-linejoin: round;
+}
+/* the floor the letters stand on, along the hero's bottom edge */
+#skillsfun-root p.skillsfun-page2__bigtext::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: max(3px, 0.45vh);
+  background: var(--cd-cream);
+  pointer-events: none;
+}
