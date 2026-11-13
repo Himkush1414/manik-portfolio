@@ -229,7 +229,7 @@ export const GlassFooter = forwardRef<GlassFooterHandle, { onFrame?: (info: { li
                           <path d={it.icon} />
                         </svg>
                       )}
-                      {it.label}
+                      <span className="u-line">{it.label}</span>
                     </a>
                   </li>
                 ))}
@@ -243,8 +243,12 @@ export const GlassFooter = forwardRef<GlassFooterHandle, { onFrame?: (info: { li
       <div className="hf-bottom absolute inset-x-0 bottom-0 z-10 flex h-[12%] items-center justify-between px-5 md:px-10">
         <p className="hf-copy">&copy; 2026 | Manik Rana</p>
         <div className="hf-legal">
-          <a href="#privacy">Privacy Policy</a>
-          <a href="#terms">Terms of Use</a>
+          <a href="#privacy">
+            <span className="u-line">Privacy Policy</span>
+          </a>
+          <a href="#terms">
+            <span className="u-line">Terms of Use</span>
+          </a>
         </div>
       </div>
     </footer>
