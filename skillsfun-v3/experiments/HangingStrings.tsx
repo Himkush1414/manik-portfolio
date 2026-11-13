@@ -24,9 +24,9 @@ const MAX_STRINGS = 320
 const STIFFNESS = 38 // spring back to rest (1/s²)
 const DAMPING = 4.6 // underdamped, so they sway back like grass
 const COUPLING = 15 // pull towards the neighbours' offset: the wave
-const PUSH = 950 // px/s² at the cursor, away from it
-const DRAG = 0.85 // how much of the pointer's sideways speed is passed on
-const MAX_FORCE = 2600
+const PUSH = 2600 // px/s² at the cursor, away from it
+const DRAG = 1.5 // how much of the pointer's sideways speed is passed on
+const MAX_FORCE = 6000
 const IDLE_AMP = 2.2 // px, touch devices only
 const TWINKLE_MIN = 0.35
 
@@ -88,7 +88,7 @@ export function HangingStrings() {
     let height = 0
     let wordH = 0
     let dpr = 1
-    let lineColor = 'rgba(214, 224, 245, 0.42)'
+    let lineColor = 'rgba(214, 224, 245, 0.2)'
 
     const readColor = () => {
       const raw = ambient ? getComputedStyle(ambient).getPropertyValue('--g0') : ''
@@ -96,8 +96,8 @@ export function HangingStrings() {
       if (!c) return
       // a touch lighter than the background tone, and translucent, so the
       // strings are only faintly visible against it
-      const mix = (v: number) => Math.round(v + (255 - v) * 0.28)
-      lineColor = `rgba(${mix(c[0])}, ${mix(c[1])}, ${mix(c[2])}, 0.42)`
+      const mix = (v: number) => Math.round(v + (255 - v) * 0.2)
+      lineColor = `rgba(${mix(c[0])}, ${mix(c[1])}, ${mix(c[2])}, 0.2)`
     }
 
     const layout = () => {
