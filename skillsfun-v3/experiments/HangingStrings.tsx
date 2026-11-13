@@ -61,7 +61,10 @@ export function HangingStrings() {
     const ctx: CanvasRenderingContext2D = ctx2d
     canvas.setAttribute('aria-hidden', 'true')
     canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none;display:block'
-    if (ambient?.parentElement === hero) ambient.after(canvas)
+    // right after the hero's background wrapper (same z-index, later in the
+    // DOM, so it paints above the background and below everything else)
+    const backdrop = hero.querySelector(':scope > .skillsfun-page2__ambient')
+    if (backdrop) backdrop.after(canvas)
     else hero.prepend(canvas)
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches

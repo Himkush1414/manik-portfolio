@@ -3,6 +3,7 @@ import { NeonStage, type StageCtl } from '../effects/neon/NeonStage'
 import { prefersReducedMotion, useNearViewport } from '../lib/hooks'
 import { GlassFooter } from '../footer/GlassFooter'
 import { enhanceNavgrid } from '../skillsfun/navgrid'
+import { HangingStrings } from '../experiments/HangingStrings' // EXPERIMENT: remove this and <HangingStrings /> in the iris slot
 // Read-only copies of the portfolio's Skills & Fun "Move Next" view, split
 // so its first screen can be the thing the iris reveals.
 import page2Html from '../skillsfun/page2.html?raw'
@@ -250,6 +251,7 @@ export function NeonToSkillsFun({ onRevealed, backRef }: { onRevealed: () => voi
             data-testid="iris-slot"
           >
             <div dangerouslySetInnerHTML={{ __html: page2Html }} className="contents" />
+            <HangingStrings />
             <div data-scrim className="pointer-events-none absolute inset-0 z-[30] bg-black" style={{ opacity: IRIS_SCRIM }} />
           </div>
         </div>
