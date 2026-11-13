@@ -22,8 +22,8 @@ import { useEffect } from 'react'
 
 const MAX_STRINGS = 320
 const STIFFNESS = 38 // spring back to rest (1/s²)
-const DAMPING = 4.6 // underdamped, so they sway back like grass
-const COUPLING = 15 // pull towards the neighbours' offset: the wave
+const DAMPING = 3.9 // underdamped, so they sway back like grass
+const COUPLING = 17.5 // pull towards the neighbours' offset: the wave
 const PUSH = 2600 // px/s² at the cursor, away from it
 const DRAG = 1.5 // how much of the pointer's sideways speed is passed on
 const MAX_FORCE = 6000
@@ -164,7 +164,7 @@ export function HangingStrings() {
     // ---- simulation + drawing ----
     const step = (dt: number, t: number) => {
       const idle = !hoverMq.matches
-      const reach = width < 600 ? 52 : 72
+      const reach = width < 600 ? 60 : 84
       const fade = 34
       for (let i = 0; i < n; i++) {
         let f = -STIFFNESS * off[i] - DAMPING * vel[i]
