@@ -1,0 +1,29 @@
+/* ============================================================
+   Footer link polish, shared by every footer on the page: Home
+   (#lv2-footer), Projects/Contact (.lv7-footer) and Skills & Fun
+   (#skillsfun-footer, whose own CSS is scoped under #skillsfun-root, hence
+   the id-level selectors further down).
+
+   - .fl-social: a brand glyph in front of LinkedIn / GitHub / Gmail, 1em
+     square so it matches the link text, painted in currentColor.
+   ============================================================ */
+
+.fl-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+}
+.fl-social svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: currentColor;
+}
+#skillsfun-root .hf-list a.fl-social { display: inline-flex; }
+#skillsfun-root .hf-list a.fl-social svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: currentColor;
+}
