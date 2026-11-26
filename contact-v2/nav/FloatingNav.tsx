@@ -20,8 +20,13 @@ export function scrollToTop(e?: MouseEvent) {
 
 // Bottom-centre cluster: orb dock + nav pill. Appears once the intro is done.
 export function NavCluster({ show }: { show: boolean }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  // not focusable or clickable while it's still hidden behind the intro
+  useLayoutEffect(() => {
+    wrapRef.current?.toggleAttribute('inert', !show);
+  }, [show]);
   return (
-    <div className={`ctv2-navwrap${show ? ' is-in' : ''}`}>
+    <div ref={wrapRef} className={`ctv2-navwrap${show ? ' is-in' : ''}`}>
       {show && <OrbDock />}
       <DesktopNav />
       <MobileNav />
