@@ -728,6 +728,12 @@
        active, so this is still the only main landmark on screen while it
        shows (as a <section>, the Contact view left the page without one). -->
   <main class="lv7-view" id="proj-view-contact">
+    <!-- Contact view (contact-v2/, a React view loaded lazily by main.tsx and
+         mounted into this <main>). This black placeholder covers the view
+         from its first paint until the React page and its intro are in
+         place, so nothing flashes before the intro. Inline styles on purpose:
+         contact-v2's stylesheet arrives with the lazy chunk. -->
+    <div class="ctv2-boot" aria-hidden="true" style="position:fixed;inset:0;z-index:900;background:#000"></div>
     <div class="lv7-contact">
       <div class="lv7-contact__top">
         <h1 class="lv7-contact__heading">CONTACT</h1>
