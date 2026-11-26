@@ -168,4 +168,80 @@ if (mode === 'enter') {
   console.log(JSON.stringify(r));
 }
 
+if (mode === 'nav') {
+  const W = +(rest[0] || 1440), H = +(rest[1] || 900);
+  const { page, logs } = await newPage(W, H);
+  const checks = [];
+  const check = (name, ok, extra) => { checks.push({ name, ok, ...(extra ? { extra } : {}) }); };
+  await page.goto(`${url}#contact`);
+  const before = await page.evaluate(() => getComputedStyle(document.querySelector('#ctv2 .ctv2-navwrap')).opacity);
+  check('nav hidden during intro', before === '0', before);
+  await introDone(page);
+  await sleep(2600); // nav entry + the orb's own 2.2 s intro
+  const box = await page.evaluate(() => {
+    const r = el => { const b = document.querySelector(el)?.getBoundingClientRect(); return b && { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom), w: Math.round(b.width), h: Math.round(b.height) }; };
+    return { vw: innerWidth, vh: innerHeight, wrap: r('#ctv2 .ctv2-navwrap'), pill: innerWidth < 640 ? r('#ctv2 .ctv2-nav__bar') : r('#ctv2 .ctv2-nav--desk'), orb: r('#ctv2 .ctv2-orb'), canvas: !!document.querySelector('#ctv2 .ctv2-orb canvas'), lv7Logo: getComputedStyle(document.getElementById('lv7-logo')).display };
+  });
+  check('orb canvas mounted', box.canvas);
+  check('old projects nav hidden', box.lv7Logo === 'none');
+  check('pill bottom gap >= 16px', box.vh - box.pill.b >= 16, box.vh - box.pill.b);
+  check('orb left of pill, ~12px gap', W < 640 ? true : Math.abs(box.pill.l - box.orb.r - 12) <= 1, box.pill.l - box.orb.r);
+  const centre = W < 640 ? (box.orb.l + box.pill.r) / 2 : (box.pill.l + box.pill.r) / 2;
+  check('cluster centred', Math.abs(centre - W / 2) <= 2, centre - W / 2);
+  // the orb is drawing: count bright pixels in a crop of the dock
+  const orbShot = await page.screenshot({ clip: { x: box.orb.l, y: box.orb.t, width: box.orb.w, height: box.orb.h } });
+  fs.writeFileSync(`${out}/${W}-orb.png`, orbShot);
+  await page.screenshot({ path: `${out}/${W}-nav.png`, clip: { x: 0, y: H - 160, width: W, height: 160 } });
+  const canvasNode = await page.evaluateHandle(() => document.querySelector('#ctv2 .ctv2-orb canvas'));
+  await sleep(2100); // two clock ticks later the orb's canvas is the same node
+  check('orb not remounted by clock ticks', await page.evaluate(c => c === document.querySelector('#ctv2 .ctv2-orb canvas'), canvasNode));
+  if (W >= 640) {
+    const current = await page.evaluate(() => document.querySelector('#ctv2 .ctv2-nav--desk [aria-current="page"]')?.textContent);
+    check('aria-current on Contact', current === 'Contact', current);
+    await page.hover('#ctv2 .ctv2-nav--desk a[href="#projects"]');
+    await sleep(400);
+    const chipOver = await page.evaluate(() => {
+      const c = document.querySelector('#ctv2 .ctv2-nav__chip').getBoundingClientRect();
+      const a = document.querySelector('#ctv2 .ctv2-nav--desk a[href="#projects"]').getBoundingClientRect();
+      return Math.abs(c.left - a.left) < 1.5 && Math.abs(c.width - a.width) < 1.5;
+    });
+    check('chip slides to hovered item', chipOver);
+    await page.screenshot({ path: `${out}/${W}-nav-hover.png`, clip: { x: 0, y: H - 160, width: W, height: 160 } });
+    await page.mouse.move(W / 2, 100);
+    await page.keyboard.press('Tab'); // focus moves into the page; walk to the nav
+    for (let i = 0; i < 12; i++) {
+      const f = await page.evaluate(() => document.activeElement?.closest('.ctv2-nav--desk') ? document.activeElement.textContent : null);
+      if (f === 'Skills') break;
+      await page.keyboard.press('Tab');
+    }
+    await sleep(350);
+    await page.screenshot({ path: `${out}/${W}-nav-focus.png`, clip: { x: 0, y: H - 160, width: W, height: 160 } });
+    const focusOn = await page.evaluate(() => document.activeElement?.textContent);
+    check('keyboard reaches nav items', focusOn === 'Skills', focusOn);
+    await page.click('#ctv2 .ctv2-nav--desk a[href="#projects"]');
+    await sleep(2400);
+    check('Projects link goes to Projects view', await page.evaluate(() => document.getElementById('proj-view-projects').classList.contains('is-active')));
+  } else {
+    const btn = '#ctv2 .ctv2-nav__menu-btn';
+    await page.tap(btn);
+    await sleep(350);
+    check('menu opens (aria-expanded)', (await page.getAttribute(btn, 'aria-expanded')) === 'true');
+    const taps = await page.evaluate(() => Array.from(document.querySelectorAll('#ctv2 .ctv2-nav__mlink')).map(a => Math.round(a.getBoundingClientRect().height)));
+    check('menu items >= 44px', taps.every(h => h >= 44), taps);
+    await page.screenshot({ path: `${out}/${W}-menu-open.png` });
+    await page.keyboard.press('Escape');
+    await sleep(200);
+    check('Esc closes menu', (await page.getAttribute(btn, 'aria-expanded')) === 'false');
+    check('focus back on Menu button', await page.evaluate(() => document.activeElement?.classList.contains('ctv2-nav__menu-btn')));
+    await page.tap(btn);
+    await sleep(200);
+    await page.touchscreen.tap(W / 2, 200);
+    await sleep(200);
+    check('outside tap closes menu', (await page.getAttribute(btn, 'aria-expanded')) === 'false');
+  }
+  const r = { W, H, box, checks, logs };
+  fs.writeFileSync(`${out}/report-${W}.json`, JSON.stringify(r, null, 2));
+  console.log(JSON.stringify({ W, fails: checks.filter(c => !c.ok), passed: checks.filter(c => c.ok).length, logs }));
+}
+
 await browser.close();
