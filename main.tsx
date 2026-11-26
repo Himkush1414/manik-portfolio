@@ -38,6 +38,8 @@ import './projects-cursor-trail';
 import './projects-nav';
 // The footers' "Resume" links open /resume.pdf in an in-page viewer.
 import './resume-viewer';
+// Contact view (contact-v2/): lazy-loads itself into #proj-view-contact.
+import './contact-v2/boot';
 // './skillsfun' (the hidden-until-navigated-to Skill & Fun view) pulls in
 // three.js via skillsfun-strip-field.ts — ~530KB that was previously
 // parsed/executed on every load of this page even though #skillsfun-root

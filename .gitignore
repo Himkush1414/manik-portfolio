@@ -3,3 +3,8 @@ dist
 .DS_Store
 *.log
 qa-desktop-site
+
+# Local secrets: never commit
+.env
+.env.*
+!.env.example
