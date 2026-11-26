@@ -303,4 +303,64 @@ if (mode === 'services') {
   console.log(JSON.stringify({ W, tz, geo: rest[3] || null, fails: checks.filter(c => !c.ok), checks, logs }));
 }
 
+if (mode === 'footer') {
+  const W = +(rest[0] || 1440), H = +(rest[1] || 900);
+  const { ctx, page, logs } = await newPage(W, H);
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(url).origin });
+  const checks = [];
+  const check = (name, ok, extra) => checks.push({ name, ok, ...(extra !== undefined ? { extra } : {}) });
+  await page.goto(`${url}#contact`);
+  await introDone(page);
+  await sleep(500);
+  await page.evaluate(() => window.scrollTo(0, 1e6));
+  await sleep(700);
+  await page.screenshot({ path: `${out}/${W}-footer-end.png` });
+  const clear = await page.evaluate(() => {
+    const legal = document.querySelector('#ctv2 .ctv2-foot__legal').getBoundingClientRect();
+    const nav = document.querySelector('#ctv2 .ctv2-navwrap').getBoundingClientRect();
+    const orb = document.querySelector('#ctv2 .ctv2-orb')?.getBoundingClientRect();
+    return { legalBottom: Math.round(legal.bottom), navTop: Math.round(Math.min(nav.top, orb ? orb.top : nav.top)) };
+  });
+  check('nav clears the legal row at the very bottom', clear.legalBottom <= clear.navTop, clear);
+  await page.evaluate(() => document.querySelector('#ctv2 .ctv2-foot__top').scrollIntoView());
+  await sleep(500);
+  await page.screenshot({ path: `${out}/${W}-footer-top.png` });
+  await page.click('#ctv2 .ctv2-copy');
+  await sleep(250);
+  const clip = await page.evaluate(() => navigator.clipboard.readText().catch(e => 'ERR ' + e.message));
+  check('copy puts the email on the clipboard', clip === 'manikrana831@gmail.com', clip);
+  check('copy shows "Copied"', (await page.textContent('#ctv2 .ctv2-copy')).includes('Copied'));
+  check('copy announced (live region)', (await page.textContent('#ctv2 .ctv2-foot [role="status"]')).includes('copied'));
+  await page.click('#ctv2 .ctv2-btn--ghost');
+  await sleep(500);
+  check('dialog opens', await page.evaluate(() => document.querySelector('#ctv2 .ctv2-dialog').open));
+  check('form re-homed into dialog', await page.evaluate(() => !!document.querySelector('#ctv2 .ctv2-dialog #lv7-contact-form')));
+  check('page scroll locked', await page.evaluate(() => document.documentElement.style.overflow === 'hidden'));
+  await page.screenshot({ path: `${out}/${W}-dialog.png` });
+  await page.click('#ctv2 .ctv2-dialog .lv7-form__submit');
+  await sleep(300);
+  check('empty submit blocked by validation', await page.evaluate(() => !document.getElementById('lv7-contact-form').classList.contains('is-sent')));
+  await page.fill('#lv7-contact-form [name=name]', 'QA Test');
+  await page.fill('#lv7-contact-form [name=email]', 'qa@example.com');
+  await page.fill('#lv7-contact-form [name=website]', 'example.com');
+  await page.fill('#lv7-contact-form [name=message]', 'Hello');
+  await page.click('#ctv2 .ctv2-dialog .lv7-form__submit');
+  await sleep(300);
+  const sent = await page.evaluate(() => ({ cls: document.getElementById('lv7-contact-form').classList.contains('is-sent'), btn: document.querySelector('#lv7-contact-form .lv7-form__submit').textContent }));
+  check('valid submit shows the existing confirmation', sent.cls && sent.btn.includes('Thanks'), sent);
+  await page.screenshot({ path: `${out}/${W}-dialog-sent.png` });
+  await page.keyboard.press('Escape');
+  await sleep(300);
+  check('Esc closes dialog', await page.evaluate(() => !document.querySelector('#ctv2 .ctv2-dialog').open));
+  check('scroll unlocked', await page.evaluate(() => document.documentElement.style.overflow === ''));
+  await page.click('#ctv2 .ctv2-foot__top-link');
+  await sleep(1800);
+  check('Back to top scrolls to 0', await page.evaluate(() => window.scrollY) < 2, await page.evaluate(() => window.scrollY));
+  await page.evaluate(() => document.querySelector('#ctv2 a.ctv2-foot__link[href="#projects"]').click());
+  await sleep(2400);
+  check('footer Projects link goes to Projects', await page.evaluate(() => document.getElementById('proj-view-projects').classList.contains('is-active')));
+  check('form returned home after leaving', await page.evaluate(() => document.getElementById('lv7-contact-form')?.parentElement?.classList.contains('ctv2-form-home')));
+  console.log(JSON.stringify({ W, fails: checks.filter(c => !c.ok), passed: checks.filter(c => c.ok).length, clear, logs }));
+}
+
 await browser.close();
