@@ -28,4 +28,17 @@ export const CONTACT_CONFIG = {
   },
 };
 
+// Section copy (polished defaults from the brief; edit freely).
+export const COPY = {
+  manifestoChip: 'Contact',
+  manifestoHeadline:
+    "I don’t build projects that only look good. I build digital products you can truly call your own, that bring your work, your experience and your dreams to life.",
+  manifestoP1:
+    "Every project starts with a real conversation. I want to understand what you’re building, who it’s for, and what it should make possible for you.",
+  manifestoP2:
+    "From a focused three-page website to a full product, I design and build with care, so that what you launch connects you with the people you want to reach and with the goals you’re chasing.",
+  pricingNote: 'Prices are a starting point, not a wall. If the opportunity is right, the budget can always be discussed.',
+  footerStatement: "Have an idea? Let’s make it real.",
+};
+
 export type ContactConfig = typeof CONTACT_CONFIG;

@@ -5,6 +5,7 @@ import { Hero } from './hero/Hero';
 import { BookCard } from './hero/BookCard';
 import { LegacySlot } from './LegacySlot';
 import { NavCluster } from './nav/FloatingNav';
+import { Manifesto } from './manifesto/Manifesto';
 
 // Root of the Contact view. The page is only mounted while the view is on
 // screen, and remounted (key = visit) on every entry, so the intro replays on
@@ -36,8 +37,9 @@ function ContactPage() {
       {!introDone && <FlickerIntro onDone={onIntroDone} />}
       <div className="ctv2-curtain">
         <Hero cardRef={cardRef} />
-        <LegacySlot />
+        <Manifesto />
       </div>
+      <LegacySlot />
       <BookCard ref={cardRef} />
       <NavCluster show={introDone} />
     </div>
