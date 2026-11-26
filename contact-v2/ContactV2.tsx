@@ -3,10 +3,10 @@ import { viewStore } from './lib/view';
 import { FlickerIntro } from './intro/FlickerIntro';
 import { Hero } from './hero/Hero';
 import { BookCard } from './hero/BookCard';
-import { LegacySlot } from './LegacySlot';
 import { NavCluster } from './nav/FloatingNav';
 import { Manifesto } from './manifesto/Manifesto';
 import { Services } from './services/Services';
+import { Footer } from './footer/Footer';
 
 // Root of the Contact view. The page is only mounted while the view is on
 // screen, and remounted (key = visit) on every entry, so the intro replays on
@@ -41,7 +41,7 @@ function ContactPage() {
         <Manifesto />
       </div>
       <Services />
-      <LegacySlot />
+      <Footer />
       <BookCard ref={cardRef} />
       <NavCluster show={introDone} />
     </div>
