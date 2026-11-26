@@ -4,6 +4,8 @@ import heroImage from './assets/hero.jpg';
 // Values marked "default" were not supplied with the brief and were taken from
 // the rest of the site (footer links, existing mailto links).
 export type PriceTier = { tier1: string; tier2: string; tier3: string };
+/** Optional app price rows (not defined yet): rendered like the website rows. */
+export type AppPriceRow = { label: string; desc: string; USD: string; INR?: string };
 
 export const CONTACT_CONFIG = {
   name: 'Manik Rana',
@@ -26,6 +28,8 @@ export const CONTACT_CONFIG = {
     // null = INR prices not set yet: everyone sees USD (see services/useCurrency.ts)
     INR: null as PriceTier | null,
   },
+  // Apps are priced by scope. Fill this in to show price rows on the Apps panel.
+  appPrices: null as AppPriceRow[] | null,
 };
 
 // Section copy (polished defaults from the brief; edit freely).

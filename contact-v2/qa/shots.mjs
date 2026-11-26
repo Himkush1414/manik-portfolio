@@ -244,4 +244,63 @@ if (mode === 'nav') {
   console.log(JSON.stringify({ W, fails: checks.filter(c => !c.ok), passed: checks.filter(c => c.ok).length, logs }));
 }
 
+if (mode === 'services') {
+  // tabs + currency. Pass tz (e.g. Asia/Kolkata) as the 3rd arg; the build
+  // must have INR prices set for the currency checks to mean anything.
+  const W = +(rest[0] || 1440), H = +(rest[1] || 900), tz = rest[2] || 'America/New_York';
+  const ctx = await browser.newContext({ viewport: { width: W, height: H }, timezoneId: tz, isMobile: W < 640, hasTouch: W < 640 });
+  await ctx.addInitScript(() => { try { sessionStorage.setItem('homeLoaderPlayed', '1'); } catch {} });
+  const page = await ctx.newPage();
+  // optional 4th arg: mock /api/geo's answer (e.g. IN / US) as the host would send it
+  if (rest[3]) await page.route('**/api/geo', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ country: rest[3] }) }));
+  const logs = [];
+  page.on('console', m => ['error', 'warning'].includes(m.type()) && logs.push(`${m.type()}: ${m.text()}`));
+  page.on('pageerror', e => logs.push('pageerror: ' + e.message));
+  const checks = [];
+  const check = (name, ok, extra) => checks.push({ name, ok, ...(extra !== undefined ? { extra } : {}) });
+  const go = async () => {
+    await page.goto(`${url}#contact`);
+    await introDone(page);
+    await page.evaluate(() => document.querySelector('#ctv2 [data-ctv2-section="services"]').scrollIntoView());
+    await sleep(900);
+  };
+  await go();
+  const state = () => page.evaluate(() => ({
+    toggle: !!document.querySelector('#ctv2 .ctv2-seg'),
+    pressed: document.querySelector('#ctv2 .ctv2-seg__btn[aria-pressed="true"]')?.textContent ?? null,
+    first: document.querySelector('#ctv2 .ctv2-price__amt')?.textContent ?? null,
+    selected: document.querySelector('#ctv2 [role="tab"][aria-selected="true"]')?.textContent ?? null,
+  }));
+  let s1 = await state();
+  check('Websites selected by default', s1.selected?.includes('Websites'), s1.selected);
+  check(`currency for tz ${tz}`, true, s1);
+  await page.screenshot({ path: `${out}/${W}-${tz.replace('/', '_')}-websites.png` });
+  const markerY = () => page.evaluate(() => document.querySelector('#ctv2 .ctv2-svc__marker').getBoundingClientRect()[innerWidth < 768 ? 'left' : 'top']);
+  const m0 = await markerY();
+  await page.click('#ctv2 [data-option="apps"]');
+  await sleep(650);
+  const m1 = await markerY();
+  s1 = await state();
+  check('click Apps selects Apps', s1.selected?.includes('Apps'), s1.selected);
+  check('marker slides to Apps', Math.abs(m1 - m0) > 40, Math.round(m1 - m0));
+  check('Apps panel shown', await page.evaluate(() => !!document.querySelector('#ctv2 .ctv2-factors') && !!document.querySelector('#ctv2 .ctv2-btn')));
+  await page.screenshot({ path: `${out}/${W}-apps.png` });
+  await page.keyboard.press(W < 768 ? 'ArrowLeft' : 'ArrowUp');
+  await sleep(600);
+  s1 = await state();
+  check('arrow key back to Websites', s1.selected?.includes('Websites'), s1.selected);
+  check('focus follows selection', await page.evaluate(() => document.activeElement?.getAttribute('data-option')) === 'websites');
+  if (s1.toggle) {
+    const other = s1.pressed === 'USD' ? 'INR' : 'USD';
+    await page.click(`#ctv2 .ctv2-seg__btn:text-is("${other}")`);
+    await sleep(400);
+    const s2 = await state();
+    check('toggle switches currency', s2.pressed === other, s2);
+    await go();
+    const s3 = await state();
+    check('override persists after reload', s3.pressed === other, s3);
+  }
+  console.log(JSON.stringify({ W, tz, geo: rest[3] || null, fails: checks.filter(c => !c.ok), checks, logs }));
+}
+
 await browser.close();
