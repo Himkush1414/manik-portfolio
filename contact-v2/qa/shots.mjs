@@ -105,6 +105,11 @@ if (mode === 'views') {
       await page.evaluate(v => window.scrollTo(0, v), y);
       await sleep(450);
     };
+    const hero = await page.evaluate(() => {
+      const r = el => { const b = document.querySelector(el)?.getBoundingClientRect(); return b && [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+      const tops = ['#ctv2 .ctv2-orb', '#ctv2 .ctv2-nav--desk', '#ctv2 .ctv2-nav__bar'].map(r).filter(b => b && b[2] > b[0]);
+      return { meta: r('#ctv2 .ctv2-hero__meta p'), metaAll: r('#ctv2 .ctv2-hero__meta'), card: r('#ctv2 .ctv2-card'), navTop: Math.min(...tops.map(b => b[1])) };
+    });
     await shoot('0-top');
     await scrollTo(Math.round(H * 0.5));
     await shoot('1-midhero');
@@ -133,7 +138,7 @@ if (mode === 'views') {
         wordWidthPct: word && +((word.width / d.clientWidth) * 100).toFixed(2),
       };
     });
-    const r = { W, H, ...metrics, shots, logs };
+    const r = { W, H, ...metrics, hero, metaClearOfNav: hero.meta[3] <= hero.navTop, metaClearOfCard: hero.metaAll[1] >= hero.card[3], shots, logs };
     all.push(r);
     console.log(JSON.stringify(r));
     await ctx.close();
@@ -174,8 +179,9 @@ if (mode === 'nav') {
   const checks = [];
   const check = (name, ok, extra) => { checks.push({ name, ok, ...(extra ? { extra } : {}) }); };
   await page.goto(`${url}#contact`);
-  const before = await page.evaluate(() => getComputedStyle(document.querySelector('#ctv2 .ctv2-navwrap')).opacity);
-  check('nav hidden during intro', before === '0', before);
+  await page.waitForSelector('#ctv2 .ctv2-navwrap', { state: 'attached' });
+  const before = await page.evaluate(() => { const n = document.querySelector('#ctv2 .ctv2-navwrap'); return { o: getComputedStyle(n).opacity, inert: n.hasAttribute('inert') }; });
+  check('nav hidden and inert during intro', before.o === '0' && before.inert, before);
   await introDone(page);
   await sleep(2600); // nav entry + the orb's own 2.2 s intro
   const box = await page.evaluate(() => {
@@ -208,12 +214,15 @@ if (mode === 'nav') {
     check('chip slides to hovered item', chipOver);
     await page.screenshot({ path: `${out}/${W}-nav-hover.png`, clip: { x: 0, y: H - 160, width: W, height: 160 } });
     await page.mouse.move(W / 2, 100);
-    await page.keyboard.press('Tab'); // focus moves into the page; walk to the nav
-    for (let i = 0; i < 12; i++) {
+    await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
+    // from the top of the document, Tab reaches the nav early (it's first in DOM order after the card)
+    let tabs = 0;
+    for (; tabs < 10; tabs++) {
+      await page.keyboard.press('Tab');
       const f = await page.evaluate(() => document.activeElement?.closest('.ctv2-nav--desk') ? document.activeElement.textContent : null);
       if (f === 'Skills') break;
-      await page.keyboard.press('Tab');
     }
+    check('nav reached within a few Tabs', tabs < 8, tabs + 1);
     await sleep(350);
     await page.screenshot({ path: `${out}/${W}-nav-focus.png`, clip: { x: 0, y: H - 160, width: W, height: 160 } });
     const focusOn = await page.evaluate(() => document.activeElement?.textContent);
@@ -361,6 +370,33 @@ if (mode === 'footer') {
   check('footer Projects link goes to Projects', await page.evaluate(() => document.getElementById('proj-view-projects').classList.contains('is-active')));
   check('form returned home after leaving', await page.evaluate(() => document.getElementById('lv7-contact-form')?.parentElement?.classList.contains('ctv2-form-home')));
   console.log(JSON.stringify({ W, fails: checks.filter(c => !c.ok), passed: checks.filter(c => c.ok).length, clear, logs }));
+}
+
+if (mode === 'perf') {
+  // frame pacing while wheel-scrolling the whole page (orb running), plus layout shifts
+  const W = +(rest[0] || 1440), H = +(rest[1] || 900);
+  const { page, logs } = await newPage(W, H);
+  await page.goto(`${url}#contact`);
+  await introDone(page);
+  await sleep(2600);
+  await page.evaluate(() => {
+    window.__cls = 0;
+    new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; }).observe({ type: 'layout-shift', buffered: false });
+    window.__frames = [];
+    let last = performance.now();
+    const tick = now => { window.__frames.push(now - last); last = now; if (window.__frames.length < 100000) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+  const total = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  const steps = Math.ceil(total / 120);
+  for (let i = 0; i < steps; i++) { await page.mouse.wheel(0, 120); await sleep(16); }
+  await sleep(500);
+  const r = await page.evaluate(() => {
+    const f = window.__frames.slice(2).sort((a, b) => a - b);
+    const pct = q => f[Math.min(f.length - 1, Math.floor(f.length * q))];
+    return { frames: f.length, medianMs: +pct(0.5).toFixed(2), p95Ms: +pct(0.95).toFixed(2), over33ms: f.filter(x => x > 33.4).length, cls: +window.__cls.toFixed(4), scrolledTo: Math.round(scrollY) };
+  });
+  console.log(JSON.stringify({ W, H, ...r, logs }));
 }
 
 await browser.close();
