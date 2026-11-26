@@ -215,6 +215,19 @@ html.ctv2-ready .ctv2-boot { display: none !important; }
 }
 #ctv2 .ctv2-hero__tagline,
 #ctv2 .ctv2-hero__mark { display: flex; flex-direction: column; }
+/* The small blocks sit over the bright beam of the photo: a soft local
+   scrim (no recolouring of the image itself) keeps the 11–13 px white text
+   above 4.5:1 on every viewport. */
+#ctv2 .ctv2-hero__meta { position: relative; isolation: isolate; align-self: flex-start; }
+#ctv2 .ctv2-hero__meta::before {
+  content: '';
+  position: absolute;
+  inset: -110px -170px -70px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.5) 30%, rgba(0, 0, 0, 0.34) 52%, rgba(0, 0, 0, 0.17) 72%, rgba(0, 0, 0, 0.05) 88%, transparent);
+}
+#ctv2 .ctv2-hero__meta p { text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35); }
 
 #ctv2 .ctv2-hero__word { will-change: transform, opacity; }
 #ctv2 .ctv2-word {
@@ -1146,7 +1159,12 @@ html.ctv2-ready .ctv2-boot { display: none !important; }
   #ctv2 .ctv2-card__logo { flex-basis: 36px; height: 36px; font-size: 11px; }
   #ctv2 .ctv2-card__title { font-size: 13px; }
   #ctv2 .ctv2-card__sub { font-size: 12px; }
-  #ctv2 .ctv2-hero__meta { margin-left: var(--ctv2-gutter); }
+  #ctv2 .ctv2-hero__meta {
+    margin-left: var(--ctv2-gutter);
+    /* phones: the wordmark is only ~16vw tall, so lift the small blocks
+       above the floating nav (≈ 72px + safe area from the bottom) with a little air */
+    padding-bottom: max(8px, calc(max(16px, env(safe-area-inset-bottom)) + 80px - 16vw));
+  }
 }
 
 @media (max-width: 899px) {

@@ -36,14 +36,17 @@ function ContactPage() {
   return (
     <div id="ctv2" className="ctv2">
       {!introDone && <FlickerIntro onDone={onIntroDone} />}
+      {/* fixed overlays first in the DOM, so keyboard users reach the card
+          and the primary nav before the page content (visual position is
+          set by CSS, not by this order) */}
+      <BookCard ref={cardRef} />
+      <NavCluster show={introDone} />
       <div className="ctv2-curtain">
         <Hero cardRef={cardRef} />
         <Manifesto />
       </div>
       <Services />
       <Footer />
-      <BookCard ref={cardRef} />
-      <NavCluster show={introDone} />
     </div>
   );
 }
