@@ -38,6 +38,12 @@ html.ctv2-on #lv7-nav-links,
 html.ctv2-on #lv7-contact-btn,
 html.ctv2-on #lv7-cursor-trail { display: none !important; }
 
+/* The site's strip-transition columns rest just off-screen with a box
+   shadow that bleeds into the viewport edge (a grey band, very visible on
+   the white section). Drop the shadow only while the strips are idle. */
+html.ctv2-on .lv6-transition:not(.is-active) .lv6-transition__col,
+html.ctv2-on .lv6-transition-mobile:not(.is-active) .lv6-transition-mobile__bar { box-shadow: none; }
+
 /* static black placeholder from index.html: hidden once the page is mounted */
 html.ctv2-ready .ctv2-boot { display: none !important; }
 
@@ -491,6 +497,78 @@ html.ctv2-ready .ctv2-boot { display: none !important; }
   /* phones: orb + pill centred together as one unit */
   #ctv2 .ctv2-navwrap { display: flex; align-items: center; gap: 12px; }
   #ctv2 .ctv2-orb { position: relative; right: auto; bottom: auto; flex: 0 0 var(--dock); }
+}
+
+/* ==========================================================================
+   CHIP — section label (components/Chip.tsx)
+   ========================================================================== */
+#ctv2 .ctv2-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+#ctv2 .ctv2-chip__box {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #f0f0f0;
+}
+#ctv2 .ctv2-chip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+#ctv2 .ctv2-chip--dark .ctv2-chip__box { background: rgba(255, 255, 255, 0.08); }
+
+/* ==========================================================================
+   MANIFESTO — white section over the pinned hero (manifesto/Manifesto.tsx)
+   ========================================================================== */
+#ctv2 .ctv2-manifesto {
+  position: relative;
+  z-index: 1;
+  background: var(--ctv2-white);
+  color: var(--ctv2-ink);
+  padding: 15vh 0 20vh;
+}
+#ctv2 .ctv2-manifesto__col {
+  /* starts exactly on the 50% line and runs to ~88% */
+  margin-left: 50%;
+  width: 38%;
+}
+#ctv2 .ctv2-manifesto__head {
+  position: relative;
+  margin-top: 20vh;
+  font-size: clamp(2.25rem, 3.4vw, 5rem);
+  line-height: 1.02;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  text-indent: 25%;
+  text-wrap: pretty;
+}
+#ctv2 .ctv2-w { opacity: 0.16; }
+#ctv2 .ctv2-manifesto__head.is-static .ctv2-w { opacity: 1; }
+#ctv2 .ctv2-manifesto__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+  max-width: 26em;
+  margin-top: 8vh;
+  font-size: clamp(1rem, 1.05vw, 1.25rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+/* portrait tablets and phones: the column goes full width */
+@media (max-aspect-ratio: 1/1), (max-width: 767px) {
+  #ctv2 .ctv2-manifesto__col {
+    margin-left: 0;
+    width: auto;
+    padding: 0 var(--ctv2-gutter);
+  }
+  #ctv2 .ctv2-manifesto__head { text-indent: 14%; margin-top: 12vh; }
+  #ctv2 .ctv2-manifesto { padding: 12vh 0 16vh; }
 }
 
 /* ==========================================================================
