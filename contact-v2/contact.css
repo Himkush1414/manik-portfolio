@@ -31,7 +31,10 @@
   html.ctv2-on #proj-root { overflow-x: clip; }
 }
 html.ctv2-on #proj-root { background: #0f0f10; }
-/* the Projects page's own Contact button and cursor trail don't belong here */
+/* the Projects page's own top nav (logo, links, Contact button) and cursor
+   trail don't belong here: the Contact view has its own bottom nav */
+html.ctv2-on #lv7-logo,
+html.ctv2-on #lv7-nav-links,
 html.ctv2-on #lv7-contact-btn,
 html.ctv2-on #lv7-cursor-trail { display: none !important; }
 
@@ -294,6 +297,201 @@ html.ctv2-ready .ctv2-boot { display: none !important; }
 }
 #ctv2 .ctv2-card:hover .ctv2-card__arrow,
 #ctv2 .ctv2-card:focus-visible .ctv2-card__arrow { transform: translate(2px, -2px); }
+
+/* ==========================================================================
+   FLOATING NAV + ORB DOCK — bottom centre (nav/FloatingNav.tsx, OrbDock.tsx)
+   ========================================================================== */
+#ctv2 .ctv2-navwrap {
+  --pill-h: 54px;
+  --dock: clamp(56px, 6.5vw, 96px);
+  --pill-bg: rgba(18, 18, 18, 0.95);
+  --pill-line: rgba(255, 255, 255, 0.1);
+  position: fixed;
+  z-index: 710;
+  left: 50%;
+  /* lifted by half the dock's overhang so the orb is centred on the pill
+     and never dips below the bottom edge / home indicator */
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + max(0px, (var(--dock) - var(--pill-h)) / 2));
+  opacity: 0;
+  transform: translate3d(-50%, 20px, 0);
+  pointer-events: none;
+  transition: opacity 0.4s var(--ctv2-ease), transform 0.4s var(--ctv2-ease);
+}
+#ctv2 .ctv2-navwrap.is-in {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+  pointer-events: auto;
+}
+
+#ctv2 .ctv2-orb {
+  position: absolute;
+  right: calc(100% + 12px);
+  bottom: calc((var(--pill-h) - var(--dock)) / 2);
+  width: var(--dock);
+  height: var(--dock);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-line);
+  pointer-events: none;
+}
+/* see OrbDock.tsx: the orb is laid out at 4x and scaled down */
+#ctv2 .ctv2-orb__stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 400%;
+  height: 400%;
+  transform: scale(0.25);
+  transform-origin: 0 0;
+}
+#ctv2 .ctv2-orb__fallback {
+  position: absolute;
+  inset: 17%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #e2e8f0 0%, #94a3b8 42%, #334155 78%, #0f172a 100%);
+  box-shadow: 0 0 18px rgba(148, 163, 184, 0.3);
+}
+
+#ctv2 .ctv2-nav--desk {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--pill-h);
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-line);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+#ctv2 .ctv2-nav__list {
+  display: flex;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#ctv2 .ctv2-nav__list li { height: 100%; }
+#ctv2 .ctv2-nav__chip {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.3s var(--ctv2-ease), width 0.3s var(--ctv2-ease);
+}
+#ctv2 .ctv2-nav__link {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 clamp(14px, 1.25vw, 20px);
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.3s var(--ctv2-ease);
+}
+#ctv2 .ctv2-nav__link:hover { color: rgba(255, 255, 255, 0.95); }
+#ctv2 .ctv2-nav__link.is-on { color: #0a0a0a; }
+#ctv2 .ctv2-nav__link:focus-visible,
+#ctv2 .ctv2-nav__menu-btn:focus-visible,
+#ctv2 .ctv2-nav__current:focus-visible,
+#ctv2 .ctv2-nav__mlink:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+#ctv2 .ctv2-nav--mob { display: none; }
+#ctv2 .ctv2-nav__bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--pill-h);
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-line);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+#ctv2 .ctv2-nav__menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  min-width: 44px;
+  padding: 0 14px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+#ctv2 .ctv2-nav__menu-btn svg { width: 18px; height: 18px; }
+#ctv2 .ctv2-nav__current {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: #0a0a0a;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+}
+#ctv2 .ctv2-nav__menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 22px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-line);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transform-origin: 50% 100%;
+  animation: ctv2-menu-in 0.25s var(--ctv2-ease);
+}
+#ctv2 .ctv2-nav__menu[hidden] { display: none; }
+@keyframes ctv2-menu-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+#ctv2 .ctv2-nav__mlink {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+}
+#ctv2 .ctv2-nav__mlink.is-on { background: #fff; color: #0a0a0a; }
+
+@media (max-width: 639px) {
+  #ctv2 .ctv2-nav--desk { display: none; }
+  #ctv2 .ctv2-nav--mob { display: block; position: relative; }
+  /* phones: orb + pill centred together as one unit */
+  #ctv2 .ctv2-navwrap { display: flex; align-items: center; gap: 12px; }
+  #ctv2 .ctv2-orb { position: relative; right: auto; bottom: auto; flex: 0 0 var(--dock); }
+}
 
 /* ==========================================================================
    TEMPORARY (stage 1): the existing Contact content, moved into the curtain

@@ -4,6 +4,7 @@ import { FlickerIntro } from './intro/FlickerIntro';
 import { Hero } from './hero/Hero';
 import { BookCard } from './hero/BookCard';
 import { LegacySlot } from './LegacySlot';
+import { NavCluster } from './nav/FloatingNav';
 
 // Root of the Contact view. The page is only mounted while the view is on
 // screen, and remounted (key = visit) on every entry, so the intro replays on
@@ -38,6 +39,7 @@ function ContactPage() {
         <LegacySlot />
       </div>
       <BookCard ref={cardRef} />
+      <NavCluster show={introDone} />
     </div>
   );
 }
