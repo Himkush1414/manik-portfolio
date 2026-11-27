@@ -13,13 +13,18 @@ export const NAV_ITEMS = [
 ] as const;
 const ACTIVE = NAV_ITEMS.length - 1; // Contact
 
+/** A nav entry. Other pages (e.g. /games) can pass their own list; Contact uses NAV_ITEMS. */
+export type NavItem = { readonly label: string; readonly href: string };
+type NavProps = { items: readonly NavItem[]; active: number };
+
 export function scrollToTop(e?: MouseEvent) {
   e?.preventDefault();
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
 }
 
 // Bottom-centre cluster: orb dock + nav pill. Appears once the intro is done.
-export function NavCluster({ show }: { show: boolean }) {
+// `items` / `active` default to the Contact view's own list and current page.
+export function NavCluster({ show, items = NAV_ITEMS, active = ACTIVE }: { show: boolean; items?: readonly NavItem[]; active?: number }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   // not focusable or clickable while it's still hidden behind the intro
   useLayoutEffect(() => {
@@ -28,18 +33,18 @@ export function NavCluster({ show }: { show: boolean }) {
   return (
     <div ref={wrapRef} className={`ctv2-navwrap${show ? ' is-in' : ''}`}>
       {show && <OrbDock />}
-      <DesktopNav />
-      <MobileNav />
+      <DesktopNav items={items} active={active} />
+      <MobileNav items={items} active={active} />
     </div>
   );
 }
 
 // ≥ 640px: all five items, a white chip that rests on Contact and slides to
 // whichever item is hovered or focused.
-function DesktopNav() {
+function DesktopNav({ items, active }: NavProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const chipRef = useRef<HTMLSpanElement>(null);
-  const [target, setTarget] = useState(ACTIVE);
+  const [target, setTarget] = useState(active);
 
   const place = useCallback((index: number) => {
     const list = listRef.current;
@@ -64,17 +69,17 @@ function DesktopNav() {
   return (
     <nav className="ctv2-nav ctv2-nav--desk" aria-label="Primary">
       <span ref={chipRef} className="ctv2-nav__chip" aria-hidden="true" />
-      <ul ref={listRef} className="ctv2-nav__list" onMouseLeave={() => setTarget(ACTIVE)}>
-        {NAV_ITEMS.map((item, i) => (
+      <ul ref={listRef} className="ctv2-nav__list" onMouseLeave={() => setTarget(active)}>
+        {items.map((item, i) => (
           <li key={item.href}>
             <a
               href={item.href}
               className={`ctv2-nav__link${i === target ? ' is-on' : ''}`}
-              aria-current={i === ACTIVE ? 'page' : undefined}
+              aria-current={i === active ? 'page' : undefined}
               onMouseEnter={() => setTarget(i)}
               onFocus={() => setTarget(i)}
-              onBlur={() => setTarget(ACTIVE)}
-              onClick={i === ACTIVE ? scrollToTop : undefined}
+              onBlur={() => setTarget(active)}
+              onClick={i === active ? scrollToTop : undefined}
             >
               {item.label}
             </a>
@@ -86,7 +91,7 @@ function DesktopNav() {
 }
 
 // < 640px: "Menu ≡" + the white current-page chip; Menu opens a list upward.
-function MobileNav() {
+function MobileNav({ items, active }: NavProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -114,15 +119,15 @@ function MobileNav() {
   return (
     <nav ref={rootRef} className={`ctv2-nav ctv2-nav--mob${open ? ' is-open' : ''}`} aria-label="Primary">
       <ul id={listId} className="ctv2-nav__menu" hidden={!open}>
-        {NAV_ITEMS.map((item, i) => (
+        {items.map((item, i) => (
           <li key={item.href}>
             <a
               href={item.href}
-              className={`ctv2-nav__mlink${i === ACTIVE ? ' is-on' : ''}`}
-              aria-current={i === ACTIVE ? 'page' : undefined}
+              className={`ctv2-nav__mlink${i === active ? ' is-on' : ''}`}
+              aria-current={i === active ? 'page' : undefined}
               onClick={e => {
                 setOpen(false);
-                if (i === ACTIVE) scrollToTop(e);
+                if (i === active) scrollToTop(e);
               }}
             >
               {item.label}
@@ -148,8 +153,8 @@ function MobileNav() {
             )}
           </svg>
         </button>
-        <a href="#contact" className="ctv2-nav__current" aria-current="page" onClick={scrollToTop}>
-          Contact
+        <a href={items[active].href} className="ctv2-nav__current" aria-current="page" onClick={scrollToTop}>
+          {items[active].label}
         </a>
       </div>
     </nav>

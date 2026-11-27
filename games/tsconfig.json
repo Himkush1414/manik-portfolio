@@ -1,0 +1,7 @@
+{
+  // Typecheck for the Games page (and the contact-v2 / game modules it imports):
+  //   node node_modules/typescript/bin/tsc --noEmit -p games
+  "extends": "../tsconfig.json",
+  "include": ["."],
+  "exclude": ["qa", "tools"]
+}

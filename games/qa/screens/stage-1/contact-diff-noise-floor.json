@@ -1,0 +1,232 @@
+{
+  "summary": {
+    "compared": 27,
+    "identical": 17,
+    "changed": [
+      {
+        "file": "1366x768-0-top.png",
+        "diffPixels": 145,
+        "total": 1049088,
+        "maxDelta": 2
+      },
+      {
+        "file": "1366x768-9-end.png",
+        "diffPixels": 21,
+        "total": 1049088,
+        "maxDelta": 1
+      },
+      {
+        "file": "1366x768-a-nav-hover.png",
+        "diffPixels": 145,
+        "total": 1049088,
+        "maxDelta": 2
+      },
+      {
+        "file": "1920x1080-9-end.png",
+        "diffPixels": 33,
+        "total": 2073600,
+        "maxDelta": 82
+      },
+      {
+        "file": "390x844-0-top.png",
+        "diffPixels": 97,
+        "total": 329160,
+        "maxDelta": 53
+      },
+      {
+        "file": "390x844-9-end.png",
+        "diffPixels": 2,
+        "total": 329160,
+        "maxDelta": 58
+      },
+      {
+        "file": "768x1024-0-top.png",
+        "diffPixels": 5,
+        "total": 786432,
+        "maxDelta": 52
+      },
+      {
+        "file": "768x1024-4-footer.png",
+        "diffPixels": 2,
+        "total": 786432,
+        "maxDelta": 58
+      },
+      {
+        "file": "768x1024-9-end.png",
+        "diffPixels": 5,
+        "total": 786432,
+        "maxDelta": 56
+      },
+      {
+        "file": "768x1024-a-nav-hover.png",
+        "diffPixels": 58,
+        "total": 786432,
+        "maxDelta": 55
+      }
+    ]
+  },
+  "rows": [
+    {
+      "file": "1366x768-0-top.png",
+      "diffPixels": 145,
+      "total": 1049088,
+      "maxDelta": 2
+    },
+    {
+      "file": "1366x768-1-midhero.png",
+      "diffPixels": 0,
+      "total": 1049088,
+      "maxDelta": 0
+    },
+    {
+      "file": "1366x768-2-manifesto.png",
+      "diffPixels": 0,
+      "total": 1049088,
+      "maxDelta": 0
+    },
+    {
+      "file": "1366x768-3-services.png",
+      "diffPixels": 0,
+      "total": 1049088,
+      "maxDelta": 0
+    },
+    {
+      "file": "1366x768-4-footer.png",
+      "diffPixels": 0,
+      "total": 1049088,
+      "maxDelta": 0
+    },
+    {
+      "file": "1366x768-9-end.png",
+      "diffPixels": 21,
+      "total": 1049088,
+      "maxDelta": 1
+    },
+    {
+      "file": "1366x768-a-nav-hover.png",
+      "diffPixels": 145,
+      "total": 1049088,
+      "maxDelta": 2
+    },
+    {
+      "file": "1920x1080-0-top.png",
+      "diffPixels": 0,
+      "total": 2073600,
+      "maxDelta": 0
+    },
+    {
+      "file": "1920x1080-1-midhero.png",
+      "diffPixels": 0,
+      "total": 2073600,
+      "maxDelta": 0
+    },
+    {
+      "file": "1920x1080-2-manifesto.png",
+      "diffPixels": 0,
+      "total": 2073600,
+      "maxDelta": 0
+    },
+    {
+      "file": "1920x1080-3-services.png",
+      "diffPixels": 0,
+      "total": 2073600,
+      "maxDelta": 0
+    },
+    {
+      "file": "1920x1080-4-footer.png",
+      "diffPixels": 0,
+      "total": 2073600,
+      "maxDelta": 0
+    },
+    {
+      "file": "1920x1080-9-end.png",
+      "diffPixels": 33,
+      "total": 2073600,
+      "maxDelta": 82
+    },
+    {
+      "file": "1920x1080-a-nav-hover.png",
+      "diffPixels": 0,
+      "total": 2073600,
+      "maxDelta": 0
+    },
+    {
+      "file": "390x844-0-top.png",
+      "diffPixels": 97,
+      "total": 329160,
+      "maxDelta": 53
+    },
+    {
+      "file": "390x844-1-midhero.png",
+      "diffPixels": 0,
+      "total": 329160,
+      "maxDelta": 0
+    },
+    {
+      "file": "390x844-2-manifesto.png",
+      "diffPixels": 0,
+      "total": 329160,
+      "maxDelta": 0
+    },
+    {
+      "file": "390x844-3-services.png",
+      "diffPixels": 0,
+      "total": 329160,
+      "maxDelta": 0
+    },
+    {
+      "file": "390x844-4-footer.png",
+      "diffPixels": 0,
+      "total": 329160,
+      "maxDelta": 0
+    },
+    {
+      "file": "390x844-9-end.png",
+      "diffPixels": 2,
+      "total": 329160,
+      "maxDelta": 58
+    },
+    {
+      "file": "768x1024-0-top.png",
+      "diffPixels": 5,
+      "total": 786432,
+      "maxDelta": 52
+    },
+    {
+      "file": "768x1024-1-midhero.png",
+      "diffPixels": 0,
+      "total": 786432,
+      "maxDelta": 0
+    },
+    {
+      "file": "768x1024-2-manifesto.png",
+      "diffPixels": 0,
+      "total": 786432,
+      "maxDelta": 0
+    },
+    {
+      "file": "768x1024-3-services.png",
+      "diffPixels": 0,
+      "total": 786432,
+      "maxDelta": 0
+    },
+    {
+      "file": "768x1024-4-footer.png",
+      "diffPixels": 2,
+      "total": 786432,
+      "maxDelta": 58
+    },
+    {
+      "file": "768x1024-9-end.png",
+      "diffPixels": 5,
+      "total": 786432,
+      "maxDelta": 56
+    },
+    {
+      "file": "768x1024-a-nav-hover.png",
+      "diffPixels": 58,
+      "total": 786432,
+      "maxDelta": 55
+    }
+  ]
+}
