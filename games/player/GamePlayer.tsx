@@ -171,6 +171,11 @@ export const GamePlayer = forwardRef<HTMLDivElement, Props>(function GamePlayer(
               <div className="gm-player__loading" role="status">
                 <span className="gm-player__spinner" aria-hidden="true" />
                 <span>{slow ? 'Still loading. The game is large, thanks for waiting.' : `Loading ${game.shortTitle}…`}</span>
+                {slow && game.kind === 'external' && (
+                  <a className="gm-player__fallback" href={game.playUrl} target="_blank" rel="noopener noreferrer">
+                    Open {game.shortTitle} in a new tab instead
+                  </a>
+                )}
               </div>
             )}
           </div>

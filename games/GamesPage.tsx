@@ -7,6 +7,7 @@ import { DetailsPanel } from './components/DetailsPanel';
 import { Selector } from './components/Selector';
 import { DevNote, MindtierExtras } from './components/Secondary';
 import { GamesFooter } from './components/GamesFooter';
+import { QrBlock } from './components/QrBlock';
 import { GamePlayer, type ExitReason } from './player/GamePlayer';
 import { EndCard } from './player/EndCard';
 import { exitFullscreen, fullscreenElement, isTouchDevice, lockLandscape, requestFullscreen, unlockOrientation } from './player/screen';
@@ -135,7 +136,7 @@ export function GamesPage() {
     return () => document.documentElement.classList.remove('gm-on');
   }, []);
 
-  const secondary = game.kind === 'local' ? <DevNote game={game} /> : <MindtierExtras game={game} />;
+  const secondary = game.kind === 'local' ? <DevNote game={game} /> : <MindtierExtras game={game} qr={<QrBlock game={game} />} />;
 
   return (
     <div id="ctv2" className="ctv2 gm" style={{ '--gm-accent': game.accent, '--gm-on-accent': game.onAccent } as CSSProperties}>

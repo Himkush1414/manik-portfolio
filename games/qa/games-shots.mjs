@@ -376,4 +376,64 @@ if (mode === 'cutoff') {
   await ctx.close();
 }
 
+if (mode === 'qr') {
+  // element screenshots of each QR tile (decoded afterwards with jsQR), at desktop and phone sizes
+  const res = [];
+  for (const [W, H] of [[1366, 768], [390, 844]]) {
+    const { ctx, page, logs } = await newPage(W, H, { dpr: 1 });
+    await page.goto(`${url}games/`);
+    await ready(page);
+    const tiles = page.locator('#ctv2 .gm-qr__tile');
+    const n = await tiles.count();
+    for (let i = 0; i < n; i++) {
+      await tiles.nth(i).scrollIntoViewIfNeeded();
+      await tiles.nth(i).screenshot({ path: `${out}/qr-${W}-${i}.png` });
+    }
+    await page.locator('#ctv2 .gm-qr').scrollIntoViewIfNeeded();
+    await sleep(300);
+    await page.locator('#ctv2 .gm-extras').screenshot({ path: `${out}/qr-block-${W}.png` });
+    const info = await page.evaluate(() => ({
+      tile: (() => { const b = document.querySelector('.gm-qr__tile')?.getBoundingClientRect(); return b && [Math.round(b.width), Math.round(b.height)]; })(),
+      caption: document.querySelector('.gm-qr__title')?.textContent,
+      url: document.querySelector('.gm-qr__url')?.textContent,
+      android: document.querySelector('.gm-android')?.innerText.replace(/\s+/g, ' '),
+      play: (() => { const a = document.querySelector('.gm-play'); return { tag: a.tagName, href: a.getAttribute('href'), target: a.getAttribute('target'), rel: a.getAttribute('rel'), note: document.getElementById('gm-play-note')?.textContent }; })(),
+      externalRequests: performance.getEntriesByType('resource').map(e => e.name).filter(n => !n.startsWith(location.origin)),
+    }));
+    // Play opens the game in a new tab (popup), this page stays
+    const [popup] = await Promise.all([ctx.waitForEvent('page', { timeout: 15000 }).catch(() => null), page.click('#ctv2 .gm-play')]);
+    info.popupUrl = popup ? popup.url() : null;
+    info.stillOnGames = page.url();
+    res.push({ W, H, tiles: n, ...info, logs });
+    await ctx.close();
+  }
+  fs.writeFileSync(`${out}/qr.json`, JSON.stringify(res, null, 2));
+  console.log(JSON.stringify(res, null, 1));
+}
+
+if (mode === 'embed') {
+  // only meaningful against a QA build with Mindtier `embeddable: true` (a framable stand-in URL):
+  // the portrait-frame player on desktop and full screen on a phone
+  const res = [];
+  for (const [W, H] of [[1440, 900], [390, 844]]) {
+    const { ctx, page, logs } = await newPage(W, H);
+    await page.goto(`${url}games/`);
+    await ready(page);
+    await page.locator('#ctv2 .gm-play').scrollIntoViewIfNeeded();
+    await page.click('#ctv2 .gm-play');
+    await page.waitForSelector('#ctv2 .gm-player iframe', { timeout: 10000 });
+    await sleep(2500);
+    await page.screenshot({ path: `${out}/embed-${W}x${H}.png` });
+    const st = await playerState(page);
+    st.stage = await page.evaluate(() => { const b = document.querySelector('.gm-player__stage').getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height), +(b.width / b.height).toFixed(3)]; });
+    st.rotate = !!(await page.$('.gm-rotate'));
+    await page.click('#ctv2 .gm-exit');
+    await sleep(700);
+    st.after = await playerState(page);
+    res.push({ W, H, st, logs });
+    await ctx.close();
+  }
+  console.log(JSON.stringify(res, null, 1));
+}
+
 await browser.close();

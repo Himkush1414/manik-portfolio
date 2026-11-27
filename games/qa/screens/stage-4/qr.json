@@ -1,0 +1,48 @@
+[
+  {
+    "W": 1366,
+    "H": 768,
+    "tiles": 1,
+    "tile": [
+      152,
+      152
+    ],
+    "caption": "Scan to play on your phone",
+    "url": "midas-engine.vercel.app/play",
+    "android": "Android Coming to Google Play. A QR code for the store listing will appear here once it’s live.",
+    "play": {
+      "tag": "A",
+      "href": "https://midas-engine.vercel.app/play",
+      "target": "_blank",
+      "rel": "noopener noreferrer",
+      "note": "Opens in a new tab"
+    },
+    "externalRequests": [],
+    "popupUrl": "https://midas-engine.vercel.app/play",
+    "stillOnGames": "http://localhost:4182/games/",
+    "logs": []
+  },
+  {
+    "W": 390,
+    "H": 844,
+    "tiles": 1,
+    "tile": [
+      146,
+      152
+    ],
+    "caption": "Scan to play on your phone",
+    "url": "midas-engine.vercel.app/play",
+    "android": "Android Coming to Google Play. A QR code for the store listing will appear here once it’s live.",
+    "play": {
+      "tag": "A",
+      "href": "https://midas-engine.vercel.app/play",
+      "target": "_blank",
+      "rel": "noopener noreferrer",
+      "note": "Opens in a new tab"
+    },
+    "externalRequests": [],
+    "popupUrl": "https://midas-engine.vercel.app/play",
+    "stillOnGames": "http://localhost:4182/games/",
+    "logs": []
+  }
+]
