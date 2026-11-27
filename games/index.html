@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0f0f10" />
+  <title>Games · Manik Rana</title>
+  <meta name="description" content="A small library of games by Manik Rana: Mindtier, ranked brain games you can play on the web, and an early playable slice of Space War: Dark Edition." />
+  <link rel="canonical" href="https://manik-portfolio-chi.vercel.app/games" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Manik Rana" />
+  <meta property="og:title" content="Games · Manik Rana" />
+  <meta property="og:description" content="Play Mindtier, ranked brain games, and an early slice of Space War: Dark Edition." />
+  <meta property="og:url" content="https://manik-portfolio-chi.vercel.app/games" />
+  <meta property="og:image" content="https://manik-portfolio-chi.vercel.app/og/games.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="The Games library: Mindtier and Space War: Dark Edition." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Games · Manik Rana" />
+  <meta name="twitter:description" content="Play Mindtier, ranked brain games, and an early slice of Space War: Dark Edition." />
+  <meta name="twitter:image" content="https://manik-portfolio-chi.vercel.app/og/games.jpg" />
+  <link rel="icon" type="image/png" sizes="512x512" href="../assets/favicon.png" />
+  <!-- paints the page colour before CSS/JS arrive (no white flash) -->
+  <style>
+    html, body { margin: 0; background: #0f0f10; }
+    #games-root:empty { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="games-root"></div>
+  <noscript>
+    <p style="color:#ededed;font:16px/1.5 system-ui,sans-serif;padding:48px">
+      The Games page needs JavaScript. Mindtier is playable at
+      <a style="color:#d7ff3a" href="https://midas-engine.vercel.app/play">midas-engine.vercel.app/play</a>.
+    </p>
+  </noscript>
+  <script type="module" src="./main.tsx"></script>
+</body>
+</html>

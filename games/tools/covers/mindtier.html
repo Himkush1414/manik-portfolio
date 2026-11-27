@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mindtier cover</title>
+<!-- Cover composition for the /games library (rendered by render-covers.mjs at 2x).
+     ?src=<dir with raw-01-home.png, raw-02-reveal.png, raw-04-results.png, logo-mark.svg> &crop=land|port
+     Art: Mindtier's own app screens (store/screenshots/raw/dark in the midas-engine repo) and brand colours
+     (ink #0F0D0B, volt #D7FF3A). -->
+<style>
+  @font-face { font-family: 'BS'; font-weight: 900; src: url('../../../game/g1/node_modules/@fontsource/big-shoulders-display/files/big-shoulders-display-latin-900-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'JBM'; font-weight: 500; src: url('../../../game/g1/node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-500-normal.woff2') format('woff2'); }
+  html, body { margin: 0; background: #0f0d0b; }
+  .art { position: relative; overflow: hidden; background: #0f0d0b; }
+  .land { width: 960px; height: 600px; }
+  .port { width: 540px; height: 675px; }
+  /* the volt slab (the brand's diagonal block) */
+  .slab { position: absolute; inset: 0; background: #d7ff3a; }
+  .land .slab { clip-path: polygon(64% 0, 100% 0, 100% 100%, 47% 100%); }
+  .port .slab { clip-path: polygon(0 62%, 100% 44%, 100% 100%, 0 100%); }
+  /* faint grain + a soft lime bloom so the black reads as matte ink, not flat #000 */
+  .glow { position: absolute; inset: 0; background: radial-gradient(60% 70% at 58% 46%, rgba(215, 255, 58, 0.10), transparent 70%); }
+  .grain { position: absolute; inset: 0; opacity: 0.05; mix-blend-mode: screen; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .hex { position: absolute; fill: none; stroke: rgba(215, 255, 58, 0.11); stroke-width: 1.5; }
+  .land .hex { left: -70px; top: 190px; width: 420px; }
+  .port .hex { right: -120px; top: -60px; width: 380px; }
+
+  .phone { position: absolute; border-radius: 30px; padding: 7px; background: #1b1916; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 30px 60px rgba(0, 0, 0, 0.55), 0 8px 18px rgba(0, 0, 0, 0.4); }
+  .phone img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 24px; }
+  /* 1080x1919 screens: 9:16 */
+  .land .p-main { width: 270px; height: 480px; left: 470px; top: 62px; z-index: 3; }
+  .land .p-back { width: 228px; height: 405px; left: 298px; top: 120px; transform: rotate(-7deg); z-index: 2; filter: brightness(0.8); }
+  .land .p-side { width: 228px; height: 405px; left: 684px; top: 112px; transform: rotate(7deg); z-index: 2; filter: brightness(0.85); }
+  .port .p-main { width: 250px; height: 444px; left: 145px; top: 150px; z-index: 3; }
+  .port .p-back { width: 196px; height: 348px; left: 22px; top: 222px; transform: rotate(-8deg); z-index: 2; filter: brightness(0.8); }
+  .port .p-side { width: 196px; height: 348px; right: 22px; top: 214px; transform: rotate(8deg); z-index: 2; filter: brightness(0.85); }
+
+  .brand { position: absolute; display: flex; align-items: center; gap: 12px; color: #f4efe6; z-index: 4; }
+  .land .brand { left: 48px; top: 44px; }
+  .port .brand { left: 36px; top: 40px; }
+  .brand img { width: 40px; height: 40px; border-radius: 9px; }
+  .brand span { font: 900 38px/1 'BS', sans-serif; letter-spacing: 0.01em; }
+  .tag { position: absolute; z-index: 4; display: flex; align-items: center; gap: 12px; font: 500 11px/1 'JBM', monospace; letter-spacing: 0.22em; color: #b9b3a7; text-transform: uppercase; }
+  .tag i { display: block; width: 34px; height: 9px; background: #d7ff3a; transform: skewX(-24deg); }
+  .land .tag { left: 50px; bottom: 46px; }
+  .port .tag { left: 38px; top: 96px; }
+</style>
+</head>
+<body>
+<div class="art" id="art">
+  <div class="glow"></div>
+  <svg class="hex" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,4 90,27 90,73 50,96 10,73 10,27" /><polygon points="50,18 78,34 78,66 50,82 22,66 22,34" /></svg>
+  <div class="slab"></div>
+  <div class="grain"></div>
+  <div class="brand"><img id="logo" alt="" /><span>MINDTIER</span></div>
+  <div class="tag"><i></i>Iron &rarr; Grandmaster</div>
+  <div class="phone p-back"><img id="home" alt="" /></div>
+  <div class="phone p-side"><img id="results" alt="" /></div>
+  <div class="phone p-main"><img id="reveal" alt="" /></div>
+</div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const src = (q.get('src') || '.').replace(/\/$/, '');
+  document.getElementById('art').classList.add(q.get('crop') === 'port' ? 'port' : 'land');
+  document.getElementById('home').src = `${src}/raw-01-home.png`;
+  document.getElementById('reveal').src = `${src}/raw-02-reveal.png`;
+  document.getElementById('results').src = `${src}/raw-04-results.png`;
+  document.getElementById('logo').src = `${src}/logo-mark.svg`;
+</script>
+</body>
+</html>

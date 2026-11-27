@@ -50,6 +50,9 @@ import { resolve } from "path";
 //                        on lv8. Deliberately excludes lv8's game, pre-game
 //                        flow, games-list section, About section, and footer
 //                        — none of that exists here. lv8 itself is untouched.
+//  - "/games/"        -> the Games library (games/): Mindtier + a playable slice
+//                        of the /game/g1/ space game in a fullscreen player.
+//                        Linked from the Skills & Fun "Game" box.
 //  - "/lab/lv10/"     -> new standalone route, fully isolated: an intro
 //                        loader sequence (pulsing logo -> black flash ->
 //                        four matte stacked panels + a glass "Welcome" ->
@@ -67,7 +70,7 @@ import { resolve } from "path";
 //    bundle to the bare URL while a ?query variant loads fresh (not applied to
 //    /about/, which is a real page, not an in-progress experiment)
 const LAB_ROUTES = ["/lab/lv1/", "/lab/lv3/", "/lab/lv4/", "/lab/lv5/", "/lab/lv6/", "/lab/lv7/", "/lab/lv8/", "/lab/lv9/", "/lab/lv10/", "/lab/lv12/", "/lab/lv13/", "/lab/home-v0/"];
-const SITE_ROUTES = ["/about/", "/game/g1/"];
+const SITE_ROUTES = ["/about/", "/game/g1/", "/games/"];
 const labDevMiddleware = () => ({
   name: "lab-dev-middleware",
   configureServer(server) {
@@ -129,6 +132,7 @@ export default defineConfig({
         labLv9: resolve(__dirname, "lab/lv9/index.html"),
         labLv10: resolve(__dirname, "lab/lv10/index.html"),
         about: resolve(__dirname, "about/index.html"),
+        games: resolve(__dirname, "games/index.html"),
         homeV0: resolve(__dirname, "lab/home-v0/index.html"),
       },
     },

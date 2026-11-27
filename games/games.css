@@ -1,0 +1,378 @@
+/* ==========================================================================
+   Games library (/games). Sits on top of contact-v2/contact.css (imported first, unchanged): the page
+   renders inside its own #ctv2 root, so Contact's tokens, font, nav pill, orb dock, grain and footer
+   styles apply here as they do on Contact. Everything below is scoped to #ctv2.gm.
+   Per-game colour: --gm-accent / --gm-on-accent, set on the root from games.config.ts.
+   ========================================================================== */
+
+html.gm-on,
+html.gm-on body {
+  margin: 0;
+  background: #0f0f10;
+}
+html.gm-on body { overflow-x: hidden; }
+@supports (overflow: clip) {
+  html.gm-on body { overflow-x: clip; }
+}
+
+#ctv2.gm {
+  --gm-radius: clamp(28px, 2.3vw, 36px);
+  --gm-text-2: #a1a1a8;
+  --gm-max: 1760px;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+#ctv2.gm :focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+#ctv2.gm .gm-main *,
+#ctv2.gm .gm-main *::before,
+#ctv2.gm .gm-main *::after { box-sizing: border-box; }
+
+/* ---------- page head ---------- */
+#ctv2 .gm-main {
+  position: relative;
+  padding: clamp(18px, 2.4vw, 32px) var(--ctv2-gutter) clamp(64px, 9vh, 120px);
+  background: var(--ctv2-foot);
+}
+#ctv2 .gm-main > * { max-width: var(--gm-max); margin-left: auto; margin-right: auto; }
+#ctv2 .gm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gm-text-2);
+}
+#ctv2 .gm-head__home {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #f4f4f5;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.28);
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.25s var(--ctv2-ease);
+}
+#ctv2 .gm-head__home:hover { text-decoration-color: currentColor; }
+#ctv2 .gm-head__count { margin: 0; font-variant-numeric: tabular-nums; }
+
+#ctv2 .gm-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: clamp(6px, 1.6vh, 24px);
+  margin-bottom: clamp(18px, 2.6vh, 32px);
+  padding-bottom: clamp(14px, 2vh, 22px);
+  border-bottom: 1px solid var(--ctv2-hair);
+}
+#ctv2 .gm-h1 {
+  font-size: clamp(44px, 5.4vw, 96px);
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  color: #f4f4f5;
+}
+#ctv2 .gm-intro__text {
+  max-width: 30ch;
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.4;
+  color: var(--gm-text-2);
+  text-align: right;
+}
+
+/* ---------- stage: cover | details, selector under the cover ---------- */
+#ctv2 .gm-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 60fr) minmax(0, 40fr);
+  grid-template-areas:
+    'feature detail'
+    'select detail';
+  grid-template-rows: auto 1fr;
+  column-gap: clamp(28px, 3.2vw, 64px);
+  row-gap: clamp(16px, 2.2vh, 24px);
+  align-items: start;
+}
+
+/* ---------- featured cover ---------- */
+#ctv2 .gm-feature {
+  --tx: 0;
+  --ty: 0;
+  grid-area: feature;
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--gm-radius);
+  overflow: hidden;
+  isolation: isolate;
+  background: #141416;
+  border: 1px solid var(--ctv2-hair);
+  box-shadow: 0 40px 90px -50px color-mix(in srgb, var(--gm-accent) 38%, transparent);
+  transform: perspective(1600px) rotateX(calc(var(--ty) * -1.6deg)) rotateY(calc(var(--tx) * 2.2deg));
+  transition: transform 0.6s var(--ctv2-ease), box-shadow 0.6s var(--ctv2-ease);
+}
+#ctv2 .gm-feature__tilt { position: absolute; inset: 0; }
+#ctv2 .gm-cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+#ctv2 .gm-cover.is-on { opacity: 1; }
+#ctv2 .gm-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate3d(calc(var(--tx) * -10px), calc(var(--ty) * -7px), 0) scale(1.045);
+  transition: transform 0.6s var(--ctv2-ease);
+}
+#ctv2 .gm-feature__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 38%, transparent 58%, rgba(0, 0, 0, 0.42) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+#ctv2 .gm-pill {
+  position: absolute;
+  z-index: 2;
+  top: clamp(14px, 1.4vw, 20px);
+  right: clamp(14px, 1.4vw, 20px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 13px 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 15, 16, 0.6);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #f4f4f5;
+}
+#ctv2 .gm-pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gm-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--gm-accent) 70%, transparent);
+}
+#ctv2 .gm-pill--live .gm-pill__dot { animation: gm-pulse 2.4s ease-in-out infinite; }
+@keyframes gm-pulse { 50% { opacity: 0.45; } }
+
+/* ---------- details panel ---------- */
+#ctv2 .gm-detail {
+  grid-area: detail;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  animation: gm-in 0.4s var(--ctv2-ease);
+}
+@keyframes gm-in { from { opacity: 0; transform: translate3d(0, 6px, 0); } }
+#ctv2 .gm-title {
+  font-size: clamp(38px, 3.5vw, 64px);
+  font-weight: 600;
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  color: #f4f4f5;
+  text-wrap: balance;
+}
+#ctv2 .gm-tagline {
+  margin-top: 14px;
+  max-width: 36ch;
+  font-size: clamp(16px, 1.15vw, 19px);
+  line-height: 1.38;
+  color: #d4d4d8;
+}
+#ctv2 .gm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+#ctv2 .gm-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--ctv2-hair);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #d4d4d8;
+  white-space: nowrap;
+}
+#ctv2 .gm-tag--accent {
+  color: var(--gm-accent);
+  border-color: color-mix(in srgb, var(--gm-accent) 42%, transparent);
+  background: color-mix(in srgb, var(--gm-accent) 7%, transparent);
+}
+
+#ctv2 .gm-specs { margin: 26px 0 0; }
+#ctv2 .gm-specs__row {
+  display: grid;
+  grid-template-columns: minmax(96px, 36%) 1fr;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid var(--ctv2-hair);
+}
+#ctv2 .gm-specs__row:last-child { border-bottom: 1px solid var(--ctv2-hair); }
+#ctv2 .gm-specs dt { font-size: 13.5px; line-height: 1.4; color: var(--gm-text-2); }
+#ctv2 .gm-specs dd { margin: 0; font-size: 14.5px; line-height: 1.4; color: #ededed; }
+
+#ctv2 .gm-desc { margin-top: 22px; }
+#ctv2 .gm-desc p { font-size: 15px; line-height: 1.55; color: var(--gm-text-2); max-width: 62ch; }
+#ctv2 .gm-desc p + p { margin-top: 10px; }
+
+#ctv2 .gm-playwrap { margin-top: 26px; }
+#ctv2 .gm-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 60px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gm-accent);
+  color: var(--gm-on-accent);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 14px 34px -16px color-mix(in srgb, var(--gm-accent) 70%, transparent);
+  transition: transform 0.25s var(--ctv2-ease), box-shadow 0.25s var(--ctv2-ease), filter 0.25s var(--ctv2-ease);
+}
+#ctv2 .gm-play:hover { transform: translate3d(0, -1px, 0); filter: brightness(1.05); box-shadow: 0 18px 40px -16px color-mix(in srgb, var(--gm-accent) 80%, transparent); }
+#ctv2 .gm-play:active { transform: none; }
+#ctv2 .gm-play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 999px; }
+#ctv2 .gm-play__icon { width: 20px; height: 20px; }
+#ctv2 .gm-play__ext { width: 18px; height: 18px; opacity: 0.75; }
+#ctv2 .gm-play__note { margin-top: 10px; font-size: 13px; color: var(--gm-text-2); text-align: center; }
+
+#ctv2 .gm-note {
+  margin-top: 22px;
+  padding: 16px 18px 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--gm-accent) 26%, transparent);
+  background: color-mix(in srgb, var(--gm-accent) 5%, transparent);
+}
+#ctv2 .gm-note p { margin-top: 10px; font-size: 14.5px; line-height: 1.5; color: #d4d4d8; }
+#ctv2 .gm-extras { margin-top: 22px; }
+#ctv2 .gm-disclaimer { margin-top: 16px; font-size: 12.5px; line-height: 1.5; color: var(--gm-text-2); }
+
+/* ---------- selector ---------- */
+#ctv2 .gm-select { grid-area: select; min-width: 0; }
+#ctv2 .gm-select__line { margin-bottom: 12px; font-size: 14px; color: var(--gm-text-2); }
+#ctv2 .gm-cards { display: flex; gap: 12px; }
+#ctv2 .gm-cards__list { display: flex; gap: 12px; flex: 2 1 0; min-width: 0; }
+#ctv2 .gm-card {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--ctv2-hair);
+  background: rgba(255, 255, 255, 0.025);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.3s var(--ctv2-ease), background 0.3s var(--ctv2-ease), box-shadow 0.3s var(--ctv2-ease);
+}
+#ctv2 .gm-card:hover { background: rgba(255, 255, 255, 0.045); }
+#ctv2 .gm-card.is-on {
+  border-color: var(--card-accent);
+  background: color-mix(in srgb, var(--card-accent) 6%, rgba(255, 255, 255, 0.02));
+  box-shadow: 0 0 0 1px var(--card-accent) inset, 0 10px 30px -18px var(--card-accent);
+}
+#ctv2 .gm-card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 20px; }
+#ctv2 .gm-card__thumb {
+  flex: 0 0 auto;
+  display: block;
+  width: 92px;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #19191b;
+}
+#ctv2 .gm-card__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+#ctv2 .gm-card__text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+#ctv2 .gm-card__title { font-size: 15px; font-weight: 600; line-height: 1.2; color: #f4f4f5; }
+#ctv2 .gm-card__status { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--gm-text-2); }
+#ctv2 .gm-card__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--card-accent); }
+#ctv2 .gm-card--soon {
+  cursor: default;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: transparent;
+}
+#ctv2 .gm-card--soon:hover { background: transparent; }
+#ctv2 .gm-card__thumb--soon {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+#ctv2 .gm-card__lock { width: 20px; height: 20px; color: var(--gm-text-2); }
+#ctv2 .gm-card--soon .gm-card__title { font-weight: 500; color: #d4d4d8; }
+
+/* ---------- footer: same as Contact's, with the stage above it ---------- */
+#ctv2 .gm-foot { border-top: 1px solid var(--ctv2-hair); }
+
+/* ==========================================================================
+   < 1024px: one column. cover -> details (title, specs, Play, secondary) -> selector carousel
+   ========================================================================== */
+@media (max-width: 1023px) {
+  #ctv2 .gm-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'feature' 'detail' 'select';
+    grid-template-rows: auto;
+    row-gap: 28px;
+  }
+  #ctv2 .gm-feature { transform: none; }
+  #ctv2 .gm-cover img { transform: none; }
+  #ctv2 .gm-select { margin-top: 8px; }
+  #ctv2 .gm-cards {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--ctv2-gutter);
+    margin: 0 calc(-1 * var(--ctv2-gutter));
+    padding: 4px var(--ctv2-gutter) 8px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  #ctv2 .gm-cards::-webkit-scrollbar { display: none; }
+  #ctv2 .gm-cards__list { flex: none; }
+  #ctv2 .gm-card { flex: 0 0 min(76vw, 320px); scroll-snap-align: start; }
+  #ctv2 .gm-cards > .gm-card--soon { flex: 0 0 min(76vw, 320px); }
+  /* the last card can reach the snap start */
+  #ctv2 .gm-cards::after { content: ''; flex: 0 0 1px; }
+}
+@media (max-width: 767px) {
+  #ctv2 .gm-feature { aspect-ratio: 4 / 5; --gm-radius: 28px; }
+  #ctv2 .gm-intro { flex-direction: column; align-items: flex-start; gap: 10px; }
+  #ctv2 .gm-intro__text { text-align: left; }
+  #ctv2 .gm-specs__row { grid-template-columns: minmax(84px, 34%) 1fr; gap: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ctv2 .gm-feature,
+  #ctv2 .gm-cover img { transform: none !important; }
+  #ctv2 .gm-detail { animation: none; }
+  #ctv2 .gm-pill--live .gm-pill__dot { animation: none; }
+  #ctv2 .gm-cover { transition: opacity 0.15s linear !important; }
+}
