@@ -144,4 +144,100 @@ if (mode === 'nav') {
   console.log(JSON.stringify(report, null, 1));
 }
 
+// state of the player as the page sees it
+const playerState = page => page.evaluate(() => {
+  const host = document.querySelector('#ctv2 .gm-player');
+  const fr = host?.querySelector('iframe');
+  return {
+    open: !!host && !host.hidden,
+    fullscreen: document.fullscreenElement === host,
+    iframes: document.querySelectorAll('iframe').length,
+    src: fr?.getAttribute('src') ?? null,
+    pageCanvases: Array.from(document.querySelectorAll('canvas')).length,
+    history: history.state?.gmPlayer ?? null,
+    url: location.pathname + location.search,
+    active: document.activeElement?.className || document.activeElement?.tagName,
+    htmlPlaying: document.documentElement.classList.contains('gm-playing'),
+    inertMain: document.querySelector('#ctv2 > .gm-main')?.hasAttribute('inert'),
+    selected: document.querySelector('[role=tab][aria-selected=true]')?.id,
+    exit: (() => { const b = document.querySelector('#ctv2 .gm-exit')?.getBoundingClientRect(); return b ? [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)] : null; })(),
+  };
+});
+
+if (mode === 'player') {
+  const [W, H] = (rest[0] || '1920x1080').split('x').map(Number);
+  const { ctx, page, logs } = await newPage(W, H, { touch: false });
+  const steps = [];
+  await page.goto(`${url}games/?game=space-game`);
+  await ready(page);
+  await sleep(1200);
+  steps.push(['library', await playerState(page)]);
+  const open = async label => {
+    await page.click('#ctv2 .gm-play');
+    await page.waitForSelector('#ctv2 .gm-player iframe', { timeout: 10000 });
+    await sleep(500);
+    steps.push([`${label}:open`, await playerState(page)]);
+  };
+  // 1) Play -> fullscreen player, game loads; then Esc (focus is inside the game)
+  await open('esc');
+  await page.waitForFunction(() => !document.querySelector('.gm-player__loading'), null, { timeout: 60000 });
+  await sleep(6000);
+  await page.screenshot({ path: `${out}/${W}x${H}-player-game.png` });
+  steps.push(['esc:loaded', await playerState(page)]);
+  await page.keyboard.press('Escape');
+  await sleep(900);
+  steps.push(['esc:closed', await playerState(page)]);
+  await page.screenshot({ path: `${out}/${W}x${H}-after-esc.png` });
+  // 2) Back button
+  await open('back');
+  await page.goBack();
+  await sleep(900);
+  steps.push(['back:closed', await playerState(page)]);
+  // 3) Exit button
+  await open('exit');
+  await sleep(1500);
+  await page.screenshot({ path: `${out}/${W}x${H}-player-loading-exit.png` });
+  await page.click('#ctv2 .gm-exit');
+  await sleep(900);
+  steps.push(['exit:closed', await playerState(page)]);
+  // history must not have grown: one Back leaves /games entirely (to about:blank here)
+  steps.push(['historyLength', await page.evaluate(() => history.length)]);
+  fs.writeFileSync(`${out}/player-${W}x${H}.json`, JSON.stringify({ steps, logs }, null, 2));
+  console.log(JSON.stringify({ steps, logs }, null, 1));
+  await ctx.close();
+}
+
+if (mode === 'rotate') {
+  const { ctx, page, logs } = await newPage(390, 844, { touch: true, dpr: 2 });
+  const steps = [];
+  await page.goto(`${url}games/?game=space-game`);
+  await ready(page);
+  steps.push(['media', await page.evaluate(() => ({ coarse: matchMedia('(hover: none) and (pointer: coarse)').matches, portrait: matchMedia('(orientation: portrait)').matches }))]);
+  await page.locator('#ctv2 .gm-play').scrollIntoViewIfNeeded();
+  await page.tap('#ctv2 .gm-play');
+  await sleep(800);
+  const rot = () => page.evaluate(() => ({ overlay: !!document.querySelector('.gm-rotate'), text: document.querySelector('.gm-rotate')?.innerText.replace(/\s+/g, ' '), role: document.querySelector('.gm-rotate')?.getAttribute('role'), iframes: document.querySelectorAll('iframe').length, exit: (() => { const b = document.querySelector('.gm-exit')?.getBoundingClientRect(); return b && [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; })(), scrollY, hScroll: document.documentElement.scrollWidth > innerWidth }));
+  steps.push(['portrait', await rot()]);
+  await page.screenshot({ path: `${out}/390x844-rotate.png` });
+  await page.setViewportSize({ width: 844, height: 390 });
+  await sleep(1500);
+  steps.push(['landscape', await rot()]);
+  await page.waitForFunction(() => !document.querySelector('.gm-player__loading'), null, { timeout: 60000 }).catch(() => {});
+  await sleep(5000);
+  await page.screenshot({ path: `${out}/844x390-playing.png` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await sleep(800);
+  steps.push(['portrait-again', await rot()]);
+  await page.screenshot({ path: `${out}/390x844-paused.png` });
+  await page.setViewportSize({ width: 844, height: 390 });
+  await sleep(800);
+  steps.push(['landscape-again', await rot()]);
+  await page.tap('.gm-exit');
+  await sleep(800);
+  steps.push(['exited', await playerState(page)]);
+  fs.writeFileSync(`${out}/rotate.json`, JSON.stringify({ steps, logs }, null, 2));
+  console.log(JSON.stringify({ steps, logs }, null, 1));
+  await ctx.close();
+}
+
 await browser.close();
