@@ -392,12 +392,15 @@ html.gm-playing body {
 }
 @keyframes gm-spin { to { transform: rotate(360deg); } }
 
-/* Exit: small glass pill, top-left (the game's own controls live top-right), clear of the notch */
+/* Exit: small glass pill at the top centre, clear of the notch. The space game keeps its own
+   controls in the corners (top-left: Return to hangar; top-right: settings, sound, fullscreen); the
+   top centre only holds decorative captions in every screen of the slice. */
 #ctv2 .gm-exit {
   position: absolute;
   z-index: 5;
-  top: max(12px, env(safe-area-inset-top));
-  left: max(12px, env(safe-area-inset-left));
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -420,6 +423,8 @@ html.gm-playing body {
 #ctv2 .gm-exit:hover { background: rgba(30, 30, 36, 0.75); border-color: rgba(255, 255, 255, 0.28); }
 #ctv2 .gm-exit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 999px; }
 #ctv2 .gm-exit__icon { width: 16px; height: 16px; }
+/* framed (portrait) game: the page around the frame is free, so the usual top-left corner */
+#ctv2 .gm-player--portrait .gm-exit { left: max(12px, env(safe-area-inset-left)); transform: none; }
 
 /* rotate prompt (landscape game, phone held upright) */
 #ctv2 .gm-rotate {
@@ -452,6 +457,58 @@ html.gm-playing body {
 }
 #ctv2 .gm-rotate__title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: #f4f4f5; }
 #ctv2 .gm-rotate__text { max-width: 30ch; font-size: 15px; line-height: 1.45; color: #b4b4bb; }
+
+/* end of the playable slice */
+#ctv2 .gm-end {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: calc(64px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: radial-gradient(70% 70% at 50% 50%, rgba(4, 5, 10, 0.55), rgba(4, 5, 10, 0.88));
+  animation: gm-end-in 0.6s var(--ctv2-ease);
+  touch-action: manipulation;
+}
+@keyframes gm-end-in { from { opacity: 0; } }
+#ctv2 .gm-end__card {
+  width: min(520px, 100%);
+  padding: clamp(24px, 4vw, 40px);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 16, 20, 0.72);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 40px 120px -40px color-mix(in srgb, var(--gm-accent) 45%, transparent);
+  text-align: left;
+}
+#ctv2 .gm-end__eyebrow { font-size: 12.5px; font-weight: 500; letter-spacing: 0.02em; color: var(--gm-accent); }
+#ctv2 .gm-end__title { margin-top: 12px; font-size: clamp(32px, 4.4vw, 52px); font-weight: 600; line-height: 1; letter-spacing: -0.04em; color: #f4f4f5; }
+#ctv2 .gm-end__text { margin-top: 14px; font-size: 16px; line-height: 1.5; color: #c4c4cc; }
+#ctv2 .gm-end__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+#ctv2 .gm-end__btn {
+  flex: 1 1 160px;
+  height: 52px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gm-accent);
+  color: #0a0a0a;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#ctv2 .gm-end__btn--ghost { background: transparent; color: #f4f4f5; border: 1px solid rgba(255, 255, 255, 0.22); }
+#ctv2 .gm-end__btn:hover { filter: brightness(1.06); }
+#ctv2 .gm-end__btn--ghost:hover { background: rgba(255, 255, 255, 0.06); }
+#ctv2 .gm-end__btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 999px; }
+@media (max-height: 460px) {
+  #ctv2 .gm-end { padding-top: max(16px, env(safe-area-inset-top)); }
+  #ctv2 .gm-end__card { padding: 22px 26px; }
+  #ctv2 .gm-end__title { font-size: 34px; margin-top: 8px; }
+  #ctv2 .gm-end__actions { margin-top: 18px; }
+}
 
 /* embedded portrait game (only if a site allows framing): a phone-shaped frame on desktop */
 #ctv2 .gm-player--portrait {

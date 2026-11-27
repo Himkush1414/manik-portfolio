@@ -240,4 +240,140 @@ if (mode === 'rotate') {
   await ctx.close();
 }
 
+if (mode === 'demo') {
+  const [W, H] = (rest[0] || '1920x1080').split('x').map(Number);
+  const touch = Math.min(W, H) <= 500;
+  const { ctx, page, logs } = await newPage(W, H, { touch });
+  await ctx.addInitScript(() => {
+    // the game's own first-run GPU hint: answered, like a returning player
+    if (location.pathname.startsWith('/game/g1') && !localStorage.getItem('spacewar.darkedition.save.v1'))
+      localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: 'high', autoPicked: true }, gpuHintShown: true } }));
+  });
+  const steps = [];
+  const t0 = Date.now();
+  const mark = (k, v = '') => steps.push([`${((Date.now() - t0) / 1000).toFixed(1)}s ${k}`, v]);
+  const press = async sel => (touch ? sel.tap() : sel.click());
+  await page.goto(`${url}games/?game=space-game`);
+  await ready(page);
+  await press(page.locator('#ctv2 .gm-play'));
+  const fl = page.frameLocator('#ctv2 .gm-player__frame');
+  mark('play pressed', JSON.stringify(await playerState(page)));
+  // boot: skip with a key once the boot overlay is up, otherwise let it run
+  await sleep(4000);
+  await page.keyboard.press('Space').catch(() => {});
+  const start = fl.locator('button[aria-label^="Start mission"]');
+  await start.waitFor({ state: 'visible', timeout: 90000 });
+  await sleep(2500);
+  mark('hangar');
+  await page.screenshot({ path: `${out}/${W}x${H}-1-hangar.png` });
+  await press(start);
+  const go = fl.locator('button:has-text("LET\'S GO")');
+  await go.waitFor({ state: 'visible', timeout: 30000 });
+  await sleep(1500);
+  await page.screenshot({ path: `${out}/${W}x${H}-2-briefing.png` });
+  await press(go);
+  await sleep(400);
+  if (await go.isVisible().catch(() => false)) await press(go);
+  const cam = fl.locator('[role="radiogroup"][aria-label="Camera mode"] [role="radio"]', { hasText: 'THIRD PERSON' });
+  await cam.waitFor({ state: 'visible', timeout: 20000 });
+  mark('camera select');
+  await press(cam);
+  await sleep(3800);
+  mark('launching');
+  await page.screenshot({ path: `${out}/${W}x${H}-3-catapult.png` });
+  await sleep(1300);
+  await page.screenshot({ path: `${out}/${W}x${H}-4-ejection.png` });
+  await page.waitForSelector('#ctv2 .gm-end', { timeout: 30000 });
+  mark('end card');
+  await sleep(900);
+  await page.screenshot({ path: `${out}/${W}x${H}-5-endcard.png` });
+  const endState = await page.evaluate(() => ({ title: document.querySelector('.gm-end__title')?.textContent, text: document.querySelector('.gm-end__text')?.textContent, buttons: Array.from(document.querySelectorAll('.gm-end button')).map(b => b.textContent), focus: document.activeElement?.textContent }));
+  mark('end state', JSON.stringify(endState));
+  // the game behind the card: black, no mission (hide the card for one capture), and it stays so
+  await sleep(6000);
+  await page.addStyleTag({ content: '#ctv2 .gm-end{visibility:hidden!important}' });
+  await sleep(200);
+  await page.screenshot({ path: `${out}/${W}x${H}-6-behind-card-6s-later.png` });
+  const behind = await fl.locator('body').evaluate(() => ({ hudNodes: document.querySelectorAll('[class*="_hud"], [class*="MissionHUD"]').length, text: document.body.innerText.slice(0, 200) }));
+  mark('behind card', JSON.stringify(behind));
+  await page.addStyleTag({ content: '#ctv2 .gm-end{visibility:visible!important}' });
+  // Replay: a fresh game from the first frame
+  const srcBefore = await page.$eval('#ctv2 .gm-player__frame', f => f.contentWindow.performance.timeOrigin);
+  await press(page.locator('#ctv2 .gm-end__btn', { hasText: 'Replay' }));
+  await sleep(1500);
+  const srcAfter = await page.$eval('#ctv2 .gm-player__frame', f => f.contentWindow.performance.timeOrigin).catch(() => null);
+  mark('replay', JSON.stringify({ newDocument: srcAfter !== srcBefore, endCard: !!(await page.$('#ctv2 .gm-end')), ...(await playerState(page)) }));
+  await sleep(2500);
+  await page.screenshot({ path: `${out}/${W}x${H}-7-replay-boot.png` });
+  // the second run reaches the end too? (only on desktop: keeps the run short) -> then Back to library
+  await page.waitForTimeout(500);
+  await press(page.locator('#ctv2 .gm-exit'));
+  await sleep(900);
+  mark('exit after replay', JSON.stringify(await playerState(page)));
+  fs.writeFileSync(`${out}/demo-${W}x${H}.json`, JSON.stringify({ steps, logs }, null, 2));
+  console.log(JSON.stringify({ steps, logs }, null, 1));
+  await ctx.close();
+}
+
+if (mode === 'demo-back') {
+  // full slice again, leaving through the end card's "Back to library"
+  const { ctx, page, logs } = await newPage(1366, 768, { touch: false });
+  await ctx.addInitScript(() => {
+    if (location.pathname.startsWith('/game/g1') && !localStorage.getItem('spacewar.darkedition.save.v1'))
+      localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: 'high', autoPicked: true }, gpuHintShown: true } }));
+  });
+  await page.goto(`${url}games/?game=space-game`);
+  await ready(page);
+  await page.click('#ctv2 .gm-play');
+  const fl = page.frameLocator('#ctv2 .gm-player__frame');
+  await sleep(4000);
+  await page.keyboard.press('Space').catch(() => {});
+  await fl.locator('button[aria-label^="Start mission"]').click({ timeout: 90000 });
+  const go = fl.locator('button:has-text("LET\'S GO")');
+  await go.click({ timeout: 30000 });
+  await sleep(400);
+  if (await go.isVisible().catch(() => false)) await go.click();
+  await fl.locator('[role="radiogroup"][aria-label="Camera mode"] [role="radio"]', { hasText: 'COCKPIT' }).click({ timeout: 20000 });
+  await page.waitForSelector('#ctv2 .gm-end', { timeout: 40000 });
+  await sleep(800);
+  await page.screenshot({ path: `${out}/1366x768-endcard-cockpit.png` });
+  await page.click('#ctv2 .gm-end__btn--ghost');
+  await sleep(900);
+  const st = await playerState(page);
+  console.log(JSON.stringify({ afterBack: st, logs }, null, 1));
+  fs.writeFileSync(`${out}/demo-back.json`, JSON.stringify({ afterBack: st, logs }, null, 2));
+  await ctx.close();
+}
+
+if (mode === 'cutoff') {
+  // the game alone with its debug API: after the launch, the flow never leaves mission.launching
+  const { ctx, page, logs } = await newPage(1280, 720, { touch: false });
+  await page.addInitScript(() => {
+    localStorage.setItem('spacewar.darkedition.save.v1', JSON.stringify({ version: 1, profile: {}, settings: { graphics: { preset: 'high', autoPicked: true }, gpuHintShown: true } }));
+    window.__flowLog = [];
+    setInterval(() => { const s = window.__G1__?.flowState?.get?.(); if (s && window.__flowLog.at(-1) !== s) window.__flowLog.push(s); }, 25);
+  });
+  const res = {};
+  for (const [label, q] of [['demo', '?boot=0&debug=1&demo=eject'], ['standalone', '?boot=0&debug=1']]) {
+    await page.goto(`${url}game/g1/${q}`);
+    await page.waitForFunction(() => window.__G1__?.flowState?.get() === 'hangar.idle', null, { timeout: 90000 });
+    await sleep(2000);
+    await page.click('button[aria-label^="Start mission"]');
+    const go = page.locator('button:has-text("LET\'S GO")');
+    await go.click({ timeout: 30000 });
+    await sleep(300);
+    if (await go.isVisible().catch(() => false)) await go.click();
+    await page.click('[role="radiogroup"][aria-label="Camera mode"] [role="radio"]:has-text("CHASE")', { timeout: 20000 });
+    await page.waitForFunction(() => window.__G1__.flowState.get() === 'mission.launching', null, { timeout: 20000 });
+    await sleep(12000);
+    // try to force the way forward: the FSM refuses in the demo
+    const forced = await page.evaluate(() => { window.__G1__.mission?.resume?.(); return window.__G1__.flowState.get(); });
+    res[label] = { log: await page.evaluate(() => window.__flowLog), final: forced };
+    await page.screenshot({ path: `${out}/cutoff-${label}.png` });
+  }
+  console.log(JSON.stringify({ res, logs }, null, 1));
+  fs.writeFileSync(`${out}/cutoff.json`, JSON.stringify({ res, logs }, null, 2));
+  await ctx.close();
+}
+
 await browser.close();

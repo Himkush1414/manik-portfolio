@@ -18,6 +18,7 @@ import { useLaunchUi } from '../../state/launch.store';
 import { sfx } from '../../audio/sfx';
 import { LAUNCH } from '../../data/mission';
 import { LAUNCH_LINES } from '../../data/lore';
+import { DEMO_END_AT_EJECT, DEMO_FADE } from '../demo';
 
 const _m = new Matrix4(), _q = new Quaternion(), _s = new Vector3(), _p = new Vector3();
 let tl: gsap.core.Timeline | null = null;
@@ -92,6 +93,12 @@ export function runLaunch(swap: () => void): Promise<void> {
     }, [], tb);
     tl.call(() => {
       CameraShaker.setRumble(0);
+      // library demo: hold the flash and fade to black here (the slice ends with the ejection)
+      if (DEMO_END_AT_EJECT) {
+        ui.set({ line: null, count: null });
+        postfx.setExposure(0, DEMO_FADE);
+        return;
+      }
       swap();
       resetLaunchRig();
       postfx.setExposure(1, LAUNCH.flashOut);

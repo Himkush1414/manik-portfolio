@@ -1,0 +1,17 @@
+{
+  "afterBack": {
+    "open": false,
+    "fullscreen": false,
+    "iframes": 0,
+    "src": null,
+    "pageCanvases": 1,
+    "history": null,
+    "url": "/games/?game=space-game",
+    "active": "gm-play",
+    "htmlPlaying": false,
+    "inertMain": false,
+    "selected": "gm-tab-space-game",
+    "exit": null
+  },
+  "logs": []
+}

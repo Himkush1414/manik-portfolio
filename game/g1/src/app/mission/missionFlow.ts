@@ -23,6 +23,7 @@ import { cockpitFx } from '../../scenes/cockpit/displays';
 import { useSettings } from '../../state/settings.store';
 import { applyCockpitView, cycleCamera, followCameraSetting, missionMode } from '../../scenes/mission/missionCamera';
 import { runLaunch, runFastLaunch, resetLaunchRig } from './launchSequence';
+import { DEMO_END_AT_EJECT, DEMO_FADE, demoEnded } from '../demo';
 import { Color, type HemisphereLight, type Light, type PerspectiveCamera, type Scene } from 'three';
 import type { WorldDef } from '../../data/worlds/types';
 
@@ -41,6 +42,13 @@ export async function enterMission(levelId: string, opts: MissionOptions = {}, s
   if (!flow.send('LAUNCH')) return false;
   await MissionLoader.prepare(level, opts);
   if (!flow.send('PREPARED')) return false;
+  // library demo: the real catapult run, then black and the end card, never the mission frame
+  if (DEMO_END_AT_EJECT) {
+    await runLaunch(() => undefined);
+    await new Promise<void>(r => gsap.delayedCall(DEMO_FADE * 0.6, r));
+    demoEnded();
+    return false;
+  }
   if (skipLaunch) beginFrame();
   else await runLaunch(beginFrame);
   return flow.send('LAUNCHED');

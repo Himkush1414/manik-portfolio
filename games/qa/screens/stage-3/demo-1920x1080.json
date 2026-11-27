@@ -1,0 +1,41 @@
+{
+  "steps": [
+    [
+      "1.2s play pressed",
+      "{\"open\":true,\"fullscreen\":true,\"iframes\":1,\"src\":\"/game/g1/?demo=eject\",\"pageCanvases\":0,\"history\":\"space-game\",\"url\":\"/games/?game=space-game\",\"active\":\"gm-exit\",\"htmlPlaying\":true,\"inertMain\":true,\"selected\":\"gm-tab-space-game\",\"exit\":[12,12,78,44]}"
+    ],
+    [
+      "17.6s hangar",
+      ""
+    ],
+    [
+      "37.2s camera select",
+      ""
+    ],
+    [
+      "41.3s launching",
+      ""
+    ],
+    [
+      "47.9s end card",
+      ""
+    ],
+    [
+      "55.4s behind card",
+      "{\"hudNodes\":0,\"text\":\"\"}"
+    ],
+    [
+      "55.4s end state",
+      "{\"title\":\"To be continued…\",\"text\":\"I’m still building this game, so this is only a small slice of it. Thanks for playing!\",\"buttons\":[\"Back to library\",\"Replay\"],\"focus\":\"\\n  HomeProjectsSkillsAboutGamesContactHomeProjectsSkillsAboutGamesContactMenuGamesManik RanaLibrary · 02 gamesGamesThings I build for fun, and to learn how games really work.Early buildSpace War: Dark EditionStrap in, seal the bay, and ride the catapult out into the dark.Space combat3DEarly buildGenreSpace combat flight, 3DEngineThree.js + React Three Fiber (WebGL 2)PlatformWeb browser (WebGL 2), landscapeControlsMouse and keyboard; taps work in the hangar and launchIn this sliceBoot, hangar, cockpit briefing, catapult launchAudioSynthesised live (Web Audio)BuildEarly build (playable slice)Six craft in the hangar (one unlocked to start) and two pilots. Pick your ship and livery, seal the bay, take the briefing in the cockpit, choose a camera and ride the catapult out of the launch tunnel.Everything you see is real-time 3D in the browser, and every sound is synthesised live.Play Space WarPlays fullscreen, best in landscape. Exit any time.Early buildThe developer is still working on this game, so you’ll only play a small part of it: from launch until the ship ejects.More games are on the way. I’m building them one at a time.MindtierLiveSpace WarEarly buildMore games coming soonIn the worksHave an idea? Let’s make it real.manikrana831@gmail.comCopyBook a call Start a projectNavigateHomeProjectsSkillsAboutGamesContactElsewhereLinkedIn GitHub StatusAvailable for new projects, NovemberLocal time11:25:48IST, IndiaManik Rana© 2026 Manik RanaPrivacyTermsBack to top ↑Early build · end of the sliceTo be continued…I’m still building this game, so this is only a small slice of it. Thanks for playing!Back to libraryReplayExit\\n  \\n    <p style=\\\"color:#ededed;font:16px/1.5 system-ui,sans-serif;padding:48px\\\">\\n      The Games page needs JavaScript. Mindtier is playable at\\n      <a style=\\\"color:#d7ff3a\\\" href=\\\"https://midas-engine.vercel.app/play\\\">midas-engine.vercel.app/play</a>.\\n    </p>\\n  \\n\\n\\n\"}"
+    ],
+    [
+      "57.2s replay",
+      "{\"newDocument\":true,\"endCard\":false,\"open\":true,\"fullscreen\":true,\"iframes\":1,\"src\":\"/game/g1/?demo=eject\",\"pageCanvases\":0,\"history\":\"space-game\",\"url\":\"/games/?game=space-game\",\"active\":\"gm-player__frame\",\"htmlPlaying\":true,\"inertMain\":true,\"selected\":\"gm-tab-space-game\",\"exit\":[12,12,78,44]}"
+    ],
+    [
+      "62.1s exit after replay",
+      "{\"open\":false,\"fullscreen\":false,\"iframes\":0,\"src\":null,\"pageCanvases\":1,\"history\":null,\"url\":\"/games/?game=space-game\",\"active\":\"gm-play\",\"htmlPlaying\":false,\"inertMain\":false,\"selected\":\"gm-tab-space-game\",\"exit\":null}"
+    ]
+  ],
+  "logs": []
+}
