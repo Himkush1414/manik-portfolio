@@ -1,0 +1,93 @@
+{
+  "steps": [
+    [
+      "media",
+      {
+        "coarse": true,
+        "portrait": true
+      }
+    ],
+    [
+      "portrait",
+      {
+        "overlay": true,
+        "text": "Rotate your phone Space War: Dark Edition plays in landscape. It starts as soon as you turn your phone sideways.",
+        "role": "alert",
+        "iframes": 0,
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ],
+        "scrollY": 0,
+        "hScroll": false
+      }
+    ],
+    [
+      "landscape",
+      {
+        "overlay": false,
+        "iframes": 1,
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ],
+        "scrollY": 0,
+        "hScroll": false
+      }
+    ],
+    [
+      "portrait-again",
+      {
+        "overlay": true,
+        "text": "Rotate your phone Space War: Dark Edition plays in landscape. The game is paused until you turn your phone sideways.",
+        "role": "alert",
+        "iframes": 1,
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ],
+        "scrollY": 0,
+        "hScroll": false
+      }
+    ],
+    [
+      "landscape-again",
+      {
+        "overlay": false,
+        "iframes": 1,
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ],
+        "scrollY": 0,
+        "hScroll": false
+      }
+    ],
+    [
+      "exited",
+      {
+        "open": false,
+        "fullscreen": false,
+        "iframes": 0,
+        "src": null,
+        "pageCanvases": 1,
+        "history": null,
+        "url": "/games/?game=space-game",
+        "active": "gm-play",
+        "htmlPlaying": false,
+        "inertMain": false,
+        "selected": "gm-tab-space-game",
+        "exit": null
+      }
+    ]
+  ],
+  "logs": []
+}

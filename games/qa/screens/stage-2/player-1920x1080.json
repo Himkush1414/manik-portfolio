@@ -1,0 +1,165 @@
+{
+  "steps": [
+    [
+      "library",
+      {
+        "open": false,
+        "fullscreen": false,
+        "iframes": 0,
+        "src": null,
+        "pageCanvases": 1,
+        "history": null,
+        "url": "/games/?game=space-game",
+        "active": "BODY",
+        "htmlPlaying": false,
+        "inertMain": false,
+        "selected": "gm-tab-space-game",
+        "exit": null
+      }
+    ],
+    [
+      "esc:open",
+      {
+        "open": true,
+        "fullscreen": true,
+        "iframes": 1,
+        "src": "/game/g1/?demo=eject",
+        "pageCanvases": 0,
+        "history": "space-game",
+        "url": "/games/?game=space-game",
+        "active": "gm-player__frame",
+        "htmlPlaying": true,
+        "inertMain": true,
+        "selected": "gm-tab-space-game",
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ]
+      }
+    ],
+    [
+      "esc:loaded",
+      {
+        "open": true,
+        "fullscreen": true,
+        "iframes": 1,
+        "src": "/game/g1/?demo=eject",
+        "pageCanvases": 0,
+        "history": "space-game",
+        "url": "/games/?game=space-game",
+        "active": "gm-player__frame",
+        "htmlPlaying": true,
+        "inertMain": true,
+        "selected": "gm-tab-space-game",
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ]
+      }
+    ],
+    [
+      "esc:closed",
+      {
+        "open": false,
+        "fullscreen": false,
+        "iframes": 0,
+        "src": null,
+        "pageCanvases": 1,
+        "history": null,
+        "url": "/games/?game=space-game",
+        "active": "gm-play",
+        "htmlPlaying": false,
+        "inertMain": false,
+        "selected": "gm-tab-space-game",
+        "exit": null
+      }
+    ],
+    [
+      "back:open",
+      {
+        "open": true,
+        "fullscreen": true,
+        "iframes": 1,
+        "src": "/game/g1/?demo=eject",
+        "pageCanvases": 0,
+        "history": "space-game",
+        "url": "/games/?game=space-game",
+        "active": "gm-player__frame",
+        "htmlPlaying": true,
+        "inertMain": true,
+        "selected": "gm-tab-space-game",
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ]
+      }
+    ],
+    [
+      "back:closed",
+      {
+        "open": false,
+        "fullscreen": false,
+        "iframes": 0,
+        "src": null,
+        "pageCanvases": 1,
+        "history": null,
+        "url": "/games/?game=space-game",
+        "active": "gm-play",
+        "htmlPlaying": false,
+        "inertMain": false,
+        "selected": "gm-tab-space-game",
+        "exit": null
+      }
+    ],
+    [
+      "exit:open",
+      {
+        "open": true,
+        "fullscreen": true,
+        "iframes": 1,
+        "src": "/game/g1/?demo=eject",
+        "pageCanvases": 0,
+        "history": "space-game",
+        "url": "/games/?game=space-game",
+        "active": "gm-player__frame",
+        "htmlPlaying": true,
+        "inertMain": true,
+        "selected": "gm-tab-space-game",
+        "exit": [
+          12,
+          12,
+          78,
+          44
+        ]
+      }
+    ],
+    [
+      "exit:closed",
+      {
+        "open": false,
+        "fullscreen": false,
+        "iframes": 0,
+        "src": null,
+        "pageCanvases": 1,
+        "history": null,
+        "url": "/games/?game=space-game",
+        "active": "gm-play",
+        "htmlPlaying": false,
+        "inertMain": false,
+        "selected": "gm-tab-space-game",
+        "exit": null
+      }
+    ],
+    [
+      "historyLength",
+      3
+    ]
+  ],
+  "logs": []
+}
