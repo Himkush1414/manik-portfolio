@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { flushSync } from 'react-dom';
-import { NavCluster } from '../contact-v2/nav/FloatingNav';
-import { DEFAULT_GAME, GAMES, GAMES_NAV, GAMES_NAV_ACTIVE, LIBRARY_COPY, type Game } from './games.config';
+import { DEFAULT_GAME, GAMES, LIBRARY_COPY, type Game } from './games.config';
 import { FeaturedCover } from './components/FeaturedCover';
 import { DetailsPanel } from './components/DetailsPanel';
 import { Selector } from './components/Selector';
 import { DevNote, MindtierExtras } from './components/Secondary';
 import { GamesFooter } from './components/GamesFooter';
 import { QrBlock } from './components/QrBlock';
+import { BackIcon } from './components/icons';
 import { GamePlayer, type ExitReason } from './player/GamePlayer';
 import { EndCard } from './player/EndCard';
 import { exitFullscreen, fullscreenElement, isTouchDevice, lockLandscape, requestFullscreen, unlockOrientation } from './player/screen';
@@ -140,12 +140,11 @@ export function GamesPage() {
 
   return (
     <div id="ctv2" className="ctv2 gm" style={{ '--gm-accent': game.accent, '--gm-on-accent': game.onAccent } as CSSProperties}>
-      {/* hidden (orb unmounted: its WebGL context is released) while a game is playing */}
-      <NavCluster show={!playing} items={GAMES_NAV} active={GAMES_NAV_ACTIVE} />
       <main id="top" className="gm-main ctv2-grain">
         <header className="gm-head">
           <a className="gm-head__home" href="/">
-            Manik Rana
+            <BackIcon className="gm-head__back" />
+            Back to portfolio
           </a>
           <p className="gm-head__count">
             {LIBRARY_COPY.eyebrow} <span aria-hidden="true">·</span> {String(GAMES.length).padStart(2, '0')} games

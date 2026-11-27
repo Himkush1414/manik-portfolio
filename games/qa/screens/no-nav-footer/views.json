@@ -1,0 +1,893 @@
+[
+  {
+    "W": 390,
+    "H": 844,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 16,
+          "y": 204,
+          "w": 358,
+          "h": 448
+        },
+        "detail": {
+          "x": 16,
+          "y": 680,
+          "w": 358,
+          "h": 1249
+        },
+        "select": {
+          "x": 16,
+          "y": 1965,
+          "w": 358,
+          "h": 117
+        },
+        "play": {
+          "x": 16,
+          "y": 1418,
+          "w": 358,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-port-C3gGoyx0.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3598,
+          "footerBottom": 3598,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 16,
+          "y": 204,
+          "w": 358,
+          "h": 448
+        },
+        "detail": {
+          "x": 16,
+          "y": 680,
+          "w": 358,
+          "h": 1015
+        },
+        "select": {
+          "x": 16,
+          "y": 1730,
+          "w": 358,
+          "h": 117
+        },
+        "play": {
+          "x": 16,
+          "y": 1447,
+          "w": 358,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-port-u0-Kxiaf.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3364,
+          "footerBottom": 3364,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 430,
+    "H": 932,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 16,
+          "y": 210,
+          "w": 398,
+          "h": 498
+        },
+        "detail": {
+          "x": 16,
+          "y": 735,
+          "w": 398,
+          "h": 1226
+        },
+        "select": {
+          "x": 16,
+          "y": 1997,
+          "w": 398,
+          "h": 117
+        },
+        "play": {
+          "x": 16,
+          "y": 1450,
+          "w": 398,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-port-C3gGoyx0.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3656,
+          "footerBottom": 3656,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 16,
+          "y": 210,
+          "w": 398,
+          "h": 498
+        },
+        "detail": {
+          "x": 16,
+          "y": 735,
+          "w": 398,
+          "h": 936
+        },
+        "select": {
+          "x": 16,
+          "y": 1707,
+          "w": 398,
+          "h": 117
+        },
+        "play": {
+          "x": 16,
+          "y": 1446,
+          "w": 398,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-port-u0-Kxiaf.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3366,
+          "footerBottom": 3366,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 844,
+    "H": 390,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 25,
+          "y": 145,
+          "w": 793,
+          "h": 496
+        },
+        "detail": {
+          "x": 25,
+          "y": 668,
+          "w": 793,
+          "h": 1056
+        },
+        "select": {
+          "x": 25,
+          "y": 1760,
+          "w": 793,
+          "h": 117
+        },
+        "play": {
+          "x": 25,
+          "y": 1316,
+          "w": 793,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2926,
+          "footerBottom": 2926,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 25,
+          "y": 145,
+          "w": 793,
+          "h": 496
+        },
+        "detail": {
+          "x": 25,
+          "y": 668,
+          "w": 793,
+          "h": 827
+        },
+        "select": {
+          "x": 25,
+          "y": 1532,
+          "w": 793,
+          "h": 117
+        },
+        "play": {
+          "x": 25,
+          "y": 1292,
+          "w": 793,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2697,
+          "footerBottom": 2697,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 932,
+    "H": 430,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 28,
+          "y": 152,
+          "w": 876,
+          "h": 548
+        },
+        "detail": {
+          "x": 28,
+          "y": 727,
+          "w": 876,
+          "h": 1056
+        },
+        "select": {
+          "x": 28,
+          "y": 1819,
+          "w": 876,
+          "h": 117
+        },
+        "play": {
+          "x": 28,
+          "y": 1375,
+          "w": 876,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2926,
+          "footerBottom": 2926,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 28,
+          "y": 152,
+          "w": 876,
+          "h": 548
+        },
+        "detail": {
+          "x": 28,
+          "y": 727,
+          "w": 876,
+          "h": 827
+        },
+        "select": {
+          "x": 28,
+          "y": 1591,
+          "w": 876,
+          "h": 117
+        },
+        "play": {
+          "x": 28,
+          "y": 1351,
+          "w": 876,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2698,
+          "footerBottom": 2698,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 768,
+    "H": 1024,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 23,
+          "y": 166,
+          "w": 722,
+          "h": 451
+        },
+        "detail": {
+          "x": 23,
+          "y": 646,
+          "w": 722,
+          "h": 1056
+        },
+        "select": {
+          "x": 23,
+          "y": 1738,
+          "w": 722,
+          "h": 117
+        },
+        "play": {
+          "x": 23,
+          "y": 1294,
+          "w": 722,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3210,
+          "footerBottom": 3210,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 23,
+          "y": 166,
+          "w": 722,
+          "h": 451
+        },
+        "detail": {
+          "x": 23,
+          "y": 646,
+          "w": 722,
+          "h": 827
+        },
+        "select": {
+          "x": 23,
+          "y": 1509,
+          "w": 722,
+          "h": 117
+        },
+        "play": {
+          "x": 23,
+          "y": 1269,
+          "w": 722,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2981,
+          "footerBottom": 2981,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 1024,
+    "H": 768,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 31,
+          "y": 167,
+          "w": 558,
+          "h": 349
+        },
+        "detail": {
+          "x": 621,
+          "y": 167,
+          "w": 372,
+          "h": 1182
+        },
+        "select": {
+          "x": 31,
+          "y": 532,
+          "w": 558,
+          "h": 139
+        },
+        "play": {
+          "x": 621,
+          "y": 905,
+          "w": 372,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2519,
+          "footerBottom": 2519,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 31,
+          "y": 167,
+          "w": 558,
+          "h": 349
+        },
+        "detail": {
+          "x": 621,
+          "y": 167,
+          "w": 372,
+          "h": 1015
+        },
+        "select": {
+          "x": 31,
+          "y": 532,
+          "w": 558,
+          "h": 139
+        },
+        "play": {
+          "x": 621,
+          "y": 934,
+          "w": 372,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2352,
+          "footerBottom": 2352,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 1366,
+    "H": 768,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 41,
+          "y": 191,
+          "w": 744,
+          "h": 465
+        },
+        "detail": {
+          "x": 829,
+          "y": 191,
+          "w": 496,
+          "h": 1107
+        },
+        "select": {
+          "x": 41,
+          "y": 673,
+          "w": 744,
+          "h": 105
+        },
+        "play": {
+          "x": 829,
+          "y": 872,
+          "w": 496,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2579,
+          "footerBottom": 2579,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 41,
+          "y": 191,
+          "w": 744,
+          "h": 465
+        },
+        "detail": {
+          "x": 829,
+          "y": 191,
+          "w": 496,
+          "h": 902
+        },
+        "select": {
+          "x": 41,
+          "y": 673,
+          "w": 744,
+          "h": 105
+        },
+        "play": {
+          "x": 829,
+          "y": 868,
+          "w": 496,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2374,
+          "footerBottom": 2374,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 1920,
+    "H": 1080,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 80,
+          "y": 230,
+          "w": 1019,
+          "h": 637
+        },
+        "detail": {
+          "x": 1161,
+          "y": 230,
+          "w": 679,
+          "h": 1085
+        },
+        "select": {
+          "x": 80,
+          "y": 891,
+          "w": 1019,
+          "h": 105
+        },
+        "play": {
+          "x": 1161,
+          "y": 908,
+          "w": 679,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2997,
+          "footerBottom": 2997,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 80,
+          "y": 230,
+          "w": 1019,
+          "h": 637
+        },
+        "detail": {
+          "x": 1161,
+          "y": 230,
+          "w": 679,
+          "h": 882
+        },
+        "select": {
+          "x": 80,
+          "y": 891,
+          "w": 1019,
+          "h": 105
+        },
+        "play": {
+          "x": 1161,
+          "y": 887,
+          "w": 679,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 2795,
+          "footerBottom": 2795,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  },
+  {
+    "W": 2560,
+    "H": 1440,
+    "games": {
+      "mindtier": {
+        "hScroll": false,
+        "feature": {
+          "x": 400,
+          "y": 240,
+          "w": 1018,
+          "h": 636
+        },
+        "detail": {
+          "x": 1482,
+          "y": 240,
+          "w": 678,
+          "h": 1085
+        },
+        "select": {
+          "x": 400,
+          "y": 900,
+          "w": 1018,
+          "h": 105
+        },
+        "play": {
+          "x": 1482,
+          "y": 918,
+          "w": 678,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:true",
+          "gm-tab-space-game:false"
+        ],
+        "soonCards": 1,
+        "coverOn": "mindtier-land-DhbDFYZt.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3265,
+          "footerBottom": 3265,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "space-game": {
+        "hScroll": false,
+        "feature": {
+          "x": 400,
+          "y": 240,
+          "w": 1018,
+          "h": 636
+        },
+        "detail": {
+          "x": 1482,
+          "y": 240,
+          "w": 678,
+          "h": 882
+        },
+        "select": {
+          "x": 400,
+          "y": 900,
+          "w": 1018,
+          "h": 105
+        },
+        "play": {
+          "x": 1482,
+          "y": 897,
+          "w": 678,
+          "h": 60
+        },
+        "playCovered": false,
+        "legalBottomVsNavTop": null,
+        "smallTargets": [],
+        "tabs": [
+          "gm-tab-mindtier:false",
+          "gm-tab-space-game:true"
+        ],
+        "soonCards": 1,
+        "coverOn": "space-land-t-Ji0Cid.avif",
+        "navPresent": false,
+        "pageCanvases": 0,
+        "footer": {
+          "docH": 3063,
+          "footerBottom": 3063,
+          "markBottom": 0,
+          "legalAboveMark": true,
+          "padBottom": "0px"
+        },
+        "font": "\"Inter Tight\", Inter, \"Helvetica Neue\", Arial, sans-serif"
+      }
+    },
+    "logs": []
+  }
+]

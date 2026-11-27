@@ -1,0 +1,5 @@
+390x844 {"fontSize":"84.01px","baselineMinusFooterBottom":-1.45,"inkBelowBaseline":1,"inkBelowEm":0.0119}
+768x1024 {"fontSize":"165.44px","baselineMinusFooterBottom":-2.88,"inkBelowBaseline":2,"inkBelowEm":0.0121}
+1366x768 {"fontSize":"294.26px","baselineMinusFooterBottom":-5.23,"inkBelowBaseline":4.6,"inkBelowEm":0.0156}
+1920x1080 {"fontSize":"413.6px","baselineMinusFooterBottom":-7.2,"inkBelowBaseline":6.46,"inkBelowEm":0.0156}
+2560x1440 {"fontSize":"551.47px","baselineMinusFooterBottom":-8.59,"inkBelowBaseline":8.62,"inkBelowEm":0.0156}
