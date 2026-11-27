@@ -1,7 +1,7 @@
 /* ==========================================================================
    Games library (/games). Sits on top of contact-v2/contact.css (imported first, unchanged): the page
-   renders inside its own #ctv2 root, so Contact's tokens, font, nav pill, orb dock, grain and footer
-   styles apply here as they do on Contact. Everything below is scoped to #ctv2.gm.
+   renders inside its own #ctv2 root, so Contact's tokens, font, grain and footer styles apply here as
+   they do on Contact. This page has no floating nav and no orb. Everything below is scoped to #ctv2.gm.
    Per-game colour: --gm-accent / --gm-on-accent, set on the root from games.config.ts.
    ========================================================================== */
 
@@ -54,6 +54,7 @@ html.gm-on body { overflow-x: hidden; }
   transition: text-decoration-color 0.25s var(--ctv2-ease);
 }
 #ctv2 .gm-head__home:hover { text-decoration-color: currentColor; }
+#ctv2 .gm-head__back { width: 16px; height: 16px; margin-right: 8px; flex: none; }
 #ctv2 .gm-head__count { margin: 0; font-variant-numeric: tabular-nums; }
 
 #ctv2 .gm-intro {
@@ -405,8 +406,19 @@ html.gm-on body { overflow-x: hidden; }
 #ctv2 .gm-card__lock { width: 20px; height: 20px; color: var(--gm-text-2); }
 #ctv2 .gm-card--soon .gm-card__title { font-weight: 500; color: #d4d4d8; }
 
-/* ---------- footer: same as Contact's, with the stage above it ---------- */
-#ctv2 .gm-foot { border-top: 1px solid var(--ctv2-hair); }
+/* ---------- footer: Contact's look, ending where the big name ends ----------
+   Contact's footer keeps ~136 px at the bottom to clear its floating nav; this page has none, so the
+   bottom padding goes and the name is the last thing on the page. The name's box is 0.8em tall with its
+   baseline ~0.035em above the box bottom; "Manik Rana" has no descenders, only the round letters dip
+   ~0.016em below the baseline. A -0.021em margin puts the footer's bottom edge on the lowest ink
+   (measured: games/qa, 390-2560 px wide), so nothing is cropped and nothing is left below. */
+#ctv2 .gm-foot {
+  border-top: 1px solid var(--ctv2-hair);
+  padding-bottom: 0;
+}
+#ctv2 .gm-foot .ctv2-foot__legal { margin-top: clamp(40px, 6vh, 64px); }
+#ctv2 .gm-foot .ctv2-foot__mark { margin-top: clamp(40px, 7vh, 88px); }
+#ctv2 .gm-foot .ctv2-foot__mark-fit { margin-bottom: -0.021em; vertical-align: top; }
 
 /* ==========================================================================
    PLAYER — full-viewport dialog: only the game and the Exit button

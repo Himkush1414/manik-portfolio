@@ -85,6 +85,14 @@ if (mode === 'views') {
           tabs: Array.from(document.querySelectorAll('[role="tab"]')).map(t => `${t.id}:${t.getAttribute('aria-selected')}`),
           soonCards: document.querySelectorAll('.gm-card--soon').length,
           coverOn: document.querySelector('.gm-cover.is-on img')?.currentSrc.split('/').pop(),
+          navPresent: !!document.querySelector('.ctv2-navwrap, .ctv2-orb, .ctv2-nav'),
+          pageCanvases: document.querySelectorAll('canvas').length,
+          footer: (() => {
+            const f = document.querySelector('#ctv2 .gm-foot').getBoundingClientRect();
+            const m = document.querySelector('#ctv2 .ctv2-foot__mark').getBoundingClientRect();
+            const l = document.querySelector('#ctv2 .ctv2-foot__legal').getBoundingClientRect();
+            return { docH: d.scrollHeight, footerBottom: Math.round(f.bottom + scrollY), markBottom: +(m.bottom - f.bottom).toFixed(2), legalAboveMark: l.bottom <= m.top, padBottom: getComputedStyle(document.querySelector('#ctv2 .gm-foot')).paddingBottom };
+          })(),
           font: getComputedStyle(document.querySelector('#ctv2 .gm-title')).fontFamily,
         };
       });

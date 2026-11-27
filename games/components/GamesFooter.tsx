@@ -10,6 +10,8 @@ import { GAMES_NAV } from '../games.config';
 // The Contact footer's look (same classes, copy, columns and wordmark), rebuilt for this page: the
 // Contact footer itself is tied to its view (in-page #contact links and the project dialog that moves
 // index.html's form), so it is not reused as-is. "Start a project" goes to the Contact view instead.
+// This page has no floating nav, so the footer needs no room for one: the legal row sits above the
+// big name and the name is the last thing on the page (games.css).
 export function GamesFooter() {
   const [copied, setCopied] = useState(false);
   const timer = useRef(0);
@@ -107,10 +109,6 @@ export function GamesFooter() {
         </div>
       </div>
 
-      <div className="ctv2-foot__mark" aria-hidden="true">
-        <FitText text={C.heroWord} className="ctv2-foot__mark-fit" />
-      </div>
-
       <div className="ctv2-foot__legal">
         <p>
           &copy; {yearNow()} {C.name}
@@ -122,6 +120,9 @@ export function GamesFooter() {
         <a className="ctv2-foot__top-link" href="#top" onClick={toTop}>
           Back to top <span aria-hidden="true">↑</span>
         </a>
+      </div>
+      <div className="ctv2-foot__mark" aria-hidden="true">
+        <FitText text={C.heroWord} className="ctv2-foot__mark-fit" />
       </div>
     </footer>
   );

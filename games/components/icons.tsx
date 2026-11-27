@@ -7,6 +7,12 @@ export const PlayIcon = ({ className }: P) => (
   </svg>
 );
 
+export const BackIcon = ({ className }: P) => (
+  <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const ExternalIcon = ({ className }: P) => (
   <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

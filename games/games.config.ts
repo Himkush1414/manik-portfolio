@@ -147,7 +147,7 @@ export const GAMES: Game[] = [
   },
 ];
 
-/** The library's nav (the Contact nav's pill and orb, pointed at the real pages from /games). */
+/** The footer's Navigate links: the real pages, as reached from /games. (The page has no floating nav.) */
 export const GAMES_NAV = [
   { label: 'Home', href: '/' },
   { label: 'Projects', href: '/#projects' },
@@ -156,7 +156,6 @@ export const GAMES_NAV = [
   { label: 'Games', href: '/games' },
   { label: 'Contact', href: '/#contact' },
 ] as const;
-export const GAMES_NAV_ACTIVE = 4;
 
 export const LIBRARY_COPY = {
   eyebrow: 'Library',
