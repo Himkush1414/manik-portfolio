@@ -19,6 +19,7 @@ import { LaunchHUD } from '../ui/screens/launch/LaunchHUD';
 import { LaunchOverlay } from '../ui/screens/mission/LaunchOverlay';
 import { MissionHUD } from '../ui/screens/mission/MissionHUD';
 import { installAutoLaunch } from './mission/autoLaunch';
+import { installDemoBridge } from './demo';
 
 import { FaultPanel } from '../ui/screens/FaultPanel';
 import { QUERY } from '../core/constants';
@@ -47,6 +48,7 @@ function Game() {
     applyStartParams();
     installDoorFeedback();
     installAutoLaunch();
+    installDemoBridge();
     installDomSettings();
     void startLoading();
   }, []);

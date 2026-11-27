@@ -1,0 +1,32 @@
+{
+  "res": {
+    "demo": {
+      "log": [
+        "hangar.idle",
+        "launch.doorsClose",
+        "launch.reveal",
+        "launch.briefing",
+        "launch.cameraSelect",
+        "launch.standby",
+        "mission.preparing",
+        "mission.launching"
+      ],
+      "final": "mission.launching"
+    },
+    "standalone": {
+      "log": [
+        "hangar.idle",
+        "launch.doorsClose",
+        "launch.reveal",
+        "launch.briefing",
+        "launch.cameraSelect",
+        "launch.standby",
+        "mission.preparing",
+        "mission.launching",
+        "mission.playing"
+      ],
+      "final": "mission.playing"
+    }
+  },
+  "logs": []
+}

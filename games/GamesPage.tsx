@@ -8,6 +8,7 @@ import { Selector } from './components/Selector';
 import { DevNote, MindtierExtras } from './components/Secondary';
 import { GamesFooter } from './components/GamesFooter';
 import { GamePlayer, type ExitReason } from './player/GamePlayer';
+import { EndCard } from './player/EndCard';
 import { exitFullscreen, fullscreenElement, isTouchDevice, lockLandscape, requestFullscreen, unlockOrientation } from './player/screen';
 
 // The selected game survives a reload / shared link as ?game=<slug> (replaceState: no history entries).
@@ -38,6 +39,17 @@ export function GamesPage() {
   const openRef = useRef(false);
   const wasFullscreen = useRef(false);
   const restoreFocus = useRef(false);
+  // the space game's slice has ended (it posts a message right after the ejection)
+  const [ended, setEnded] = useState(false);
+  const [runKey, setRunKey] = useState(0);
+  const onGameMessage = useCallback((data: unknown) => {
+    const d = data as { source?: string; type?: string } | null;
+    if (d?.source === 'g1-demo' && d.type === 'end') setEnded(true);
+  }, []);
+  const replay = useCallback(() => {
+    setEnded(false);
+    setRunKey(k => k + 1); // a fresh iframe: the game restarts from its first frame
+  }, []);
 
   /** Play: open the dialog, then (same click) ask for real fullscreen; the fixed layer is the fallback. */
   const openPlayer = useCallback((g: Game) => {
@@ -48,6 +60,7 @@ export function GamesPage() {
     }
     openRef.current = true;
     wasFullscreen.current = false;
+    setEnded(false);
     flushSync(() => setPlaying(g));
     history.pushState({ ...(history.state ?? {}), gmPlayer: g.slug }, '');
     const host = hostRef.current;
@@ -63,6 +76,7 @@ export function GamesPage() {
     if (!openRef.current) return;
     openRef.current = false;
     restoreFocus.current = true;
+    setEnded(false);
     setPlaying(null); // unmounts the iframe: the game's document, loops, audio and GL contexts go with it
     unlockOrientation();
     exitFullscreen();
@@ -149,7 +163,14 @@ export function GamesPage() {
       <div className="gm-footwrap">
         <GamesFooter />
       </div>
-      <GamePlayer ref={hostRef} game={playing} onExit={closePlayer} />
+      <GamePlayer
+        ref={hostRef}
+        game={playing}
+        onExit={closePlayer}
+        runKey={runKey}
+        onGameMessage={onGameMessage}
+        overlay={ended ? <EndCard onBack={() => closePlayer('end-card')} onReplay={replay} /> : null}
+      />
     </div>
   );
 }

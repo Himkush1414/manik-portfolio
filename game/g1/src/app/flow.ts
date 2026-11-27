@@ -5,6 +5,7 @@
 // *_DONE events; nothing else can move the machine while one runs.
 import { create } from 'zustand';
 import { bus } from '../core/bus';
+import { DEMO_END_AT_EJECT, DEMO_LOCKED_STATES } from './demoFlag';
 
 export type FlowState =
   | 'boot.black'
@@ -123,11 +124,14 @@ export const useFlow = create<FlowStore>()((set, get) => ({
     const from = get().state;
     const to = nextState(from, event);
     if (!to) return false;
+    // library demo (?demo=eject): nothing after the catapult ejection is reachable (see demo.ts)
+    if (DEMO_END_AT_EJECT && DEMO_LOCKED_STATES.has(to)) return false;
     set(s => ({ state: to, history: [...s.history.slice(-31), from] }));
     bus.emit('flow:state', { from, to });
     return true;
   },
   force(state) {
+    if (DEMO_END_AT_EJECT && DEMO_LOCKED_STATES.has(state)) return;
     const from = get().state;
     set(s => ({ state, history: [...s.history.slice(-31), from] }));
     bus.emit('flow:state', { from, to: state });
