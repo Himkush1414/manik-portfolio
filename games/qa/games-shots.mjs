@@ -436,4 +436,46 @@ if (mode === 'embed') {
   console.log(JSON.stringify(res, null, 1));
 }
 
+if (mode === 'keys') {
+  const res = {};
+  for (const reduce of [false, true]) {
+    const { ctx, page, logs } = await newPage(1366, 768, { touch: false, reduce });
+    await page.goto(`${url}games/`);
+    await ready(page);
+    await sleep(600);
+    // Tab order from the top of the page
+    const order = [];
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press('Tab');
+      const d = await page.evaluate(() => { const a = document.activeElement; return `${a.tagName.toLowerCase()}${a.getAttribute('role') ? '[' + a.getAttribute('role') + ']' : ''}:${(a.getAttribute('aria-label') || a.textContent || '').trim().slice(0, 28)}`; });
+      order.push(d);
+      if (d.includes('[tab]')) break;
+    }
+    const focusRing = await page.evaluate(() => { const cs = getComputedStyle(document.activeElement); return `${cs.outlineStyle} ${cs.outlineWidth} ${cs.outlineColor}`; });
+    await page.keyboard.press('ArrowRight');
+    await sleep(reduce ? 60 : 200);
+    await page.screenshot({ path: `${out}/keys-mid-fade${reduce ? '-reduced' : ''}.png` });
+    const fade = await page.evaluate(() => Array.from(document.querySelectorAll('.gm-cover')).map(p => +getComputedStyle(p).opacity.slice(0, 4)));
+    const trans = await page.evaluate(() => getComputedStyle(document.querySelector('.gm-cover')).transitionDuration);
+    await sleep(600);
+    const afterRight = await page.evaluate(() => ({ selected: document.querySelector('[role=tab][aria-selected=true]')?.id, focus: document.activeElement?.id, title: document.querySelector('.gm-title')?.textContent, url: location.search }));
+    await page.keyboard.press('ArrowLeft');
+    await sleep(500);
+    const afterLeft = await page.evaluate(() => document.querySelector('[role=tab][aria-selected=true]')?.id);
+    await page.keyboard.press('End');
+    await sleep(300);
+    // Enter on the selected tab plays it (space game -> player opens, focus inside)
+    await page.keyboard.press('Enter');
+    await sleep(1200);
+    const playing = await playerState(page);
+    await page.keyboard.press('Escape');
+    await sleep(900);
+    const back = await playerState(page);
+    res[reduce ? 'reduced' : 'normal'] = { order, focusRing, fadeAt200ms: fade, coverTransition: trans, afterRight, afterLeft, enterPlays: { open: playing.open, fullscreen: playing.fullscreen, active: playing.active }, afterEsc: { open: back.open, active: back.active, selected: back.selected }, logs };
+    await ctx.close();
+  }
+  fs.writeFileSync(`${out}/keys.json`, JSON.stringify(res, null, 2));
+  console.log(JSON.stringify(res, null, 1));
+}
+
 await browser.close();

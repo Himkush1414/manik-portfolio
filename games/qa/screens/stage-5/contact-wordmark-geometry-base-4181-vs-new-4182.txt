@@ -1,0 +1,4 @@
+4181 768x1024 {"rect":[3.063,907.359,761.859,122.422],"fontSize":"165.44px","transform":"none","wordTransform":"none","fonts":"Inter Tight 400 600,Inter 900"}
+4181 1366x768 {"rect":[5.469,560.547,1355.063,217.75],"fontSize":"294.27px","transform":"none","wordTransform":"none","fonts":"Sora 400,Sora 600,Sora 700,Sora 800,Inter Tight 400 600,Inter 900"}
+4182 768x1024 {"rect":[3.047,907.359,761.906,122.422],"fontSize":"165.45px","transform":"none","wordTransform":"none","fonts":"Inter Tight 400 600,Inter 900"}
+4182 1366x768 {"rect":[5.469,560.547,1355.063,217.75],"fontSize":"294.27px","transform":"none","wordTransform":"none","fonts":"Sora 400,Sora 600,Sora 700,Sora 800,Inter Tight 400 600,Inter 900"}

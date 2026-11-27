@@ -302,7 +302,7 @@ html.gm-on body { overflow-x: hidden; }
 #ctv2 .gm-qr__url {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 44px;
   font-size: 13px;
   color: var(--gm-text-2);
   text-decoration: underline;

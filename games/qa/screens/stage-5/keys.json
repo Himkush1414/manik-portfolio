@@ -1,0 +1,78 @@
+{
+  "normal": {
+    "order": [
+      "a:Home",
+      "a:Projects",
+      "a:Skills",
+      "a:About",
+      "a:Games",
+      "a:Contact",
+      "a:Manik Rana",
+      "a:Play Mindtier",
+      "a:midas-engine.vercel.app/play",
+      "button[tab]:MindtierLive"
+    ],
+    "focusRing": "solid 2px rgb(255, 255, 255)",
+    "fadeAt200ms": [
+      0.02,
+      0.97
+    ],
+    "coverTransition": "0.4s",
+    "afterRight": {
+      "selected": "gm-tab-space-game",
+      "focus": "gm-tab-space-game",
+      "title": "Space War: Dark Edition",
+      "url": "?game=space-game"
+    },
+    "afterLeft": "gm-tab-mindtier",
+    "enterPlays": {
+      "open": true,
+      "fullscreen": true,
+      "active": "gm-player__frame"
+    },
+    "afterEsc": {
+      "open": false,
+      "active": "gm-play",
+      "selected": "gm-tab-space-game"
+    },
+    "logs": []
+  },
+  "reduced": {
+    "order": [
+      "a:Home",
+      "a:Projects",
+      "a:Skills",
+      "a:About",
+      "a:Games",
+      "a:Contact",
+      "a:Manik Rana",
+      "a:Play Mindtier",
+      "a:midas-engine.vercel.app/play",
+      "button[tab]:MindtierLive"
+    ],
+    "focusRing": "solid 2px rgb(255, 255, 255)",
+    "fadeAt200ms": [
+      0,
+      1
+    ],
+    "coverTransition": "0.15s",
+    "afterRight": {
+      "selected": "gm-tab-space-game",
+      "focus": "gm-tab-space-game",
+      "title": "Space War: Dark Edition",
+      "url": "?game=space-game"
+    },
+    "afterLeft": "gm-tab-mindtier",
+    "enterPlays": {
+      "open": true,
+      "fullscreen": true,
+      "active": "gm-player__frame"
+    },
+    "afterEsc": {
+      "open": false,
+      "active": "gm-play",
+      "selected": "gm-tab-space-game"
+    },
+    "logs": []
+  }
+}
