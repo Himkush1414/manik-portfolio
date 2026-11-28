@@ -336,6 +336,12 @@ function wireAboutFrameLinks() {
       goTo('skills');
       return;
     }
+    const contact = target.closest('a[href="/#contact"]');
+    if (contact) {
+      e.preventDefault();
+      goTo('contact');
+      return;
+    }
     const home = target.closest('a[href="/"]');
     if (home) {
       e.preventDefault();

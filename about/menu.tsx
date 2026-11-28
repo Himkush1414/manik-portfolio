@@ -19,17 +19,17 @@ const contactLinks = document.getElementById('contact-links');
 const menuLinks = document.getElementById('menu-links');
 
 if (smMount) {
-  // "Home", "Projects" and "Skills" are real links off lv5 entirely (the
-  // main site's root, each with a hash the main site's own script picks
-  // up on load to land straight on that view); the other two stay
-  // in-page (`#`) since neither is a real destination — see the
-  // per-item click handling below for what each does instead.
+  // "Home", "Projects", "Skills" and "Contact" are real links off lv5
+  // entirely (the main site's root, each with a hash the main site's own
+  // script picks up on load to land straight on that view); "About" stays
+  // in-page (`#`) since it is this very section — see the per-item click
+  // handling below.
   const smItems = [
     { label: 'Home', ariaLabel: 'Go to the main site', link: '/' },
     { label: 'About', ariaLabel: 'This section', link: '#' },
     { label: 'Projects', ariaLabel: 'Go to Projects', link: '/#projects' },
     { label: 'Skills', ariaLabel: 'Go to Skills', link: '/#skills' },
-    { label: 'Contact', ariaLabel: 'Show contact links', link: '#' },
+    { label: 'Contact', ariaLabel: 'Go to Contact', link: '/#contact' },
   ];
 
   const root = createRoot(smMount);
@@ -85,26 +85,16 @@ if (smMount) {
     });
   });
 
-  // Home, Projects and Skills are genuine <a href> links — left to
-  // navigate normally, no handler needed. The other two are each handled
-  // on their own terms: About is this very section (nothing to navigate
-  // to, just close), and Contact reveals the social links panel in place
-  // instead of closing.
+  // Home, Projects, Skills and Contact are genuine <a href> links — left
+  // to navigate normally, no handler needed. About is this very section
+  // (nothing to navigate to, just close).
   smMount.addEventListener('click', e => {
     const item = (e.target as HTMLElement).closest('.sm-panel-item') as HTMLElement | null;
     if (!item) return;
     const index = Number(item.dataset.index);
-    if (index === 1 || index === 3 || index === 4) return; // Home / Projects / Skills: real navigation, let it proceed
+    if (index !== 2) return; // Home / Projects / Skills / Contact: real navigation, let it proceed
 
     e.preventDefault();
-    if (index === 5) {
-      const willOpen = !contactLinks?.classList.contains('is-open');
-      contactLinks?.classList.toggle('is-open', willOpen);
-      contactLinks?.setAttribute('aria-hidden', String(!willOpen));
-      // the corner links make room above that row rather than overlap it
-      menuLinks?.classList.toggle('is-raised', willOpen);
-      return;
-    }
     hideContactLinks();
     closeMenu();
   });
